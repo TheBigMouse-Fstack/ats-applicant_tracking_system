@@ -7,6 +7,14 @@ export const dynamic = "force-dynamic";
 // GET: Lấy danh sách phiếu đánh giá
 export async function GET(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json(
+        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để xem phiếu đánh giá" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const applicationId = searchParams.get("applicationId");
 
@@ -44,6 +52,14 @@ export async function GET(req: Request) {
 // POST: Tạo phiếu đánh giá Scorecard mới theo quy tắc BRL-08
 export async function POST(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json(
+        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để chấm điểm ứng viên" },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const {
       applicationId,
@@ -107,7 +123,6 @@ export async function POST(req: Request) {
     const overallScore = Number((tech * 0.4 + comm * 0.3 + cult * 0.3).toFixed(2));
 
     // 3. Xác định Giám khảo (Evaluator) từ Session hoặc User mặc định
-    const sessionUser = getSessionUser();
     let evaluatorId = sessionUser ? sessionUser.id : null;
 
     if (!evaluatorId) {

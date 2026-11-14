@@ -61,16 +61,36 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. KIỂM TRA BRL-05: DELAY BUFFER CHO EMAIL TỪ CHỐI
-    let emailScheduledAt: Date | null = app.emailScheduledAt;
-    if (toStage === "REJECTED") {
-      // Hẹn giờ sau 12 tiếng
-      emailScheduledAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
-    }
-
-    // 4. Lấy thông tin người thực hiện từ session
+    // 4. Lấy thông tin người thực hiện từ session & KIỂM TRA PHÂN QUYỀN RBAC
     const sessionUser = getSessionUser();
     const userId = sessionUser ? sessionUser.id : null;
+
+    // RBAC: Hiring Manager tuyệt đối cấm kéo - thả chuyển cột trạng thái (Mục 13 RBAC Matrix)
+    if (sessionUser && sessionUser.role === "HIRING_MANAGER") {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Quản lý chuyên môn (Hiring Manager) chỉ có quyền Xem hồ sơ và Đánh giá Scorecard; không có quyền luân chuyển trạng thái trên bảng Kanban theo ma trận phân quyền RBAC.",
+          rule: "RBAC-MGR-BLOCK",
+        },
+        { status: 403 }
+      );
+    }
+
+    // 3. KIỂM TRA BRL-05: DELAY BUFFER CHO EMAIL TỪ CHỐI & HỦY NẾU RỜI KHỎI REJECTED
+    let emailScheduledAt: Date | null = app.emailScheduledAt;
+    let isEmailSent = app.isEmailSent;
+
+    if (toStage === "REJECTED") {
+      // Hẹn giờ sau 12 tiếng nếu chuyển sang REJECTED
+      emailScheduledAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+      isEmailSent = false;
+    } else if (fromStage === "REJECTED" && toStage !== "REJECTED") {
+      // BRL-05 Exception: Nếu HR can thiệp kéo thẻ rời khỏi cột REJECTED, tự động hủy lịch gửi email từ chối
+      emailScheduledAt = null;
+      isEmailSent = false;
+    }
 
     // 5. Cập nhật Application và tạo AuditLog trong 1 Transaction
     const [updatedApp] = await prisma.$transaction([
@@ -80,6 +100,7 @@ export async function POST(req: Request) {
           currentStage: toStage,
           stageUpdatedAt: new Date(),
           emailScheduledAt,
+          isEmailSent,
         },
       }),
       prisma.auditLog.create({

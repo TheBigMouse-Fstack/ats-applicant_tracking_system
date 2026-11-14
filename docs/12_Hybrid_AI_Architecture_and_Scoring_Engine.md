@@ -221,3 +221,4 @@ Dưới đây là 4 luận cứ chứng minh tính đúng đắn:
 | **Xử lý ngữ nghĩa** | Nhận diện Section Header, Regex Date, Dictionary | Hiểu sâu ngữ nghĩa (Semantic Understanding) |
 | **Kiểm soát tính nhất quán**| Toán học tất định 100% | `temperature: 0` + `JSON Schema` tất định |
 | **Độ tin cậy cho Demo** | Tuyệt đối (Bảo vệ bài thi không bao giờ sập) | Trực quan, cao cấp, thông minh |
+

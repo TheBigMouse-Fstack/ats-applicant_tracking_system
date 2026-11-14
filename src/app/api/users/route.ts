@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, hashPassword } from "@/lib/auth";
 
-// GET: Lấy danh sách toàn bộ User nội bộ
+// GET: Lấy danh sách toàn bộ User nội bộ (Chỉ Admin mới có quyền)
 export async function GET() {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser || sessionUser.role !== "ADMIN") {
+      return NextResponse.json(
+        { success: false, error: "Chỉ Quản trị viên (Admin) mới có quyền xem danh sách nhân sự." },
+        { status: 403 }
+      );
+    }
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -30,9 +37,17 @@ export async function GET() {
   }
 }
 
-// POST: Tạo người dùng mới (Chỉ Admin mới có quyền theo BRL-Auth)
+// POST: Tạo người dùng mới (Chỉ Admin mới có quyền theo BRL-Auth & RBAC)
 export async function POST(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (sessionUser && sessionUser.role !== "ADMIN") {
+      return NextResponse.json(
+        { success: false, error: "Chỉ Quản trị viên (Admin) mới có quyền tạo tài khoản nhân viên." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { fullName, email, password, role } = body;
 
@@ -91,7 +106,7 @@ export async function POST(req: Request) {
       data: {
         fullName: fullName.trim(),
         email: email.toLowerCase().trim(),
-        passwordHash: password, // Trong thực tế lưu hash bcrypt
+        passwordHash: hashPassword(password), // Băm an toàn chuẩn NIST PBKDF2-SHA512 (NFR-SEC-02)
         role: role.toUpperCase(),
         isActive: true,
       },
@@ -116,9 +131,17 @@ export async function POST(req: Request) {
   }
 }
 
-// PATCH: Khóa / Mở khóa tài khoản hoặc cập nhật Vai trò
+// PATCH: Khóa / Mở khóa tài khoản hoặc cập nhật Vai trò (Chỉ Admin)
 export async function PATCH(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (sessionUser && sessionUser.role !== "ADMIN") {
+      return NextResponse.json(
+        { success: false, error: "Chỉ Quản trị viên (Admin) mới có quyền khóa/mở khóa tài khoản." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { userId, isActive, role } = body;
 

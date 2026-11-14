@@ -108,6 +108,7 @@ export default function KanbanBoard() {
 
   // Drawer state
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
 
   // Error / Notification alert banner
   const [alertError, setAlertError] = useState<string | null>(null);
@@ -115,6 +116,10 @@ export default function KanbanBoard() {
 
   useEffect(() => {
     setIsMounted(true);
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((d) => d.success && setCurrentUser(d.user))
+      .catch(() => {});
   }, []);
 
   // Fetch Pipeline Data
@@ -414,6 +419,26 @@ export default function KanbanBoard() {
         </div>
       )}
 
+      {/* Banner thông báo chế độ Hiring Manager */}
+      {currentUser?.role === "HIRING_MANAGER" && (
+        <div className="p-3.5 bg-amber-50 border border-amber-200/90 rounded-2xl flex items-center justify-between text-xs text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg">💼</span>
+            <div>
+              <p className="font-bold">
+                Chế độ Quản lý Chuyên môn (Hiring Manager — {currentUser.fullName})
+              </p>
+              <p className="text-[11px] text-amber-700 mt-0.5">
+                Theo ma trận phân quyền RBAC: Chức năng kéo-thả chuyển cột được khóa. Bạn có quyền xem hồ sơ CV gốc và mở phiếu chấm điểm Scorecard.
+              </p>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 shrink-0">
+            Read-Only Kanban
+          </span>
+        </div>
+      )}
+
       {/* 3. Bảng 5 Cột Kanban Kéo thả */}
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start pb-6">
@@ -474,6 +499,7 @@ export default function KanbanBoard() {
                             application={app}
                             index={index}
                             onOpenDrawer={(id) => setSelectedAppId(id)}
+                            isDragDisabled={currentUser?.role === "HIRING_MANAGER"}
                           />
                         ))
                       )}

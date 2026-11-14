@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createSessionCookie } from "@/lib/auth";
+import { createSessionCookie, verifyPassword, hashPassword } from "@/lib/auth";
 import { UserRole } from "@/types";
 
 export async function POST(req: Request) {
@@ -50,8 +50,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Kiểm tra mật khẩu chính xác
-    const isMatch = user.passwordHash === password;
+    // Kiểm tra mật khẩu an toàn với PBKDF2 (NFR-SEC-02)
+    const isMatch = verifyPassword(password, user.passwordHash);
 
     if (!isMatch) {
       return NextResponse.json(
@@ -64,7 +64,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // Tạo phiên đăng nhập
+    // Tự động nâng cấp hash mật khẩu nếu là chuỗi plaintext cũ
+    if (!user.passwordHash.startsWith("pbkdf2$")) {
+      prisma.user
+        .update({
+          where: { id: user.id },
+          data: { passwordHash: hashPassword(password) },
+        })
+        .catch((e) => console.error("Error auto-migrating password hash:", e));
+    }
+
+    // Tạo phiên đăng nhập đã ký số an toàn
     const sessionUser = {
       id: user.id,
       fullName: user.fullName,

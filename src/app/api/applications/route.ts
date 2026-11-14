@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { extractTextFromCv, parseAndScoreCv } from "@/lib/ai-parser";
+import { getSessionUser } from "@/lib/auth";
 import { writeFile } from "fs/promises";
 import path from "path";
 
 export const dynamic = "force-dynamic";
 
+// Rate Limiter trượt trong bộ nhớ: Tối đa 5 lần nộp / 10 phút trên mỗi IP (NFR-SEC-03)
+const ipSubmissionTimestamps = new Map<string, number[]>();
+
 // GET: Lấy danh sách hồ sơ ứng tuyển (dành cho API nội bộ hoặc xuất báo cáo)
 export async function GET(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json(
+        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để xem danh sách hồ sơ" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const jobId = searchParams.get("jobId");
     const stage = searchParams.get("stage");
@@ -40,6 +52,29 @@ export async function GET(req: Request) {
 // POST: Nộp hồ sơ ứng tuyển từ cổng Public Careers (SCR-02)
 export async function POST(req: Request) {
   try {
+    // 0. BẢO VỆ CHỐNG BOT/SPAM BẰNG RATE LIMITING (NFR-SEC-03: Tối đa 5 requests/10 phút/IP)
+    const clientIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "127.0.0.1";
+    const nowMs = Date.now();
+    const windowMs = 10 * 60 * 1000;
+    const history = (ipSubmissionTimestamps.get(clientIp) || []).filter(
+      (t) => nowMs - t < windowMs
+    );
+
+    if (history.length >= 5) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Hệ thống phát hiện tần suất nộp hồ sơ vượt quá giới hạn an toàn từ IP của bạn. Vui lòng chờ 10 phút trước khi thử lại theo quy định NFR-SEC-03.",
+          rule: "NFR-SEC-03",
+        },
+        { status: 429 }
+      );
+    }
+
     const formData = await req.formData();
     const jobIdStr = formData.get("jobId") as string;
     const fullName = (formData.get("fullName") as string)?.trim() || "";
@@ -193,9 +228,53 @@ export async function POST(req: Request) {
       );
     }
 
-    // 6. Lưu file vào ổ cứng (public/uploads/)
+    // 6. KIỂM TRA CHỮ KÝ NHỊ PHÂN (MAGIC BYTES) & Lưu file vào ổ cứng (public/uploads/)
     const arrayBuffer = await file!.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Chặn tệp tin đổi đuôi giả mạo (Polyglot / Fake Extension Attack)
+    if (fileExt === ".pdf") {
+      const isPdf =
+        buffer.length >= 4 &&
+        buffer[0] === 0x25 &&
+        buffer[1] === 0x50 &&
+        buffer[2] === 0x44 &&
+        buffer[3] === 0x46; // %PDF
+      if (!isPdf) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Tệp tin không đúng định dạng PDF hợp lệ (Chữ ký nhị phân Magic Bytes không khớp).",
+            fieldErrors: {
+              cvFile: "Nội dung tệp không phải PDF chuẩn hoặc đã bị đổi đuôi giả mạo",
+            },
+          },
+          { status: 400 }
+        );
+      }
+    } else if (fileExt === ".docx") {
+      const isDocx =
+        buffer.length >= 2 && buffer[0] === 0x50 && buffer[1] === 0x4b; // PK (Zip)
+      if (!isDocx) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Tệp tin không đúng định dạng DOCX hợp lệ (Chữ ký nhị phân Magic Bytes không khớp).",
+            fieldErrors: {
+              cvFile: "Nội dung tệp không phải DOCX chuẩn hoặc đã bị đổi đuôi giả mạo",
+            },
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Ghi nhận IP đã nộp hồ sơ hợp lệ vào Rate Limiter
+    history.push(nowMs);
+    ipSubmissionTimestamps.set(clientIp, history);
+
     const safeFileName = `cv_${Date.now()}_${path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads");
     const filePath = path.join(uploadDir, safeFileName);

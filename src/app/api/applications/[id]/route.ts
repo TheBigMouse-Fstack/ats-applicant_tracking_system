@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/auth";
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json(
+        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để xem chi tiết hồ sơ" },
+        { status: 401 }
+      );
+    }
+
     const applicationId = Number(params.id);
     if (!applicationId) {
       return NextResponse.json(

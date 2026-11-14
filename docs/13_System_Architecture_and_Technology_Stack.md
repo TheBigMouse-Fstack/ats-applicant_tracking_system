@@ -189,3 +189,4 @@ Hệ thống mã nguồn của dự án **ReCoverX Career ATS** tại thư mục
 1. Toàn bộ **7 Use Case cốt lõi (UC-00 đến UC-07)** đều có giao diện tương tác thực tế và API hoạt động ổn định.
 2. Toàn bộ **10 Quy tắc Nghiệp vụ (BRL-01 đến BRL-10)** đều được kiểm soát bằng logic phần mềm và được bảo vệ bởi **45 kịch bản kiểm thử tự động (Unit/Integration Tests)** chạy xanh $100\%$.
 3. Toàn bộ thiết kế giao diện đều tuân thủ nghiêm ngặt **Quy chuẩn Form Validation & UI/UX** (viền đỏ khi sai, thông báo lỗi inline dưới ô nhập liệu, xem trước tệp PDF gốc trực quan).
+

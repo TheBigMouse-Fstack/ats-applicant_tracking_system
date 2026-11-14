@@ -29,9 +29,20 @@ export async function GET(req: Request) {
   }
 }
 
-// POST: Tạo tin tuyển dụng mới
+// POST: Tạo tin tuyển dụng mới (HR và Admin; Hiring Manager chỉ đọc)
 export async function POST(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (sessionUser && sessionUser.role === "HIRING_MANAGER") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Quản lý chuyên môn (Hiring Manager) chỉ có quyền xem tin tuyển dụng, không có quyền tạo mới.",
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const {
       title,
@@ -66,7 +77,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const sessionUser = getSessionUser();
     let creatorId = sessionUser ? sessionUser.id : null;
 
     if (!creatorId) {

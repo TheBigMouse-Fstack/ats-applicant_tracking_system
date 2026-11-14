@@ -14,12 +14,14 @@ interface CandidateCardProps {
   application: any;
   index: number;
   onOpenDrawer: (appId: number) => void;
+  isDragDisabled?: boolean;
 }
 
 export default function CandidateCard({
   application,
   index,
   onOpenDrawer,
+  isDragDisabled = false,
 }: CandidateCardProps) {
   const { candidate, job, aiMatchScore, isSlaBreached, slaMessage, evaluations } =
     application;
@@ -33,7 +35,11 @@ export default function CandidateCard({
   };
 
   return (
-    <Draggable draggableId={String(application.id)} index={index}>
+    <Draggable
+      draggableId={String(application.id)}
+      index={index}
+      isDragDisabled={isDragDisabled}
+    >
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}

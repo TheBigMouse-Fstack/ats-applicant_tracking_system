@@ -7,6 +7,14 @@ export const dynamic = "force-dynamic";
 // GET: Lấy danh sách ứng viên trong Kho nhân tài (SCR-07 / UC-06)
 export async function GET(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json(
+        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để truy cập Kho nhân tài" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search")?.trim().toLowerCase() || "";
     const jobId = searchParams.get("jobId");
@@ -50,6 +58,17 @@ export async function GET(req: Request) {
 // POST: Tái sử dụng ứng viên / Khôi phục hồ sơ (Re-pooling UC-06)
 export async function POST(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser || sessionUser.role === "HIRING_MANAGER") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Chỉ Chuyên viên HR và Admin mới có quyền luân chuyển ứng viên trong Kho nhân tài",
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { candidateId, targetJobId } = body;
 
@@ -87,7 +106,6 @@ export async function POST(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    const sessionUser = getSessionUser();
     const userId = sessionUser ? sessionUser.id : null;
 
     // 3. Tạo Application mới ở trạng thái SCREENING

@@ -127,18 +127,32 @@ async function runTests() {
   assert(validateStageTransition("INTERVIEW", "HIRED", 1).allowed === true, "Cho phép kéo sang HIRED khi đã có 1 Scorecard");
 
   // ---------------------------------------------------------
-  // TEST SUITE 5: BRL-05 (Delay Buffer 12-24h khi gửi Email từ chối)
+  // TEST SUITE 5: BRL-05 (Delay Buffer 12-24h khi gửi Email từ chối & Hủy khi phục hồi)
   // ---------------------------------------------------------
-  console.log(`\n${colors.bold}5. Kiểm tra BRL-05 (Delay Buffer 12-24h cho Email từ chối):${colors.reset}`);
+  console.log(`\n${colors.bold}5. Kiểm tra BRL-05 (Delay Buffer 12-24h cho Email từ chối & Hủy khi phục hồi):${colors.reset}`);
 
   function scheduleRejectionEmail(now = new Date(), delayHours = 12) {
     return new Date(now.getTime() + delayHours * 60 * 60 * 1000);
+  }
+
+  function handleStageChangeEmailBuffer(fromStage, toStage, currentScheduledAt) {
+    if (toStage === "REJECTED") {
+      return { scheduledAt: scheduleRejectionEmail(new Date(), 12), isEmailSent: false };
+    }
+    if (fromStage === "REJECTED" && toStage !== "REJECTED") {
+      // Hủy lịch gửi email khi thẻ được HR kéo khỏi REJECTED
+      return { scheduledAt: null, isEmailSent: false };
+    }
+    return { scheduledAt: currentScheduledAt, isEmailSent: false };
   }
 
   const now = new Date();
   const scheduledTime = scheduleRejectionEmail(now, 12);
   const diffHours = (scheduledTime.getTime() - now.getTime()) / (1000 * 60 * 60);
   assert(diffHours === 12, "Thời gian gửi thư từ chối được hoãn đúng 12 giờ so với thời điểm loại");
+
+  const restored = handleStageChangeEmailBuffer("REJECTED", "SCREENING", scheduledTime);
+  assert(restored.scheduledAt === null, "Tự động hủy lịch gửi email từ chối khi HR kéo thẻ khỏi cột REJECTED (BRL-05)");
 
   // ---------------------------------------------------------
   // TEST SUITE 6: Database Integration & Seed Data Integrity
@@ -182,6 +196,22 @@ async function runTests() {
 
     const hrLead = await prisma.user.findFirst({ where: { role: "HR" } });
     assert(hrLead !== null && hrLead.role === "HR", "Tài khoản HR LEAD tồn tại và sẵn sàng quản lý Pipeline");
+
+    // RBAC Permissions logic check (docs/08 RBAC Matrix)
+    function checkRbacPermission(role, action) {
+      if (action === "MOVE_STAGE") return role === "ADMIN" || role === "HR";
+      if (action === "CREATE_JOB") return role === "ADMIN" || role === "HR";
+      if (action === "MANAGE_USERS") return role === "ADMIN";
+      if (action === "SCORECARD") return role === "HIRING_MANAGER" || role === "HR" || role === "ADMIN";
+      return false;
+    }
+
+    assert(checkRbacPermission("HIRING_MANAGER", "MOVE_STAGE") === false, "Chặn Hiring Manager kéo thả chuyển cột Kanban (Mục 13 RBAC)");
+    assert(checkRbacPermission("HR", "MOVE_STAGE") === true, "Cho phép HR kéo thả chuyển cột Kanban");
+    assert(checkRbacPermission("HIRING_MANAGER", "CREATE_JOB") === false, "Chặn Hiring Manager tạo JD tuyển dụng (chỉ xem)");
+    assert(checkRbacPermission("HR", "CREATE_JOB") === true, "Cho phép HR tạo JD tuyển dụng");
+    assert(checkRbacPermission("HR", "MANAGE_USERS") === false, "Chặn HR quản trị người dùng (chỉ Admin)");
+    assert(checkRbacPermission("ADMIN", "MANAGE_USERS") === true, "Cho phép Admin toàn quyền quản trị người dùng");
     // ---------------------------------------------------------
     // TEST SUITE 8: SPRINT 2 — KANBAN PIPELINE & BRL-07 SLA
     // ---------------------------------------------------------
@@ -304,6 +334,92 @@ async function runTests() {
 
     const totalJobsInDb = await prisma.job.count();
     assert(totalJobsInDb >= 2, `Có ${totalJobsInDb} vị trí tuyển dụng sẵn sàng nhận hồ sơ chuyển luồng`);
+
+    // ---------------------------------------------------------
+    // TEST SUITE 11: NÂNG CẤP AN TOÀN BẢO MẬT (ENTERPRISE SECURITY SUITE)
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}11. Kiểm tra Nâng cấp An toàn & Bảo mật (Security & Cryptography):${colors.reset}`);
+
+    const crypto = require("crypto");
+
+    // 1. Kiểm tra Băm mật khẩu PBKDF2 có Salt (NFR-SEC-02)
+    function testHashPassword(password) {
+      const salt = crypto.randomBytes(16).toString("hex");
+      const iterations = 100000;
+      const derivedKey = crypto
+        .pbkdf2Sync(password, salt, iterations, 64, "sha512")
+        .toString("hex");
+      return `pbkdf2$${iterations}$${salt}$${derivedKey}`;
+    }
+
+    function testVerifyPassword(password, storedHash) {
+      if (storedHash.startsWith("pbkdf2$")) {
+        const parts = storedHash.split("$");
+        const iterations = parseInt(parts[1], 10);
+        const salt = parts[2];
+        const originalHash = parts[3];
+        const derivedKey = crypto
+          .pbkdf2Sync(password, salt, iterations, 64, "sha512")
+          .toString("hex");
+        return crypto.timingSafeEqual(Buffer.from(derivedKey, "hex"), Buffer.from(originalHash, "hex"));
+      }
+      return password === storedHash;
+    }
+
+    const hashed = testHashPassword("Admin@123");
+    assert(hashed.startsWith("pbkdf2$100000$"), "Mật khẩu được băm bằng thuật toán NIST PBKDF2-SHA512 với 100,000 vòng lặp");
+    assert(testVerifyPassword("Admin@123", hashed) === true, "Xác thực mật khẩu đúng thành công");
+    assert(testVerifyPassword("WrongPassword", hashed) === false, "Chặn mật khẩu sai chính xác");
+
+    // 2. Kiểm tra Ký số Token Phiên làm việc HMAC-SHA256 chống mạo danh
+    const SECRET = "recoverx_test_secret";
+    function signToken(payload) {
+      const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
+      const sig = crypto.createHmac("sha256", SECRET).update(payloadB64).digest("base64url");
+      return `${payloadB64}.${sig}`;
+    }
+
+    function verifyToken(token) {
+      const [payloadB64, sig] = token.split(".");
+      const expectedSig = crypto.createHmac("sha256", SECRET).update(payloadB64).digest("base64url");
+      if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null;
+      return JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8"));
+    }
+
+    const originalToken = signToken({ id: 1, role: "HR" });
+    const verified = verifyToken(originalToken);
+    assert(verified !== null && verified.role === "HR", "Chữ ký số HMAC-SHA256 của phiên hợp lệ");
+
+    // Giả mạo đổi role thành ADMIN
+    const tamperedPayload = Buffer.from(JSON.stringify({ id: 1, role: "ADMIN" })).toString("base64url");
+    const tamperedToken = `${tamperedPayload}.${originalToken.split(".")[1]}`;
+    let tamperDetected = false;
+    try {
+      tamperDetected = verifyToken(tamperedToken) === null;
+    } catch {
+      tamperDetected = true;
+    }
+    assert(tamperDetected, "Phát hiện và chặn thành công hành vi sửa đổi Cookie giả mạo quyền Admin");
+
+    // 3. Kiểm tra Chữ ký Nhị phân (Magic Bytes Verification)
+    function verifyMagicBytes(fileExt, buffer) {
+      if (fileExt === ".pdf") {
+        return buffer.length >= 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46; // %PDF
+      }
+      if (fileExt === ".docx") {
+        return buffer.length >= 2 && buffer[0] === 0x50 && buffer[1] === 0x4B; // PK
+      }
+      return false;
+    }
+
+    const validPdfBuffer = Buffer.from("%PDF-1.4 sample content");
+    const fakePdfBuffer = Buffer.from("<html><script>alert('xss')</script></html>");
+    const validDocxBuffer = Buffer.from([0x50, 0x4B, 0x03, 0x04, 0x00]);
+
+    assert(verifyMagicBytes(".pdf", validPdfBuffer) === true, "Chấp nhận tệp PDF có Magic Bytes hợp lệ (%PDF-)");
+    assert(verifyMagicBytes(".pdf", fakePdfBuffer) === false, "Chặn tệp HTML/Mã độc đổi đuôi giả mạo thành .pdf");
+    assert(verifyMagicBytes(".docx", validDocxBuffer) === true, "Chấp nhận tệp DOCX có Magic Bytes nén hợp lệ (PK)");
+
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
   } finally {

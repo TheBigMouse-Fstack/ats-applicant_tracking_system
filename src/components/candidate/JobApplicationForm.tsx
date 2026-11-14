@@ -152,7 +152,7 @@ export default function JobApplicationForm({
     }
   };
 
-  // MÀN HÌNH THÀNH CÔNG (Sau khi nộp và AI bóc tách hoàn tất)
+  // MÀN HÌNH THÀNH CÔNG (Sau khi nộp và hệ thống tiếp nhận an toàn)
   if (successResult) {
     return (
       <div className="bg-white rounded-2xl border border-emerald-200 p-8 shadow-sm space-y-6 animate-in fade-in zoom-in-95">
@@ -165,62 +165,51 @@ export default function JobApplicationForm({
               Nộp Hồ Sơ Ứng Tuyển Thành Công!
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Hồ sơ mã #{successResult.applicationId} đã được hệ thống ATS tiếp nhận.
+              Mã hồ sơ tiếp nhận: <strong>#{successResult.applicationId}</strong> &bull; Vị trí: <strong>{jobTitle}</strong>
             </p>
           </div>
         </div>
 
-        {/* Thẻ kết quả AI Phân tích & So khớp */}
-        <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-              Kết quả AI Sàng lọc Ban đầu
+        {/* Thẻ xác nhận thông tin ứng tuyển */}
+        <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3.5 text-xs">
+          <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
+            <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              Biên Nhận Tiếp Nhận Hồ Sơ Trực Tuyến
             </span>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-extrabold border ${successResult.aiMatchScore >= 75
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : successResult.aiMatchScore >= 60
-                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                    : "bg-slate-100 text-slate-700 border-slate-300"
-                }`}
-            >
-              Match Score: {successResult.aiMatchScore}%
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              Đã ghi nhận an toàn
             </span>
           </div>
 
-          <p className="text-xs text-slate-700 leading-relaxed font-medium bg-white p-3 rounded-lg border border-slate-200">
-            {successResult.aiMatchRationale}
-          </p>
-
-          {successResult.matchedSkills && successResult.matchedSkills.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-600">
             <div>
-              <p className="text-[11px] font-bold text-slate-500 mb-1">
-                Kỹ năng phù hợp với vị trí:
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {successResult.matchedSkills.map((sk: string) => (
-                  <span
-                    key={sk}
-                    className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  >
-                    ✔ {sk}
-                  </span>
-                ))}
-              </div>
+              <span className="text-slate-400 block text-[11px]">Họ và tên ứng viên:</span>
+              <span className="font-bold text-slate-900">{successResult.candidateName || fullName}</span>
             </div>
-          )}
+            <div>
+              <span className="text-slate-400 block text-[11px]">Email liên hệ:</span>
+              <span className="font-semibold text-slate-800">{email}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[11px]">Vị trí công việc:</span>
+              <span className="font-semibold text-slate-800">{jobTitle}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[11px]">Thời gian tiếp nhận:</span>
+              <span className="font-semibold text-slate-800">{new Date().toLocaleString("vi-VN")}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Thông điệp tiếp theo */}
-        <div className="text-xs text-slate-600 space-y-2 border-t border-slate-100 pt-4">
-          <p className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-brand-600 shrink-0" />
-            <span>Hồ sơ đã được mã hóa và chuyển tới bộ phận Tuyển dụng (HR).</span>
+        {/* Thông điệp phản hồi lịch sự & Quy trình tiếp theo */}
+        <div className="text-xs text-slate-600 space-y-2.5 border-t border-slate-100 pt-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+          <p className="font-semibold text-emerald-900 flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+            Cảm ơn bạn đã quan tâm và ứng tuyển vào ReCoverX Career!
           </p>
-          <p className="text-slate-500">
-            Bạn sẽ nhận được email phản hồi về các bước tiếp theo hoặc kết quả phỏng vấn qua hòm thư:{" "}
-            <strong>{email}</strong>.
+          <p className="text-slate-600 leading-relaxed">
+            Hồ sơ của bạn đã được chuyển tới Ban Tuyển dụng (HR Department) để rà soát và đánh giá kỹ lưỡng. Chúng tôi sẽ phản hồi kết quả và các bước tiếp theo qua hòm thư điện tử <strong>{email}</strong> trong vòng <strong>1 – 3 ngày làm việc</strong>.
           </p>
         </div>
 
@@ -229,7 +218,7 @@ export default function JobApplicationForm({
             href="/jobs"
             className="flex-1 py-3 px-4 rounded-xl text-center bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-sm transition-all"
           >
-            Khám phá vị trí tuyển dụng khác
+            Khám phá các vị trí tuyển dụng khác
           </Link>
           <button
             onClick={() => {
@@ -239,9 +228,9 @@ export default function JobApplicationForm({
               setPhone("");
               setCvFile(null);
             }}
-            className="py-3 px-4 rounded-xl text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition-all"
+            className="py-3 px-4 rounded-xl text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition-all cursor-pointer"
           >
-            Nộp hồ sơ khác
+            Nộp hồ sơ vị trí khác
           </button>
         </div>
       </div>

@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // GET: Lấy toàn bộ dữ liệu Pipeline theo 5 cột Kanban và danh sách Jobs để lọc
 export async function GET(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json(
+        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để truy cập Pipeline" },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const jobIdParam = searchParams.get("jobId");
     const searchParam = searchParams.get("search")?.trim().toLowerCase() || "";

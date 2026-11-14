@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser || sessionUser.role === "HIRING_MANAGER") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Chỉ Chuyên viên HR và Quản trị viên mới có quyền xuất dữ liệu ứng viên.",
+        },
+        { status: 403 }
+      );
+    }
+
     const applications = await prisma.application.findMany({
       include: {
         candidate: true,
