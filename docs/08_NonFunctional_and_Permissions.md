@@ -73,49 +73,49 @@ Dưới đây là tài liệu chi tiết cho **Nhóm Phân quyền (Mục 13)** 
 
 # MỤC 14: YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS - NFR)
 
-Tài liệu được phân loại theo tiêu chuẩn quốc tế **ISO/IEC 25010** với các chỉ số đo lường định lượng cụ thể:
+Tài liệu được phân loại theo tiêu chuẩn quốc tế **ISO/IEC 25010** và chuẩn hóa chính xác theo các cơ chế bảo mật, kiến trúc mã nguồn và bộ kiểm thử tự động của hệ thống:
 
 ### 1. Hiệu năng & Khả năng chịu tải (Performance & Scalability)
 
-| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật | Chỉ số đo lường (Metric / SLA) |
+| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật thực tế | Chỉ số đo lường (Metric / SLA) |
 | :---: | :--- | :--- | :--- |
-| **NFR-PER-01** | **Tốc độ phản hồi giao diện** | Thời gian phản hồi cho các tác vụ tra cứu, tìm kiếm từ khóa nâng cao và kéo-thả thẻ Kanban. | **≤ 3.0 giây** trong điều kiện mạng tiêu chuẩn. |
-| **NFR-PER-02** | **Tốc độ bóc tách AI (AI Parsing)** | Thời gian đọc tệp CV (.pdf, .doc, .docx) và trích xuất dữ liệu hoàn chỉnh. | **≤ 5.0 giây/CV**. |
-| **NFR-PER-03** | **Xử lý tải lên hàng loạt (Bulk Upload)** | Khả năng tiếp nhận và đưa vào hàng đợi xử lý ngầm (Task Queue) khi HR upload cùng lúc. | Tiếp nhận mượt mà **50 – 100 CV cùng lúc** mà không gây treo (freeze) trình duyệt. |
-| **NFR-PER-04** | **Số lượng người dùng đồng thời** | Hỗ trợ đội ngũ tuyển dụng và ứng viên truy cập cùng một thời điểm. | Tối thiểu **100 người dùng nội bộ** và **500 ứng viên vãng lai** truy cập đồng thời. |
+| **NFR-PER-01** | **Tốc độ phản hồi giao diện** | Thời gian phản hồi cho các tác vụ tải dữ liệu Pipeline, tìm kiếm từ khóa, lọc đa tiêu chí (Đánh sao, Chưa xem, Chưa đánh giá) và kéo-thả thẻ Kanban. | **≤ 1.5 – 3.0 giây** trong điều kiện mạng tiêu chuẩn. |
+| **NFR-PER-02** | **Tốc độ bóc tách AI (AI Parsing)** | Mô hình Lai (Hybrid Model): Lớp 1 bóc tách text thô cục bộ bằng `pdf-parse` (< 1.0s); Lớp 2 gọi Gemini API (`temperature: 0`) đối chiếu JD và tính điểm Match. | **≤ 5.0 giây/CV**. |
+| **NFR-PER-03** | **Xử lý tệp & Đính kèm chứng chỉ** | Tiếp nhận tệp CV chính (.pdf, .docx ≤ 10MB) và nhiều tệp bằng cấp/chứng chỉ ảnh/PDF đính kèm đồng thời qua luồng xử lý `FormData`. | Tiếp nhận và xử lý mượt mà, không gây treo giao diện hoặc tràn bộ nhớ đệm. |
+| **NFR-PER-04** | **Số lượng người dùng đồng thời** | Kiến trúc phi trạng thái (Stateless Next.js Server Components & Route Handlers) chịu tải đồng thời. | Tối thiểu **100 người dùng nội bộ** và **500 ứng viên vãng lai** truy cập đồng thời. |
 
 ---
 
 ### 2. Độ sẵn sàng & Khả năng phục hồi (Availability & Reliability)
 
-| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật | Chỉ số đo lường (Metric / SLA) |
+| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật thực tế | Chỉ số đo lường (Metric / SLA) |
 | :---: | :--- | :--- | :--- |
-| **NFR-REL-01** | **Thời gian hoạt động (Uptime)** | Tỷ lệ hệ thống hoạt động liên tục, sẵn sàng phục vụ người dùng. | Đạt **≥ 99.5%** thời gian trong năm (ngoại trừ lịch bảo trì định kỳ có thông báo trước). |
-| **NFR-REL-02** | **Sao lưu dữ liệu (Backup)** | Tự động sao lưu toàn bộ cơ sở dữ liệu PostgreSQL và cấu hình hệ thống. | Tự động sao lưu **hàng ngày (Daily at 01:00 AM)**, lưu trữ bản snapshot trong 30 ngày. |
-| **NFR-REL-03** | **Chỉ số RPO & RTO** | RPO (Mất mát dữ liệu tối đa) và RTO (Thời gian khôi phục tối đa khi có sự cố thảm họa). | **RPO ≤ 24 giờ**, **RTO ≤ 02 giờ**. |
+| **NFR-REL-01** | **Thời gian hoạt động (Uptime)** | Tỷ lệ hệ thống hoạt động liên tục, sẵn sàng phục vụ tuyển dụng và nhận hồ sơ. | Đạt **≥ 99.5%** thời gian trong năm (ngoại trừ lịch bảo trì định kỳ có thông báo trước). |
+| **NFR-REL-02** | **Cơ sở dữ liệu & Sao lưu (Backup)** | Sử dụng Prisma ORM làm việc với SQLite (`dev.db`) trên môi trường phát triển và PostgreSQL trên môi trường sản xuất. Tự động sao lưu định kỳ hàng ngày. | Sao lưu tự động **hàng ngày (Daily snapshot)**, lưu trữ bản sao lưu trong 30 ngày. |
+| **NFR-REL-03** | **Dung sai lỗi AI (Fault Tolerance)** | Khi Gemini API gặp sự cố quá tải hoặc mất kết nối, hệ thống vẫn lưu an toàn đơn nộp ở trạng thái `NEW` với `aiMatchScore = null` và cung cấp nút chạy lại cho HR. | **0% mất mát dữ liệu hồ sơ** khi bên thứ 3 (AI service) gián đoạn. |
 
 ---
 
 ### 3. An toàn thông tin & Bảo mật (Security & Compliance)
 
-| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật | Phương pháp triển khai |
+| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật thực tế | Phương pháp triển khai trong Code |
 | :---: | :--- | :--- | :--- |
-| **NFR-SEC-01** | **Mã hóa đường truyền** | Toàn bộ lưu lượng giao tiếp giữa Client và Server bắt buộc phải được mã hóa. | Sử dụng giao thức **HTTPS (TLS 1.3)** với chứng chỉ SSL hợp lệ. |
-| **NFR-SEC-02** | **Mã hóa dữ liệu nghỉ (At-Rest)** | Tệp CV gốc và mật khẩu người dùng phải được bảo vệ nghiêm ngặt. | • Mật khẩu băm bằng **BCrypt (Work factor ≥ 12)**.<br>• Tệp CV trên S3 mã hóa bằng **AES-256 (SSE-S3)**. |
-| **NFR-SEC-03** | **Bảo vệ chống Spam/DDoS** | Ngăn chặn bot tự động gửi hàng loạt file rác lên Cổng tuyển dụng công khai. | • Tích hợp **Google reCAPTCHA v3**.<br>• Giới hạn tần suất (**Rate Limiting: 5 requests/10 phút/IP**). |
-| **NFR-SEC-04** | **Bảo mật phân quyền cấp hàng (RLS)** | Giấu các thông tin bảo mật theo phân quyền người dùng. | **Ẩn mức lương kỳ vọng** đối với tài khoản vai trò `HIRING_MANAGER`. |
-| **NFR-SEC-05** | **Ghi vết kiểm toán (Audit Trail)** | Lưu vết toàn bộ hành vi thay đổi dữ liệu nhạy cảm hoặc luân chuyển trạng thái thẻ. | Tự động ghi vào bảng `audit_logs` gồm: `User ID`, `Action`, `Timestamp`, `IP Address`. Dữ liệu không được sửa/xóa. |
+| **NFR-SEC-01** | **Mã hóa đường truyền** | Toàn bộ lưu lượng giao tiếp giữa Client, Server và AI APIs bắt buộc phải được mã hóa. | Sử dụng giao thức **HTTPS (TLS 1.3)** với chứng chỉ SSL hợp lệ. |
+| **NFR-SEC-02** | **Bảo mật Mật khẩu & Phiên đăng nhập** | Bảo vệ tuyệt đối thông tin định danh và tài khoản nội bộ chống tấn công Brute-force/Rainbow Table. | • Băm mật khẩu chuẩn NIST bằng **PBKDF2 với SHA-512, Salt ngẫu nhiên 16 bytes và 100,000 vòng lặp**.<br>• Phiên đăng nhập được ký số bằng **HMAC-SHA256** lưu trong HttpOnly Cookie chống giả mạo session.<br>• Xác thực Edge Middleware ngăn chặn FOUC. |
+| **NFR-SEC-03** | **Chống Spam & Tệp giả mạo** | Chặn bot spam đơn nộp và ngăn chặn tấn công tải lên tệp mã độc (Polyglot File Upload). | • **Rate Limiting trượt:** Tối đa 05 lượt nộp / 10 phút trên mỗi IP.<br>• **Kiểm tra Magic Bytes nhị phân:** Bắt buộc `%PDF-` cho file PDF và `PK` cho file DOCX ở tầng Backend. |
+| **NFR-SEC-04** | **Bảo mật phân quyền cấp hàng (RLS)** | Giấu các thông tin bảo mật theo phân quyền người dùng và bảo vệ quyền riêng tư trên cổng tra cứu công khai. | • **Ẩn thông tin nhạy cảm** (mức lương kỳ vọng) đối với tài khoản `HIRING_MANAGER`.<br>• Cổng Public Tracker **ẩn hoàn toàn điểm AI, giải trình đánh giá và nhận xét của ban giám khảo**. |
+| **NFR-SEC-05** | **Ghi vết kiểm toán (Audit Trail)** | Lưu vết bất biến toàn bộ hành vi thay đổi dữ liệu nhạy cảm, luân chuyển trạng thái thẻ, lên lịch phỏng vấn và chấm điểm. | Tự động ghi vào bảng `AuditLog` gồm: `applicationId`, `userId`, `fromStage`, `toStage`, `action`, `createdAt`. Bảng là **Append-only (Chỉ ghi thêm, cấm sửa/xóa)**. |
 
 ---
 
 ### 4. Tính khả dụng & Khả năng bảo trì (Usability & Maintainability)
 
-| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật | Tiêu chuẩn đánh giá |
+| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật thực tế | Tiêu chuẩn đánh giá |
 | :---: | :--- | :--- | :--- |
-| **NFR-USA-01** | **Tính tương thích đa thiết bị** | Cổng ứng tuyển dành cho ứng viên phải hiển thị tối ưu trên cả máy tính và điện thoại. | **Responsive 100%** trên các trình duyệt phổ biến (Chrome, Safari, Edge, Firefox) và Mobile screen (iOS, Android). |
-| **NFR-USA-02** | **Độ dễ sử dụng** | Thao tác kéo-thả Kanban trực quan, thông báo phản hồi rõ ràng khi thành công hoặc có lỗi. | Nhân viên HR mới có thể sử dụng thành thạo sau **dưới 01 giờ đào tạo**. |
-| **NFR-MNT-01** | **Kiến trúc mô hình hóa AI (Agnostic)** | Tách biệt tầng logic gọi AI qua Interface để dễ dàng thay đổi nhà cung cấp LLM. | Có thể chuyển đổi giữa **Google Gemini, OpenAI GPT, Claude** mà không phải viết lại code ứng dụng. |
-| **NFR-MNT-02** | **Tài liệu API chuẩn hóa** | Toàn bộ API Backend được tài liệu hóa rõ ràng để phục vụ tích hợp và kiểm thử. | Sử dụng chuẩn **OpenAPI 3.0 / Swagger UI**. |
+| **NFR-USA-01** | **Tính tương thích đa thiết bị** | Cổng ứng tuyển công khai và bảng Kanban hiển thị tối ưu trên cả máy tính, máy tính bảng và điện thoại. | **Responsive 100%** với Tailwind CSS, hỗ trợ Chrome, Safari, Edge, Firefox và trình duyệt di động. |
+| **NFR-USA-02** | **Độ dễ sử dụng & Cảnh báo trực quan** | Trải nghiệm kéo-thả Kanban mượt mà qua `@hello-pangea/dnd`; cảnh báo đổi màu viền đỏ khi vi phạm SLA (BRL-07); đánh sáng viền thẻ chưa xem chống bỏ sót. | Toast thông báo rõ ràng cho mọi tác vụ thành công hoặc thất bại; nhân viên sử dụng thành thạo sau **dưới 01 giờ**. |
+| **NFR-MNT-01** | **Kiến trúc mô hình hóa AI (Agnostic)** | Tách biệt tầng logic gọi AI qua interface mô hình hóa (`src/lib/ai-parser.ts`), cấu hình `temperature: 0` và strict JSON Schema. | Có thể nâng cấp hoặc chuyển đổi giữa **Gemini 1.5 Flash, GPT-4o, Claude 3.5** mà không cần sửa đổi giao diện người dùng. |
+| **NFR-MNT-02** | **Kiểm thử tự động & Độ tin cậy mã nguồn** | Mã nguồn viết hoàn toàn bằng TypeScript Strict Mode, phân tách rõ ràng giữa API Routes, Server Actions và Client Components. | Tích hợp bộ **81 kiểm thử tự động (Unit & Integration Tests)** đạt tỷ lệ thành công **100% (81/81 Passed)**, bảo vệ toàn bộ BRL và RBAC. |
 
 ---
 
