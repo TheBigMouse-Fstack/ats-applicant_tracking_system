@@ -11,53 +11,63 @@ Dưới đây là tài liệu chi tiết cho **Nhóm Phân quyền (Mục 13)** 
 # MỤC 13: MA TRẬN PHÂN QUYỀN (RBAC - ROLE-BASED ACCESS CONTROL)
 
 ### 1. Định nghĩa các Vai trò người dùng (User Roles)
-1. **Ứng viên (Candidate / Public):** Người dùng bên ngoài, truy cập công khai vào Cổng tuyển dụng để xem tin và nộp hồ sơ, không cần tài khoản đăng nhập.
-2. **Chuyên viên HR (Recruiter):** Người vận hành chính của hệ thống; quản lý toàn bộ vòng đời ứng viên, vị trí tuyển dụng, luân chuyển trạng thái và gửi thông báo.
-3. **Quản lý chuyên môn (Hiring Manager):** Trưởng bộ phận hoặc người phỏng vấn; được phân quyền xem hồ sơ theo vị trí được chỉ định, tham gia chấm điểm phỏng vấn.
-4. **Quản trị viên (Admin):** Quản lý toàn bộ cấu hình hệ thống, tài khoản người dùng, mẫu email và có quyền xóa dữ liệu vĩnh viễn (Hard Delete).
+1. **Ứng viên (Candidate / Public):** Người dùng bên ngoài, truy cập công khai vào Cổng tuyển dụng để xem tin, nộp hồ sơ, đính kèm chứng chỉ và tra cứu tiến độ ứng tuyển trực tuyến (Public Tracker), không cần tài khoản đăng nhập.
+2. **Chuyên viên HR (Recruiter):** Người vận hành chính của hệ thống; quản lý toàn bộ vòng đời tuyển dụng (JD, nạp CV, kéo-thả Kanban, xếp lịch & điều phối phỏng vấn, gửi thư mời/thư từ chối, đánh giá Scorecard, xuất báo cáo CSV và luân chuyển ứng viên Repooling).
+3. **Quản lý chuyên môn (Hiring Manager / Tech Lead):** Trưởng bộ phận hoặc giám khảo phỏng vấn kỹ thuật; được phân quyền xem hồ sơ ứng viên, mở Drawer xem CV gốc, ghi chú trước/sau phỏng vấn và lập Phiếu đánh giá chuyên môn (Scorecard). **Bị chặn tuyệt đối quyền kéo-thả chuyển trạng thái Kanban, chặn tạo JD, chặn xếp lịch phỏng vấn và bị ẩn thông tin tài chính/mức lương.**
+4. **Quản trị viên (Admin):** Quản lý toàn diện hệ thống; quản trị tài khoản người dùng nội bộ (`/admin/users`), phân quyền vai trò, cấu hình hệ thống và là tác nhân duy nhất có thẩm quyền thực thi tác vụ xóa vĩnh viễn (Hard Delete) hồ sơ quá hạn 6 tháng theo BRL-10.
 
 ---
 
 ### 2. Bảng Ma trận Phân quyền chi tiết (RBAC Matrix)
 
 > **Ký hiệu quyền hạn:**
-> * **C (Create):** Quyền tạo mới / Tải lên.
-> * **R (Read):** Quyền xem / Đọc dữ liệu.
-> * **U (Update):** Quyền chỉnh sửa / Kéo-thả chuyển trạng thái.
-> * **D (Delete):** Quyền xóa (Soft Delete: Ẩn/Xóa mềm; Hard Delete: Xóa vĩnh viễn).
-> * **`-` :** Không có quyền truy cập.
+> * **C (Create):** Quyền tạo mới / Tải lên / Thiết lập.
+> * **R (Read):** Quyền xem / Đọc dữ liệu / Tra cứu.
+> * **U (Update):** Quyền chỉnh sửa / Kéo-thả chuyển trạng thái / Ghi nhận.
+> * **D (Delete):** Quyền xóa (Soft Delete: Ẩn/Đóng; Hard Delete: Xóa vĩnh viễn khỏi CSDL và ổ đĩa).
+> * **`-` :** Không có quyền truy cập (Bị ẩn giao diện hoặc chặn ở tầng Backend/Middleware).
 
-| STT | Nhóm chức năng / Nghiệp vụ | 👤 Ứng viên (Public) | 👔 Chuyên viên HR | 💼 Hiring Manager | 🛠️ Quản trị viên (Admin) | Ghi chú ràng buộc bảo mật |
+| STT | Phân hệ & Chức năng nghiệp vụ | 👤 Ứng viên (Public) | 👔 Chuyên viên HR | 💼 Hiring Manager | 🛠️ Quản trị viên (Admin) | Ghi chú ràng buộc bảo mật & Thực thi Code |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
-| **I** | **Cổng ứng tuyển trực tuyến** | | | | | |
-| 1 | Xem danh sách tin tuyển dụng & JD | **R** | **R** | **R** | **R** | Công khai |
-| 2 | Nộp hồ sơ & Upload CV công khai | **C** | - | - | - | Bắt buộc reCAPTCHA |
-| **II**| **Quản lý Vị trí tuyển dụng (Jobs)** | | | | | |
-| 3 | Tạo & Chỉnh sửa JD tuyển dụng | - | **C, R, U** | **R** *(chỉ đọc)* | **C, R, U, D** | Manager chỉ xem vị trí của mình |
-| 4 | Đóng / Mở đợt tuyển dụng (Status) | - | **U** | - | **U** | |
-| **III**| **Tiếp nhận & Bóc tách hồ sơ (CV Intake)**| | | | | |
-| 5 | Tải lên CV nội bộ (Bulk Upload) | - | **C** | - | **C** | Tối đa 50 file/lần |
-| 6 | Xem trước tệp CV gốc (Preview) | - | **R** | **R** | **R** | Xem trực tiếp trên trình duyệt |
-| 7 | Xác nhận gộp hồ sơ trùng lặp | - | **U** | - | **U** | Chỉ HR/Admin được gộp |
+| **I** | **Cổng ứng tuyển & Tra cứu trực tuyến** | | | | | |
+| 1 | Xem danh sách tin tuyển dụng & JD | **R** | **R** | **R** | **R** | Truy cập công khai tại `/jobs` |
+| 2 | Nộp hồ sơ & Tải CV, chứng chỉ (.pdf, .docx ≤ 10MB) | **C** | - | - | - | Chống spam: Rate Limit 5 lần/10 phút & Magic Bytes |
+| 3 | Tra cứu tiến độ hồ sơ ứng tuyển (Public Tracker) | **R** | **R** | **R** | **R** | Tra cứu qua Mã hồ sơ; **Bảo mật NFR-SEC-04: Ẩn điểm AI & nhận xét nội bộ** |
+| **II**| **Quản lý Vị trí tuyển dụng (Jobs Management)** | | | | | |
+| 4 | Tạo mới & Chỉnh sửa JD tuyển dụng | - | **C, R, U** | **R** *(chỉ đọc)* | **C, R, U, D** | **Chặn Manager tạo/sửa JD** (kiểm tra quyền tại API) |
+| 5 | Đóng / Mở đợt tuyển dụng (Trạng thái Active/Closed)| - | **U** | - | **U** | Cập nhật cờ trạng thái tiếp nhận hồ sơ |
+| 6 | Xóa vị trí tuyển dụng | - | - | - | **D** | Chỉ Admin có thẩm quyền xóa tin tuyển dụng |
+| **III**| **Tiếp nhận & Bóc tách hồ sơ (CV Intake & AI Engine)**| | | | | |
+| 7 | Tải lên CV nội bộ & đính kèm chứng chỉ (Add Candidate) | - | **C** | - | **C** | Phân loại nguồn (`LINKEDIN`, `REFERRAL`, `HEADHUNTER`) |
+| 8 | Xem trước tệp CV gốc và chứng chỉ (Preview) | - | **R** | **R** | **R** | Xem trực tiếp trên trình duyệt qua Candidate Drawer |
+| 9 | Xác nhận gộp hồ sơ trùng lặp (Deduplication BRL-02) | - | **U** | - | **U** | Gộp dữ liệu mới vào hồ sơ cũ, không sinh bản ghi rác |
+| 10 | Kích hoạt phân tích lại AI (Re-parse CV) | - | **U** | - | **U** | Kích hoạt khi có sự cố mạng hoặc muốn cập nhật phân tích |
 | **IV**| **Quản lý Pipeline Kanban** | | | | | |
-| 8 | Xem bảng Kanban 5 cột | - | **R** | **R** *(bị giới hạn)* | **R** | Manager chỉ xem thẻ được gán |
-| 9 | Kéo - thả chuyển cột trạng thái | - | **U** | **`-` (CẤM)** | **U** | **Manager tuyệt đối không được kéo** |
-| 10 | Tìm kiếm & Lọc hồ sơ nâng cao | - | **R** | **R** | **R** | Tốc độ phản hồi < 3s |
-| 11 | **Xem thông tin nhạy cảm (Mức lương)** | - | **R** | **`-` (ẨN)** | **R** | **Bảo mật lương: Manager bị che** |
-| 12 | Luân chuyển vị trí (Repooling) | - | **C, U** | - | **C, U** | |
-| **V** | **Đánh giá phỏng vấn (Scorecard)** | | | | | |
-| 13 | Chấm điểm & Ghi nhận xét của mình | - | **C, R, U** | **C, R, U** | **R** | Thang điểm 1 - 5 sao |
-| 14 | Sửa đánh giá của thành viên khác | - | **`-` (CẤM)** | **`-` (CẤM)** | **`-` (CẤM)** | **Chỉ được sửa phiếu của chính mình** |
-| 15 | Xem điểm trung bình tổng hợp | - | **R** | **R** | **R** | Hệ thống tự động tính |
+| 11 | Xem bảng Kanban 5 cột (`NEW` ➔ `REJECTED`) | - | **R** | **R** *(chế độ xem)* | **R** | Manager xem danh sách ứng viên các vị trí liên quan |
+| 12 | Kéo - thả chuyển cột trạng thái | - | **U** | **`-` (CẤM TUYỆT ĐỐI)**| **U** | **Mục 13 RBAC: API chặn 403 Forbidden nếu Manager kéo thả** |
+| 13 | Đánh dấu sao (Starred) hồ sơ tiềm năng | - | **U** | - | **U** | Ghim hồ sơ ưu tiên, lưu nhật ký kiểm toán |
+| 14 | Tìm kiếm, sắp xếp & lọc nâng cao | - | **R** | **R** | **R** | Lọc theo Chưa xem (Unviewed), Đánh sao, Chưa đánh giá |
+| 15 | Xem thông tin bảo mật / Mức lương kỳ vọng | - | **R** | **`-` (ẨN RLS)** | **R** | **Bảo mật NFR-SEC-04: Che thông tin nhạy cảm với Manager** |
+| 16 | Luân chuyển vị trí ứng viên (Repooling) | - | **C, U** | - | **C, U** | Tạo đợt ứng tuyển mới ở Job đích, bảo lưu lịch sử cũ |
+| 17 | Chốt chặn Stage-Gate (Chuyển sang HIRED) | - | **U** *(Bắt buộc Scorecard)* | - | **U** *(Bắt buộc Scorecard)* | **BRL-06: Hệ thống chặn chuyển HIRED nếu có 0 Scorecard** |
+| **V** | **Lịch phỏng vấn & Đánh giá Scorecard** | | | | | |
+| 18 | Lên lịch, đổi lịch (Reschedule), hủy lịch (Cancel) | - | **C, R, U, D** | **`-` (CẤM)** | **C, R, U, D** | **RBAC: Manager chỉ xem lịch, chỉ HR/Admin được xếp/sửa/hủy** |
+| 19 | Tạo link Google Meet/Zoom & tự động gửi thư mời | - | **C** | - | **C** | Tự động tạo thư mời chuyên nghiệp kèm lịch phỏng vấn |
+| 20 | Ghi chú trước và sau phỏng vấn | - | **C, R, U** | **C, R, U** | **C, R, U** | Lưu vết lưu ý nghiệp vụ trong quá trình phỏng vấn |
+| 21 | Chấm điểm Scorecard 3 tiêu chí có trọng số (BRL-08) | - | **C, R, U** | **C, R, U** | **R, C** | Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30% |
+| 22 | Chỉnh sửa phiếu đánh giá của giám khảo khác | - | **`-` (CẤM)** | **`-` (CẤM)** | **`-` (CẤM)** | **Nguyên tắc độc lập: Chỉ người chấm được sửa phiếu của mình** |
+| 23 | Xem điểm tổng hợp & lịch sử đánh giá đa vòng | - | **R** | **R** | **R** | Hiển thị minh bạch lịch sử và căn cứ tuyển dụng |
 | **VI**| **Tự động hóa & Email** | | | | | |
-| 16 | Cấu hình thời gian delay gửi email | - | **R** | - | **U** | Mặc định delay 12h |
-| 17 | Hủy gửi email từ chối tự động | - | **U** | - | **U** | Kéo thẻ khỏi cột Rejected |
-| **VII**| **Kho nhân tài & Quản trị dữ liệu** | | | | | |
-| 18 | Tra cứu Kho nhân tài (Talent Pool) | - | **R** | - | **R** | |
-| 19 | Xóa mềm hồ sơ (Soft Delete) | - | **D** *(Soft)* | - | **D** *(Soft)* | Ẩn hồ sơ khỏi Pipeline |
-| 20 | Xóa vĩnh viễn hồ sơ (Hard Delete) | - | **`-` (CẤM)** | **`-` (CẤM)** | **D** *(Hard)* | Hoặc Hệ thống tự xóa sau 6 tháng |
-| 21 | Xuất dữ liệu báo cáo (Excel/CSV) | - | **R** | - | **R** | Trích xuất theo bộ lọc |
-| 22 | Xem nhật ký thao tác (Audit Log) | - | **R** | - | **R** | Theo dõi lịch sử người dùng |
+| 24 | Tự động hoãn gửi Email từ chối 12–24h (BRL-05) | - | - | - | - | Hệ thống tự động kích hoạt khi thẻ vào cột `REJECTED` |
+| 25 | Hủy lịch gửi email từ chối khi phục hồi thẻ | - | **U** | - | **U** | Kéo thẻ rời khỏi cột `REJECTED` tự động hủy lịch gửi |
+| 26 | Gửi Thư mời nhận việc (Offer Letter) | - | **C** | - | **C** | Kích hoạt khi ứng viên trúng tuyển tại cột `HIRED` |
+| **VII**| **Kho nhân tài & Quản trị Hệ thống** | | | | | |
+| 27 | Tra cứu Kho nhân tài (Talent Pool) | - | **R** | - | **R** | Tìm kiếm ứng viên dự phòng và kích hoạt Re-pooling |
+| 28 | Truy cập Trang Quản trị người dùng (`/admin/users`) | - | **`-` (CẤM)** | **`-` (CẤM)** | **C, R, U, D** | **Server Middleware chặn 307 Redirect về Pipeline nếu không phải Admin** |
+| 29 | Phân quyền tài khoản nội bộ (`HR`, `HIRING_MANAGER`) | - | - | - | **U** | Quản lý vòng đời tài khoản nhân viên |
+| 30 | Xóa vĩnh viễn hồ sơ quá hạn 6 tháng (BRL-10 Purge) | - | **`-` (CẤM)** | **`-` (CẤM)** | **D (Hard Delete)**| **BRL-10: Chỉ Admin có quyền xóa vĩnh viễn DB và file tệp CV** |
+| 31 | Xuất dữ liệu danh sách ứng viên (CSV Export) | - | **R** | - | **R** | Xuất file CSV mã hóa chuẩn UTF-8 BOM cho Excel |
+| 32 | Xem nhật ký kiểm toán hệ thống (Audit Log) | - | **R** | - | **R** | Theo dõi lịch sử thao tác theo thời gian thực |
 
 ---
 
