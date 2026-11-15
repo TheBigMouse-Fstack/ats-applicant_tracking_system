@@ -239,7 +239,7 @@ export default function JobApplicationForm({
             Cảm ơn bạn đã quan tâm và ứng tuyển vào RecoverX!
           </p>
           <p className="text-slate-600 leading-relaxed">
-            Hồ sơ của bạn đã được chuyển tới Ban Tuyển dụng (HR Department) để rà soát và đánh giá kỹ lưỡng. Chúng tôi sẽ phản hồi kết quả và các bước tiếp theo qua hòm thư điện tử <strong>{email}</strong> trong vòng <strong>1 – 3 ngày làm việc</strong>.
+            Hồ sơ của bạn đã được chuyển tới Bộ phận Tuyển dụng để rà soát và đánh giá kỹ lưỡng. Chúng tôi sẽ phản hồi kết quả và các bước tiếp theo qua hòm thư điện tử <strong>{email}</strong> trong vòng <strong>1 – 3 ngày làm việc</strong>.
           </p>
         </div>
 
@@ -434,7 +434,7 @@ export default function JobApplicationForm({
                   Nhấp để tải lên hoặc kéo thả tệp CV vào đây
                 </p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Định dạng hỗ trợ: PDF, DOCX (Dung lượng tối đa 10MB)
+                  Định dạng hỗ trợ: PDF, DOCX (Tối đa 10MB)
                 </p>
               </div>
             </div>
@@ -503,7 +503,7 @@ export default function JobApplicationForm({
                 className="w-full py-2 px-3 rounded-xl border border-dashed border-slate-300 hover:border-brand-500 hover:bg-brand-50/40 text-slate-600 hover:text-brand-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Thêm ảnh chứng chỉ khác (+ Bằng IELTS, TOEIC, Bằng ĐH)</span>
+                <span>Thêm ảnh chứng chỉ khác</span>
               </button>
             )}
           </div>
@@ -514,7 +514,7 @@ export default function JobApplicationForm({
             className="w-full py-3 px-3 rounded-xl border border-dashed border-slate-200 hover:border-brand-400 hover:bg-slate-50 text-slate-500 hover:text-brand-700 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <ImageIcon className="w-4 h-4 text-slate-400" />
-            <span>Tải ảnh bằng cấp (IELTS, Bằng ĐH, Chứng chỉ) — Hỗ trợ PNG, JPG, PDF</span>
+            <span>Đính kèm ảnh bằng cấp, chứng chỉ (PNG, JPG, PDF)</span>
           </button>
         )}
       </div>

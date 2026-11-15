@@ -200,14 +200,14 @@ export default function CandidatesListPage() {
           <div className="md:col-span-4">
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
               <Search className="w-3.5 h-3.5 text-slate-400" />
-              Tìm ứng viên (Họ tên, email, kỹ năng)
+              Tìm kiếm ứng viên
             </label>
             <div className="relative">
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Nhập tên, email, kỹ năng (Java, React)..."
+                placeholder="Nhập tên, email hoặc kỹ năng..."
                 className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-8 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
               />
               {search && (
@@ -225,14 +225,14 @@ export default function CandidatesListPage() {
           <div className="md:col-span-3">
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
               <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-              Vị trí tuyển dụng (Job)
+              Vị trí tuyển dụng
             </label>
             <select
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
               className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
             >
-              <option value="ALL">Tất cả vị trí ({jobs.length} jobs)</option>
+              <option value="ALL">Tất cả vị trí ({jobs.length})</option>
               {jobs.map((job) => (
                 <option key={job.id} value={String(job.id)}>
                   {job.title} — {job.department}
@@ -245,7 +245,7 @@ export default function CandidatesListPage() {
           <div className="md:col-span-3">
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
               <Filter className="w-3.5 h-3.5 text-slate-400" />
-              Vòng tuyển dụng (Stage)
+              Vòng tuyển dụng
             </label>
             <select
               value={selectedStage}
@@ -253,11 +253,11 @@ export default function CandidatesListPage() {
               className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
             >
               <option value="ALL">Tất cả các vòng</option>
-              <option value="NEW">Mới nộp (NEW)</option>
-              <option value="SCREENING">Sàng lọc (SCREENING)</option>
-              <option value="INTERVIEW">Phỏng vấn (INTERVIEW)</option>
-              <option value="HIRED">Tuyển chọn (HIRED)</option>
-              <option value="REJECTED">Từ chối (REJECTED)</option>
+              <option value="NEW">Mới nộp</option>
+              <option value="SCREENING">Sàng lọc</option>
+              <option value="INTERVIEW">Phỏng vấn</option>
+              <option value="HIRED">Tuyển chọn</option>
+              <option value="REJECTED">Từ chối</option>
             </select>
           </div>
 

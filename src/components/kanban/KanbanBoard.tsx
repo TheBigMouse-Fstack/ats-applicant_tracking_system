@@ -71,7 +71,7 @@ const COLUMNS_CONFIG: ColumnConfig[] = [
   },
   {
     id: "HIRED",
-    title: "Tuyển chọn (Hired)",
+    title: "Tuyển chọn",
     badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
     headerBg: "bg-emerald-50/70 border-b border-emerald-100",
     dotColor: "bg-emerald-500",
@@ -79,7 +79,7 @@ const COLUMNS_CONFIG: ColumnConfig[] = [
   },
   {
     id: "REJECTED",
-    title: "Từ chối (Rejected)",
+    title: "Từ chối",
     badgeColor: "bg-rose-100 text-rose-700 border-rose-200",
     headerBg: "bg-rose-50/70 border-b border-rose-100",
     dotColor: "bg-rose-500",
@@ -205,7 +205,7 @@ export default function KanbanBoard() {
           "Đã chuyển sang Từ chối. Email phản hồi đã được lên lịch tự động."
         );
       } else if (toStage === "HIRED") {
-        setAlertSuccess("Chúc mừng! Ứng viên đã được chuyển sang Tuyển chọn (HIRED) thành công.");
+        setAlertSuccess("Ứng viên đã được chuyển sang Tuyển chọn thành công.");
       }
 
       // Tự tắt alert sau 6 giây
@@ -342,10 +342,10 @@ export default function KanbanBoard() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
               <Layers className="w-7 h-7 text-brand-600" />
-              Pipeline Tuyển Dụng (Kanban 5 Cột)
+              Quy Trình Tuyển Dụng
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Quy trình theo dõi và quản lý hồ sơ ứng viên qua các giai đoạn tuyển dụng.
+              Theo dõi và quản lý hồ sơ ứng viên qua các giai đoạn tuyển dụng.
             </p>
           </div>
 
@@ -381,14 +381,14 @@ export default function KanbanBoard() {
           <div className="md:col-span-4">
             <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
               <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-              Vị trí tuyển dụng (Job)
+              Vị trí tuyển dụng
             </label>
             <select
               value={selectedJobId}
               onChange={(e) => setSelectedJobId(e.target.value)}
               className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
             >
-              <option value="ALL">Tất cả vị trí tuyển dụng ({jobs.length} jobs)</option>
+              <option value="ALL">Tất cả vị trí tuyển dụng ({jobs.length})</option>
               {jobs.map((job) => (
                 <option key={job.id} value={String(job.id)}>
                   {job.title} — {job.department} ({job._count.applications} ứng viên)
@@ -401,14 +401,14 @@ export default function KanbanBoard() {
           <div className="md:col-span-6">
             <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
               <Search className="w-3.5 h-3.5 text-slate-400" />
-              Tìm ứng viên (Họ tên, email, kỹ năng)
+              Tìm kiếm ứng viên
             </label>
             <div className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Nhập tên ứng viên, email hoặc kỹ năng (VD: React, Python)..."
+                placeholder="Nhập tên ứng viên, email hoặc kỹ năng..."
                 className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-8 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
               />
               {searchQuery && (
@@ -489,15 +489,15 @@ export default function KanbanBoard() {
             <span className="text-lg">💼</span>
             <div>
               <p className="font-bold">
-                Chế độ Quản lý Chuyên môn (Hiring Manager — {currentUser.fullName})
+                Chế độ Quản lý Chuyên môn — {currentUser.fullName}
               </p>
               <p className="text-[11px] text-amber-700 mt-0.5">
-                Chức năng kéo-thả được quản lý bởi bộ phận Tuyển dụng (HR). Bạn có quyền xem hồ sơ CV gốc và tạo phiếu đánh giá Scorecard.
+                Quyền luân chuyển trạng thái do Bộ phận Tuyển dụng quản lý. Bạn có quyền xem hồ sơ và nhập phiếu đánh giá phỏng vấn.
               </p>
             </div>
           </div>
           <span className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 shrink-0">
-            Read-Only Kanban
+            Chỉ xem
           </span>
         </div>
       )}

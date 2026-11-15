@@ -424,7 +424,7 @@ export default function CandidateDrawer({
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              Xem trước CV Gốc (Visual PDF)
+              Xem trước CV Gốc
             </button>
 
             <button
@@ -436,7 +436,7 @@ export default function CandidateDrawer({
               }`}
             >
               <History className="w-3.5 h-3.5" />
-              Lịch sử Luân chuyển & Scorecard ({data?.evaluations?.length || 0})
+              Nhật ký luân chuyển & Đánh giá ({data?.evaluations?.length || 0})
             </button>
           </div>
 
@@ -709,10 +709,10 @@ export default function CandidateDrawer({
                         </div>
                         <div>
                           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                            2. Tiêu Chuẩn Vị Trí Đang Ứng Tuyển (Job Requirements)
+                            2. Tiêu Chuẩn Yêu Cầu Vị Trí
                           </h3>
                           <p className="text-[11px] text-slate-400">
-                            Căn cứ yêu cầu công việc để HR và giám khảo đối chiếu đánh giá
+                            Cơ sở đối chiếu và đánh giá mức độ phù hợp
                           </p>
                         </div>
                       </div>
@@ -737,7 +737,7 @@ export default function CandidateDrawer({
                       {/* Kỹ năng bắt buộc trong JD */}
                       <div>
                         <span className="text-xs font-bold text-slate-700 block mb-1.5 uppercase tracking-wider">
-                          Kỹ năng bắt buộc (Required Skills):
+                          Kỹ năng bắt buộc:
                         </span>
                         <div className="flex flex-wrap gap-1.5">
                           {jobRequiredSkills.map((sk: string, idx: number) => (
@@ -754,7 +754,7 @@ export default function CandidateDrawer({
                       {/* Tóm tắt mô tả công việc */}
                       <div>
                         <span className="text-xs font-bold text-slate-700 block mb-1 uppercase tracking-wider">
-                          Mô tả & Trách nhiệm công việc (JD):
+                          Mô tả công việc:
                         </span>
                         <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-line font-medium">
                           {data?.job?.requirementsJd}
@@ -774,7 +774,7 @@ export default function CandidateDrawer({
                               3. Đối Chiếu Kỹ Năng & Tiêu Chuẩn Tuyển Dụng
                             </h3>
                             <p className="text-[11px] text-slate-500">
-                              Bảng tổng hợp đối chiếu kỹ năng khai báo trong CV với yêu cầu công việc (Để HR đánh giá)
+                              Đối chiếu kỹ năng thực tế với tiêu chuẩn yêu cầu
                             </p>
                           </div>
                         </div>
@@ -840,7 +840,7 @@ export default function CandidateDrawer({
                         <div className="bg-white/90 p-4 rounded-xl border border-indigo-100 text-xs text-slate-800 leading-relaxed shadow-2xs">
                           <span className="font-bold text-indigo-900 block mb-1 flex items-center gap-1">
                             <Award className="w-3.5 h-3.5 text-indigo-600" />
-                            Tóm tắt đối chiếu hồ sơ (Tham khảo cho HR):
+                            Tóm tắt đối chiếu hồ sơ:
                           </span>
                           <p className="font-medium text-slate-700">
                             {data.aiMatchRationale
@@ -971,7 +971,7 @@ export default function CandidateDrawer({
                               <div className="bg-white/90 p-3.5 rounded-xl border border-purple-100 shadow-2xs space-y-1">
                                 <span className="font-bold text-purple-950 flex items-center gap-1.5">
                                   <MessageSquare className="w-3.5 h-3.5 text-purple-600" />
-                                  Dặn dò ứng viên (Trước PV):
+                                  Dặn dò ứng viên:
                                 </span>
                                 <p className="text-slate-700 text-[11px] leading-relaxed">
                                   {data.interviewNotes || <span className="text-slate-400 italic">Chưa có ghi chú dặn dò</span>}
@@ -981,7 +981,7 @@ export default function CandidateDrawer({
                               <div className="bg-white/90 p-3.5 rounded-xl border border-indigo-100 shadow-2xs space-y-1">
                                 <span className="font-bold text-indigo-950 flex items-center gap-1.5">
                                   <ClipboardCheck className="w-3.5 h-3.5 text-indigo-600" />
-                                  Lưu ý nội bộ cho Giám khảo (Trước PV):
+                                  Lưu ý cho hội đồng phỏng vấn:
                                 </span>
                                 <p className="text-slate-700 text-[11px] leading-relaxed">
                                   {data.interviewInterviewerNotes || <span className="text-slate-400 italic">Chưa có lưu ý nội bộ</span>}
@@ -994,7 +994,7 @@ export default function CandidateDrawer({
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
                                   <FileText className="w-3.5 h-3.5 text-purple-600" />
-                                  Biên Bản / Ghi Chú Sau Phỏng Vấn (Sau PV):
+                                  Biên bản phỏng vấn:
                                 </span>
                                 <button
                                   type="button"
@@ -1047,7 +1047,7 @@ export default function CandidateDrawer({
                             <div className="flex items-center gap-2">
                               <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                                Đánh Giá Của Chuyên Gia Phỏng Vấn (Scorecard)
+                                Đánh Giá Phỏng Vấn
                               </h4>
                             </div>
                             <button
@@ -1056,7 +1056,7 @@ export default function CandidateDrawer({
                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition-colors cursor-pointer"
                             >
                               <Plus className="w-3.5 h-3.5 text-amber-600" />
-                              <span>{data?.evaluations && data.evaluations.length > 0 ? "+ Thêm đánh giá" : "Chấm điểm Scorecard"}</span>
+                              <span>{data?.evaluations && data.evaluations.length > 0 ? "+ Thêm đánh giá" : "Nhập đánh giá phỏng vấn"}</span>
                             </button>
                           </div>
 
@@ -1131,7 +1131,7 @@ export default function CandidateDrawer({
                             </div>
                           ) : (
                             <div className="p-3 bg-white/70 rounded-xl border border-dashed border-amber-200 text-xs text-amber-900 flex items-center justify-between">
-                              <span>Hội đồng chuyên môn chưa hoàn thành phiếu đánh giá Scorecard cho ứng viên này.</span>
+                              <span>Hội đồng chuyên môn chưa hoàn thành phiếu đánh giá phỏng vấn cho ứng viên này.</span>
                               <button
                                 type="button"
                                 onClick={() => setIsScorecardOpen(true)}
@@ -1259,7 +1259,7 @@ export default function CandidateDrawer({
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                           <Star className="w-4 h-4 text-purple-600 fill-purple-600" />
-                          Phiếu đánh giá phỏng vấn (Scorecards):
+                          Phiếu đánh giá phỏng vấn:
                         </h4>
                         <button
                           type="button"
@@ -1267,13 +1267,13 @@ export default function CandidateDrawer({
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
                         >
                           <Star className="w-3.5 h-3.5 fill-white" />
-                          + Đánh Giá Phỏng Vấn (Scorecard)
+                          + Đánh Giá Phỏng Vấn
                         </button>
                       </div>
 
                       {data?.evaluations?.length === 0 ? (
                         <div className="p-4 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
-                          Chưa có phiếu đánh giá Scorecard nào cho ứng viên này.
+                          Chưa có phiếu đánh giá phỏng vấn nào cho ứng viên này.
                         </div>
                       ) : (
                         data?.evaluations?.map((ev: any) => (
@@ -1283,7 +1283,7 @@ export default function CandidateDrawer({
                           >
                             <div className="flex justify-between items-center">
                               <span className="font-bold text-slate-900">
-                                Giám khảo: {ev.evaluator?.fullName} ({ev.evaluator?.role})
+                                Giám khảo: {ev.evaluator?.fullName}
                               </span>
                               <span className="font-extrabold text-brand-600 text-sm">
                                 {ev.overallScore ? `${ev.overallScore.toFixed(1)}/5.0★` : "Chưa chấm"}
@@ -1317,7 +1317,7 @@ export default function CandidateDrawer({
                     <div className="space-y-3">
                       <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                         <History className="w-4 h-4 text-slate-500" />
-                        Nhật ký Luân chuyển Trạng thái (Audit Logs):
+                        Nhật ký luân chuyển trạng thái:
                       </h4>
 
                       <div className="space-y-2">
@@ -1473,8 +1473,8 @@ export default function CandidateDrawer({
                     onChange={(e) => setInterviewFormat(e.target.value as any)}
                     className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
-                    <option value="ONLINE">Trực tuyến (Google Meet / Zoom)</option>
-                    <option value="OFFLINE">Trực tiếp tại văn phòng công ty</option>
+                    <option value="ONLINE">Trực tuyến</option>
+                    <option value="OFFLINE">Trực tiếp tại văn phòng</option>
                   </select>
                 </div>
               </div>
@@ -1482,8 +1482,8 @@ export default function CandidateDrawer({
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   {interviewFormat === "ONLINE"
-                    ? "Link Họp Trực Tuyến (Google Meet/Zoom) *"
-                    : "Địa Chỉ / Phòng Họp Trực Tiếp *"}
+                    ? "Đường dẫn phòng họp trực tuyến *"
+                    : "Địa chỉ phòng họp trực tiếp *"}
                 </label>
                 <input
                   type="text"
@@ -1501,39 +1501,39 @@ export default function CandidateDrawer({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Ghi Chú Dặn Dò Ứng Viên (Gửi kèm trong email)
+                  Ghi chú gửi ứng viên
                 </label>
                 <textarea
                   rows={2}
                   value={interviewNotes}
                   onChange={(e) => setInterviewNotes(e.target.value)}
-                  placeholder="VD: Vui lòng chuẩn bị slide hoặc portfolio giới thiệu dự án tiêu biểu, kiểm tra kết nối mạng trước 5 phút..."
+                  placeholder="Vui lòng chuẩn bị slide hoặc portfolio giới thiệu dự án tiêu biểu, kiểm tra kết nối mạng trước 5 phút..."
                   className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Lưu ý nội bộ cho Chuyên gia / Giám khảo (Trước PV)
+                  Lưu ý cho hội đồng phỏng vấn
                 </label>
                 <textarea
                   rows={2}
                   value={interviewInterviewerNotes}
                   onChange={(e) => setInterviewInterviewerNotes(e.target.value)}
-                  placeholder="VD: Tập trung hỏi sâu về Microservices, kinh nghiệm giải quyết nghẽn kết nối, khả năng tư duy giải thuật..."
+                  placeholder="Tập trung hỏi sâu về kiến trúc hệ thống, kinh nghiệm xử lý tải cao, tư duy giải thuật..."
                   className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Ghi chú / Biên bản sau phỏng vấn (Sau PV)
+                  Biên bản phỏng vấn
                 </label>
                 <textarea
                   rows={2}
                   value={interviewPostNotes}
                   onChange={(e) => setInterviewPostNotes(e.target.value)}
-                  placeholder="VD: Ứng viên thể hiện phong thái tự tin, trả lời tốt câu hỏi tình huống, hội đồng đánh giá tích cực..."
+                  placeholder="Ứng viên thể hiện phong thái tự tin, trả lời tốt câu hỏi tình huống, hội đồng đánh giá tích cực..."
                   className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
@@ -1551,7 +1551,7 @@ export default function CandidateDrawer({
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      Mẫu Thư Phỏng Vấn Tự Động Đã Sẵn Sàng:
+                      Mẫu thư mời phỏng vấn:
                     </span>
                     <button
                       type="button"

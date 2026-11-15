@@ -73,7 +73,7 @@ export default function AdminLoginPage() {
           Cổng Quản Trị Tuyển Dụng Nội Bộ
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Hệ thống Quản lý Tuyển dụng & Hồ sơ Ứng viên (ATS)
+          Hệ thống Quản lý Tuyển dụng & Hồ sơ Ứng viên
         </p>
       </div>
 

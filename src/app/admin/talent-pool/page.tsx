@@ -197,13 +197,13 @@ export default function TalentPoolPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold border border-brand-200 mb-1.5">
             <Users className="w-3.5 h-3.5" />
-            Quản trị Kho Nhân Tài (Talent Pool)
+            Quản trị Kho Nhân Tài
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Kho Nhân Tài & Xuất Dữ Liệu Tuyển Dụng
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Lưu trữ tập trung toàn bộ dữ liệu ứng viên, hỗ trợ tái sử dụng hồ sơ (Re-pooling) và xuất báo cáo CSV chuẩn Unicode.
+            Lưu trữ tập trung dữ liệu ứng viên, hỗ trợ luân chuyển hồ sơ và xuất báo cáo chuẩn định dạng.
           </p>
         </div>
 
@@ -215,10 +215,10 @@ export default function TalentPoolPage() {
                 handleSimulatePurge(purgeDays);
               }}
               className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold border border-red-200 transition-all cursor-pointer"
-              title="Dọn dẹp hồ sơ REJECTED lưu quá 6 tháng"
+              title="Dọn dẹp hồ sơ quá hạn lưu trữ"
             >
               <Trash2 className="w-4 h-4 text-red-600" />
-              <span>Dọn dẹp hồ sơ quá hạn (6 tháng)</span>
+              <span>Dọn dẹp hồ sơ quá hạn</span>
             </button>
           )}
 
@@ -228,7 +228,7 @@ export default function TalentPoolPage() {
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 hover:shadow-lg transition-all"
           >
             <Download className="w-4 h-4" />
-            <span>Xuất Báo Cáo CSV (Excel)</span>
+            <span>Xuất Báo Cáo CSV</span>
           </a>
 
           <button
@@ -299,7 +299,7 @@ export default function TalentPoolPage() {
             <option value="SCREENING">SCREENING — Sàng lọc</option>
             <option value="INTERVIEW">INTERVIEW — Phỏng vấn</option>
             <option value="HIRED">HIRED — Đã tuyển</option>
-            <option value="REJECTED">REJECTED — Đã từ chối (Tiềm năng)</option>
+            <option value="REJECTED">REJECTED — Đã từ chối</option>
           </select>
         </div>
       </div>
@@ -476,7 +476,7 @@ export default function TalentPoolPage() {
               <div>
                 <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold border border-brand-200 mb-1">
                   <RotateCcw className="w-3 h-3" />
-                  Quy trình Re-pooling (UC-06)
+                  Tái sử dụng hồ sơ
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">
                   Tái Sử Dụng Hồ Sơ Ứng Viên
@@ -507,7 +507,7 @@ export default function TalentPoolPage() {
                   <strong>Email:</strong> {repoolCandidate.email}
                 </p>
                 <p className="text-slate-500 text-[11px] pt-1">
-                  Hồ sơ sẽ được đưa vào vòng <strong>SCREENING</strong> của vị trí mới để HR tiếp tục đánh giá mà không cần ứng viên nộp lại CV.
+                  Hồ sơ sẽ được đưa vào vòng <strong>SCREENING</strong> của vị trí mới để tiếp tục quy trình tuyển dụng mà không cần nộp lại CV.
                 </p>
               </div>
 
@@ -561,10 +561,10 @@ export default function TalentPoolPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    Dọn dẹp Hồ sơ Quá hạn (Data Retention Purge)
+                    Dọn dẹp hồ sơ quá hạn
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Tuân thủ ISO-27001 & quy định bảo mật vòng đời dữ liệu
+                    Tuân thủ quy định bảo mật vòng đời dữ liệu
                   </p>
                 </div>
               </div>
@@ -578,14 +578,14 @@ export default function TalentPoolPage() {
 
             <div className="text-xs text-slate-600 space-y-2 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
               <p>
-                Theo quy định bảo mật dữ liệu nhân sự, các hồ sơ ở trạng thái <strong>TỪ CHỐI (REJECTED)</strong> lưu trữ quá thời hạn quy định (mặc định <strong>180 ngày</strong>) có thể được xóa vĩnh viễn (Hard Delete) để bảo vệ quyền riêng tư ứng viên.
+                Theo quy định bảo mật dữ liệu nhân sự, các hồ sơ ở trạng thái <strong>ĐÃ TỪ CHỐI</strong> lưu trữ quá thời hạn quy định (mặc định <strong>180 ngày</strong>) có thể được xóa vĩnh viễn để bảo vệ quyền riêng tư ứng viên.
               </p>
             </div>
 
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Ngưỡng thời gian lưu trữ (Ngày):
+                  Ngưỡng thời gian lưu trữ (ngày):
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -604,10 +604,10 @@ export default function TalentPoolPage() {
                     disabled={purgeLoading}
                     className="px-3 py-2 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-xl border border-brand-200 cursor-pointer"
                   >
-                    Quét trước (Simulate)
+                    Quét kiểm tra
                   </button>
                   <span className="text-[11px] text-slate-400">
-                    (Mặc định 180 ngày; 0 ngày để quét tất cả)
+                    Mặc định 180 ngày; nhập 0 để quét tất cả
                   </span>
                 </div>
               </div>

@@ -276,18 +276,18 @@ export default function AddCandidateModal({
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-brand-600" />
-                Nguồn tiếp nhận (Candidate Source)
+                Nguồn tiếp nhận
               </label>
               <select
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
                 className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
-                <option value="LINKEDIN">LinkedIn Sourcing (HR chủ động săn)</option>
-                <option value="REFERRAL">Employee Referral (Nhân viên giới thiệu)</option>
-                <option value="HEADHUNTER">Agency / Headhunter (Đối tác cung ứng)</option>
-                <option value="DIRECT_EMAIL">Direct Email (Gửi qua email careers@)</option>
-                <option value="CAREER_SITE">Career Portal (Nộp trực tuyến)</option>
+                <option value="LINKEDIN">LinkedIn Sourcing</option>
+                <option value="REFERRAL">Giới thiệu nội bộ</option>
+                <option value="HEADHUNTER">Agency / Headhunter</option>
+                <option value="DIRECT_EMAIL">Email trực tiếp</option>
+                <option value="CAREER_SITE">Cổng tuyển dụng</option>
                 <option value="OTHER">Nguồn khác</option>
               </select>
             </div>
@@ -296,7 +296,7 @@ export default function AddCandidateModal({
           {/* Tải CV gốc */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
-              <span>Bản CV Gốc của Ứng viên (.pdf, .docx) <span className="text-red-500">*</span></span>
+              <span>Hồ sơ CV (.pdf, .docx) <span className="text-red-500">*</span></span>
               {cvFile && <span className="text-[11px] text-emerald-600 font-bold">Đã chọn tệp</span>}
             </label>
 
@@ -349,7 +349,7 @@ export default function AddCandidateModal({
                     Bấm để tải lên hoặc kéo thả tệp CV vào đây
                   </p>
                   <p className="text-[11px] text-slate-400">
-                    Hỗ trợ PDF, DOCX (Dung lượng tối đa 10MB)
+                    Hỗ trợ PDF, DOCX (Tối đa 10MB)
                   </p>
                 </div>
               )}
@@ -427,7 +427,7 @@ export default function AddCandidateModal({
             <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Award className="w-3.5 h-3.5 text-purple-600" />
-                <span>Bằng Cấp & Chứng Chỉ Đính Kèm (Ảnh IELTS, Bằng ĐH, AWS...)</span>
+                <span>Bằng Cấp & Chứng Chỉ Đính Kèm</span>
               </label>
               <span className="text-[11px] text-slate-400">Tùy chọn • Tối đa 5 ảnh/tệp</span>
             </div>
@@ -494,7 +494,7 @@ export default function AddCandidateModal({
                 className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-200 hover:border-purple-400 hover:bg-slate-50 text-slate-500 hover:text-purple-700 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <ImageIcon className="w-4 h-4 text-slate-400" />
-                <span>Đính kèm ảnh bằng cấp (IELTS, Bằng ĐH, Chứng chỉ) — Hỗ trợ PNG, JPG, PDF</span>
+                <span>Đính kèm ảnh bằng cấp, chứng chỉ (PNG, JPG, PDF)</span>
               </button>
             )}
           </div>

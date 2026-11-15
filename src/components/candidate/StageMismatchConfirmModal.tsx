@@ -32,9 +32,9 @@ export default function StageMismatchConfirmModal({
   if (!isOpen) return null;
 
   const stageLabels: Record<string, string> = {
-    SCREENING: "Sơ Loại Hồ Sơ (Screening)",
-    INTERVIEW: "Phỏng Vấn Chuyên Môn (Interview)",
-    HIRED: "Tuyển Chọn Chính Thức (Hired)",
+    SCREENING: "Sơ Loại Hồ Sơ",
+    INTERVIEW: "Phỏng Vấn Chuyên Môn",
+    HIRED: "Tuyển Chọn Chính Thức",
   };
 
   const stageName = stageLabels[targetStage] || targetStage;
@@ -149,8 +149,8 @@ export default function StageMismatchConfirmModal({
         <div className="p-3 bg-amber-50 rounded-xl border border-amber-300/80 text-[11px] text-amber-900 leading-normal">
           <p className="font-semibold">
             {actionType === "SCHEDULE_INTERVIEW"
-              ? "Hồ sơ này thiếu nhiều tiêu chuẩn quan trọng so với JD. Để tránh xếp lịch phỏng vấn nhầm, vui lòng xác nhận bạn có muốn tiếp tục đặc cách lên lịch phỏng vấn cho ứng viên này không?"
-              : "Để tránh việc HR bấm nhầm hoặc duyệt sót hồ sơ chưa đạt chuẩn, vui lòng xác nhận bạn có muốn đặc cách tiếp tục chuyển hồ sơ này sang giai đoạn tiếp theo không?"}
+              ? "Hồ sơ này còn thiếu một số tiêu chuẩn so với yêu cầu vị trí. Vui lòng xác nhận bạn có muốn tiếp tục lên lịch phỏng vấn cho ứng viên này không?"
+              : "Để đảm bảo quy trình tuyển chọn chuẩn xác, vui lòng xác nhận bạn có muốn tiếp tục luân chuyển hồ sơ này sang giai đoạn tiếp theo không?"}
           </p>
         </div>
 
@@ -161,7 +161,7 @@ export default function StageMismatchConfirmModal({
             onClick={onClose}
             className="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
           >
-            Hủy bỏ (Giữ nguyên)
+            Giữ nguyên vị trí cũ
           </button>
 
           <button

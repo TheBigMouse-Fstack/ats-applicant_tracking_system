@@ -148,7 +148,7 @@ export default function ScorecardModal({
               Phiếu Đánh Giá Chuyên Môn
             </div>
             <h3 className="text-lg font-bold text-slate-900">
-              Đánh Giá Phỏng Vấn (Scorecard)
+              Đánh Giá Phỏng Vấn
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Ứng viên: <strong className="text-slate-800">{candidateName}</strong> —{" "}
@@ -177,7 +177,7 @@ export default function ScorecardModal({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-700">
-                1. Kỹ năng Chuyên môn (Technical Skills)
+                1. Kỹ năng chuyên môn
               </label>
               <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
                 Trọng số 40%
@@ -195,7 +195,7 @@ export default function ScorecardModal({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-700">
-                2. Giao tiếp & Thuyết trình (Communication)
+                2. Kỹ năng giao tiếp & thuyết trình
               </label>
               <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                 Trọng số 30%
@@ -213,7 +213,7 @@ export default function ScorecardModal({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-700">
-                3. Văn hóa & Tinh thần Đồng đội (Cultural Fit)
+                3. Độ phù hợp văn hóa & làm việc nhóm
               </label>
               <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                 Trọng số 30%
@@ -227,11 +227,11 @@ export default function ScorecardModal({
             )}
           </div>
 
-          {/* Preview Điểm có trọng số BRL-08 */}
+          {/* Preview Điểm có trọng số */}
           <div className="bg-gradient-to-r from-brand-50 to-purple-50 border border-brand-200 rounded-2xl p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-bold text-brand-900 uppercase tracking-wider">
-                Điểm Đánh Giá Tổng Hợp (BRL-08):
+                Điểm đánh giá tổng hợp:
               </p>
               <p className="text-[11px] text-brand-700 mt-0.5">
                 = (Chuyên môn × 0.4) + (Giao tiếp × 0.3) + (Văn hóa × 0.3)
@@ -255,10 +255,10 @@ export default function ScorecardModal({
               onChange={(e) => setRecommendation(e.target.value)}
               className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
-              <option value="STRONG_HIRE">🌟 Xuất sắc — Tuyển dụng ngay (Strong Hire)</option>
-              <option value="HIRE">✅ Đạt chuẩn — Đề xuất tuyển dụng (Hire)</option>
-              <option value="NO_HIRE">⚠️ Chưa đạt — Xem xét từ chối (No Hire)</option>
-              <option value="STRONG_NO_HIRE">⛔ Không phù hợp (Strong No Hire)</option>
+              <option value="STRONG_HIRE">🌟 Xuất sắc — Tuyển dụng ngay</option>
+              <option value="HIRE">✅ Đạt chuẩn — Đề xuất tuyển dụng</option>
+              <option value="NO_HIRE">⚠️ Chưa đạt — Xem xét từ chối</option>
+              <option value="STRONG_NO_HIRE">⛔ Không phù hợp</option>
             </select>
           </div>
 
@@ -299,7 +299,7 @@ export default function ScorecardModal({
               ) : (
                 <>
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Lưu Phiếu Đánh Giá (Mở khóa Hired)</span>
+                  <span>Lưu Phiếu Đánh Giá</span>
                 </>
               )}
             </button>

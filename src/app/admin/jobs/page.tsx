@@ -125,7 +125,7 @@ export default function AdminJobsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
             <Briefcase className="w-7 h-7 text-brand-600" />
-            Quản Lý Vị Trí Tuyển Dụng (Jobs)
+            Quản Lý Vị Trí Tuyển Dụng
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Tạo lập và quản lý các vị trí tuyển dụng, tiêu chuẩn yêu cầu và tiếp nhận hồ sơ ứng viên.
@@ -301,7 +301,7 @@ export default function AdminJobsPage() {
           <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between pb-3 border-b border-slate-100">
               <h3 className="text-lg font-bold text-slate-900">
-                Thêm Vị Trí Tuyển Dụng Mới (Job)
+                Thêm Vị Trí Tuyển Dụng Mới
               </h3>
               <button
                 type="button"
@@ -322,7 +322,7 @@ export default function AdminJobsPage() {
             <form onSubmit={handleCreateJob} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Tiêu đề vị trí (Job Title) <span className="text-red-500">*</span>
+                  Tiêu đề vị trí <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -392,7 +392,7 @@ export default function AdminJobsPage() {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  Kỹ năng bắt buộc (Cách nhau bằng dấu phẩy)
+                  Kỹ năng bắt buộc (phân tách bằng dấu phẩy)
                 </label>
                 <input
                   type="text"

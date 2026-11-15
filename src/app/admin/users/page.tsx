@@ -136,13 +136,13 @@ export default function UserManagementPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold mb-1.5">
             <ShieldCheck className="w-3.5 h-3.5" />
-            Phân hệ Quản trị (Admin System & RBAC) &bull; UC-00
+            Quản trị hệ thống & Phân quyền
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Quản trị Người dùng & Phân quyền Nội bộ
           </h1>
           <p className="text-sm text-slate-500">
-            Quản lý tài khoản Admin, Chuyên viên Tuyển dụng (HR) và Quản lý Chuyên môn (Hiring Manager)
+            Quản lý tài khoản quản trị, tuyển dụng và hội đồng chuyên môn
           </p>
         </div>
 
@@ -190,7 +190,7 @@ export default function UserManagementPage() {
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
                   <th className="py-3.5 px-4">Thành viên</th>
                   <th className="py-3.5 px-4">Email</th>
-                  <th className="py-3.5 px-4">Vai trò (Role)</th>
+                  <th className="py-3.5 px-4">Vai trò</th>
                   <th className="py-3.5 px-4">Hoạt động</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
                   <th className="py-3.5 px-4 text-right">Thao tác</th>
@@ -402,16 +402,16 @@ export default function UserManagementPage() {
               {/* Vai trò */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Phân quyền Vai trò (Role) <span className="text-red-500">*</span>
+                  Phân quyền vai trò <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white text-slate-900"
                 >
-                  <option value="HR">HR LEAD — Quản lý tuyển dụng, duyệt CV, kéo thả Kanban</option>
-                  <option value="HIRING_MANAGER">HIRING MANAGER — Phỏng vấn & Chấm điểm Scorecard</option>
-                  <option value="ADMIN">ADMIN — Quản trị toàn bộ người dùng & Hệ thống</option>
+                  <option value="HR">HR LEAD — Quản lý tuyển dụng và phê duyệt hồ sơ</option>
+                  <option value="HIRING_MANAGER">HIRING MANAGER — Hội đồng chuyên môn & Đánh giá phỏng vấn</option>
+                  <option value="ADMIN">ADMIN — Quản trị toàn bộ hệ thống</option>
                 </select>
               </div>
 
