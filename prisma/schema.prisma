@@ -82,6 +82,9 @@ model Application {
   emailScheduledAt   DateTime?    // BRL-05 Rejection delay buffer (+12h)
   isEmailSent        Boolean      @default(false)
   repooledFromId     Int?
+  isStarred          Boolean      @default(false) // Đánh dấu sao hồ sơ đặc biệt (như Gmail star)
+  isViewed           Boolean      @default(false) // Đã được HR mở xem / xử lý hay chưa
+  viewedAt           DateTime?    // Thời gian mở xem lần đầu
   interviewDate             DateTime?    // Lịch phỏng vấn đã xếp
   interviewFormat           String?      @default("ONLINE") // ONLINE, OFFLINE
   interviewLocation         String?      // Link Google Meet / Zoom hoặc Phòng họp thực tế

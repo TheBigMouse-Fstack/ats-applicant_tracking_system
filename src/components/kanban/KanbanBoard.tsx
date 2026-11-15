@@ -23,6 +23,9 @@ import {
   X,
   FileSpreadsheet,
   UserPlus,
+  Star,
+  ArrowUpDown,
+  Sparkles,
 } from "lucide-react";
 
 interface JobOption {
@@ -93,6 +96,10 @@ export default function KanbanBoard() {
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("NEWEST");
+  const [showStarredOnly, setShowStarredOnly] = useState(false);
+  const [showUnviewedOnly, setShowUnviewedOnly] = useState(false);
+
   const [columns, setColumns] = useState<Record<string, any[]>>({
     NEW: [],
     SCREENING: [],
@@ -149,6 +156,15 @@ export default function KanbanBoard() {
       if (searchQuery.trim()) {
         params.append("search", searchQuery.trim());
       }
+      if (sortBy !== "NEWEST") {
+        params.append("sortBy", sortBy);
+      }
+      if (showStarredOnly) {
+        params.append("starred", "true");
+      }
+      if (showUnviewedOnly) {
+        params.append("unviewed", "true");
+      }
 
       const res = await fetch(`/api/pipeline?${params.toString()}`);
       const data = await res.json();
@@ -172,7 +188,31 @@ export default function KanbanBoard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedJobId, searchQuery]);
+  }, [selectedJobId, searchQuery, sortBy, showStarredOnly, showUnviewedOnly]);
+
+  // Xử lý bật/tắt gắn sao nhanh (Gmail star toggle)
+  const handleToggleStar = async (appId: number) => {
+    // Cập nhật lạc quan (Optimistic update)
+    setColumns((prev) => {
+      const next: Record<string, any[]> = {};
+      Object.keys(prev).forEach((stage) => {
+        next[stage] = prev[stage].map((item) =>
+          item.id === appId ? { ...item, isStarred: !item.isStarred } : item
+        );
+      });
+      return next;
+    });
+
+    try {
+      const res = await fetch(`/api/applications/${appId}/star`, { method: "POST" });
+      const data = await res.json();
+      if (!data.success) {
+        fetchPipeline();
+      }
+    } catch {
+      fetchPipeline();
+    }
+  };
 
   useEffect(() => {
     if (isMounted) {
@@ -434,6 +474,77 @@ export default function KanbanBoard() {
             </div>
           </div>
         </div>
+
+        {/* Hàng 2: Bộ lọc nhanh & Sắp xếp thẻ Kanban */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
+          {/* Quick Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-slate-400 font-semibold mr-1">Bộ lọc nhanh:</span>
+            <button
+              type="button"
+              onClick={() => {
+                setShowStarredOnly(false);
+                setShowUnviewedOnly(false);
+              }}
+              className={`px-3 py-1 rounded-xl font-bold transition-all cursor-pointer ${
+                !showStarredOnly && !showUnviewedOnly
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              Tất cả ({stats.total || 0})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowStarredOnly(!showStarredOnly);
+                setShowUnviewedOnly(false);
+              }}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
+                showStarredOnly
+                  ? "bg-amber-500 text-white border-amber-600 shadow-xs"
+                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+              }`}
+            >
+              <Star className="w-3.5 h-3.5 fill-current" />
+              <span>Chỉ xem gắn sao</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowUnviewedOnly(!showUnviewedOnly);
+                setShowStarredOnly(false);
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
+                showUnviewedOnly
+                  ? "bg-blue-600 text-white border-blue-700 shadow-xs"
+                  : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span>Chưa xử lý ({columns.NEW?.filter((c: any) => !c.isViewed).length || 0})</span>
+            </button>
+          </div>
+
+          {/* Sắp xếp thẻ (Sort Dropdown) */}
+          <div className="flex items-center gap-2 shrink-0">
+            <label className="font-semibold text-slate-500 flex items-center gap-1">
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+              <span>Sắp xếp:</span>
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-slate-50/70 py-1.5 px-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all cursor-pointer text-xs"
+            >
+              <option value="NEWEST">🕒 Mới nhất</option>
+              <option value="OLDEST">⏳ Cũ nhất</option>
+              <option value="UNVIEWED_FIRST">🔔 Chưa xem lên đầu</option>
+              <option value="STARRED_FIRST">⭐ Được gắn sao lên đầu</option>
+              <option value="UNEVALUATED_FIRST">📝 Chưa đánh giá lên đầu</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* 2. Banner Thông báo Vi phạm Business Rules (Nếu có lỗi từ chối chuyển trạng thái) */}
@@ -562,6 +673,7 @@ export default function KanbanBoard() {
                             application={app}
                             index={index}
                             onOpenDrawer={(id) => setSelectedAppId(id)}
+                            onToggleStar={handleToggleStar}
                             isDragDisabled={currentUser?.role === "HIRING_MANAGER"}
                           />
                         ))
@@ -579,7 +691,10 @@ export default function KanbanBoard() {
       {/* 4. Slide-over Candidate Drawer khi click vào thẻ ứng viên */}
       <CandidateDrawer
         applicationId={selectedAppId}
-        onClose={() => setSelectedAppId(null)}
+        onClose={() => {
+          setSelectedAppId(null);
+          fetchPipeline();
+        }}
         onStageChange={async (appId, toStage) => {
           const res = await handleMoveStage(appId, toStage);
           return res;

@@ -19,10 +19,15 @@ export async function GET(req: Request) {
     const search = searchParams.get("search")?.trim().toLowerCase() || "";
     const jobId = searchParams.get("jobId");
     const stage = searchParams.get("stage");
+    const sortBy = searchParams.get("sortBy") || "NEWEST";
+    const starredOnly = searchParams.get("starred") === "true";
+    const unviewedOnly = searchParams.get("unviewed") === "true";
 
     const where: any = {};
     if (jobId && jobId !== "ALL") where.jobId = Number(jobId);
     if (stage && stage !== "ALL") where.currentStage = stage;
+    if (starredOnly) where.isStarred = true;
+    if (unviewedOnly) where.isViewed = false;
 
     if (search) {
       where.candidate = {
@@ -35,6 +40,15 @@ export async function GET(req: Request) {
       };
     }
 
+    let orderBy: any = { createdAt: "desc" };
+    if (sortBy === "OLDEST") {
+      orderBy = { createdAt: "asc" };
+    } else if (sortBy === "STARRED_FIRST") {
+      orderBy = [{ isStarred: "desc" }, { createdAt: "desc" }];
+    } else if (sortBy === "UNVIEWED_FIRST") {
+      orderBy = [{ isViewed: "asc" }, { createdAt: "desc" }];
+    }
+
     const applications = await prisma.application.findMany({
       where,
       include: {
@@ -42,7 +56,7 @@ export async function GET(req: Request) {
         job: true,
         evaluations: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
     });
 
     return NextResponse.json({ success: true, data: applications });

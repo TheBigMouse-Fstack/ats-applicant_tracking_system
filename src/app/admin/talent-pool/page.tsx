@@ -32,6 +32,8 @@ export default function TalentPoolPage() {
   const [search, setSearch] = useState("");
   const [selectedJobId, setSelectedJobId] = useState("ALL");
   const [selectedStage, setSelectedStage] = useState("ALL");
+  const [sortBy, setSortBy] = useState("NEWEST");
+  const [quickFilter, setQuickFilter] = useState<"ALL" | "STARRED" | "UNVIEWED">("ALL");
 
   // Re-pool Modal State
   const [repoolCandidate, setRepoolCandidate] = useState<any | null>(null);
@@ -51,6 +53,20 @@ export default function TalentPoolPage() {
 
   // Success / Notice Banner
   const [notice, setNotice] = useState<string | null>(null);
+
+  // Toggle Star (Gmail-style)
+  const handleToggleStar = async (appId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setData((prev) =>
+      prev.map((app) => (app.id === appId ? { ...app, isStarred: !app.isStarred } : app))
+    );
+    try {
+      await fetch(`/api/applications/${appId}/star`, { method: "POST" });
+    } catch (err) {
+      console.error("Lỗi khi gắn sao:", err);
+      fetchTalentPool();
+    }
+  };
 
   // Fetch Jobs list for filter and repool dropdown
   const fetchJobs = async () => {
@@ -73,6 +89,9 @@ export default function TalentPoolPage() {
       if (search.trim()) params.append("search", search.trim());
       if (selectedJobId !== "ALL") params.append("jobId", selectedJobId);
       if (selectedStage !== "ALL") params.append("stage", selectedStage);
+      if (sortBy) params.append("sortBy", sortBy);
+      if (quickFilter === "STARRED") params.append("starred", "true");
+      if (quickFilter === "UNVIEWED") params.append("unviewed", "true");
 
       const res = await fetch(`/api/talent-pool?${params.toString()}`);
       const resData = await res.json();
@@ -84,7 +103,7 @@ export default function TalentPoolPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, selectedJobId, selectedStage]);
+  }, [search, selectedJobId, selectedStage, sortBy, quickFilter]);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -257,50 +276,114 @@ export default function TalentPoolPage() {
         </div>
       )}
 
-      {/* 2. Filters */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-center">
-        {/* Search */}
-        <div className="md:col-span-5 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo tên ứng viên, email hoặc kỹ năng..."
-            className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-9 pr-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
+      {/* 2. Filters & Quick Sort Controls */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-center">
+          {/* Search */}
+          <div className="md:col-span-4 relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm theo tên ứng viên, email hoặc kỹ năng..."
+              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-9 pr-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
+          {/* Job filter */}
+          <div className="md:col-span-3">
+            <select
+              value={selectedJobId}
+              onChange={(e) => setSelectedJobId(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="ALL">Tất cả vị trí tuyển dụng</option>
+              {jobs.map((j) => (
+                <option key={j.id} value={String(j.id)}>
+                  {j.title} ({j.department})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Stage filter */}
+          <div className="md:col-span-3">
+            <select
+              value={selectedStage}
+              onChange={(e) => setSelectedStage(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="ALL">Tất cả trạng thái Kanban</option>
+              <option value="NEW">NEW — Mới tiếp nhận</option>
+              <option value="SCREENING">SCREENING — Sàng lọc</option>
+              <option value="INTERVIEW">INTERVIEW — Phỏng vấn</option>
+              <option value="HIRED">HIRED — Đã tuyển</option>
+              <option value="REJECTED">REJECTED — Đã từ chối</option>
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div className="md:col-span-2">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="NEWEST">Mới nhất trước</option>
+              <option value="OLDEST">Cũ nhất trước</option>
+              <option value="STARRED_FIRST">⭐ Đã gắn sao</option>
+              <option value="UNVIEWED_FIRST">🔔 Chưa xem trước</option>
+            </select>
+          </div>
         </div>
 
-        {/* Job filter */}
-        <div className="md:col-span-4">
-          <select
-            value={selectedJobId}
-            onChange={(e) => setSelectedJobId(e.target.value)}
-            className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+        {/* Quick Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 text-xs">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Bộ lọc nhanh:</span>
+          <button
+            type="button"
+            onClick={() => setQuickFilter("ALL")}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              quickFilter === "ALL"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
           >
-            <option value="ALL">Tất cả vị trí tuyển dụng</option>
-            {jobs.map((j) => (
-              <option key={j.id} value={String(j.id)}>
-                {j.title} ({j.department})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Stage filter */}
-        <div className="md:col-span-3">
-          <select
-            value={selectedStage}
-            onChange={(e) => setSelectedStage(e.target.value)}
-            className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            Tất cả
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuickFilter("STARRED")}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              quickFilter === "STARRED"
+                ? "bg-amber-500 text-white shadow-xs"
+                : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+            }`}
           >
-            <option value="ALL">Tất cả trạng thái Kanban</option>
-            <option value="NEW">NEW — Mới tiếp nhận</option>
-            <option value="SCREENING">SCREENING — Sàng lọc</option>
-            <option value="INTERVIEW">INTERVIEW — Phỏng vấn</option>
-            <option value="HIRED">HIRED — Đã tuyển</option>
-            <option value="REJECTED">REJECTED — Đã từ chối</option>
-          </select>
+            <span>⭐ Đã gắn sao</span>
+            {data.filter((a) => a.isStarred).length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/30 text-current font-black">
+                {data.filter((a) => a.isStarred).length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setQuickFilter("UNVIEWED")}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              quickFilter === "UNVIEWED"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+            }`}
+          >
+            <span>🔔 Chưa xem</span>
+            {data.filter((a) => !a.isViewed).length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-200 text-blue-900 font-black">
+                {data.filter((a) => !a.isViewed).length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -310,6 +393,7 @@ export default function TalentPoolPage() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-3.5 px-3 text-center w-10">⭐</th>
                 <th className="py-3.5 px-4">Ứng viên</th>
                 <th className="py-3.5 px-4">Vị trí ứng tuyển</th>
                 <th className="py-3.5 px-4">Kỹ năng chuyên môn</th>
@@ -322,14 +406,14 @@ export default function TalentPoolPage() {
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-brand-600" />
                     Đang tải dữ liệu kho nhân tài...
                   </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
                     Không tìm thấy ứng viên nào phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
@@ -344,16 +428,49 @@ export default function TalentPoolPage() {
 
                   const candidate = app.candidate;
                   const hasScorecard = app.evaluations && app.evaluations.length > 0;
+                  const isNewUnviewed = app.currentStage === "NEW" && !app.isViewed;
 
                   return (
                     <tr
                       key={app.id}
-                      className="hover:bg-slate-50/70 transition-colors"
+                      className={`hover:bg-slate-50/70 transition-colors ${
+                        isNewUnviewed
+                          ? "bg-blue-50/30 border-l-4 border-l-blue-500"
+                          : app.isStarred
+                          ? "bg-amber-50/20"
+                          : ""
+                      }`}
                     >
+                      {/* Star Column */}
+                      <td className="py-3.5 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleStar(app.id, e)}
+                          className="p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                          title={app.isStarred ? "Bỏ gắn sao" : "Gắn sao ưu tiên"}
+                        >
+                          <Star
+                            className={`w-4 h-4 transition-colors ${
+                              app.isStarred
+                                ? "text-amber-400 fill-amber-400 drop-shadow-xs"
+                                : "text-slate-300 hover:text-amber-400"
+                            }`}
+                          />
+                        </button>
+                      </td>
+
                       {/* Ứng viên */}
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900 text-sm">
-                          {candidate?.fullName}
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 text-sm">
+                            {candidate?.fullName}
+                          </span>
+                          {isNewUnviewed && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                              Mới • Chưa xem
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-slate-500">
                           {candidate?.email} • {candidate?.phone}
@@ -686,7 +803,10 @@ export default function TalentPoolPage() {
       {/* 5. Candidate Drawer */}
       <CandidateDrawer
         applicationId={drawerAppId}
-        onClose={() => setDrawerAppId(null)}
+        onClose={() => {
+          setDrawerAppId(null);
+          fetchTalentPool();
+        }}
         onStageChange={async (appId, toStage) => {
           try {
             const res = await fetch("/api/pipeline/move", {

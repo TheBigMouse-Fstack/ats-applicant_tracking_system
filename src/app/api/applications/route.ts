@@ -26,11 +26,19 @@ export async function GET(req: Request) {
     const stage = searchParams.get("stage");
     const source = searchParams.get("source");
     const search = searchParams.get("search");
+    const sortBy = searchParams.get("sortBy") || "NEWEST";
+    const starredOnly = searchParams.get("starred") === "true";
+    const unviewedOnly = searchParams.get("unviewed") === "true";
+    const unevaluatedOnly = searchParams.get("unevaluated") === "true";
 
     const where: any = {};
     if (jobId && jobId !== "ALL") where.jobId = Number(jobId);
     if (stage && stage !== "ALL") where.currentStage = stage;
     if (source && source !== "ALL") where.source = source;
+    if (starredOnly) where.isStarred = true;
+    if (unviewedOnly) where.isViewed = false;
+    if (unevaluatedOnly) where.evaluations = { none: {} };
+
     if (search && search.trim()) {
       const q = search.trim();
       where.OR = [
@@ -42,6 +50,13 @@ export async function GET(req: Request) {
       ];
     }
 
+    let orderBy: any = { createdAt: "desc" };
+    if (sortBy === "OLDEST") {
+      orderBy = { createdAt: "asc" };
+    } else if (sortBy === "NAME_ASC") {
+      orderBy = { candidate: { fullName: "asc" } };
+    }
+
     const applications = await prisma.application.findMany({
       where,
       include: {
@@ -49,8 +64,28 @@ export async function GET(req: Request) {
         job: true,
         evaluations: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
     });
+
+    // Sắp xếp tùy biến ở tầng server cho các tiêu chí phức tạp
+    if (sortBy === "STARRED_FIRST") {
+      applications.sort((a, b) => {
+        if (a.isStarred !== b.isStarred) return b.isStarred ? 1 : -1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    } else if (sortBy === "UNVIEWED_FIRST") {
+      applications.sort((a, b) => {
+        if (a.isViewed !== b.isViewed) return a.isViewed ? 1 : -1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    } else if (sortBy === "UNEVALUATED_FIRST") {
+      applications.sort((a, b) => {
+        const aHasEval = a.evaluations && a.evaluations.length > 0;
+        const bHasEval = b.evaluations && b.evaluations.length > 0;
+        if (aHasEval !== bHasEval) return aHasEval ? 1 : -1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    }
 
     return NextResponse.json({ success: true, data: applications });
   } catch (error: any) {

@@ -22,6 +22,8 @@ import {
   Clock,
   Building2,
   Calendar,
+  ArrowUpDown,
+  Sparkles,
 } from "lucide-react";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
@@ -37,11 +39,13 @@ export default function CandidatesListPage() {
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Bộ lọc
+  // Bộ lọc & Sắp xếp
   const [search, setSearch] = useState("");
   const [selectedJobId, setSelectedJobId] = useState("ALL");
   const [selectedStage, setSelectedStage] = useState("ALL");
   const [selectedSource, setSelectedSource] = useState("ALL");
+  const [sortBy, setSortBy] = useState<string>("NEWEST");
+  const [quickFilter, setQuickFilter] = useState<string>("ALL"); // ALL, STARRED, UNVIEWED, UNEVALUATED
 
   // Drawer & Modal State
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
@@ -79,6 +83,10 @@ export default function CandidatesListPage() {
       if (selectedJobId !== "ALL") params.append("jobId", selectedJobId);
       if (selectedStage !== "ALL") params.append("stage", selectedStage);
       if (selectedSource !== "ALL") params.append("source", selectedSource);
+      if (sortBy !== "NEWEST") params.append("sortBy", sortBy);
+      if (quickFilter === "STARRED") params.append("starred", "true");
+      if (quickFilter === "UNVIEWED") params.append("unviewed", "true");
+      if (quickFilter === "UNEVALUATED") params.append("unevaluated", "true");
 
       const res = await fetch(`/api/applications?${params.toString()}`);
       const data = await res.json();
@@ -90,7 +98,23 @@ export default function CandidatesListPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, selectedJobId, selectedStage, selectedSource]);
+  }, [search, selectedJobId, selectedStage, selectedSource, sortBy, quickFilter]);
+
+  // Xử lý bật/tắt gắn sao hồ sơ (Star như Gmail)
+  const handleToggleStar = async (appId: number) => {
+    setCandidates((prev) =>
+      prev.map((c) => (c.id === appId ? { ...c, isStarred: !c.isStarred } : c))
+    );
+    try {
+      const res = await fetch(`/api/applications/${appId}/star`, { method: "POST" });
+      const data = await res.json();
+      if (!data.success) {
+        fetchCandidates();
+      }
+    } catch {
+      fetchCandidates();
+    }
+  };
 
   useEffect(() => {
     fetchJobs();
@@ -193,8 +217,9 @@ export default function CandidatesListPage() {
         </div>
       )}
 
-      {/* 2. Bộ Lọc Đa Tiêu Chí */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
+      {/* 2. Bộ Lọc Đa Tiêu Chí & Sắp Xếp */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+        {/* Hàng 1: Tìm kiếm & Các dropdown phân loại */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3">
           {/* Ô tìm kiếm */}
           <div className="md:col-span-4">
@@ -241,7 +266,7 @@ export default function CandidatesListPage() {
             </select>
           </div>
 
-          {/* Lọc theo Vòng tuyển dụng (Stage) */}
+          {/* Lọc theo Vòng tuyển dụng */}
           <div className="md:col-span-3">
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
               <Filter className="w-3.5 h-3.5 text-slate-400" />
@@ -281,6 +306,80 @@ export default function CandidatesListPage() {
             </select>
           </div>
         </div>
+
+        {/* Hàng 2: Sắp Xếp (Sort) & Quick Filter Pills */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+          {/* Quick Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="text-slate-400 font-semibold mr-1">Bộ lọc nhanh:</span>
+            <button
+              type="button"
+              onClick={() => setQuickFilter("ALL")}
+              className={`px-3 py-1 rounded-xl font-bold transition-all cursor-pointer ${
+                quickFilter === "ALL"
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              Tất cả ({candidates.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickFilter(quickFilter === "STARRED" ? "ALL" : "STARRED")}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
+                quickFilter === "STARRED"
+                  ? "bg-amber-500 text-white border-amber-600 shadow-xs"
+                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+              }`}
+            >
+              <Star className="w-3.5 h-3.5 fill-current" />
+              <span>Đã gắn sao ({candidates.filter((c) => c.isStarred).length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickFilter(quickFilter === "UNVIEWED" ? "ALL" : "UNVIEWED")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
+                quickFilter === "UNVIEWED"
+                  ? "bg-blue-600 text-white border-blue-700 shadow-xs"
+                  : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span>Chưa xem ({candidates.filter((c) => !c.isViewed).length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickFilter(quickFilter === "UNEVALUATED" ? "ALL" : "UNEVALUATED")}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
+                quickFilter === "UNEVALUATED"
+                  ? "bg-purple-600 text-white border-purple-700 shadow-xs"
+                  : "bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100"
+              }`}
+            >
+              <span>Chưa đánh giá ({candidates.filter((c) => !c.evaluations || c.evaluations.length === 0).length})</span>
+            </button>
+          </div>
+
+          {/* Sắp xếp danh sách (Sort Dropdown) */}
+          <div className="flex items-center gap-2 shrink-0">
+            <label className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+              <span>Sắp xếp:</span>
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="text-xs rounded-xl border border-slate-200 bg-slate-50/70 py-1.5 px-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all cursor-pointer"
+            >
+              <option value="NEWEST">🕒 Mới nhất (Thời gian nộp)</option>
+              <option value="OLDEST">⏳ Cũ nhất</option>
+              <option value="UNVIEWED_FIRST">🔔 Chưa xem lên đầu</option>
+              <option value="STARRED_FIRST">⭐ Được gắn sao lên đầu</option>
+              <option value="UNEVALUATED_FIRST">📝 Chưa có đánh giá lên đầu</option>
+              <option value="NAME_ASC">🔤 Tên ứng viên (A - Z)</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* 3. Bảng Danh Sách Ứng Viên */}
@@ -289,11 +388,14 @@ export default function CandidatesListPage() {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                <th className="py-3.5 px-3 w-10 text-center">
+                  <Star className="w-3.5 h-3.5 mx-auto text-amber-500 fill-amber-500" />
+                </th>
                 <th className="py-3.5 px-4">Ứng viên & Nguồn</th>
                 <th className="py-3.5 px-4">Vị trí ứng tuyển</th>
                 <th className="py-3.5 px-4">Kỹ năng trích xuất</th>
                 <th className="py-3.5 px-4 text-center">Bằng cấp & Chứng chỉ</th>
-                <th className="py-3.5 px-4 text-center">Đánh giá Scorecard</th>
+                <th className="py-3.5 px-4 text-center">Đánh giá phỏng vấn</th>
                 <th className="py-3.5 px-4 text-center">Giai đoạn</th>
                 <th className="py-3.5 px-4 text-right">Xem CV / Thao tác</th>
               </tr>
@@ -301,14 +403,14 @@ export default function CandidatesListPage() {
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-brand-600" />
                     Đang nạp danh sách hồ sơ ứng viên...
                   </td>
                 </tr>
               ) : candidates.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
                     Không tìm thấy ứng viên nào phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
@@ -332,16 +434,64 @@ export default function CandidatesListPage() {
                   const sourceBadge = getSourceBadge(app.source || "CAREER_SITE");
                   const stageBadge = getStageBadge(app.currentStage);
                   const hasScorecard = app.evaluations && app.evaluations.length > 0;
+                  const isNewStage = app.currentStage === "NEW";
+                  const isUnviewedNew = isNewStage && !app.isViewed;
 
                   return (
                     <tr
                       key={app.id}
-                      className="hover:bg-slate-50/70 transition-colors group"
+                      className={`transition-colors group ${
+                        isUnviewedNew
+                          ? "bg-blue-50/50 hover:bg-blue-50/80 border-l-4 border-l-blue-600"
+                          : app.isStarred
+                          ? "bg-amber-50/25 hover:bg-amber-50/50 border-l-4 border-l-amber-400"
+                          : "hover:bg-slate-50/70"
+                      }`}
                     >
+                      {/* Cột Gắn sao ⭐ (Gmail style) */}
+                      <td className="py-3.5 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleStar(app.id);
+                          }}
+                          title={app.isStarred ? "Bỏ gắn sao" : "Gắn sao hồ sơ đặc biệt"}
+                          className="p-1.5 rounded-lg text-slate-300 hover:text-amber-400 hover:bg-amber-50 transition-all cursor-pointer inline-flex items-center justify-center"
+                        >
+                          <Star
+                            className={`w-4 h-4 transition-transform ${
+                              app.isStarred
+                                ? "fill-amber-400 text-amber-400 scale-110 drop-shadow-2xs"
+                                : "text-slate-300 hover:text-amber-400 hover:scale-110"
+                            }`}
+                          />
+                        </button>
+                      </td>
+
                       {/* Ứng viên & Nguồn */}
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                          <span>{candidate?.fullName}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedAppId(app.id)}
+                            className="hover:text-brand-600 transition-colors text-left"
+                          >
+                            {candidate?.fullName}
+                          </button>
+
+                          {/* Đánh sáng cho CV ở stage NEW chưa xem */}
+                          {isUnviewedNew ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-700 border border-blue-300 shadow-2xs animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
+                              <span>Mới • Chưa xem</span>
+                            </span>
+                          ) : isNewStage ? (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                              Đã xem
+                            </span>
+                          ) : null}
+
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${sourceBadge.bg}`}
                           >
@@ -583,7 +733,10 @@ export default function CandidatesListPage() {
       {/* 6. Candidate Drawer (Slide-over chi tiết) */}
       <CandidateDrawer
         applicationId={selectedAppId}
-        onClose={() => setSelectedAppId(null)}
+        onClose={() => {
+          setSelectedAppId(null);
+          fetchCandidates();
+        }}
         onStageChange={async (appId, toStage) => {
           try {
             const res = await fetch("/api/pipeline/move", {

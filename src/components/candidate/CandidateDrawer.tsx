@@ -376,6 +376,29 @@ export default function CandidateDrawer({
                   <Calendar className="w-3.5 h-3.5" />
                   <span>{data?.interviewDate ? "Đã xếp lịch PV" : "Lên lịch PV"}</span>
                 </button>
+
+                {/* Nút Gắn sao hồ sơ đặc biệt (Gmail Star style) */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!data?.id) return;
+                    const newStarred = !data.isStarred;
+                    setData((prev: any) => ({ ...prev, isStarred: newStarred }));
+                    try {
+                      await fetch(`/api/applications/${data.id}/star`, { method: "POST" });
+                    } catch {}
+                  }}
+                  title={data?.isStarred ? "Bỏ gắn sao đặc biệt" : "Gắn sao hồ sơ đặc biệt"}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border transition-all cursor-pointer ${
+                    data?.isStarred
+                      ? "bg-amber-100 text-amber-900 border-amber-300 shadow-2xs"
+                      : "bg-white hover:bg-slate-100 text-slate-600 border-slate-200"
+                  }`}
+                >
+                  <Star className={`w-3.5 h-3.5 ${data?.isStarred ? "fill-amber-400 text-amber-500" : "text-slate-400"}`} />
+                  <span>{data?.isStarred ? "Đã gắn sao" : "Gắn sao"}</span>
+                </button>
+
                 {data?.candidate?.cvFileUrl && (
                   <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                     PDF Đã lưu trữ

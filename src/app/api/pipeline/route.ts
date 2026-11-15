@@ -18,6 +18,9 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const jobIdParam = searchParams.get("jobId");
     const searchParam = searchParams.get("search")?.trim().toLowerCase() || "";
+    const sortByParam = searchParams.get("sortBy") || "NEWEST";
+    const starredOnly = searchParams.get("starred") === "true";
+    const unviewedOnly = searchParams.get("unviewed") === "true";
 
     // 1. Lấy danh sách Jobs đang hoạt động để làm bộ lọc
     const jobs = await prisma.job.findMany({
@@ -37,6 +40,12 @@ export async function GET(req: Request) {
     const whereClause: any = {};
     if (jobIdParam && jobIdParam !== "ALL") {
       whereClause.jobId = Number(jobIdParam);
+    }
+    if (starredOnly) {
+      whereClause.isStarred = true;
+    }
+    if (unviewedOnly) {
+      whereClause.isViewed = false;
     }
 
     if (searchParam) {
@@ -108,6 +117,33 @@ export async function GET(req: Request) {
         isSlaBreached,
         slaMessage,
       });
+    });
+
+    // 5. Sắp xếp các thẻ trong từng cột Kanban theo tiêu chuẩn lọc
+    const sortFn = (a: any, b: any) => {
+      if (sortByParam === "OLDEST") {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      if (sortByParam === "STARRED_FIRST") {
+        if (a.isStarred !== b.isStarred) return b.isStarred ? 1 : -1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (sortByParam === "UNVIEWED_FIRST") {
+        if (a.isViewed !== b.isViewed) return a.isViewed ? 1 : -1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (sortByParam === "UNEVALUATED_FIRST") {
+        const aHasEval = a.evaluations && a.evaluations.length > 0;
+        const bHasEval = b.evaluations && b.evaluations.length > 0;
+        if (aHasEval !== bHasEval) return aHasEval ? 1 : -1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      // Mặc định: NEWEST (Mới nhất lên đầu)
+      return new Date(b.stageUpdatedAt || b.createdAt).getTime() - new Date(a.stageUpdatedAt || a.createdAt).getTime();
+    };
+
+    Object.keys(columns).forEach((key) => {
+      columns[key].sort(sortFn);
     });
 
     const stats = {
