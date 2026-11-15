@@ -29,6 +29,8 @@ import {
   Send,
   Copy,
   Check,
+  Eye,
+  Image as ImageIcon,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import ScorecardModal from "@/components/scorecard/ScorecardModal";
@@ -66,6 +68,10 @@ export default function CandidateDrawer({
   const [interviewSuccessEmail, setInterviewSuccessEmail] = useState<string | null>(null);
   const [interviewError, setInterviewError] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
+
+  // Lightbox xem ảnh Bằng cấp / Chứng chỉ phóng to
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImageTitle, setPreviewImageTitle] = useState<string>("");
 
   // Tải chi tiết hồ sơ
   useEffect(() => {
@@ -200,6 +206,7 @@ export default function CandidateDrawer({
   const parsedSkills = safeParseJSON(data?.candidate?.parsedSkills, []);
   const parsedEducation = safeParseJSON(data?.candidate?.parsedEducation, []);
   const parsedExperience = safeParseJSON(data?.candidate?.parsedExperience, []);
+  const certificates = safeParseJSON(data?.candidate?.certificates, []);
   const aiMatchedSkills = safeParseJSON(data?.aiMatchedSkills, []);
   const aiMissingSkills = safeParseJSON(data?.aiMissingSkills, []);
   const jobRequiredSkills = safeParseJSON(data?.job?.requiredSkills, []);
@@ -493,6 +500,80 @@ export default function CandidateDrawer({
                             <span className="text-xs text-slate-400">Chưa có thông tin kỹ năng</span>
                           )}
                         </div>
+                      </div>
+
+                      {/* 1.4 Bằng cấp & Chứng chỉ đính kèm (Ảnh / PDF) */}
+                      <div className="space-y-2.5 pt-3 border-t border-slate-100">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                            <Award className="w-4 h-4 text-purple-600" />
+                            Bằng Cấp & Chứng Chỉ Đính Kèm ({certificates.length}):
+                          </h4>
+                          <span className="text-[11px] text-slate-400">Xem trực tiếp trên web</span>
+                        </div>
+
+                        {certificates.length === 0 ? (
+                          <div className="p-3.5 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400 bg-slate-50/50">
+                            Ứng viên chưa tải lên tệp chứng chỉ hoặc bằng cấp bổ sung.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {certificates.map((cert: any, idx: number) => {
+                              const isImg =
+                                cert.fileType === "image" ||
+                                /\.(jpg|jpeg|png|webp)$/i.test(cert.fileUrl || "");
+                              return (
+                                <div
+                                  key={idx}
+                                  className="group relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs hover:shadow-md hover:border-purple-300 transition-all flex flex-col justify-between"
+                                >
+                                  {isImg ? (
+                                    <div
+                                      onClick={() => {
+                                        setPreviewImage(cert.fileUrl);
+                                        setPreviewImageTitle(cert.name || `Chứng chỉ #${idx + 1}`);
+                                      }}
+                                      className="h-28 bg-slate-100 flex items-center justify-center cursor-pointer relative overflow-hidden"
+                                    >
+                                      <img
+                                        src={cert.fileUrl}
+                                        alt={cert.name}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                      />
+                                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                                        <Eye className="w-4 h-4" />
+                                        <span>Phóng to</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <a
+                                      href={cert.fileUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="h-28 bg-slate-50 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-slate-100 transition-colors"
+                                    >
+                                      <FileText className="w-8 h-8 text-red-500 mb-1" />
+                                      <span className="text-[10px] font-bold text-slate-700 line-clamp-1">
+                                        Tài liệu PDF
+                                      </span>
+                                    </a>
+                                  )}
+                                  <div className="p-2 border-t border-slate-100 bg-white">
+                                    <p
+                                      className="text-[11px] font-bold text-slate-800 truncate"
+                                      title={cert.name}
+                                    >
+                                      {cert.name || "Bằng cấp / Chứng chỉ"}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400">
+                                      {isImg ? "Ảnh chứng chỉ" : "Tài liệu PDF"}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1146,6 +1227,48 @@ export default function CandidateDrawer({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Phóng to Ảnh Bằng cấp / Chứng chỉ */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-3.5 bg-slate-800 text-white border-b border-slate-700">
+              <span className="text-xs font-bold truncate max-w-md">{previewImageTitle}</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewImage}
+                  download
+                  className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                  title="Tải ảnh về máy"
+                >
+                  <Download className="w-4 h-4" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImage(null)}
+                  className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
+                  title="Đóng"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-2 flex items-center justify-center max-h-[80vh] overflow-auto">
+              <img
+                src={previewImage}
+                alt={previewImageTitle}
+                className="max-h-[75vh] w-auto object-contain rounded-lg shadow-lg"
+              />
+            </div>
           </div>
         </div>
       )}

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RecoverX — Đối Tác Kỹ Thuật Số & Phát Triển Phần Mềm Doanh Nghiệp",
+  title: "RecoverX — Công ty Công nghệ & Phát triển Phần mềm",
   description:
-    "RecoverX là công ty công nghệ chuyên cung cấp dịch vụ kỹ thuật phần mềm cao cấp, kiến trúc Microservices, hiện đại hóa Cloud và đảm bảo chất lượng phần mềm.",
+    "RecoverX cung cấp các giải pháp công nghệ thông tin, kỹ thuật phần mềm chất lượng cao và cơ hội nghề nghiệp hàng đầu cho nhân tài công nghệ.",
 };
 
 export default function RootLayout({

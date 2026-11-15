@@ -8,6 +8,7 @@ import {
 } from "@hello-pangea/dnd";
 import CandidateCard from "@/components/kanban/CandidateCard";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
+import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 import {
   Search,
   Filter,
@@ -20,6 +21,7 @@ import {
   Layers,
   X,
   FileSpreadsheet,
+  UserPlus,
 } from "lucide-react";
 
 interface JobOption {
@@ -109,6 +111,7 @@ export default function KanbanBoard() {
   // Drawer state
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
   const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Error / Notification alert banner
   const [alertError, setAlertError] = useState<string | null>(null);
@@ -298,10 +301,21 @@ export default function KanbanBoard() {
           </div>
 
           <div className="flex items-center gap-2">
+            {currentUser?.role !== "HIRING_MANAGER" && (
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 shadow-sm transition-all cursor-pointer"
+                title="Tiếp nhận CV từ nguồn LinkedIn, Referral hoặc săn ngoài"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>+ Tiếp nhận CV mới</span>
+              </button>
+            )}
+
             <button
               onClick={() => fetchPipeline()}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all border border-slate-200"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all border border-slate-200 cursor-pointer"
               title="Làm mới bảng"
             >
               <RefreshCw
@@ -521,6 +535,17 @@ export default function KanbanBoard() {
           const res = await handleMoveStage(appId, toStage);
           return res;
         }}
+      />
+
+      {/* 5. Modal Tiếp nhận CV Mới dành cho HR & Admin */}
+      <AddCandidateModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => {
+          fetchPipeline();
+          setAlertSuccess("Tiếp nhận hồ sơ ứng viên thành công vào Pipeline!");
+        }}
+        defaultJobId={selectedJobId !== "ALL" ? Number(selectedJobId) : null}
       />
     </div>
   );

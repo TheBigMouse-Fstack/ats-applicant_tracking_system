@@ -69,7 +69,7 @@ export default function HomePage() {
               Về RecoverX
             </a>
             <a href="#solutions" className="hover:text-brand-600 transition-colors">
-              Năng lực & Giải pháp
+              Dịch vụ & Giải pháp
             </a>
             <a href="#culture" className="hover:text-brand-600 transition-colors">
               Văn hóa & Đãi ngộ
@@ -740,7 +740,7 @@ export default function HomePage() {
 
             <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-slate-600">
               <a href="#about" className="hover:text-brand-600 transition-colors">Về Chúng Tôi</a>
-              <a href="#solutions" className="hover:text-brand-600 transition-colors">Năng Lực Kỹ Thuật</a>
+              <a href="#solutions" className="hover:text-brand-600 transition-colors">Dịch Vụ & Giải Pháp</a>
               <Link href="/jobs" className="hover:text-brand-600 transition-colors">Cơ Hội Việc Làm</Link>
               <Link href="/jobs/tracker" className="hover:text-brand-600 transition-colors">Tra Cứu Hồ Sơ</Link>
               <a href="#contact" className="hover:text-brand-600 transition-colors">Liên Hệ Doanh Nghiệp</a>

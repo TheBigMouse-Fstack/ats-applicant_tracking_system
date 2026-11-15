@@ -9,6 +9,7 @@ import {
   Users,
   Database,
   LogOut,
+  UserCheck,
 } from "lucide-react";
 import { SessionUser } from "@/lib/auth";
 
@@ -65,10 +66,11 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
   };
 
   const navLinks = [
-    { href: "/admin/pipeline", label: "Pipeline Tuyển dụng", icon: Kanban },
+    { href: "/admin/pipeline", label: "Pipeline (Kanban)", icon: Kanban },
+    { href: "/admin/candidates", label: "Danh sách Ứng viên", icon: UserCheck },
     { href: "/admin/jobs", label: "Tin Tuyển dụng", icon: Briefcase },
-    { href: "/admin/users", label: "Quản trị User (Admin)", icon: Users, adminOnly: true },
     { href: "/admin/talent-pool", label: "Kho Nhân tài", icon: Database },
+    { href: "/admin/users", label: "Quản trị User (Admin)", icon: Users, adminOnly: true },
   ];
 
   return (

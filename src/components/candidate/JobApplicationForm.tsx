@@ -12,6 +12,10 @@ import {
   ArrowRight,
   ShieldCheck,
   Clock,
+  Image as ImageIcon,
+  Plus,
+  Trash2,
+  Award,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -28,6 +32,7 @@ export default function JobApplicationForm({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -35,6 +40,25 @@ export default function JobApplicationForm({
   const [successResult, setSuccessResult] = useState<any | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const certInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleAddCertificates = (files: FileList | null) => {
+    if (!files) return;
+    const validExts = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+    const added: File[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+      if (validExts.includes(ext) && file.size <= 10 * 1024 * 1024) {
+        added.push(file);
+      }
+    }
+    setCertificateFiles((prev) => [...prev, ...added].slice(0, 5)); // Tối đa 5 chứng chỉ
+  };
+
+  const handleRemoveCertificate = (index: number) => {
+    setCertificateFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // Xóa lỗi trường khi người dùng gõ
   const handleInputChange = (
@@ -129,6 +153,11 @@ export default function JobApplicationForm({
       formData.append("email", email.trim().toLowerCase());
       formData.append("phone", cleanPhone);
       formData.append("cvFile", cvFile!);
+
+      // Đính kèm các tệp Bằng cấp / Chứng chỉ dạng ảnh hoặc PDF
+      certificateFiles.forEach((file) => {
+        formData.append("certificates", file);
+      });
 
       const res = await fetch("/api/applications", {
         method: "POST",
@@ -417,6 +446,76 @@ export default function JobApplicationForm({
             <AlertCircle className="w-3 h-3 shrink-0" />
             <span>{fieldErrors.cvFile}</span>
           </p>
+        )}
+      </div>
+
+      {/* 5. Đính kèm Bằng cấp & Chứng chỉ (IELTS, Bằng ĐH, AWS...) - Tùy chọn */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <Award className="w-3.5 h-3.5 text-brand-600" />
+            <span>Bằng Cấp & Chứng Chỉ Đính Kèm</span>
+          </label>
+          <span className="text-[11px] font-medium text-slate-400">Tùy chọn • Tối đa 5 tệp</span>
+        </div>
+
+        <input
+          type="file"
+          ref={certInputRef}
+          multiple
+          accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+          onChange={(e) => handleAddCertificates(e.target.files)}
+          className="hidden"
+        />
+
+        {certificateFiles.length > 0 ? (
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {certificateFiles.map((file, idx) => {
+                const isImage = file.type.startsWith("image/") || /\.(jpg|jpeg|png|webp)$/i.test(file.name);
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <div className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 text-slate-600">
+                        {isImage ? <ImageIcon className="w-3.5 h-3.5 text-purple-600" /> : <FileText className="w-3.5 h-3.5 text-red-600" />}
+                      </div>
+                      <span className="truncate font-medium text-slate-800 text-[11px]">{file.name}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCertificate(idx)}
+                      className="text-slate-400 hover:text-red-600 p-1 rounded"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {certificateFiles.length < 5 && (
+              <button
+                type="button"
+                onClick={() => certInputRef.current?.click()}
+                className="w-full py-2 px-3 rounded-xl border border-dashed border-slate-300 hover:border-brand-500 hover:bg-brand-50/40 text-slate-600 hover:text-brand-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Thêm ảnh chứng chỉ khác (+ Bằng IELTS, TOEIC, Bằng ĐH)</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => certInputRef.current?.click()}
+            className="w-full py-3 px-3 rounded-xl border border-dashed border-slate-200 hover:border-brand-400 hover:bg-slate-50 text-slate-500 hover:text-brand-700 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <ImageIcon className="w-4 h-4 text-slate-400" />
+            <span>Tải ảnh bằng cấp (IELTS, Bằng ĐH, Chứng chỉ) — Hỗ trợ PNG, JPG, PDF</span>
+          </button>
         )}
       </div>
 

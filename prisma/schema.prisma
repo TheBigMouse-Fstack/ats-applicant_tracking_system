@@ -54,6 +54,7 @@ model Candidate {
   parsedSkills    String?       @default("[]") // JSON string
   parsedEducation String?       @default("[]") // JSON string
   parsedExperience String?      @default("[]") // JSON string
+  certificates    String?       @default("[]") // JSON string: [{ id, name, fileUrl, fileType, size, uploadedAt }]
   cvFileUrl       String
   cvText          String?       // Raw extracted text from PDF
   createdAt       DateTime      @default(now())
@@ -71,6 +72,7 @@ model Application {
   candidate          Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobId              Int
   job                Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  source             String       @default("CAREER_SITE") // CAREER_SITE, LINKEDIN, REFERRAL, HEADHUNTER, DIRECT_EMAIL, OTHER
   currentStage       String       @default("NEW") // NEW, SCREENING, INTERVIEW, HIRED, REJECTED
   aiMatchScore       Float?       // 0.0 - 100.0%
   aiMatchRationale   String?      // Explanation why scored this %

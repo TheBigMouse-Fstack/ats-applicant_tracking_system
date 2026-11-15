@@ -15,12 +15,18 @@ import {
   X,
   ExternalLink,
   Loader2,
+  UserPlus,
 } from "lucide-react";
+import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+
+  // Modal tiếp nhận CV
+  const [isAddCandidateOpen, setIsAddCandidateOpen] = useState(false);
+  const [candidateJobId, setCandidateJobId] = useState<number | null>(null);
 
   // Modal create job
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -122,17 +128,28 @@ export default function AdminJobsPage() {
             Quản Lý Vị Trí Tuyển Dụng (Jobs)
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Tạo lập và theo dõi các tiêu chuẩn tuyển dụng (JD) phục vụ đối sánh AI Match tự động.
+            Tạo lập và quản lý các vị trí tuyển dụng, tiêu chuẩn yêu cầu và tiếp nhận hồ sơ ứng viên.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
+            onClick={() => {
+              setCandidateJobId(null);
+              setIsAddCandidateOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all"
+          >
+            <UserPlus className="w-4 h-4 text-brand-400" />
+            <span>+ Tiếp nhận CV</span>
+          </button>
+
+          <button
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-500/20 hover:shadow-lg transition-all"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Tạo Tin Tuyển Dụng Mới</span>
+            <span>+ Tạo Tin Mới</span>
           </button>
 
           <button
@@ -248,14 +265,29 @@ export default function AdminJobsPage() {
                     <strong>{job._count?.applications || 0}</strong> ứng viên
                   </span>
 
-                  <Link
-                    href={`/jobs/${job.id}`}
-                    target="_blank"
-                    className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 font-bold"
-                  >
-                    <span>Cổng ứng tuyển</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCandidateJobId(job.id);
+                        setIsAddCandidateOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold text-[11px] transition-colors"
+                      title="Tiếp nhận hồ sơ cho vị trí này"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Nhận CV</span>
+                    </button>
+
+                    <Link
+                      href={`/jobs/${job.id}`}
+                      target="_blank"
+                      className="inline-flex items-center gap-1 text-slate-500 hover:text-brand-600 font-medium px-2 py-1.5"
+                    >
+                      <span>Cổng tin</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             );
@@ -411,6 +443,20 @@ export default function AdminJobsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal Tiếp nhận CV từ kênh nội bộ */}
+      <AddCandidateModal
+        isOpen={isAddCandidateOpen}
+        onClose={() => {
+          setIsAddCandidateOpen(false);
+          setCandidateJobId(null);
+        }}
+        defaultJobId={candidateJobId}
+        onSuccess={() => {
+          setNotice("Đã tiếp nhận hồ sơ ứng viên thành công vào hệ thống!");
+          fetchJobs();
+        }}
+      />
     </div>
   );
 }

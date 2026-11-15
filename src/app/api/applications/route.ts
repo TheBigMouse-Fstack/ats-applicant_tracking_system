@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { extractTextFromCv, parseAndScoreCv } from "@/lib/ai-parser";
 import { getSessionUser } from "@/lib/auth";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +24,23 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const jobId = searchParams.get("jobId");
     const stage = searchParams.get("stage");
+    const source = searchParams.get("source");
+    const search = searchParams.get("search");
 
     const where: any = {};
     if (jobId && jobId !== "ALL") where.jobId = Number(jobId);
-    if (stage) where.currentStage = stage;
+    if (stage && stage !== "ALL") where.currentStage = stage;
+    if (source && source !== "ALL") where.source = source;
+    if (search && search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { candidate: { fullName: { contains: q } } },
+        { candidate: { email: { contains: q } } },
+        { candidate: { phone: { contains: q } } },
+        { candidate: { parsedSkills: { contains: q } } },
+        { job: { title: { contains: q } } },
+      ];
+    }
 
     const applications = await prisma.application.findMany({
       where,
@@ -277,9 +290,46 @@ export async function POST(req: Request) {
 
     const safeFileName = `cv_${Date.now()}_${path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads");
+    try {
+      await mkdir(uploadDir, { recursive: true });
+    } catch {}
     const filePath = path.join(uploadDir, safeFileName);
     await writeFile(filePath, buffer);
     const cvFileUrl = `/uploads/${safeFileName}`;
+
+    // 6.5. Xử lý các tệp Bằng cấp / Chứng chỉ đính kèm (Certificates & Attachments)
+    const certFiles = formData.getAll("certificates") as File[];
+    const source = (formData.get("source") as string)?.trim() || "CAREER_SITE";
+    const newCertificates: any[] = [];
+
+    if (certFiles && certFiles.length > 0) {
+      const certDir = path.join(uploadDir, "certificates");
+      try {
+        await mkdir(certDir, { recursive: true });
+      } catch {}
+
+      for (const certFile of certFiles) {
+        if (!certFile || !(certFile instanceof File) || certFile.size === 0) continue;
+        const cExt = certFile.name.slice(certFile.name.lastIndexOf(".")).toLowerCase();
+        const validCertExts = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+        if (!validCertExts.includes(cExt)) continue;
+        if (certFile.size > 10 * 1024 * 1024) continue; // Tối đa 10MB
+
+        const cSafeName = `cert_${Date.now()}_${path.basename(certFile.name).replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+        const cPath = path.join(certDir, cSafeName);
+        const cBuffer = Buffer.from(await certFile.arrayBuffer());
+        await writeFile(cPath, cBuffer);
+
+        newCertificates.push({
+          id: `cert_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          name: certFile.name,
+          fileUrl: `/uploads/certificates/${cSafeName}`,
+          fileType: cExt === ".pdf" ? "pdf" : "image",
+          size: certFile.size,
+          uploadedAt: new Date().toISOString(),
+        });
+      }
+    }
 
     // 7. Bóc tách nội dung CV (Layer 1 Text Extraction)
     const cvRawText = await extractTextFromCv(buffer, fileName);
@@ -307,6 +357,14 @@ export async function POST(req: Request) {
     });
 
     if (candidate) {
+      let existingCerts: any[] = [];
+      try {
+        existingCerts = JSON.parse(candidate.certificates || "[]");
+      } catch {
+        existingCerts = [];
+      }
+      const combinedCerts = [...existingCerts, ...newCertificates];
+
       // Cập nhật thông tin mới nhất
       candidate = await prisma.candidate.update({
         where: { id: candidate.id },
@@ -318,6 +376,7 @@ export async function POST(req: Request) {
           parsedSkills: JSON.stringify(aiResult.skills),
           parsedEducation: JSON.stringify(aiResult.education),
           parsedExperience: JSON.stringify(aiResult.experience),
+          certificates: JSON.stringify(combinedCerts),
           cvFileUrl,
           cvText: cvRawText.slice(0, 10000),
         },
@@ -333,6 +392,7 @@ export async function POST(req: Request) {
           parsedSkills: JSON.stringify(aiResult.skills),
           parsedEducation: JSON.stringify(aiResult.education),
           parsedExperience: JSON.stringify(aiResult.experience),
+          certificates: JSON.stringify(newCertificates),
           cvFileUrl,
           cvText: cvRawText.slice(0, 10000),
         },
@@ -344,6 +404,7 @@ export async function POST(req: Request) {
       data: {
         candidateId: candidate.id,
         jobId: job.id,
+        source,
         currentStage: "NEW",
         aiMatchScore: aiResult.matchScore,
         aiMatchRationale: aiResult.rationale,
