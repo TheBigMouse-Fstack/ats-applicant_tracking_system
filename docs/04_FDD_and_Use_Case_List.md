@@ -133,8 +133,9 @@ Dưới đây là **Bảng FR-xx hoàn chỉnh** được thiết kế chuẩn x
 | **FR-12** | Cảnh báo thời gian lưu thẻ (SLA) | Tự động đổi màu thẻ ứng viên khi thời gian lưu lại tại một cột vượt quá giới hạn SLA cấu hình trước. | Hệ thống | BR-08 | **UC-04** | Should Have |
 | **FR-13** | Luân chuyển vị trí (Repooling) | Cho phép HR chuyển một thẻ ứng viên từ vị trí này sang vị trí khác đang mở mà không cần ứng viên nộp lại CV. | HR | BR-10 | **UC-04** | Should Have |
 | **Phân hệ 4: Đánh giá & Phỏng vấn (Evaluation & Scorecard)** | | | | | | |
-| **FR-14** | Nhập điểm và nhận xét Scorecard | Tích hợp biểu mẫu đánh giá trên thẻ ứng viên, cho phép HR và Hiring Manager chấm điểm (1–5) và ghi nhận xét. | HR, Manager | BR-09 | **UC-05** | Should Have |
-| **FR-15** | Tổng hợp kết quả đánh giá | Tự động tính điểm trung bình và hiển thị tổng hợp phản hồi của hội đồng phỏng vấn trên thẻ ứng viên. | Hệ thống | BR-09 | **UC-05** | Should Have |
+| **FR-14** | Đánh giá Scorecard chuyên sâu | Biểu mẫu đánh giá đa tiêu chí có trọng số (Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30%), phân vòng phỏng vấn, cấp bậc đề xuất, căn cứ trúng tuyển (điểm mạnh then chốt) và điểm cần đào tạo bổ trợ. | HR, Manager, Tech Lead | BR-09 | **UC-05** | Must Have |
+| **FR-15** | Tổng hợp kết quả & Lịch sử đánh giá | Tự động tính điểm trung bình có trọng số, lưu trữ độc lập từng phiếu đánh giá của từng giám khảo và truy vết lịch sử ứng tuyển đa chiều của ứng viên. | Hệ thống | BR-09 | **UC-05** | Must Have |
+| **FR-15A**| Quản lý Vòng đời Lịch phỏng vấn | Đặt lịch, chỉnh sửa đổi lịch (Reschedule), hủy lịch (Cancel), đính kèm ghi chú trước/sau phỏng vấn và tạo thư mời tự động. | HR, Admin | BR-08 | **UC-05A**| Must Have |
 | **Phân hệ 5: Quản trị Hệ thống & Dữ liệu (System & Data Management)** | | | | | | |
 | **FR-16** | Quản trị vòng đời Kho nhân tài (Talent Pool) | Lưu trữ tập trung hồ sơ và tự động chạy tiến trình xóa vĩnh viễn (Hard Delete) đối với hồ sơ bị loại sau 06 tháng. | Hệ thống | BR-10 | **UC-06** | Must Have |
 | **FR-17** | Ghi nhận lịch sử thao tác (Audit Log) | Tự động ghi lại lịch sử thao tác (người thực hiện, hành động, thời gian) khi có thay đổi trên thẻ ứng viên. | Hệ thống | BR-11 | System | Must Have |

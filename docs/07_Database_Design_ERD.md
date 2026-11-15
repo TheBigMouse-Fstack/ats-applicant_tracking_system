@@ -78,7 +78,11 @@ erDiagram
         string phone UK
         int experience_years
         jsonb parsed_skills
+        jsonb parsed_education
+        jsonb parsed_experience
+        jsonb certificates
         string cv_file_url
+        text cv_text
         timestamp created_at
     }
 
@@ -86,9 +90,18 @@ erDiagram
         int application_id PK
         int candidate_id FK
         int job_id FK
-        string current_stage "SUBMITTED | PROCESSING | SCREENING | INTERVIEW | HIRED | REJECTED"
+        string current_stage "NEW | SCREENING | INTERVIEW | HIRED | REJECTED"
+        boolean is_starred "Gmail-style Star"
+        boolean is_viewed "Đã xem sơ bộ"
+        timestamp viewed_at
         float ai_match_score
         string ai_reject_reason
+        timestamp interview_date
+        string interview_format "ONLINE | OFFLINE"
+        text interview_location
+        text interview_notes
+        text interview_interviewer_notes
+        text interview_post_notes
         timestamp stage_updated_at
         timestamp email_scheduled_at
         boolean is_email_sent
@@ -98,11 +111,20 @@ erDiagram
         int evaluation_id PK
         int application_id FK
         int evaluator_id FK
+        string round "Vòng 1 | Vòng 2 | Vòng Tổng hợp"
+        string level_recommendation "TRAINEE | JUNIOR | MIDDLE | SENIOR | LEAD"
         int technical_score "1 - 5"
         int communication_score "1 - 5"
         int cultural_fit_score "1 - 5"
+        float overall_score "Weighted 40% - 30% - 30%"
+        text strengths "Căn cứ tuyển dụng / Điểm mạnh"
+        text weaknesses "Điểm cần lưu ý & đào tạo"
+        text technical_notes
+        text communication_notes
+        text culture_notes
+        text hire_reason "Kết luận Giám khảo"
         text comments
-        string recommendation "HIRE | NO_HIRE"
+        string recommendation "STRONG_HIRE | HIRE | NO_HIRE | STRONG_NO_HIRE"
         timestamp created_at
     }
 
@@ -156,17 +178,21 @@ Dưới đây là từ điển chi tiết từng thuộc tính của **6 bảng 
 ---
 
 ### 3. Bảng `candidates` (Thông tin Ứng viên & Dữ liệu bóc tách CV)
-> Lưu thông tin cá nhân và dữ liệu do AI bóc tách từ CV.
+> Lưu thông tin cá nhân, bằng cấp, chứng chỉ và dữ liệu bóc tách kỹ năng từ CV.
 
 | Tên trường (Column) | Kiểu dữ liệu | Khóa | Ràng buộc | Giá trị mặc định | Mô tả ý nghĩa nghiệp vụ |
 | :--- | :--- | :---: | :--- | :--- | :--- |
 | `candidate_id` | SERIAL | **PK** | NOT NULL | Tự tăng | Khóa chính định danh ứng viên. |
-| `full_name` | VARCHAR(100) | | NOT NULL | | Họ và tên ứng viên (từ Form hoặc AI đọc). |
-| `email` | VARCHAR(150) | | NOT NULL, UNIQUE | | Email liên hệ (Dùng để khử trùng lặp). |
-| `phone` | VARCHAR(20) | | NOT NULL, UNIQUE | | Số điện thoại (Dùng để khử trùng lặp). |
-| `experience_years`| INT | | NULL | `0` | Số năm kinh nghiệm do AI Parsing bóc tách. |
-| `parsed_skills`| JSONB | | NULL | `'[]'` | Danh sách kỹ năng AI bóc tách được từ CV. |
-| `cv_file_url` | VARCHAR(500) | | NOT NULL | | Đường dẫn tải tệp CV gốc trên S3 Storage. |
+| `full_name` | VARCHAR(100) | | NOT NULL | | Họ và tên ứng viên (từ Form hoặc trích xuất). |
+| `email` | VARCHAR(150) | | NOT NULL, UNIQUE | | Email liên hệ (Dùng để khử trùng lặp BRL-02). |
+| `phone` | VARCHAR(20) | | NOT NULL, UNIQUE | | Số điện thoại (Dùng để khử trùng lặp BRL-02). |
+| `experience_years`| INT | | NULL | `0` | Số năm kinh nghiệm bóc tách từ hồ sơ. |
+| `parsed_skills`| JSONB | | NULL | `'[]'` | Danh sách kỹ năng bóc tách từ CV. |
+| `parsed_education`| JSONB | | NULL | `'[]'` | Lịch sử học vấn, trường lớp, chuyên ngành. |
+| `parsed_experience`| JSONB | | NULL | `'[]'` | Quá trình công tác và dự án thực tế. |
+| `certificates` | JSONB | | NULL | `'[]'` | Danh sách tệp chứng chỉ / bằng cấp dạng ảnh. |
+| `cv_file_url` | VARCHAR(500) | | NOT NULL | | Đường dẫn tải tệp CV gốc (PDF/DOCX). |
+| `cv_text` | TEXT | | NULL | | Toàn văn bản trích xuất thô từ CV. |
 | `created_at` | TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm tiếp nhận hồ sơ lần đầu. |
 
 ---
@@ -179,29 +205,47 @@ Dưới đây là từ điển chi tiết từng thuộc tính của **6 bảng 
 | `application_id` | SERIAL | **PK** | NOT NULL | Tự tăng | Khóa chính hồ sơ ứng tuyển. |
 | `candidate_id` | INT | **FK** | NOT NULL, FK `candidates` | | Tham chiếu đến ứng viên nộp đơn. |
 | `job_id` | INT | **FK** | NOT NULL, FK `jobs` | | Tham chiếu đến vị trí ứng tuyển. |
-| `current_stage` | VARCHAR(30) | | NOT NULL | `'SUBMITTED'` | Cột Kanban: `SUBMITTED`, `PROCESSING`, `SCREENING`, `INTERVIEW`, `HIRED`, `REJECTED`. |
-| `ai_match_score`| FLOAT | | NULL | `NULL` | Điểm AI sàng lọc (thang điểm 0.0 - 100.0%). |
-| `ai_reject_reason`| TEXT | | NULL | `NULL` | Lý do loại tự động nếu Match Score < 60%. |
-| `stage_updated_at`| TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm luân chuyển cột (Dùng tính SLA). |
-| `email_scheduled_at`| TIMESTAMP | | NULL | `NULL` | Thời điểm hẹn giờ gửi email từ chối (+12h). |
+| `current_stage` | VARCHAR(30) | | NOT NULL | `'NEW'` | Cột Kanban: `NEW`, `SCREENING`, `INTERVIEW`, `HIRED`, `REJECTED`. |
+| `is_starred` | BOOLEAN | | NOT NULL | `FALSE` | Đánh dấu sao ưu tiên kiểu Gmail (⭐). |
+| `is_viewed` | BOOLEAN | | NOT NULL | `FALSE` | Đánh dấu HR đã mở xem sơ bộ hồ sơ hay chưa. |
+| `viewed_at` | TIMESTAMP | | NULL | `NULL` | Thời điểm HR mở xem hồ sơ lần đầu. |
+| `ai_match_score`| FLOAT | | NULL | `NULL` | Điểm tham khảo đối chiếu tiêu chuẩn. |
+| `ai_reject_reason`| TEXT | | NULL | `NULL` | Lý do chưa đáp ứng yêu cầu tuyển dụng. |
+| `interview_date` | TIMESTAMP | | NULL | `NULL` | Thời gian diễn ra phỏng vấn đã xếp. |
+| `interview_format`| VARCHAR(20) | | NULL | `'ONLINE'` | Hình thức: `ONLINE` (Google Meet) hoặc `OFFLINE`. |
+| `interview_location`| TEXT | | NULL | `NULL` | Link phòng họp trực tuyến hoặc địa chỉ phòng họp. |
+| `interview_notes` | TEXT | | NULL | `NULL` | Ghi chú dặn dò ứng viên trước phỏng vấn. |
+| `interview_interviewer_notes`| TEXT | | NULL | `NULL` | Lưu ý nội bộ cho hội đồng phỏng vấn. |
+| `interview_post_notes`| TEXT | | NULL | `NULL` | Biên bản / Nhận xét sau phỏng vấn. |
+| `stage_updated_at`| TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm luân chuyển cột (Dùng tính SLA BRL-07). |
+| `email_scheduled_at`| TIMESTAMP | | NULL | `NULL` | Thời điểm hẹn giờ gửi email từ chối (+12h BRL-05). |
 | `is_email_sent` | BOOLEAN | | NOT NULL | `FALSE` | Trạng thái đã gửi email từ chối hay chưa. |
-| `repooled_from_id`| INT | **FK** | NULL, FK `applications` | `NULL` | ID hồ sơ gốc nếu được luân chuyển (Repooling). |
+| `repooled_from_id`| INT | **FK** | NULL, FK `applications` | `NULL` | ID hồ sơ gốc nếu được luân chuyển (Repooling UC-06). |
 
 ---
 
 ### 5. Bảng `evaluations` (Phiếu đánh giá phỏng vấn - Scorecard)
-> Lưu trữ điểm số và nhận xét của từng thành viên hội đồng phỏng vấn.
+> Lưu trữ điểm số, căn cứ tuyển dụng và nhận xét chuyên sâu của hội đồng phỏng vấn.
 
 | Tên trường (Column) | Kiểu dữ liệu | Khóa | Ràng buộc | Giá trị mặc định | Mô tả ý nghĩa nghiệp vụ |
 | :--- | :--- | :---: | :--- | :--- | :--- |
 | `evaluation_id` | SERIAL | **PK** | NOT NULL | Tự tăng | Khóa chính phiếu đánh giá. |
 | `application_id`| INT | **FK** | NOT NULL, FK `applications`| | Tham chiếu đến hồ sơ được đánh giá. |
-| `evaluator_id` | INT | **FK** | NOT NULL, FK `users` | | Người chấm điểm (HR / Hiring Manager). |
-| `technical_score`| INT | | NOT NULL, CHECK (1..5) | | Điểm chuyên môn kỹ thuật (thang 1 - 5 sao). |
-| `communication_score`| INT | | NOT NULL, CHECK (1..5) | | Điểm giao tiếp & ứng xử (thang 1 - 5 sao). |
-| `cultural_fit_score`| INT | | NOT NULL, CHECK (1..5) | | Điểm phù hợp văn hóa công ty (thang 1 - 5 sao). |
-| `comments` | TEXT | | NULL | | Nhận xét chi tiết của người chấm. |
-| `recommendation`| VARCHAR(20) | | NOT NULL | `'HIRE'` | Khuyến nghị tuyển dụng: `HIRE` hoặc `NO_HIRE`. |
+| `evaluator_id` | INT | **FK** | NOT NULL, FK `users` | | Người chấm điểm (HR / Hiring Manager / Tech Lead). |
+| `round` | VARCHAR(100) | | NULL | `'Vòng 1 — Đánh giá Chuyên môn'` | Vòng phỏng vấn (Vòng 1 Kỹ thuật, Vòng 2 Văn hóa/Quản lý). |
+| `level_recommendation`| VARCHAR(50)| | NULL | `'MIDDLE'` | Cấp bậc đề xuất: `TRAINEE`, `JUNIOR`, `MIDDLE`, `SENIOR`, `LEAD`. |
+| `technical_score`| INT | | NOT NULL, CHECK (1..5) | | Điểm chuyên môn kỹ thuật (Trọng số 40%). |
+| `communication_score`| INT | | NOT NULL, CHECK (1..5) | | Điểm giao tiếp & thuyết trình (Trọng số 30%). |
+| `cultural_fit_score`| INT | | NOT NULL, CHECK (1..5) | | Điểm phù hợp văn hóa công ty (Trọng số 30%). |
+| `overall_score` | FLOAT | | NULL | | Điểm trung bình có trọng số (BRL-08). |
+| `strengths` | TEXT | | NULL | | **Căn cứ tuyển dụng (Điểm mạnh nổi bật — Lý do đậu)**. |
+| `weaknesses` | TEXT | | NULL | | Điểm cần lưu ý / Rủi ro & Kế hoạch đào tạo khi nhận việc. |
+| `technical_notes`| TEXT | | NULL | | Nhận xét chi tiết kiến trúc, giải thuật, giải pháp. |
+| `communication_notes`| TEXT | | NULL | | Nhận xét chi tiết khả năng diễn đạt, phản biện, ngoại ngữ. |
+| `culture_notes` | TEXT | | NULL | | Nhận xét chi tiết thái độ, sự chủ động, tinh thần đội ngũ. |
+| `hire_reason` | TEXT | | NULL | | Tóm tắt kết luận của Giám khảo / Hội đồng phỏng vấn. |
+| `comments` | TEXT | | NULL | | Ghi chú nhận xét tổng hợp. |
+| `recommendation`| VARCHAR(30) | | NOT NULL | `'HIRE'` | Khuyến nghị: `STRONG_HIRE`, `HIRE`, `NO_HIRE`, `STRONG_NO_HIRE`. |
 | `created_at` | TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm hoàn tất đánh giá. |
 
 ---

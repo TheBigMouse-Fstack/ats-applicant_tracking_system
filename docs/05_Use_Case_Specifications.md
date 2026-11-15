@@ -205,24 +205,29 @@ Sau khi đối chiếu chéo giữa **BRD**, **Quy trình BPMN To-Be** và **Cá
 
 #### B. BẢN ĐẶC TẢ CHI TIẾT (USE CASE SPECIFICATION):
 * **Mã Use Case:** UC-05
-* **Tên Use Case:** Đánh giá ứng viên bằng Scorecard
-* **Tác nhân:** Chuyên viên HR, Quản lý chuyên môn (Hội đồng phỏng vấn), Hệ thống ATS
-* **Mô tả:** Cho phép hội đồng phỏng vấn cùng chấm điểm các tiêu chí năng lực chuyên môn và ghi nhận xét trực tiếp trên hồ sơ ứng viên tại vòng phỏng vấn.
-* **Tiền điều kiện:** Ứng viên đang ở trạng thái/cột "Interview" trên bảng Kanban.
-* **Hậu điều kiện:** Điểm số và nhận xét được lưu trữ; hệ thống tính điểm trung bình tổng hợp.
+* **Tên Use Case:** Đánh giá Ứng viên Bằng Scorecard Chuyên Sâu & Lưu Vết Lịch Sử
+* **Tác nhân:** Chuyên viên HR, Quản lý chuyên môn / Tech Lead (Hội đồng phỏng vấn), Hệ thống ATS
+* **Mô tả:** Cho phép hội đồng phỏng vấn chọn vòng phỏng vấn, cấp bậc đề xuất, chấm điểm có trọng số các tiêu chí năng lực (Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30%), ghi nhận căn cứ trúng tuyển (điểm mạnh then chốt) và điểm cần lưu ý/đào tạo để làm cơ sở minh bạch cho quyết định tuyển dụng.
+* **Tiền điều kiện:** Ứng viên đang ở trạng thái/cột "Interview" trên bảng Kanban hoặc có lịch phỏng vấn đã được xác lập.
+* **Hậu điều kiện:** Điểm số, cấp bậc, căn cứ tuyển dụng và nhận xét của từng giám khảo được lưu thành phiếu đánh giá độc lập; hệ thống tự động tính điểm trung bình tổng hợp và cập nhật lịch sử ứng viên.
 * **Luồng sự kiện chính (Basic Flow):**
-  1. Người phỏng vấn (HR hoặc Hiring Manager) nhấp chuột vào thẻ ứng viên trên bảng Kanban và chọn tab "Đánh giá (Scorecard)".
-  2. Hệ thống hiển thị biểu mẫu đánh giá gồm danh sách các tiêu chí chuyên môn định sẵn (ví dụ: Kỹ năng kỹ thuật, Kỹ năng giao tiếp, Độ phù hợp văn hóa).
-  3. Người phỏng vấn chọn số sao chấm điểm cho từng tiêu chí (thang điểm 1 đến 5 sao).
-  4. Người phỏng vấn nhập nội dung nhận xét chi tiết vào ô phản hồi.
-  5. Người phỏng vấn chọn Đề xuất kết quả: "Nên tuyển" hoặc "Không tuyển".
-  6. Người phỏng vấn nhấn "Lưu đánh giá".
-  7. Hệ thống xác thực dữ liệu, lưu phiếu đánh giá gắn với tài khoản của người chấm.
-  8. Hệ thống tự động tính toán lại Điểm số trung bình cộng của toàn bộ hội đồng phỏng vấn và hiển thị trên giao diện chi tiết hồ sơ. Kết thúc Use Case.
+  1. Người phỏng vấn (HR hoặc Quản lý chuyên môn/Tech Lead) mở ngăn chi tiết ứng viên (`CandidateDrawer`) và nhấn "+ Đánh Giá Phỏng Vấn".
+  2. Hệ thống hiển thị biểu mẫu `ScorecardModal` với thông tin ứng viên, vị trí tuyển dụng, và các trường đánh giá chuyên sâu.
+  3. Người phỏng vấn chọn Vòng phỏng vấn (*Vòng 1 Kỹ thuật, Vòng 2 Văn hóa/Quản lý, hoặc Vòng Tổng hợp*) và Cấp bậc đề xuất (*Trainee, Junior, Middle, Senior, Tech Lead*).
+  4. Người phỏng vấn chấm điểm sao từ 1 đến 5 sao và nhập nhận xét chi tiết cho 3 tiêu chí có trọng số:
+     * *Kỹ năng chuyên môn kỹ thuật (Trọng số 40%)*
+     * *Kỹ năng giao tiếp, thuyết trình & ngoại ngữ (Trọng số 30%)*
+     * *Độ phù hợp văn hóa & tinh thần làm việc nhóm (Trọng số 30%)*
+  5. Hệ thống hiển thị điểm đánh giá tổng hợp có trọng số theo công thức `= (Chuyên môn × 0.4) + (Giao tiếp × 0.3) + (Văn hóa × 0.3)` trên thang 5.0★.
+  6. Người phỏng vấn chọn Khuyến nghị tuyển dụng: *Xuất sắc (Strong Hire)*, *Đạt chuẩn (Hire)*, *Chưa đạt (No Hire)*, *Không phù hợp (Strong No Hire)*.
+  7. Người phỏng vấn nhập **Căn cứ đề xuất tuyển dụng (Điểm mạnh nổi bật — Lý do đậu)** (bắt buộc đối với Hire/Strong Hire) và **Điểm cần lưu ý / Kế hoạch đào tạo khi nhận việc**.
+  8. Người phỏng vấn nhập Tóm tắt kết luận của Giám khảo và nhấn "Lưu Phiếu Đánh Giá".
+  9. Hệ thống xác thực dữ liệu, lưu phiếu đánh giá gắn với tài khoản của người chấm, đồng thời ghi nhận nhật ký kiểm toán `SCORECARD_EVALUATE`.
+  10. Hệ thống cập nhật danh sách phiếu đánh giá trong hồ sơ và hiển thị thông báo lưu thành công. Kết thúc Use Case.
 * **Luồng thay thế (Alternative Flows):**
-  * *3a. Đã có người khác chấm điểm trước:* Hệ thống hiển thị riêng biệt phần chấm điểm của người dùng hiện tại và phần điểm tổng hợp, không cho phép sửa điểm của người khác.
+  * *4a. Đã có giám khảo khác chấm điểm trước đó:* Hệ thống lưu từng phiếu đánh giá độc lập theo từng tài khoản giám khảo và vòng phỏng vấn, hiển thị đầy đủ lịch sử đánh giá đa chiều mà không ghi đè dữ liệu của nhau.
 * **Luồng ngoại lệ (Exception Flows):**
-  * *6a. Bỏ trống tiêu chí bắt buộc:* Hệ thống thông báo: "Vui lòng chấm điểm đầy đủ các tiêu chí trước khi lưu".
+  * *7a. Bỏ trống tiêu chí bắt buộc hoặc bỏ trống căn cứ trúng tuyển khi đề xuất Hire:* Hệ thống hiển thị cảnh báo đỏ tại trường tương ứng và yêu cầu hoàn thiện trước khi lưu.
 
 ---
 
