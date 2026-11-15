@@ -54,6 +54,13 @@ export default async function JobsPublicPage() {
 
           <div className="flex items-center gap-3">
             <Link
+              href="/jobs/tracker"
+              className="text-xs font-bold text-brand-700 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-xl border border-brand-200 transition-colors flex items-center gap-1.5"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Tra cứu hồ sơ
+            </Link>
+            <Link
               href="/"
               className="text-xs font-semibold text-slate-600 hover:text-brand-600 transition-colors flex items-center gap-1"
             >

@@ -25,6 +25,10 @@ import {
   User,
   MapPin,
   Award,
+  Video,
+  Send,
+  Copy,
+  Check,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import ScorecardModal from "@/components/scorecard/ScorecardModal";
@@ -52,6 +56,17 @@ export default function CandidateDrawer({
   const [reparsing, setReparsing] = useState(false);
   const [reparseNotice, setReparseNotice] = useState<string | null>(null);
 
+  // Lên lịch Phỏng vấn State (UC-05A)
+  const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
+  const [interviewDate, setInterviewDate] = useState("");
+  const [interviewFormat, setInterviewFormat] = useState<"ONLINE" | "OFFLINE">("ONLINE");
+  const [interviewLocation, setInterviewLocation] = useState("");
+  const [interviewNotes, setInterviewNotes] = useState("");
+  const [interviewLoading, setInterviewLoading] = useState(false);
+  const [interviewSuccessEmail, setInterviewSuccessEmail] = useState<string | null>(null);
+  const [interviewError, setInterviewError] = useState<string | null>(null);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+
   // Tải chi tiết hồ sơ
   useEffect(() => {
     if (!applicationId) return;
@@ -59,11 +74,36 @@ export default function CandidateDrawer({
     setLoading(true);
     setActionError("");
     setReparseNotice(null);
+    setInterviewSuccessEmail(null);
+    setInterviewError(null);
+
     fetch(`/api/applications/${applicationId}`)
       .then((res) => res.json())
       .then((res) => {
         if (res.success) {
           setData(res.data);
+          if (res.data.interviewDate) {
+            const d = new Date(res.data.interviewDate);
+            const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+              .toISOString()
+              .slice(0, 16);
+            setInterviewDate(iso);
+            setInterviewFormat(res.data.interviewFormat || "ONLINE");
+            setInterviewLocation(res.data.interviewLocation || "");
+            setInterviewNotes(res.data.interviewNotes || "");
+          } else {
+            const defDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+            defDate.setHours(9, 0, 0, 0);
+            const iso = new Date(defDate.getTime() - defDate.getTimezoneOffset() * 60000)
+              .toISOString()
+              .slice(0, 16);
+            setInterviewDate(iso);
+            setInterviewFormat("ONLINE");
+            setInterviewLocation("https://meet.google.com/xyz-recoverx-meet");
+            setInterviewNotes(
+              "Vui lòng chuẩn bị slide giới thiệu bản thân và kiểm tra micro/camera trước 5 phút."
+            );
+          }
         }
       })
       .catch((e) => console.error(e))
@@ -112,6 +152,41 @@ export default function CandidateDrawer({
     }
   };
 
+  // Lên lịch Phỏng vấn & Tạo thư mời (UC-05A)
+  const handleScheduleInterview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInterviewError(null);
+    setInterviewLoading(true);
+
+    try {
+      const res = await fetch("/api/interviews/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applicationId,
+          interviewDate: new Date(interviewDate).toISOString(),
+          interviewFormat,
+          interviewLocation,
+          interviewNotes,
+          moveToInterviewStage: data?.currentStage !== "INTERVIEW",
+        }),
+      });
+
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        setInterviewError(resData.error || "Không thể lưu lịch phỏng vấn");
+      } else {
+        setInterviewSuccessEmail(resData.emailTemplate?.body || "Đã lưu lịch phỏng vấn");
+        setData(resData.data);
+        setReparseNotice("Đã lên lịch phỏng vấn và tạo mẫu thư mời tự động thành công!");
+      }
+    } catch (err: any) {
+      setInterviewError("Lỗi kết nối khi xếp lịch: " + err.message);
+    } finally {
+      setInterviewLoading(false);
+    }
+  };
+
   // Parse JSON helper
   const safeParseJSON = (jsonString: string | null | undefined, fallback: any = []) => {
     if (!jsonString) return fallback;
@@ -157,6 +232,19 @@ export default function CandidateDrawer({
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-800">
                   Cột: {data?.currentStage}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsInterviewModalOpen(true);
+                    setInterviewSuccessEmail(null);
+                    setInterviewError(null);
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200 transition-all cursor-pointer"
+                  title="Lên lịch hoặc xem lịch phỏng vấn chuyên môn"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>{data?.interviewDate ? "Đã xếp lịch PV" : "Lên lịch PV"}</span>
+                </button>
                 {data?.candidate?.cvFileUrl && (
                   <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                     PDF Đã lưu trữ
@@ -561,6 +649,101 @@ export default function CandidateDrawer({
                         </div>
                       )}
                     </div>
+
+                    {/* KHỐI 4: LỊCH HẸN PHỎNG VẤN CHUYÊN MÔN (UC-05A) */}
+                    {(data?.interviewDate || data?.currentStage === "INTERVIEW") && (
+                      <div className="bg-gradient-to-r from-purple-50/80 via-indigo-50/40 to-white rounded-2xl border border-purple-200/90 p-5 shadow-2xs space-y-3.5">
+                        <div className="flex items-center justify-between pb-2.5 border-b border-purple-100">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                              <Calendar className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-bold uppercase tracking-wider text-purple-950">
+                                4. Lịch Hẹn Phỏng Vấn Chuyên Môn (UC-05A)
+                              </h3>
+                              <p className="text-[11px] text-purple-600">
+                                {data?.interviewDate
+                                  ? "Đã xác nhận thời gian & phòng họp"
+                                  : "Chưa xếp lịch cụ thể cho ứng viên"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsInterviewModalOpen(true);
+                              setInterviewSuccessEmail(null);
+                              setInterviewError(null);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-xs transition-all cursor-pointer"
+                          >
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>{data?.interviewDate ? "Đổi lịch phỏng vấn" : "+ Lên lịch ngay"}</span>
+                          </button>
+                        </div>
+
+                        {data?.interviewDate ? (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                              <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-2xs">
+                                <span className="text-slate-400 block mb-0.5">Thời gian bắt đầu:</span>
+                                <span className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                                  <Clock className="w-4 h-4 text-purple-600" />
+                                  {new Date(data.interviewDate).toLocaleString("vi-VN", {
+                                    weekday: "long",
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+
+                              <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-2xs">
+                                <span className="text-slate-400 block mb-0.5">Hình thức & Địa điểm:</span>
+                                {data.interviewFormat === "ONLINE" ? (
+                                  <div className="flex items-center gap-1.5 font-bold text-brand-600 text-xs">
+                                    <Video className="w-4 h-4 text-brand-500 shrink-0" />
+                                    <span className="truncate">Họp Online: {data.interviewLocation}</span>
+                                    {data.interviewLocation?.startsWith("http") && (
+                                      <a
+                                        href={data.interviewLocation}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-brand-700 hover:text-brand-900 ml-1 underline shrink-0 inline-flex items-center gap-0.5"
+                                      >
+                                        Vào phòng <ExternalLink className="w-3 h-3" />
+                                      </a>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
+                                    <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
+                                    <span>Văn phòng: {data.interviewLocation}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {data.interviewNotes && (
+                              <div className="bg-white/80 p-3 rounded-xl border border-purple-100 text-xs text-slate-700">
+                                <span className="font-bold text-purple-900 block mb-0.5">
+                                  Dặn dò ứng viên:
+                                </span>
+                                <p>{data.interviewNotes}</p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-white/70 rounded-xl border border-dashed border-purple-200 text-xs text-purple-700 flex items-center justify-between">
+                            <span>Hồ sơ đang ở vòng Phỏng vấn. Hãy lên lịch hẹn để hệ thống sinh Thư mời gửi ứng viên.</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -810,6 +993,170 @@ export default function CandidateDrawer({
             .then((r) => r.success && setData(r.data));
         }}
       />
+
+      {/* Modal Lên Lịch Phỏng Vấn (UC-05A) */}
+      {isInterviewModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Lên Lịch Phỏng Vấn & Soạn Thư Mời (UC-05A)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Ứng viên: <strong>{data?.candidate?.fullName}</strong> &bull; {data?.job?.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsInterviewModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleInterview} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Ngày & Giờ Phỏng Vấn <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={interviewDate}
+                    onChange={(e) => setInterviewDate(e.target.value)}
+                    required
+                    className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Hình Thức Phỏng Vấn <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={interviewFormat}
+                    onChange={(e) => setInterviewFormat(e.target.value as any)}
+                    className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="ONLINE">Trực tuyến (Google Meet / Zoom)</option>
+                    <option value="OFFLINE">Trực tiếp tại văn phòng công ty</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  {interviewFormat === "ONLINE"
+                    ? "Link Họp Trực Tuyến (Google Meet/Zoom) *"
+                    : "Địa Chỉ / Phòng Họp Trực Tiếp *"}
+                </label>
+                <input
+                  type="text"
+                  value={interviewLocation}
+                  onChange={(e) => setInterviewLocation(e.target.value)}
+                  placeholder={
+                    interviewFormat === "ONLINE"
+                      ? "https://meet.google.com/xyz-abcd-efg"
+                      : "Phòng Họp Lotus 3, Tầng 12, Tòa nhà ReCoverX Tower, TP.HCM"
+                  }
+                  required
+                  className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Ghi Chú Dặn Dò Ứng Viên (Tùy chọn)
+                </label>
+                <textarea
+                  rows={2}
+                  value={interviewNotes}
+                  onChange={(e) => setInterviewNotes(e.target.value)}
+                  placeholder="VD: Vui lòng chuẩn bị slide hoặc portfolio giới thiệu dự án tiêu biểu..."
+                  className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              {interviewError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{interviewError}</span>
+                </div>
+              )}
+
+              {/* Email Template Preview / Success */}
+              {interviewSuccessEmail && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      Mẫu Thư Mời Phỏng Vấn Tự Động Đã Sẵn Sàng:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(interviewSuccessEmail);
+                        setCopiedEmail(true);
+                        setTimeout(() => setCopiedEmail(false), 3000);
+                      }}
+                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1 px-2 py-1 bg-white rounded-lg border border-emerald-300 cursor-pointer"
+                    >
+                      {copiedEmail ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Đã sao chép!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Sao chép thư</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <pre className="text-[11px] text-slate-700 font-mono bg-white p-3 rounded-lg border border-emerald-100 max-h-48 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+                    {interviewSuccessEmail}
+                  </pre>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsInterviewModalOpen(false)}
+                  disabled={interviewLoading}
+                  className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={interviewLoading}
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 rounded-xl shadow-md shadow-purple-500/20 flex items-center gap-2 cursor-pointer"
+                >
+                  {interviewLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Đang lưu lịch...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Xác Nhận & Tạo Thư Mời</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

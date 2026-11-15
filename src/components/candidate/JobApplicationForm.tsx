@@ -11,6 +11,7 @@ import {
   Loader2,
   ArrowRight,
   ShieldCheck,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -215,10 +216,17 @@ export default function JobApplicationForm({
 
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <Link
-            href="/jobs"
-            className="flex-1 py-3 px-4 rounded-xl text-center bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-sm transition-all"
+            href="/jobs/tracker"
+            className="flex-1 py-3 px-4 rounded-xl text-center bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5"
           >
-            Khám phá các vị trí tuyển dụng khác
+            <Clock className="w-4 h-4" />
+            Tra cứu tiến độ hồ sơ (#{successResult.applicationId})
+          </Link>
+          <Link
+            href="/jobs"
+            className="flex-1 py-3 px-4 rounded-xl text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition-all flex items-center justify-center"
+          >
+            Khám phá các vị trí khác
           </Link>
           <button
             onClick={() => {
@@ -228,9 +236,9 @@ export default function JobApplicationForm({
               setPhone("");
               setCvFile(null);
             }}
-            className="py-3 px-4 rounded-xl text-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition-all cursor-pointer"
+            className="py-3 px-4 rounded-xl text-center text-slate-500 hover:text-slate-700 font-semibold text-xs transition-all cursor-pointer"
           >
-            Nộp hồ sơ vị trí khác
+            Nộp đơn khác
           </button>
         </div>
       </div>

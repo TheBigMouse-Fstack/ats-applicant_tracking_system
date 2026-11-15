@@ -16,10 +16,14 @@ import {
   Filter,
   Eye,
   Star,
+  Trash2,
+  ShieldAlert,
+  Loader2,
 } from "lucide-react";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 
 export default function TalentPoolPage() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
@@ -34,6 +38,13 @@ export default function TalentPoolPage() {
   const [targetJobId, setTargetJobId] = useState<string>("");
   const [repoolLoading, setRepoolLoading] = useState(false);
   const [repoolError, setRepoolError] = useState<string | null>(null);
+
+  // BRL-10 Data Retention Purge State (Admin only)
+  const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
+  const [purgeDays, setPurgeDays] = useState(180);
+  const [purgeSimResult, setPurgeSimResult] = useState<any | null>(null);
+  const [purgeLoading, setPurgeLoading] = useState(false);
+  const [purgeError, setPurgeError] = useState<string | null>(null);
 
   // Drawer
   const [drawerAppId, setDrawerAppId] = useState<number | null>(null);
@@ -76,9 +87,69 @@ export default function TalentPoolPage() {
   }, [search, selectedJobId, selectedStage]);
 
   useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success && res.user) {
+          setCurrentUser(res.user);
+        }
+      })
+      .catch((e) => console.error(e));
+
     fetchJobs();
     fetchTalentPool();
   }, [fetchTalentPool]);
+
+  // BRL-10: Mô phỏng quét dữ liệu quá hạn
+  const handleSimulatePurge = async (days = purgeDays) => {
+    try {
+      setPurgeLoading(true);
+      setPurgeError(null);
+      const res = await fetch("/api/talent-pool/cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ days: Number(days), dryRun: true }),
+      });
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        setPurgeError(resData.error || "Không thể mô phỏng dọn dẹp");
+      } else {
+        setPurgeSimResult(resData);
+      }
+    } catch (e: any) {
+      setPurgeError("Lỗi kết nối khi quét dọn dẹp: " + e.message);
+    } finally {
+      setPurgeLoading(false);
+    }
+  };
+
+  // BRL-10: Thực thi xóa vĩnh viễn (Hard Delete)
+  const handleExecutePurge = async () => {
+    try {
+      setPurgeLoading(true);
+      setPurgeError(null);
+      const res = await fetch("/api/talent-pool/cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ days: Number(purgeDays), dryRun: false }),
+      });
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        setPurgeError(resData.error || "Lỗi dọn dẹp dữ liệu");
+      } else {
+        setNotice(
+          `Tuân thủ BRL-10: Đã dọn dẹp vĩnh viễn ${resData.purgedApplicationsCount} hồ sơ quá hạn ${purgeDays} ngày khỏi Kho Nhân Tài!`
+        );
+        setIsPurgeModalOpen(false);
+        setPurgeSimResult(null);
+        fetchTalentPool();
+      }
+    } catch (e: any) {
+      setPurgeError("Lỗi hệ thống khi dọn dẹp dữ liệu: " + e.message);
+    } finally {
+      setPurgeLoading(false);
+    }
+  };
 
   // Handle Repool submit (UC-06)
   const handleRepoolSubmit = async (e: React.FormEvent) => {
@@ -137,6 +208,20 @@ export default function TalentPoolPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {currentUser?.role === "ADMIN" && (
+            <button
+              onClick={() => {
+                setIsPurgeModalOpen(true);
+                handleSimulatePurge(purgeDays);
+              }}
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold border border-red-200 transition-all cursor-pointer"
+              title="Dọn dẹp hồ sơ REJECTED lưu quá 6 tháng theo quy tắc BRL-10"
+            >
+              <Trash2 className="w-4 h-4 text-red-600" />
+              <span>Dọn dẹp BRL-10 (6 tháng)</span>
+            </button>
+          )}
+
           <a
             href="/api/export"
             download
@@ -469,6 +554,139 @@ export default function TalentPoolPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4.2 BRL-10 Data Retention Purge Modal (Admin Only) */}
+      {isPurgeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Dọn dẹp Hồ sơ Quá hạn (BRL-10)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Tuân thủ ISO-27001 & quy định bảo mật vòng đời dữ liệu
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsPurgeModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-600 space-y-2 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <p>
+                Theo quy chuẩn <strong>BRL-10</strong>, các hồ sơ ở trạng thái <strong>TỪ CHỐI (REJECTED)</strong> chỉ được lưu trữ tối đa <strong>180 ngày (06 tháng)</strong> trong Kho Nhân Tài. Sau thời hạn này, hệ thống sẽ thực hiện xóa vĩnh viễn (Hard Delete) để bảo vệ quyền riêng tư ứng viên.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Ngưỡng thời gian lưu trữ (Ngày):
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    value={purgeDays}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      setPurgeDays(isNaN(val) ? 0 : val);
+                    }}
+                    className="w-28 text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleSimulatePurge(purgeDays)}
+                    disabled={purgeLoading}
+                    className="px-3 py-2 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-xl border border-brand-200 cursor-pointer"
+                  >
+                    Quét trước (Simulate)
+                  </button>
+                  <span className="text-[11px] text-slate-400">
+                    (180 ngày BRL-10; 0 ngày để test ngay)
+                  </span>
+                </div>
+              </div>
+
+              {/* Simulation Result */}
+              {purgeSimResult && (
+                <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/70 text-xs text-amber-900 space-y-2">
+                  <div className="flex items-center justify-between font-bold">
+                    <span>Kết quả quét thử nghiệm:</span>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[11px]">
+                      {purgeSimResult.eligibleCount} hồ sơ quá hạn
+                    </span>
+                  </div>
+                  {purgeSimResult.eligibleCount === 0 ? (
+                    <p className="text-slate-500 italic">
+                      Hiện tại không có hồ sơ REJECTED nào lưu quá {purgeDays} ngày.
+                    </p>
+                  ) : (
+                    <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
+                      {purgeSimResult.items.map((it: any) => (
+                        <div
+                          key={it.applicationId}
+                          className="bg-white p-2 rounded-lg border border-amber-100 flex items-center justify-between text-[11px]"
+                        >
+                          <div>
+                            <span className="font-bold text-slate-800">{it.candidateName}</span> &bull; {it.jobTitle}
+                          </div>
+                          <span className="text-red-600 font-semibold">{it.daysInPool} ngày</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {purgeError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{purgeError}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsPurgeModalOpen(false)}
+                disabled={purgeLoading}
+                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleExecutePurge}
+                disabled={purgeLoading || (purgeSimResult && purgeSimResult.eligibleCount === 0)}
+                className="px-5 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-300 rounded-xl shadow-md shadow-red-500/20 flex items-center gap-1.5 cursor-pointer"
+              >
+                {purgeLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang dọn dẹp...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Xác nhận Xóa Vĩnh Viễn</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

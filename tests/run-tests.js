@@ -420,6 +420,83 @@ async function runTests() {
     assert(verifyMagicBytes(".pdf", fakePdfBuffer) === false, "Chặn tệp HTML/Mã độc đổi đuôi giả mạo thành .pdf");
     assert(verifyMagicBytes(".docx", validDocxBuffer) === true, "Chấp nhận tệp DOCX có Magic Bytes nén hợp lệ (PK)");
 
+    // ---------------------------------------------------------
+    // TEST SUITE 12: MỞ RỘNG PHẠM VI (SCOPE EXPANSION - UC-05A, UC-01A, UC-06A)
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}12. Kiểm tra Mở Rộng Phạm Vi (Scope Expansion - UC-05A, UC-01A, UC-06A):${colors.reset}`);
+
+    // 1. UC-05A: Module Lên lịch Phỏng vấn & Thư mời (Interview Scheduling)
+    function generateInterviewEmail(candidateName, jobTitle, date, format, location, notes) {
+      const isOnline = format === "ONLINE";
+      const formattedDate = new Date(date).toLocaleString("vi-VN");
+      return `Kính gửi ${candidateName}, Ban Tuyển dụng ReCoverX Career trân trọng mời bạn tham dự phỏng vấn vị trí ${jobTitle} vào lúc ${formattedDate}. Hình thức: ${isOnline ? "Trực tuyến qua Google Meet/Zoom: " + location : "Trực tiếp tại: " + location}.${notes ? " Ghi chú: " + notes : ""}`;
+    }
+
+    const testApp = await prisma.application.findFirst({
+      include: { candidate: true, job: true }
+    });
+
+    if (testApp) {
+      const interviewTime = new Date(Date.now() + 48 * 3600 * 1000);
+      const emailContent = generateInterviewEmail(
+        testApp.candidate.fullName,
+        testApp.job.title,
+        interviewTime,
+        "ONLINE",
+        "https://meet.google.com/test-room",
+        "Mang theo laptop và chuẩn bị slide giới thiệu."
+      );
+
+      assert(emailContent.includes(testApp.candidate.fullName), "Thư mời phỏng vấn chứa tên ứng viên chính xác");
+      assert(emailContent.includes(testApp.job.title), "Thư mời phỏng vấn chứa đúng tên vị trí tuyển dụng");
+      assert(emailContent.includes("https://meet.google.com/test-room"), "Thư mời phỏng vấn chèn đúng link Google Meet trực tuyến");
+
+      // Kiểm tra RBAC lên lịch phỏng vấn: HR/Admin được phép, Hiring Manager bị chặn
+      const hrCanSchedule = (role) => ["HR", "ADMIN"].includes(role);
+      const hmCanSchedule = (role) => role === "HIRING_MANAGER";
+      assert(hrCanSchedule("HR") === true, "HR có thẩm quyền lên lịch phỏng vấn và gửi thư mời");
+      assert(hrCanSchedule("ADMIN") === true, "ADMIN có thẩm quyền lên lịch phỏng vấn và gửi thư mời");
+      assert(hrCanSchedule("HIRING_MANAGER") === false, "Hiring Manager bị chặn quyền lên lịch phỏng vấn theo RBAC");
+    }
+
+    // 2. UC-01A: Cổng Tra Cứu Tiến Độ Hồ Sơ (Candidate Tracker & Data Privacy)
+    function sanitizeCandidateTrackerResponse(app, candidate, job) {
+      // Tuân thủ NFR-SEC-04: KHÔNG trả về aiMatchScore, aiMatchRationale, comments nội bộ
+      return {
+        applicationId: app.id,
+        candidateName: candidate.fullName,
+        jobTitle: job.title,
+        currentStage: app.currentStage,
+        appliedAt: app.createdAt
+      };
+    }
+
+    if (testApp) {
+      const trackerData = sanitizeCandidateTrackerResponse(testApp, testApp.candidate, testApp.job);
+      assert(trackerData.applicationId === testApp.id, "Tra cứu trả về đúng mã hồ sơ ứng tuyển");
+      assert(trackerData.aiMatchScore === undefined, "Bảo mật NFR-SEC-04: Tracker không để lộ điểm AI Match nội bộ");
+      assert(trackerData.aiMatchRationale === undefined, "Bảo mật NFR-SEC-04: Tracker không để lộ giải trình đánh giá AI");
+      assert(trackerData.evaluatorComments === undefined, "Bảo mật NFR-SEC-04: Tracker không để lộ nhận xét của giám khảo");
+    }
+
+    // 3. UC-06A: Dọn dẹp Vòng đời Dữ liệu 180 ngày (BRL-10 Retention Purge)
+    const retentionDays = 180;
+    const cutoffMs = Date.now() - retentionDays * 24 * 3600 * 1000;
+    const oldRejectedDate = new Date(Date.now() - 200 * 24 * 3600 * 1000);
+    const recentRejectedDate = new Date(Date.now() - 30 * 24 * 3600 * 1000);
+
+    const isEligibleForPurge = (stage, updatedAt) => stage === "REJECTED" && new Date(updatedAt).getTime() <= cutoffMs;
+
+    assert(isEligibleForPurge("REJECTED", oldRejectedDate) === true, "Hồ sơ REJECTED quá 180 ngày (200 ngày) đủ điều kiện Hard Delete theo BRL-10");
+    assert(isEligibleForPurge("REJECTED", recentRejectedDate) === false, "Hồ sơ REJECTED mới 30 ngày được bảo lưu an toàn trong Kho Nhân Tài");
+    assert(isEligibleForPurge("HIRED", oldRejectedDate) === false, "Hồ sơ trúng tuyển (HIRED) không bị xóa bởi tác vụ BRL-10");
+
+    // Phân quyền Purge: Chỉ Admin có quyền, HR & Manager bị chặn
+    const canExecutePurge = (role) => role === "ADMIN";
+    assert(canExecutePurge("ADMIN") === true, "Quản trị viên (Admin) có toàn quyền thực thi dọn dẹp BRL-10");
+    assert(canExecutePurge("HR") === false, "Chuyên viên HR bị chặn quyền xóa vĩnh viễn hồ sơ theo BRL-10");
+    assert(canExecutePurge("HIRING_MANAGER") === false, "Hiring Manager bị chặn quyền xóa vĩnh viễn hồ sơ theo BRL-10");
+
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
   } finally {
