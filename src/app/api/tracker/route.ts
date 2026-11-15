@@ -17,7 +17,7 @@ function getCandidateStageInfo(stage: string, interviewDetails?: {
         stepIndex: 1,
         statusColor: "blue",
         description:
-          "Hồ sơ của bạn đã được ghi nhận trên hệ thống tuyển dụng ReCoverX Career. Đội ngũ tuyển dụng sẽ xem xét thông tin trong thời gian sớm nhất.",
+          "Hồ sơ của bạn đã được ghi nhận trên hệ thống tuyển dụng RecoverX. Đội ngũ tuyển dụng sẽ xem xét thông tin trong thời gian sớm nhất.",
       };
     case "SCREENING":
       return {

@@ -82,9 +82,9 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
                 <Briefcase className="w-5 h-5" />
               </div>
               <div className="leading-tight">
-                <span className="font-bold text-base text-slate-900 tracking-tight">ReCoverX</span>
+                <span className="font-bold text-base text-slate-900 tracking-tight">RecoverX</span>
                 <span className="text-xs font-semibold text-brand-600 ml-1.5 px-1.5 py-0.5 bg-brand-50 rounded">
-                  ATS
+                  Portal
                 </span>
               </div>
             </Link>

@@ -77,7 +77,7 @@ export default function CandidateTrackerPage() {
             </div>
             <div>
               <span className="font-bold text-lg text-slate-900 tracking-tight">
-                ReCoverX Career
+                RecoverX
               </span>
               <span className="ml-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
                 Tra Cứu Hồ Sơ
@@ -394,7 +394,7 @@ export default function CandidateTrackerPage() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
-        ReCoverX Career ATS &bull; Hệ thống quản lý tuyển dụng thông minh chuẩn ITBA &bull; 2026
+        &copy; 2026 RecoverX Technology Solutions Co., Ltd. Cổng thông tin ứng viên trực tuyến.
       </footer>
     </div>
   );

@@ -207,7 +207,7 @@ export default function JobApplicationForm({
         <div className="text-xs text-slate-600 space-y-2.5 border-t border-slate-100 pt-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
           <p className="font-semibold text-emerald-900 flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-            Cảm ơn bạn đã quan tâm và ứng tuyển vào ReCoverX Career!
+            Cảm ơn bạn đã quan tâm và ứng tuyển vào RecoverX!
           </p>
           <p className="text-slate-600 leading-relaxed">
             Hồ sơ của bạn đã được chuyển tới Ban Tuyển dụng (HR Department) để rà soát và đánh giá kỹ lưỡng. Chúng tôi sẽ phản hồi kết quả và các bước tiếp theo qua hòm thư điện tử <strong>{email}</strong> trong vòng <strong>1 – 3 ngày làm việc</strong>.

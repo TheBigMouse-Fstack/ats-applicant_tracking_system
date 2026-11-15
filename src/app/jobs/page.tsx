@@ -15,8 +15,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Cơ Hội Nghề Nghiệp | ReCoverX Career",
-  description: "Khám phá các cơ hội nghề nghiệp công nghệ hấp dẫn tại ReCoverX Career.",
+  title: "Cơ Hội Nghề Nghiệp | RecoverX",
+  description:
+    "Khám phá các cơ hội nghề nghiệp công nghệ hấp dẫn từ Trainee, Dev, QA đến UI/UX tại RecoverX Technology Solutions.",
 };
 
 export default async function JobsPublicPage() {
@@ -34,7 +35,7 @@ export default async function JobsPublicPage() {
   const departments = Array.from(new Set(jobs.map((j) => j.department)));
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {/* 1. Header Public */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -44,7 +45,7 @@ export default async function JobsPublicPage() {
             </div>
             <div>
               <span className="font-bold text-lg text-slate-900 tracking-tight">
-                ReCoverX Career
+                RecoverX
               </span>
               <span className="ml-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
                 Tuyển Dụng
@@ -80,15 +81,15 @@ export default async function JobsPublicPage() {
       {/* 2. Banner Hero */}
       <div className="bg-gradient-to-b from-white to-slate-50 border-b border-slate-200/80 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold">
             <Sparkles className="w-3.5 h-3.5" />
-            Tuyển Dụng Đón Đầu Công Nghệ 2026
+            Cơ Hội Phát Triển Sự Nghiệp Công Nghệ 2026
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Gia nhập Đội ngũ ReCoverX Career
+            Xây Dựng Sự Nghiệp Đỉnh Cao Cùng RecoverX
           </h1>
-          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
-            Hệ thống ứng tuyển thông minh ứng dụng AI tự động phân tích hồ sơ và phản hồi nhanh chóng, minh bạch cho ứng viên.
+          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Khám phá các vị trí công việc đa dạng từ cấp bậc Trainee, Junior đến Senior và Tech Lead trong môi trường công nghệ hiện đại chuẩn quốc tế.
           </p>
 
           {/* Tag phòng ban */}
@@ -222,9 +223,9 @@ export default async function JobsPublicPage() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-500">
-        <p>© 2026 ReCoverX Career — Hệ thống Quản trị Tuyển dụng ATS Thông minh.</p>
+        <p>© 2026 RecoverX Technology Solutions Co., Ltd. Bảo lưu mọi quyền.</p>
         <p className="mt-1 text-slate-400">
-          Tuân thủ bộ quy tắc chuẩn nghiệp vụ ITBA: BRL-01, BRL-02, BRL-04, BRL-09.
+          Trụ sở chính: Tầng 18, RecoverX Innovation Tower, Quận 1, TP. Hồ Chí Minh
         </p>
       </footer>
     </div>

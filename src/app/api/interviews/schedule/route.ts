@@ -132,7 +132,7 @@ export async function POST(req: Request) {
     const emailTemplate = `
 Kính gửi bạn ${app.candidate.fullName},
 
-Ban Tuyển dụng ReCoverX Career trân trọng chúc mừng hồ sơ của bạn đã vượt qua vòng sơ loại tiêu chuẩn cho vị trí "${app.job.title}".
+Ban Tuyển dụng RecoverX trân trọng chúc mừng hồ sơ của bạn đã vượt qua vòng sơ loại tiêu chuẩn cho vị trí "${app.job.title}".
 
 Chúng tôi trân trọng kính mời bạn tham dự buổi Phỏng vấn Chuyên môn với Hội đồng Tuyển dụng:
 • Vị trí ứng tuyển: ${app.job.title} (${app.job.department})
@@ -145,7 +145,7 @@ Vui lòng xác nhận sự hiện diện của bạn bằng cách phản hồi e
 Nếu cần hỗ trợ điều chỉnh lịch hẹn, bạn có thể liên hệ trực tiếp với chuyên viên tuyển dụng ${sessionUser.fullName}.
 
 Trân trọng,
-Ban Tuyển dụng ReCoverX Career
+Ban Tuyển dụng RecoverX
     `.trim();
 
     return NextResponse.json({

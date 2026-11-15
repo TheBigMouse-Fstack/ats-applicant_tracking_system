@@ -25,17 +25,17 @@ interface JobDetailPageProps {
 
 export async function generateMetadata({ params }: JobDetailPageProps) {
   const jobId = Number(params.id);
-  if (isNaN(jobId)) return { title: "Vị trí tuyển dụng | ReCoverX Career" };
+  if (isNaN(jobId)) return { title: "Vị trí tuyển dụng | RecoverX" };
 
   const job = await prisma.job.findUnique({
     where: { id: jobId },
     select: { title: true, department: true },
   });
 
-  if (!job) return { title: "Không tìm thấy việc làm | ReCoverX Career" };
+  if (!job) return { title: "Không tìm thấy việc làm | RecoverX" };
   return {
-    title: `${job.title} (${job.department}) | ReCoverX Career ATS`,
-    description: `Ứng tuyển vị trí ${job.title} tại ReCoverX Career — Hệ thống tiếp nhận hồ sơ thông minh.`,
+    title: `${job.title} (${job.department}) | RecoverX`,
+    description: `Ứng tuyển vị trí ${job.title} tại RecoverX Technology Solutions.`,
   };
 }
 
@@ -67,7 +67,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             </div>
             <div>
               <span className="font-bold text-lg text-slate-900 tracking-tight">
-                ReCoverX Career
+                RecoverX
               </span>
               <span className="ml-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
                 Tuyển Dụng
@@ -203,7 +203,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-500">
-        <p>© 2026 ReCoverX Career — Hệ thống Tuyển dụng Doanh nghiệp Tự động.</p>
+        <p>© 2026 RecoverX Technology Solutions Co., Ltd. Bảo lưu mọi quyền.</p>
       </footer>
     </div>
   );
