@@ -386,92 +386,71 @@ flowchart TD
     %% SUBGRAPH: LANES
     subgraph LANE_CANDIDATE["👤 LÀN 1: ỨNG VIÊN (CANDIDATE)"]
         Start_Cand(["● Truy cập Cổng tuyển dụng"])
-        T_Apply["Điền thông tin & nộp CV trực tuyến"]
+        T1A["1A. Điền thông tin & nộp CV trực tuyến"]
     end
 
     subgraph LANE_SYSTEM["⚙️ LÀN 2: HỆ THỐNG ATS & AI (SYSTEM)"]
-        T_Dedup["Khử trùng lặp qua Email/SĐT"]
+        T2["2. Khử trùng lặp (Deduplication)"]
         GW_Dup{"Phát hiện trùng lặp?"}
-        T_Merge["Gộp vào hồ sơ cũ & cảnh báo"]
+        T2_Merge["Gộp hồ sơ & cảnh báo"]
         
-        T_Parse["AI Parsing: Bóc tách thông tin CV"]
-        T_AIScreen["AI Screening: Đối chiếu tiêu chí JD"]
-        GW_AI{"Kết quả sàng lọc AI?"}
+        T3["3. AI Parsing: Bóc tách thông tin CV"]
+        T4["4. AI Screening: Đối chiếu tiêu chí JD"]
+        T5["5. Khởi tạo thẻ ứng viên trên Kanban (Cột NEW)"]
 
-        %% Rejection branch by AI
-        T_AutoRej["Chuyển thẻ sang cột 'Rejected'"]
-        T_DelayMail["Tự động gửi Email từ chối (sau thời gian delay)"]
-        End_AIRej(["⦿ Kết thúc: Loại ở vòng AI"])
-
-        %% Pass branch
-        T_CreateCard["Khởi tạo thẻ ứng viên trên Kanban (cột 'Screening')"]
-        T_AutoArchive["Lưu vào Kho nhân tài (Talent Pool)"]
+        T11["11. Tự động gửi Email từ chối (sau 12h delay)"]
+        DB_TalentPool[("🗄️ Kho nhân tài (Talent Pool)")]
+        End_Rej(["⦿ Kết thúc: Lưu trữ hồ sơ"])
     end
 
     subgraph LANE_HR["👔 LÀN 3: CHUYÊN VIÊN HR (RECRUITER)"]
-        Start_HR(["● Tiếp nhận CV offline"])
-        T_HRUpload["Tải lên CV nội bộ (Bulk/Single)"]
+        Start_HR(["● Tiếp nhận CV nội bộ"])
+        T1B["1B. Tải CV lên hệ thống"]
 
-        T_ReviewKanban["Xem xét & lọc hồ sơ trên Kanban"]
-        GW_HRScreen{"Duyệt phỏng vấn?"}
+        T7["7. Xem xét và sàng lọc hồ sơ trên Kanban"]
+        GW_Screen{"Duyệt phỏng vấn?"}
 
-        T_Schedule["Kéo sang cột 'Interview' & Hẹn lịch phỏng vấn"]
-        T_Interview["Tổ chức phỏng vấn & Chấm điểm trên Scorecard"]
+        T8["8. Kéo sang cột 'interview' và hẹn lịch phỏng vấn"]
+        T9["9. Tổ chức phỏng vấn & chấm điểm trên Scorecard"]
         GW_Interview{"Quyết định tuyển dụng?"}
 
-        %% Pass Interview
-        T_Hired["Kéo sang 'Hired' & Gửi Offer Letter"]
+        T10A["10A. Kéo sang 'Reject'"]
+        T10B["10B. Kéo sang 'Hired' & Gửi Offer Letter"]
         End_Hired(["⦿ Kết thúc: Tuyển dụng thành công"])
-
-        %% Reject Interview
-        T_HRRej["Kéo sang 'Rejected' & Gửi email từ chối"]
-        End_HRRej(["⦿ Kết thúc: Không trúng tuyển"])
     end
 
     %% CONNECTIONS (Sequence Flows)
-    %% Candidate path
-    Start_Cand --> T_Apply
-    T_Apply --> T_Dedup
+    Start_Cand --> T1A
+    T1A --> T2
 
-    %% HR internal upload path
-    Start_HR --> T_HRUpload
-    T_HRUpload --> T_Dedup
+    Start_HR --> T1B
+    T1B --> T2
 
-    %% System Deduplication & Parsing
-    T_Dedup --> GW_Dup
-    GW_Dup -- Có trùng --> T_Merge
-    T_Merge --> T_Parse
-    GW_Dup -- Không trùng --> T_Parse
+    T2 --> GW_Dup
+    GW_Dup -- Có --> T2_Merge
+    T2_Merge --> T3
+    GW_Dup -- Không --> T3
 
-    %% AI Screening
-    T_Parse --> T_AIScreen
-    T_AIScreen --> GW_AI
+    T3 --> T4
+    T4 --> T5
+    T5 --> T7
 
-    %% AI Fail
-    GW_AI -- Không đạt --> T_AutoRej
-    T_AutoRej --> T_DelayMail
-    T_DelayMail --> T_AutoArchive
-    T_AutoArchive --> End_AIRej
+    T7 --> GW_Screen
+    GW_Screen -- Không duyệt --> T10A
+    GW_Screen -- Đồng ý --> T8
 
-    %% AI Pass -> Moves to HR
-    GW_AI -- Đạt tiêu chuẩn --> T_CreateCard
-    T_CreateCard --> T_ReviewKanban
+    T8 --> T9
+    T9 --> GW_Interview
 
-    %% HR Review
-    T_ReviewKanban --> GW_HRScreen
-    GW_HRScreen -- Không duyệt --> T_HRRej
-    GW_HRScreen -- Đồng ý --> T_Schedule
+    GW_Interview -- Rớt --> T10A
+    GW_Interview -- Đậu --> T10B
+    T10B --> End_Hired
 
-    %% Interview & Result
-    T_Schedule --> T_Interview
-    T_Interview --> GW_Interview
+    T10A --> T11
+    T11 --> End_Rej
 
-    GW_Interview -- Đậu --> T_Hired
-    T_Hired --> End_Hired
-
-    GW_Interview -- Rớt --> T_HRRej
-    T_HRRej --> T_AutoArchive
-    T_AutoArchive --> End_HRRej
+    %% Data Association
+    T11 -. Lưu trữ & gắn thẻ .-> DB_TalentPool
 ```
 
 ---
@@ -482,33 +461,36 @@ Khi mở công cụ vẽ, bạn chia 3 dải ngang (Horizontal Lanes) và đặt
 
 | Vị trí Làn | Tên Task / Sự kiện | Loại ký hiệu BPMN 2.0 | Ý nghĩa & Hành vi |
 | :--- | :--- | :--- | :--- |
-| **Ứng viên** | `Truy cập Cổng tuyển dụng` | **Start Event** (Vòng tròn nét đơn) | Điểm bắt đầu chính. |
-| **Ứng viên** | `Điền thông tin & nộp CV trực tuyến` | **User Task** (Icon người 👤) | Ứng viên tự upload file CV và nhập thông tin. |
-| **Hệ thống** | `Khử trùng lặp (Deduplication)` | **Service Task** (Icon bánh răng ⚙️) | Hệ thống tự kiểm tra Email/SĐT trong CSDL. |
-| **Hệ thống** | `Gộp hồ sơ & cảnh báo` | **Service Task** (⚙️) | Chạy tự động nếu phát hiện trùng lặp. |
-| **Hệ thống** | `AI Parsing (Trích xuất CV)` | **Service Task** (⚙️) | Tự động đọc và bóc tách thông tin từ PDF/Word. |
-| **Hệ thống** | `AI Screening (Sàng lọc tiêu chuẩn JD)` | **Service Task** (⚙️) | AI đối chiếu kỹ năng/kinh nghiệm với JD. |
-| **Hệ thống** | Cổng `Kết quả sàng lọc AI?` | **Exclusive Gateway** (Hình thoi có **X**) | Rẽ 2 nhánh: Đạt hoặc Không đạt. |
-| **Hệ thống** | `Tự động gửi Email từ chối (sau delay)` | **Send Task** (Icon phong bì ✉️) | Tự gửi email từ chối lịch sự đến ứng viên bị loại. |
-| **Hệ thống** | `Khởi tạo thẻ ứng viên trên Kanban` | **Service Task** (⚙️) | Tự động tạo thẻ ở cột "Screening" nếu vượt qua AI. |
-| **Chuyên viên HR** | `Xem xét & lọc hồ sơ trên Kanban` | **User Task** (👤) | HR dùng bộ lọc nâng cao để chọn ứng viên phỏng vấn. |
-| **Chuyên viên HR** | `Kéo sang Interview & hẹn lịch phỏng vấn` | **User Task** (👤) | HR thao tác kéo thả và liên hệ ứng viên. |
-| **Chuyên viên HR** | `Tổ chức phỏng vấn & chấm Scorecard` | **User Task** (👤) | Nhập điểm trực tiếp trên hệ thống ATS. |
-| **Chuyên viên HR** | Cổng `Quyết định tuyển dụng?` | **Exclusive Gateway** (Hình thoi có **X**) | Rẽ 2 nhánh: Đậu hoặc Rớt. |
-| **Chuyên viên HR** | `Gửi Offer Letter` / `Gửi email từ chối` | **User Task** hoặc **Send Task** | Hoàn tất phản hồi kết quả phỏng vấn. |
-| **Hệ thống** | `Lưu vào Kho nhân tài (Talent Pool)` | **Service Task** (⚙️) | Lưu trữ tập trung và quản lý vòng đời hồ sơ. |
+| **Ứng viên** | `Truy cập Cổng tuyển dụng` | **Start Event** (Vòng tròn nét đơn) | Điểm bắt đầu 1: Ứng viên nộp trực tuyến. |
+| **Ứng viên** | `1A. Điền thông tin & nộp CV trực tuyến` | **User Task** (Icon người 👤) | Ứng viên tự upload file CV, bằng cấp và nhập thông tin. |
+| **Chuyên viên HR** | `Tiếp nhận CV nội bộ` | **Start Event** (Vòng tròn nét đơn) | Điểm bắt đầu 2: HR tiếp nhận Referral/Headhunt. |
+| **Chuyên viên HR** | `1B. Tải CV lên hệ thống` | **User Task** (👤) | HR chủ động nạp hồ sơ ứng viên vào ATS. |
+| **Hệ thống** | `2. Khử trùng lặp (Deduplication)` | **Service Task** (Icon bánh răng ⚙️) | Tự động quét kiểm tra Email/SĐT trong vòng 30 ngày (BRL-02). |
+| **Hệ thống** | Cổng `Phát hiện trùng lặp?` | **Exclusive Gateway** (Hình thoi **X**) | Rẽ nhánh: Có trùng hoặc Không trùng. |
+| **Hệ thống** | `Gộp hồ sơ & cảnh báo` | **Service Task** (⚙️) | Hợp nhất hồ sơ và ghi nhận vết ứng tuyển cũ. |
+| **Hệ thống** | `3. AI Parsing (Trích xuất CV)` | **Service Task** (⚙️) | Tự động đọc và bóc tách thông tin từ PDF/Word. |
+| **Hệ thống** | `4. AI Screening (Sàng lọc tiêu chuẩn JD)` | **Service Task** (⚙️) | AI đối chiếu kỹ năng/kinh nghiệm với JD & tính Match Score. |
+| **Hệ thống** | `5. Khởi tạo thẻ ứng viên trên Kanban (Cột NEW)` | **Service Task** (⚙️) | Tạo thẻ mới trên Kanban, chuyển quyền kiểm soát cho HR (*Human-in-the-loop*). |
+| **Chuyên viên HR** | `7. Xem xét và sàng lọc hồ sơ trên Kanban` | **User Task** (👤) | HR dùng bộ lọc nâng cao để thẩm định và chọn hồ sơ phỏng vấn. |
+| **Chuyên viên HR** | Cổng `Duyệt phỏng vấn?` | **Exclusive Gateway** (Hình thoi **X**) | Rẽ 2 nhánh: Đồng ý phỏng vấn hoặc Không duyệt. |
+| **Chuyên viên HR** | `8. Kéo sang cột 'interview' và hẹn lịch phỏng vấn` | **User Task** (👤) | HR kéo thẻ sang Interview, tạo link Meet/Zoom và gửi thư mời. |
+| **Chuyên viên HR** | `9. Tổ chức phỏng vấn & chấm điểm trên Scorecard` | **User Task** (👤) | Hội đồng nhập điểm 3 tiêu chí (BRL-08) và ghi nhận xét chuyên môn. |
+| **Chuyên viên HR** | Cổng `Quyết định tuyển dụng?` | **Exclusive Gateway** (Hình thoi **X**) | Rẽ 2 nhánh: Đậu (kèm chốt chặn có Scorecard BRL-06) hoặc Rớt. |
+| **Chuyên viên HR** | `10A. Kéo sang 'Reject'` | **User Task** (👤) | HR chuyển thẻ sang Rejected khi không đạt CV hoặc phỏng vấn. |
+| **Chuyên viên HR** | `10B. Kéo sang 'Hired' & Gửi Offer Letter` | **User Task** (👤) | HR xác nhận trúng tuyển và gửi Thư mời nhận việc. |
+| **Hệ thống** | `11. Tự động gửi Email từ chối (sau 12h delay)` | **Send Task** (Icon phong bì ✉️) | Kích hoạt bộ đệm hoãn 12-24h (BRL-05) trước khi tự gửi email từ chối. |
+| **Hệ thống** | `Talent Pool` | **Data Store** (Hình trụ) | Lưu trữ tập trung hồ sơ dự phòng và quản lý vòng đời dữ liệu. |
+| **Các điểm dừng** | Các **End Events** | **End Event** (Vòng tròn viền đậm) | Đóng luồng quy trình (Tuyển dụng thành công / Lưu trữ hồ sơ). |
 
 ---
 
 ### PHẦN 4: 4 ĐIỂM "ĂN TIỀN" ĐỂ BẠN THUYẾT MINH TO-BE SO VỚI AS-IS
 
 Khi so sánh 2 sơ đồ, bạn chỉ cần nhấn mạnh 4 điểm đột phá này:
-1. **Chuyển từ "HR bị động tải file" sang "Ứng viên tự phục vụ (Self-service)":** Có cổng nộp CV công khai giúp tiết kiệm 100% thời gian tải và gom file thủ công.
-2. **Loại bỏ hoàn toàn bước gõ tay Excel:** Bước này được thay thế bằng **Service Task: AI Parsing** chạy ngầm trong chưa đầy 3 giây.
-3. **Cơ chế Sàng lọc & Từ chối 2 lớp:**
-   * *Lớp 1 (Tự động):* AI Screening loại ngay hồ sơ không đạt chuẩn tối thiểu và tự gửi thư từ chối (có độ trễ), HR không phải tốn một giây nào.
-   * *Lớp 2 (Chuyên sâu):* HR chỉ tập trung phỏng vấn và đánh giá những ứng viên thực sự tiềm năng.
-4. **Thay thế file Excel rời rạc bằng Bảng Kanban & Scorecard:** Quản lý trực quan bằng thao tác kéo-thả và chấm điểm phỏng vấn tập trung, lưu vết lịch sử (Audit Log) đầy đủ.
+1. **Đa kênh tiếp nhận & Tự phục vụ (Multi-channel & Self-service):** Có cổng nộp CV công khai giúp ứng viên tự nộp, đồng thời hỗ trợ HR nạp CV nội bộ nhanh chóng.
+2. **Loại bỏ hoàn toàn bước gõ tay Excel:** Bước này được thay thế bằng **Service Task: AI Parsing** tự động trích xuất thông tin có cấu trúc trong 3 giây.
+3. **Mô hình Hybrid AI hỗ trợ quyết định (Human-in-the-loop):** AI đóng vai trò trợ lý tính điểm % Match và phân tích kỹ năng, đưa về cột NEW để HR kiểm duyệt — loại bỏ triệt để nguy cơ AI tự ý loại nhầm nhân tài (False Negatives).
+4. **Vận hành chuẩn hóa bằng Kanban, Lịch phỏng vấn & Scorecard có trọng số:** Toàn bộ lịch phỏng vấn, liên kết họp trực tuyến và đánh giá đa chiều (Chuyên môn, Giao tiếp, Văn hóa) được số hóa tập trung, có chốt chặn Stage-Gate đảm bảo chất lượng tuyển dụng.
 
 ---
 
@@ -522,54 +504,54 @@ Dưới đây là phần diễn giải toàn bộ quy trình **To-Be** được 
 
 ---
 
-### 1. MÔ TẢ TỔNG QUAN (HÌNH NÀY LÀ GÌ?)
+### 2.1 MÔ TẢ TỔNG QUAN (HÌNH NÀY LÀ GÌ?)
 
-Đây là **Sơ đồ Quy trình nghiệp vụ chuẩn BPMN 2.0** mô tả **Quy trình Tuyển dụng Tương lai (To-Be)** của hệ thống ATS. Sơ đồ được thiết kế dạng phân làn (Swimlanes) gồm 3 chủ thể: **Ứng viên (Candidate)**, **Hệ thống tự động (System)** và **Chuyên viên Tuyển dụng (HR)**; thể hiện chuỗi hoạt động từ khi tiếp nhận hồ sơ trực tuyến, xử lý bóc tách và sàng lọc tự động bằng AI, cho đến khi đánh giá phỏng vấn và đóng quy trình tuyển dụng.
+Đây là **Sơ đồ Quy trình nghiệp vụ chuẩn BPMN 2.0** mô tả **Quy trình Tuyển dụng Tương lai (To-Be)** của hệ thống ReCoverX Career ATS. Sơ đồ được thiết kế dạng phân làn (Swimlanes) gồm 3 chủ thể: **Ứng viên (Candidate)**, **Hệ thống tự động (System)** và **Chuyên viên Tuyển dụng (HR)**; thể hiện chuỗi hoạt động từ 2 kênh tiếp nhận hồ sơ (Ứng viên tự nộp trực tuyến & HR chủ động nạp CV nội bộ/Referral), qua các bước xử lý bóc tách và đối chiếu tự động bằng AI, đưa lên bảng điều khiển Kanban theo cơ chế *Human-in-the-loop*, tổ chức phỏng vấn và đánh giá năng lực qua Scorecard, cho đến khi ra quyết định tuyển dụng và tự động hóa quy trình gửi thư từ chối (có độ trễ buffer) lưu vào Kho nhân tài (Talent Pool).
 
 ---
 
-### 2. GIẢI THÍCH CHI TIẾT TỪNG BƯỚC TRONG QUY TRÌNH
+### 2.2 QUY TRÌNH CHI TIẾT
 
 Quy trình vận hành tuần tự qua 4 giai đoạn cụ thể như sau:
 
-#### **Giai đoạn 1: Tiếp nhận hồ sơ và Khử trùng lặp (Ứng viên & Hệ thống)**
-* **Điểm bắt đầu (Start Event - "Truy cập Cổng tuyển dụng"):** Quy trình được kích hoạt khi ứng viên truy cập vào Cổng thông tin tuyển dụng trực tuyến của công ty.
-* **Bước 1 ("Điền thông tin & nộp CV trực tuyến"):** Ứng viên điền thông tin liên hệ và tải tệp CV (.pdf, .doc, .docx) lên biểu mẫu ứng tuyển công khai.
-* **Bước 2 ("Khử trùng lặp (Deduplication)"):** Hệ thống tự động quét kiểm tra Email và Số điện thoại của ứng viên vừa nộp với cơ sở dữ liệu hiện có.
+#### **Giai đoạn 1: Tiếp nhận hồ sơ và Khử trùng lặp (Ứng viên, HR & Hệ thống)**
+* **Điểm bắt đầu 1 (Start Event - "Truy cập Cổng tuyển dụng"):** Kích hoạt khi ứng viên truy cập vào Cổng thông tin nghề nghiệp trực tuyến của công ty.
+  * **Bước 1A ("Điền thông tin & nộp CV trực tuyến"):** Ứng viên tự nhập thông tin liên hệ và tải tệp CV (.pdf, .docx), đính kèm bằng cấp/chứng chỉ lên biểu mẫu ứng tuyển công khai.
+* **Điểm bắt đầu 2 (Start Event - "Tiếp nhận CV nội bộ"):** Kích hoạt khi HR tiếp nhận hồ sơ từ các kênh giới thiệu nội bộ (Employee Referral), tìm kiếm chủ động qua LinkedIn hoặc từ đối tác Headhunt.
+  * **Bước 1B ("Tải CV lên hệ thống"):** HR chủ động nạp tệp CV và thông tin ứng viên vào hệ thống qua biểu mẫu nội bộ.
+* **Bước 2 ("Khử trùng lặp (Deduplication)"):** Hệ thống tự động quét kiểm tra cặp định danh `(Email, Số điện thoại)` của ứng viên vừa nộp với cơ sở dữ liệu hiện có trong vòng 30 ngày (theo quy tắc BRL-02).
 * **Cổng điều kiện 1 (Gateway - "Phát hiện trùng lặp?"):**
-  * **Nhánh "Có":** Hệ thống thực hiện bước **"Gộp hồ sơ & cảnh báo"** để lưu vết lịch sử ứng tuyển cũ, sau đó chuyển tiếp sang bước bóc tách dữ liệu.
-  * **Nhánh "Không":** Chuyển thẳng sang bước bóc tách dữ liệu.
+  * **Nhánh "Có":** Hệ thống thực hiện bước **"Gộp hồ sơ & cảnh báo"** để hợp nhất dữ liệu mới vào hồ sơ ứng viên cũ và ghi nhận lịch sử ứng tuyển.
+  * **Nhánh "Không":** Chuyển thẳng sang bước bóc tách dữ liệu AI.
 
 ---
 
-#### **Giai đoạn 2: Trích xuất và Sàng lọc tự động bằng AI (Hệ thống)**
-* **Bước 3 ("AI Parsing (Trích xuất CV)"):** Hệ thống tự động đọc tệp CV và bóc tách các trường dữ liệu có cấu trúc (Họ tên, SĐT, Email, Kỹ năng, Số năm kinh nghiệm).
-* **Bước 4 ("AI Screening (Sàng lọc tiêu chuẩn JD)"):** Hệ thống đối chiếu tự động các dữ liệu vừa bóc tách với tiêu chuẩn yêu cầu trong Bản mô tả công việc (JD).
-* **Cổng điều kiện 2 (Gateway - "Kết quả sàng lọc AI?"):**
-  * **Nhánh "Không đạt":**
-    * **Bước 5A ("Chuyển thẻ sang cột 'Rejected'"):** Hệ thống tự động phân loại thẻ ứng viên vào cột Rejected trên bảng Kanban kèm lý do không đạt.
-    * **Bước 6A ("Tự động gửi Email từ chối (sau 12h delay)"):** Hệ thống kích hoạt gửi email thông báo từ chối lịch sự đến ứng viên (sau thời gian trễ cấu hình trước), đồng thời lưu trữ dữ liệu vào **Kho nhân tài (Talent Pool)** và đi đến **Điểm kết thúc (End Event)**.
-  * **Nhánh "Đạt":**
-    * **Bước 5B ("Khởi tạo thẻ ứng viên trên Kanban"):** Hệ thống tự động tạo mới thẻ ứng viên tại trạng thái sẵn sàng sàng lọc trên bảng Kanban và chuyển quyền xử lý sang cho Chuyên viên HR.
+#### **Giai đoạn 2: Trích xuất và Đối chiếu tự động bằng AI (Hệ thống)**
+* **Bước 3 ("AI Parsing (Trích xuất CV)"):** Hệ thống tự động đọc văn bản CV và bóc tách các trường dữ liệu có cấu trúc (Họ tên, SĐT, Email, Kỹ năng, Học vấn, Số năm kinh nghiệm).
+* **Bước 4 ("AI Screening (Sàng lọc tiêu chuẩn JD)"):** Hệ thống đối chiếu tự động dữ liệu bóc tách với tiêu chuẩn yêu cầu trong Bản mô tả công việc (JD), tính toán tỷ lệ phù hợp (% Match Score) và tóm tắt lý do đánh giá.
+* **Bước 5 ("Khởi tạo thẻ ứng viên trên Kanban (Cột NEW)"):** Đề cao nguyên tắc kiểm soát tối cao của con người (*Human-in-the-loop*), hệ thống tự động tạo thẻ ứng viên mới tại cột **NEW** trên bảng Kanban và chuyển quyền xử lý cho Chuyên viên Tuyển dụng, không tự ý loại ứng viên.
 
 ---
 
 #### **Giai đoạn 3: Đánh giá hồ sơ và Phỏng vấn (Chuyên viên HR)**
-* **Bước 7 ("Xem xét và lọc hồ sơ trên Kanban"):** HR truy cập bảng Kanban, sử dụng bộ lọc nâng cao để xem chi tiết hồ sơ và CV gốc của ứng viên.
-* **Cổng điều kiện 3 (Gateway - "Duyệt phỏng vấn?"):**
-  * **Nhánh "Không duyệt":** HR thực hiện **"Kéo sang 'Reject' & gửi email từ chối"**, dữ liệu được đồng bộ vào **Talent Pool** và kết thúc luồng xử lý.
+* **Bước 7 ("Xem xét và sàng lọc hồ sơ trên Kanban"):** HR truy cập bảng Kanban, sử dụng bộ lọc nâng cao để xem chi tiết hồ sơ, CV gốc và kết quả phân tích AI để ra quyết định sơ loại.
+* **Cổng điều kiện 2 (Gateway - "Duyệt phỏng vấn?"):**
+  * **Nhánh "Không duyệt":** Chuyển sang **Bước 10A ("Kéo sang 'Reject'")** để đưa thẻ vào luồng từ chối.
   * **Nhánh "Đồng ý":** 
-    * **Bước 8 ("Kéo sang cột 'interview' và hẹn lịch phỏng vấn"):** HR thao tác kéo thẻ ứng viên sang cột Interview và liên hệ ứng viên để thống nhất thời gian phỏng vấn.
-    * **Bước 9 ("Tổ chức phỏng vấn & chấm điểm trên Scorecard"):** Buổi phỏng vấn diễn ra; HR và Quản lý chuyên môn nhập điểm đánh giá (1–5 sao) và nhận xét trực tiếp vào Biểu mẫu đánh giá (Scorecard) trên thẻ ứng viên.
+    * **Bước 8 ("Kéo sang cột 'interview' và hẹn lịch phỏng vấn"):** HR kéo thẻ ứng viên sang cột Interview, thiết lập thời gian, tạo link Google Meet/Zoom trực tuyến và gửi thư mời phỏng vấn đến ứng viên.
+    * **Bước 9 ("Tổ chức phỏng vấn & chấm điểm trên Scorecard"):** Buổi phỏng vấn diễn ra; Hội đồng phỏng vấn (HR & Quản lý chuyên môn) nhập điểm đánh giá theo 3 tiêu chí trọng số (Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30% - BRL-08) và ghi nhận xét chi tiết vào Phiếu đánh giá (Scorecard).
 
 ---
 
 #### **Giai đoạn 4: Xác định kết quả tuyển dụng và Đóng hồ sơ (HR & Hệ thống)**
-* **Cổng điều kiện 4 (Gateway - "Quyết định tuyển dụng?"):** Căn cứ vào điểm số trên Scorecard để đưa ra quyết định cuối cùng:
+* **Cổng điều kiện 3 (Gateway - "Quyết định tuyển dụng?"):** Căn cứ vào điểm số trên Scorecard (áp dụng chốt chặn Stage-Gate BRL-06: bắt buộc có ít nhất 01 phiếu Scorecard hoàn chỉnh):
   * **Nhánh "Đậu" (Trúng tuyển):**
-    * **Bước 10A ("Kéo sang 'Hired' & Gửi Offer Letter"):** HR chuyển thẻ ứng viên sang cột Hired và gửi Thư mời nhận việc cho ứng viên.
-    * Chuyển đến **Điểm kết thúc (End Event)** - Tuyển dụng thành công.
+    * **Bước 10B ("Kéo sang 'Hired' & Gửi Offer Letter"):** HR chuyển thẻ ứng viên sang cột Hired và gửi Thư mời nhận việc cho ứng viên.
+    * Chuyển đến **Điểm kết thúc (End Event - Tuyển dụng thành công)** để chuyển giao sang quy trình Tiếp nhận nhân sự (Onboarding / HRIS).
   * **Nhánh "Rớt" (Không trúng tuyển):**
-    * **Bước 10B ("Kéo sang 'Reject' & gửi email từ chối"):** HR chuyển thẻ ứng viên sang cột Rejected và gửi email phản hồi kết quả phỏng vấn.
-    * Hồ sơ ứng viên được lưu trữ tập trung vào **Kho nhân tài (Talent Pool)** để quản lý vòng đời dữ liệu và phục vụ luân chuyển vị trí (Repooling) trong tương lai; sau đó chuyển đến **Điểm kết thúc (End Event)**.
+    * **Bước 10A ("Kéo sang 'Reject'"):** HR chuyển thẻ ứng viên sang cột Rejected.
+* **Bước 11 ("Tự động gửi Email từ chối (sau 12h delay)"):**
+  * Hệ thống tự động kích hoạt bộ đệm hoãn 12–24 giờ (Delay Buffer BRL-05) trước khi gửi email từ chối lịch sự đến ứng viên (cho phép HR can thiệp hủy lịch nếu kéo nhầm thẻ).
+  * Đồng thời, toàn bộ dữ liệu hồ sơ ứng viên được tự động lưu trữ tập trung vào **Kho nhân tài (Talent Pool)** để quản lý vòng đời dữ liệu và phục vụ luân chuyển vị trí (Re-pooling) trong tương lai.
+  * Chuyển đến **Điểm kết thúc (End Event - Đóng hồ sơ & Lưu trữ dự phòng)**.
 
