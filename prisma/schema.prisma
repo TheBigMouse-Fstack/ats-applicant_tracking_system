@@ -101,18 +101,26 @@ model Application {
 
 // 5. Evaluations table (Phiếu chấm điểm phỏng vấn - Scorecard)
 model Evaluation {
-  id                 Int         @id @default(autoincrement())
-  applicationId      Int
-  application        Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  evaluatorId        Int
-  evaluator          User        @relation(fields: [evaluatorId], references: [id])
-  technicalScore     Int         // 1 - 5 (Trọng số 40%)
-  communicationScore Int         // 1 - 5 (Trọng số 30%)
-  culturalFitScore   Int         // 1 - 5 (Trọng số 30%)
-  overallScore       Float?      // Weighted average: (tech*0.4 + comm*0.3 + cult*0.3)
-  comments           String?
-  recommendation     String      @default("HIRE") // STRONG_HIRE, HIRE, NO_HIRE, STRONG_NO_HIRE
-  createdAt          DateTime    @default(now())
+  id                  Int         @id @default(autoincrement())
+  applicationId       Int
+  application         Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  evaluatorId         Int
+  evaluator           User        @relation(fields: [evaluatorId], references: [id])
+  round               String?     @default("Vòng 1 — Đánh giá Chuyên môn")
+  technicalScore      Int         // 1 - 5 (Trọng số 40%)
+  communicationScore  Int         // 1 - 5 (Trọng số 30%)
+  culturalFitScore    Int         // 1 - 5 (Trọng số 30%)
+  overallScore        Float?      // Weighted average: (tech*0.4 + comm*0.3 + cult*0.3)
+  recommendation      String      @default("HIRE") // STRONG_HIRE, HIRE, NO_HIRE, STRONG_NO_HIRE
+  levelRecommendation String?     // TRAINEE, JUNIOR, MIDDLE, SENIOR, LEAD
+  strengths           String?     // Điểm mạnh nổi bật — Lý do chính giúp ứng viên đạt chuẩn
+  weaknesses          String?     // Điểm cần cải thiện / Rủi ro cần lưu ý
+  technicalNotes      String?     // Đánh giá chi tiết chuyên môn / kỹ thuật
+  communicationNotes  String?     // Đánh giá kỹ năng giao tiếp & thuyết trình
+  cultureNotes        String?     // Đánh giá thái độ & văn hóa làm việc
+  hireReason          String?     // Tóm tắt lý do quyết định tuyển dụng hoặc từ chối
+  comments            String?     // Ghi chú tổng hợp
+  createdAt           DateTime    @default(now())
 
   @@map("evaluations")
 }
