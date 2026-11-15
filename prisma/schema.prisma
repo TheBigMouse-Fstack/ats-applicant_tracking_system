@@ -82,10 +82,12 @@ model Application {
   emailScheduledAt   DateTime?    // BRL-05 Rejection delay buffer (+12h)
   isEmailSent        Boolean      @default(false)
   repooledFromId     Int?
-  interviewDate      DateTime?    // Lịch phỏng vấn đã xếp
-  interviewFormat    String?      @default("ONLINE") // ONLINE, OFFLINE
-  interviewLocation  String?      // Link Google Meet / Zoom hoặc Phòng họp thực tế
-  interviewNotes     String?      // Ghi chú chuẩn bị cho ứng viên
+  interviewDate             DateTime?    // Lịch phỏng vấn đã xếp
+  interviewFormat           String?      @default("ONLINE") // ONLINE, OFFLINE
+  interviewLocation         String?      // Link Google Meet / Zoom hoặc Phòng họp thực tế
+  interviewNotes            String?      // Ghi chú chuẩn bị cho ứng viên (Trước PV)
+  interviewInterviewerNotes String?      // Ghi chú nội bộ cho chuyên gia / giám khảo (Trước PV)
+  interviewPostNotes        String?      // Biên bản & ghi chú tổng kết sau phỏng vấn (Sau PV)
   createdAt          DateTime     @default(now())
 
   evaluations        Evaluation[]
