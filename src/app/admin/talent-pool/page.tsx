@@ -197,7 +197,7 @@ export default function TalentPoolPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold border border-brand-200 mb-1.5">
             <Users className="w-3.5 h-3.5" />
-            Quản trị Talent Pool (UC-06 & UC-07)
+            Quản trị Kho Nhân Tài (Talent Pool)
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
             Kho Nhân Tài & Xuất Dữ Liệu Tuyển Dụng
@@ -215,10 +215,10 @@ export default function TalentPoolPage() {
                 handleSimulatePurge(purgeDays);
               }}
               className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold border border-red-200 transition-all cursor-pointer"
-              title="Dọn dẹp hồ sơ REJECTED lưu quá 6 tháng theo quy tắc BRL-10"
+              title="Dọn dẹp hồ sơ REJECTED lưu quá 6 tháng"
             >
               <Trash2 className="w-4 h-4 text-red-600" />
-              <span>Dọn dẹp BRL-10 (6 tháng)</span>
+              <span>Dọn dẹp hồ sơ quá hạn (6 tháng)</span>
             </button>
           )}
 
@@ -312,8 +312,8 @@ export default function TalentPoolPage() {
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4">Ứng viên</th>
                 <th className="py-3.5 px-4">Vị trí ứng tuyển</th>
-                <th className="py-3.5 px-4">Kỹ năng AI bóc tách</th>
-                <th className="py-3.5 px-4 text-center">AI Match</th>
+                <th className="py-3.5 px-4">Kỹ năng chuyên môn</th>
+                <th className="py-3.5 px-4 text-center">Đối chiếu tiêu chuẩn</th>
                 <th className="py-3.5 px-4 text-center">Scorecard</th>
                 <th className="py-3.5 px-4 text-center">Trạng thái</th>
                 <th className="py-3.5 px-4 text-right">Thao tác</th>
@@ -392,19 +392,11 @@ export default function TalentPoolPage() {
                         </div>
                       </td>
 
-                      {/* AI Match */}
+                      {/* Đối chiếu tiêu chuẩn */}
                       <td className="py-3.5 px-4 text-center">
-                        {app.aiMatchScore !== null && app.aiMatchScore !== undefined ? (
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${app.aiMatchScore >= 75
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : app.aiMatchScore >= 60
-                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : "bg-red-50 text-red-700 border-red-200"
-                              }`}
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            {Math.round(app.aiMatchScore)}%
+                        {app.aiMatchedSkills ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Đã đối chiếu
                           </span>
                         ) : (
                           <span className="text-slate-400 text-xs">—</span>
@@ -569,7 +561,7 @@ export default function TalentPoolPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    Dọn dẹp Hồ sơ Quá hạn (BRL-10)
+                    Dọn dẹp Hồ sơ Quá hạn (Data Retention Purge)
                   </h3>
                   <p className="text-xs text-slate-500">
                     Tuân thủ ISO-27001 & quy định bảo mật vòng đời dữ liệu
@@ -586,7 +578,7 @@ export default function TalentPoolPage() {
 
             <div className="text-xs text-slate-600 space-y-2 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
               <p>
-                Theo quy chuẩn <strong>BRL-10</strong>, các hồ sơ ở trạng thái <strong>TỪ CHỐI (REJECTED)</strong> chỉ được lưu trữ tối đa <strong>180 ngày (06 tháng)</strong> trong Kho Nhân Tài. Sau thời hạn này, hệ thống sẽ thực hiện xóa vĩnh viễn (Hard Delete) để bảo vệ quyền riêng tư ứng viên.
+                Theo quy định bảo mật dữ liệu nhân sự, các hồ sơ ở trạng thái <strong>TỪ CHỐI (REJECTED)</strong> lưu trữ quá thời hạn quy định (mặc định <strong>180 ngày</strong>) có thể được xóa vĩnh viễn (Hard Delete) để bảo vệ quyền riêng tư ứng viên.
               </p>
             </div>
 
@@ -615,7 +607,7 @@ export default function TalentPoolPage() {
                     Quét trước (Simulate)
                   </button>
                   <span className="text-[11px] text-slate-400">
-                    (180 ngày BRL-10; 0 ngày để test ngay)
+                    (Mặc định 180 ngày; 0 ngày để quét tất cả)
                   </span>
                 </div>
               </div>

@@ -148,7 +148,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Định dạng tệp không hợp lệ. Hệ thống chỉ chấp nhận định dạng PDF hoặc DOCX theo quy tắc BRL-01.",
+          error: "Định dạng tệp không hợp lệ. Hệ thống chỉ chấp nhận định dạng PDF hoặc DOCX.",
           fieldErrors: {
             cvFile: "Chỉ chấp nhận định dạng tệp .pdf hoặc .docx",
           },
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: `Dung lượng tệp (${(file!.size / (1024 * 1024)).toFixed(1)}MB) vượt quá giới hạn 10MB cho phép theo quy tắc BRL-01.`,
+          error: `Dung lượng tệp (${(file!.size / (1024 * 1024)).toFixed(1)}MB) vượt quá giới hạn tối đa 10MB cho phép.`,
           fieldErrors: {
             cvFile: "Dung lượng tệp vượt quá 10MB",
           },
@@ -192,7 +192,7 @@ export async function POST(req: Request) {
         {
           success: false,
           error:
-            "Ứng viên đã nộp hồ sơ cho vị trí này trong vòng 30 ngày qua. Vui lòng không nộp lặp lại theo quy tắc BRL-02.",
+            "Ứng viên đã nộp hồ sơ cho vị trí này trong vòng 30 ngày qua. Vui lòng không nộp lặp lại.",
           fieldErrors: {
             email: "Email này đã ứng tuyển vị trí này trong 30 ngày qua",
             phone: "Số điện thoại này đã ứng tuyển vị trí này trong 30 ngày qua",

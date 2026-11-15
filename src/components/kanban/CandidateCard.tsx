@@ -23,16 +23,14 @@ export default function CandidateCard({
   onOpenDrawer,
   isDragDisabled = false,
 }: CandidateCardProps) {
-  const { candidate, job, aiMatchScore, isSlaBreached, slaMessage, evaluations } =
-    application;
+  const { candidate, job, isSlaBreached, slaMessage, evaluations } = application;
 
-  // Màu sắc của Huy hiệu Match Score (BRL-04)
-  const getMatchBadgeColor = (score: number | null) => {
-    if (score === null || score === undefined) return "bg-slate-100 text-slate-600 border-slate-200";
-    if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold";
-    if (score >= 60) return "bg-amber-50 text-amber-700 border-amber-200 font-semibold";
-    return "bg-red-50 text-red-700 border-red-200 font-semibold";
-  };
+  let skills: string[] = [];
+  try {
+    skills = JSON.parse(candidate?.parsedSkills || "[]");
+  } catch {
+    skills = [];
+  }
 
   return (
     <Draggable
@@ -75,28 +73,21 @@ export default function CandidateCard({
             <span>{job?.title || "Vị trí không xác định"}</span>
           </p>
 
-          {/* Badges: Match Score & Năm kinh nghiệm */}
+          {/* Thông tin năng lực: Kỹ năng & Kinh nghiệm */}
           <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
-            {/* Điểm AI Match */}
-            {aiMatchScore !== null && aiMatchScore !== undefined ? (
+            {/* Kỹ năng tiêu biểu */}
+            {skills.slice(0, 2).map((sk) => (
               <span
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs border ${getMatchBadgeColor(
-                  aiMatchScore
-                )}`}
+                key={sk}
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-brand-50 text-brand-700 border border-brand-200/70"
               >
-                <Sparkles className="w-3 h-3" />
-                Match: {Math.round(aiMatchScore)}%
+                {sk}
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-slate-100 text-slate-500 border border-slate-200">
-                <Clock className="w-3 h-3" />
-                Chờ AI bóc tách
-              </span>
-            )}
+            ))}
 
             {/* Năm kinh nghiệm */}
             {candidate?.experienceYears !== undefined && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-slate-50 text-slate-600 border border-slate-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-slate-50 text-slate-600 border border-slate-200">
                 {candidate.experienceYears > 0
                   ? `${candidate.experienceYears} năm KN`
                   : "Mới tốt nghiệp"}

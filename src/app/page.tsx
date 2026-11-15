@@ -74,11 +74,8 @@ export default function HomePage() {
             <a href="#culture" className="hover:text-brand-600 transition-colors">
               Văn hóa & Đãi ngộ
             </a>
-            <Link href="/jobs" className="hover:text-brand-600 transition-colors flex items-center gap-1.5">
-              <span>Tuyển dụng</span>
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800">
-                8+ Roles
-              </span>
+            <Link href="/jobs" className="hover:text-brand-600 transition-colors">
+              Tuyển dụng
             </Link>
             <a href="#contact" className="hover:text-brand-600 transition-colors">
               Liên hệ
@@ -108,11 +105,6 @@ export default function HomePage() {
       {/* 2. Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50 to-slate-100/60 pt-20 pb-24 border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200/80 text-xs font-bold shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Đối Tác Kỹ Thuật Số & Phát Triển Phần Mềm Doanh Nghiệp Chuẩn Quốc Tế
-          </div>
-
           <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] max-w-5xl mx-auto">
             Tiên Phong Kiến Tạo Phần Mềm &{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600">
@@ -259,9 +251,9 @@ export default function HomePage() {
       <section id="solutions" className="py-20 bg-slate-50 border-b border-slate-200/80 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200">
-              <Layers className="w-3.5 h-3.5" />
-              Năng Lực Kỹ Thuật & Cốt Lõi
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
+              <Layers className="w-3.5 h-3.5 text-brand-600" />
+              Dịch Vụ & Lĩnh Vực Chuyên Môn
             </div>
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
               Giải Pháp Phần Mềm Toàn Diện Cho Doanh Nghiệp
@@ -460,7 +452,7 @@ export default function HomePage() {
               <h4 className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">
                 Software Engineer Trainee (Java / Spring Boot & React)
               </h4>
-              <p className="text-xs text-slate-400">Khối Phát Triển Phần Mềm &bull; Trợ cấp 8 - 12 triệu</p>
+              <p className="text-xs text-slate-400">Phát triển Phần mềm &bull; Trợ cấp 8 - 12 triệu</p>
             </Link>
 
             {/* Job Preview 2 */}
@@ -477,7 +469,7 @@ export default function HomePage() {
               <h4 className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">
                 Fullstack Developer (Node.js & React / TypeScript)
               </h4>
-              <p className="text-xs text-slate-400">Khối Phát Triển Phần Mềm &bull; Lương 22 - 35 triệu</p>
+              <p className="text-xs text-slate-400">Phát triển Phần mềm &bull; Lương 22 - 35 triệu</p>
             </Link>
 
             {/* Job Preview 3 */}
@@ -494,7 +486,7 @@ export default function HomePage() {
               <h4 className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">
                 Senior Backend Engineer (Java / Microservices & Cloud AWS)
               </h4>
-              <p className="text-xs text-slate-400">Khối Kiến Trúc Doanh Nghiệp &bull; Lương 45 - 65 triệu</p>
+              <p className="text-xs text-slate-400">Kiến trúc & Backend &bull; Lương 45 - 65 triệu</p>
             </Link>
 
             {/* Job Preview 4 */}
@@ -511,7 +503,7 @@ export default function HomePage() {
               <h4 className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">
                 QA / QC Tester Trainee (Manual & Automation Basics)
               </h4>
-              <p className="text-xs text-slate-400">Khối Đảm Bảo Chất Lượng &bull; Đào tạo ISTQB miễn phí</p>
+              <p className="text-xs text-slate-400">Đảm bảo Chất lượng &bull; Đào tạo ISTQB miễn phí</p>
             </Link>
 
             {/* Job Preview 5 */}
@@ -528,7 +520,7 @@ export default function HomePage() {
               <h4 className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">
                 Senior Automation QA Engineer (Playwright & CI/CD)
               </h4>
-              <p className="text-xs text-slate-400">Khối Đảm Bảo Chất Lượng &bull; Lương 30 - 45 triệu</p>
+              <p className="text-xs text-slate-400">Đảm bảo Chất lượng &bull; Lương 30 - 45 triệu</p>
             </Link>
 
             {/* Job Preview 6 */}
@@ -545,7 +537,7 @@ export default function HomePage() {
               <h4 className="text-sm font-bold text-white group-hover:text-brand-400 transition-colors">
                 UI/UX Designer (Design System & Enterprise SaaS)
               </h4>
-              <p className="text-xs text-slate-400">Khối Thiết Kế Sản Phẩm &bull; Lương 25 - 40 triệu</p>
+              <p className="text-xs text-slate-400">Thiết kế Sản phẩm &bull; Lương 25 - 40 triệu</p>
             </Link>
           </div>
         </div>

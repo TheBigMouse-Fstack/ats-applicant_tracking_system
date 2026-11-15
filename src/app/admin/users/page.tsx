@@ -286,7 +286,7 @@ export default function UserManagementPage() {
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-slate-900 text-base">Thêm Tài Khoản Nhân Viên Mới</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Thiết lập thông tin và phân quyền (BRL-Auth)</p>
+                <p className="text-xs text-slate-500 mt-0.5">Thiết lập thông tin và phân quyền người dùng</p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}

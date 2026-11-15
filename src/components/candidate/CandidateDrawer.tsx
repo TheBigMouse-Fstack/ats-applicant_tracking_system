@@ -281,7 +281,7 @@ export default function CandidateDrawer({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Bóc tách AI & Năng lực
+              Hồ sơ & Đối chiếu Tiêu chuẩn
             </button>
 
             <button
@@ -314,7 +314,7 @@ export default function CandidateDrawer({
             {loading ? (
               <div className="py-20 text-center text-slate-400 space-y-3">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-brand-600" />
-                <p className="text-xs">Đang nạp chi tiết ứng viên & phân tích AI...</p>
+                <p className="text-xs">Đang tải chi tiết hồ sơ ứng viên...</p>
               </div>
             ) : (
               <>
@@ -338,11 +338,11 @@ export default function CandidateDrawer({
                 )}
 
                 {/* ========================================================================= */}
-                {/* TAB 1: BÓC TÁCH AI & NĂNG LỰC (3 KHỐI RÕ RÀNG THEO YÊU CẦU ITBA) */}
+                {/* TAB 1: HỒ SƠ & ĐỐI CHIẾU TIÊU CHUẨN */}
                 {/* ========================================================================= */}
                 {activeTab === "overview" && (
                   <div className="space-y-6">
-                    {/* KHỐI 1: HỒ SƠ ỨNG VIÊN BÓC TÁCH TỪ CV */}
+                    {/* KHỐI 1: HỒ SƠ ỨNG VIÊN TRÍCH XUẤT TỪ CV */}
                     <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs space-y-4">
                       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div className="flex items-center gap-2">
@@ -351,7 +351,7 @@ export default function CandidateDrawer({
                           </div>
                           <div>
                             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                              1. Thông tin Bóc Tách Trực Tiếp Từ CV
+                              1. Thông Tin Trích Xuất Từ CV
                             </h3>
                             <p className="text-[11px] text-slate-400">
                               Dữ liệu học vấn, số năm kinh nghiệm và kỹ năng trích xuất
@@ -359,18 +359,18 @@ export default function CandidateDrawer({
                           </div>
                         </div>
 
-                        {/* Nút Chạy lại AI Phân tích */}
+                        {/* Nút Cập nhật thông tin */}
                         <button
                           type="button"
                           onClick={handleReparse}
                           disabled={reparsing}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-all cursor-pointer"
-                          title="Chạy lại AI bóc tách nếu muốn cập nhật thông tin"
+                          title="Cập nhật lại thông tin trích xuất từ CV"
                         >
                           <RotateCw
                             className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-brand-600" : ""}`}
                           />
-                          <span>{reparsing ? "Đang phân tích..." : "Phân tích lại AI"}</span>
+                          <span>{reparsing ? "Đang cập nhật..." : "Cập nhật thông tin CV"}</span>
                         </button>
                       </div>
 
@@ -477,7 +477,7 @@ export default function CandidateDrawer({
                       {/* 1.3 Kỹ năng bóc tách thực tế từ CV */}
                       <div className="space-y-2 pt-1">
                         <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                          Kỹ Năng & Chuyên Môn Bóc Tách Từ CV ({parsedSkills.length}):
+                          Kỹ Năng & Chuyên Môn Trong CV ({parsedSkills.length}):
                         </h4>
                         <div className="flex flex-wrap gap-1.5">
                           {parsedSkills.length > 0 ? (
@@ -490,7 +490,7 @@ export default function CandidateDrawer({
                               </span>
                             ))
                           ) : (
-                            <span className="text-xs text-slate-400">Chưa bóc tách được kỹ năng</span>
+                            <span className="text-xs text-slate-400">Chưa có thông tin kỹ năng</span>
                           )}
                         </div>
                       </div>
@@ -507,7 +507,7 @@ export default function CandidateDrawer({
                             2. Tiêu Chuẩn Vị Trí Đang Ứng Tuyển (Job Requirements)
                           </h3>
                           <p className="text-[11px] text-slate-400">
-                            Yêu cầu JD làm căn cứ để AI đối soát và chấm điểm
+                            Căn cứ yêu cầu công việc để HR và giám khảo đối chiếu đánh giá
                           </p>
                         </div>
                       </div>
@@ -557,7 +557,7 @@ export default function CandidateDrawer({
                       </div>
                     </div>
 
-                    {/* KHỐI 3: KẾT QUẢ ĐỐI SOÁT & CHẤM ĐIỂM AI MATCH (BRL-04) */}
+                    {/* KHỐI 3: KẾT QUẢ ĐỐI CHIẾU TIÊU CHUẨN TUYỂN DỤNG */}
                     <div className="bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-slate-50 p-5 rounded-2xl border border-indigo-200/80 shadow-xs space-y-4">
                       <div className="flex items-center justify-between pb-3 border-b border-indigo-100">
                         <div className="flex items-center gap-2.5">
@@ -566,25 +566,17 @@ export default function CandidateDrawer({
                           </div>
                           <div>
                             <h3 className="text-xs font-bold uppercase tracking-wider text-brand-900">
-                              3. Đánh Giá Đối Soát & Chấm Điểm AI (Match Evaluation)
+                              3. Đối Chiếu Kỹ Năng & Tiêu Chuẩn Tuyển Dụng
                             </h3>
                             <p className="text-[11px] text-slate-500">
-                              So sánh năng lực thực tế trong CV với tiêu chuẩn tuyển dụng
+                              Bảng tổng hợp đối chiếu kỹ năng khai báo trong CV với yêu cầu công việc (Để HR đánh giá)
                             </p>
                           </div>
                         </div>
 
                         <div className="text-right">
-                          <span
-                            className={`px-3.5 py-1.5 rounded-xl text-lg font-black border ${
-                              (data?.aiMatchScore || 0) >= 75
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                : (data?.aiMatchScore || 0) >= 60
-                                ? "bg-amber-100 text-amber-800 border-amber-300"
-                                : "bg-red-100 text-red-800 border-red-300"
-                            }`}
-                          >
-                            Match: {data?.aiMatchScore ? `${Math.round(data.aiMatchScore)}%` : "N/A"}
+                          <span className="px-3 py-1.5 rounded-xl text-xs font-bold border bg-white text-slate-700 border-indigo-200 shadow-2xs">
+                            Đối chiếu: {aiMatchedSkills.length}/{jobRequiredSkills.length} kỹ năng đáp ứng
                           </span>
                         </div>
                       </div>
@@ -638,19 +630,19 @@ export default function CandidateDrawer({
                         </div>
                       </div>
 
-                      {/* Giải trình của AI (Rationale) */}
+                      {/* Gợi ý đối chiếu cho HR */}
                       {data?.aiMatchRationale && (
                         <div className="bg-white/90 p-4 rounded-xl border border-indigo-100 text-xs text-slate-800 leading-relaxed shadow-2xs">
                           <span className="font-bold text-indigo-900 block mb-1 flex items-center gap-1">
                             <Award className="w-3.5 h-3.5 text-indigo-600" />
-                            Giải trình của AI (AI Match Rationale):
+                            Tóm tắt đối chiếu hồ sơ (Tham khảo cho HR):
                           </span>
                           <p className="font-medium text-slate-700">{data.aiMatchRationale}</p>
                         </div>
                       )}
                     </div>
 
-                    {/* KHỐI 4: LỊCH HẸN PHỎNG VẤN CHUYÊN MÔN (UC-05A) */}
+                    {/* KHỐI 4: LỊCH HẸN PHỎNG VẤN CHUYÊN MÔN */}
                     {(data?.interviewDate || data?.currentStage === "INTERVIEW") && (
                       <div className="bg-gradient-to-r from-purple-50/80 via-indigo-50/40 to-white rounded-2xl border border-purple-200/90 p-5 shadow-2xs space-y-3.5">
                         <div className="flex items-center justify-between pb-2.5 border-b border-purple-100">
@@ -660,7 +652,7 @@ export default function CandidateDrawer({
                             </div>
                             <div>
                               <h3 className="text-xs font-bold uppercase tracking-wider text-purple-950">
-                                4. Lịch Hẹn Phỏng Vấn Chuyên Môn (UC-05A)
+                                4. Lịch Hẹn Phỏng Vấn Chuyên Môn
                               </h3>
                               <p className="text-[11px] text-purple-600">
                                 {data?.interviewDate
@@ -791,7 +783,7 @@ export default function CandidateDrawer({
                                 : "text-slate-600 hover:text-slate-900"
                             }`}
                           >
-                            📝 Văn Bản Bóc Tách
+                            📝 Văn Bản Trích Xuất
                           </button>
                         </div>
 
@@ -838,7 +830,7 @@ export default function CandidateDrawer({
                     ) : (
                       <div className="space-y-2">
                         <div className="flex justify-between items-center text-xs text-slate-500 px-1">
-                          <span>Văn bản trích xuất trực tiếp bằng thư viện `pdf-parse`:</span>
+                          <span>Văn bản trích xuất từ tài liệu CV:</span>
                           <span>{data?.candidate?.cvText?.length || 0} ký tự</span>
                         </div>
                         <div className="bg-slate-900 text-slate-100 p-5 rounded-2xl font-mono text-xs leading-relaxed max-h-[650px] overflow-y-auto border border-slate-800 shadow-inner whitespace-pre-line">
@@ -850,7 +842,7 @@ export default function CandidateDrawer({
                 )}
 
                 {/* ========================================================================= */}
-                {/* TAB 3: AUDIT LOGS & SCORECARD (BRL-08 & BRL-06) */}
+                {/* TAB 3: AUDIT LOGS & SCORECARD */}
                 {/* ========================================================================= */}
                 {activeTab === "history" && (
                   <div className="space-y-6">
@@ -867,7 +859,7 @@ export default function CandidateDrawer({
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
                         >
                           <Star className="w-3.5 h-3.5 fill-white" />
-                          + Chấm Điểm Scorecard (BRL-08)
+                          + Đánh Giá Phỏng Vấn (Scorecard)
                         </button>
                       </div>
 
@@ -1005,7 +997,7 @@ export default function CandidateDrawer({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">
-                    Lên Lịch Phỏng Vấn & Soạn Thư Mời (UC-05A)
+                    Lên Lịch Phỏng Vấn & Soạn Thư Mời
                   </h3>
                   <p className="text-xs text-slate-500">
                     Ứng viên: <strong>{data?.candidate?.fullName}</strong> &bull; {data?.job?.title}
@@ -1063,7 +1055,7 @@ export default function CandidateDrawer({
                   placeholder={
                     interviewFormat === "ONLINE"
                       ? "https://meet.google.com/xyz-abcd-efg"
-                      : "Phòng Họp Lotus 3, Tầng 12, Tòa nhà ReCoverX Tower, TP.HCM"
+                      : "Phòng Họp Lotus 3, Tầng 18, Tòa nhà RecoverX Tower, TP.HCM"
                   }
                   required
                   className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"

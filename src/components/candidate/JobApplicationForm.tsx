@@ -69,7 +69,7 @@ export default function JobApplicationForm({
     if (!validExtensions.includes(ext)) {
       setFieldErrors((prev) => ({
         ...prev,
-        cvFile: "Chỉ chấp nhận tệp .pdf hoặc .docx theo quy tắc BRL-01",
+        cvFile: "Chỉ chấp nhận tệp định dạng .pdf hoặc .docx",
       }));
       return;
     }
@@ -77,7 +77,7 @@ export default function JobApplicationForm({
     if (file.size > maxSizeBytes) {
       setFieldErrors((prev) => ({
         ...prev,
-        cvFile: `Dung lượng tệp (${(file.size / (1024 * 1024)).toFixed(1)}MB) vượt quá giới hạn 10MB (BRL-01)`,
+        cvFile: `Dung lượng tệp (${(file.size / (1024 * 1024)).toFixed(1)}MB) vượt quá giới hạn tối đa 10MB`,
       }));
       return;
     }
@@ -405,7 +405,7 @@ export default function JobApplicationForm({
                   Nhấp để tải lên hoặc kéo thả tệp CV vào đây
                 </p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Định dạng hỗ trợ: PDF, DOCX (Dung lượng tối đa 10MB theo BRL-01)
+                  Định dạng hỗ trợ: PDF, DOCX (Dung lượng tối đa 10MB)
                 </p>
               </div>
             </div>
@@ -420,11 +420,11 @@ export default function JobApplicationForm({
         )}
       </div>
 
-      {/* Ràng buộc nghiệp vụ note */}
+      {/* Lưu ý ứng tuyển */}
       <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-[11px] text-slate-500 space-y-1">
         <p className="font-semibold text-slate-700">Lưu ý khi nộp hồ sơ:</p>
-        <p>• BRL-02: Khử trùng lặp — không thể nộp lại cùng 1 vị trí trong 30 ngày.</p>
-        <p>• BRL-09: Giới hạn ứng tuyển — tối đa 3 vị trí trong vòng 90 ngày.</p>
+        <p>• Mỗi ứng viên vui lòng không nộp trùng một vị trí trong vòng 30 ngày.</p>
+        <p>• Để đảm bảo chất lượng ứng tuyển, mỗi ứng viên có thể ứng tuyển tối đa 3 vị trí trong 90 ngày.</p>
       </div>
 
       {/* Nút gửi form */}
@@ -436,12 +436,12 @@ export default function JobApplicationForm({
         {loading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Đang tải lên & Phân tích CV qua AI...</span>
+            <span>Đang gửi hồ sơ ứng tuyển...</span>
           </>
         ) : (
           <>
             <Sparkles className="w-4 h-4" />
-            <span>Nộp hồ sơ ngay & Kiểm tra Match AI</span>
+            <span>Nộp hồ sơ ứng tuyển ngay</span>
           </>
         )}
       </button>

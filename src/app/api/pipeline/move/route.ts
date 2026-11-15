@@ -53,7 +53,7 @@ export async function POST(req: Request) {
           {
             success: false,
             error:
-              "Không thể chuyển sang giai đoạn HIRED: Ứng viên cần có ít nhất 01 phiếu đánh giá Scorecard hoàn tất từ Hiring Manager theo quy tắc BRL-06.",
+              "Chưa thể tuyển chọn: Cần có ít nhất 01 phiếu đánh giá Scorecard hoàn tất từ người phỏng vấn chuyên môn trước khi xác nhận tuyển.",
             rule: "BRL-06",
           },
           { status: 400 }
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
         {
           success: false,
           error:
-            "Quản lý chuyên môn (Hiring Manager) chỉ có quyền Xem hồ sơ và Đánh giá Scorecard; không có quyền luân chuyển trạng thái trên bảng Kanban theo ma trận phân quyền RBAC.",
+            "Quản lý chuyên môn (Hiring Manager) chỉ có quyền xem hồ sơ và đánh giá Scorecard; quyền luân chuyển trạng thái do bộ phận Tuyển dụng (HR) phụ trách.",
           rule: "RBAC-MGR-BLOCK",
         },
         { status: 403 }

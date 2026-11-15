@@ -117,7 +117,7 @@ export default async function JobsPublicPage() {
             Các Vị Trí Đang Tuyển Dụng ({jobs.length})
           </h2>
           <span className="text-xs text-slate-500">
-            Hồ sơ được bảo mật và sàng lọc tự động theo BRL-01 & BRL-02
+            Hồ sơ ứng tuyển được bảo mật thông tin tuyệt đối
           </span>
         </div>
 

@@ -55,7 +55,7 @@ async function main() {
   const jobsData = [
     {
       title: "Software Engineer Trainee (Java / Spring Boot & React) — Khóa 2026",
-      department: "Khối Phát Triển Phần Mềm (Software Engineering)",
+      department: "Phát triển Phần mềm",
       location: "Quận 1, TP. Hồ Chí Minh (Hybrid)",
       employmentType: "Toàn thời gian",
       minExperienceYears: 0,
@@ -83,7 +83,7 @@ QUYỀN LỢI ĐÃI NGỘ:
     },
     {
       title: "Fullstack Developer (Node.js & React / TypeScript)",
-      department: "Khối Phát Triển Phần Mềm (Software Engineering)",
+      department: "Phát triển Phần mềm",
       location: "Quận 1, TP. Hồ Chí Minh",
       employmentType: "Toàn thời gian",
       minExperienceYears: 2,
@@ -109,7 +109,7 @@ QUYỀN LỢI ĐÃI NGỘ:
     },
     {
       title: "Senior Backend Engineer (Java / Microservices & Cloud AWS)",
-      department: "Khối Kiến Trúc Doanh Nghiệp (Enterprise Architecture)",
+      department: "Kiến trúc & Backend",
       location: "Quận 1, TP. Hồ Chí Minh (Hybrid)",
       employmentType: "Toàn thời gian",
       minExperienceYears: 4,
@@ -137,7 +137,7 @@ QUYỀN LỢI ĐÃI NGỘ:
     },
     {
       title: "QA / QC Tester Trainee (Manual & Automation Basics) — Khóa 2026",
-      department: "Khối Đảm Bảo Chất Lượng (Quality Engineering)",
+      department: "Đảm bảo Chất lượng",
       location: "Quận 1, TP. Hồ Chí Minh",
       employmentType: "Toàn thời gian",
       minExperienceYears: 0,
@@ -165,7 +165,7 @@ QUYỀN LỢI ĐÃI NGỘ:
     },
     {
       title: "Senior Automation QA Engineer (Playwright / Selenium & CI/CD)",
-      department: "Khối Đảm Bảo Chất Lượng (Quality Engineering)",
+      department: "Đảm bảo Chất lượng",
       location: "Quận 1, TP. Hồ Chí Minh (Hybrid)",
       employmentType: "Toàn thời gian",
       minExperienceYears: 3,
@@ -192,7 +192,7 @@ QUYỀN LỢI ĐÃI NGỘ:
     },
     {
       title: "UI/UX Designer (Design System & Enterprise SaaS)",
-      department: "Khối Thiết Kế Sản Phẩm (Product & UX Design)",
+      department: "Thiết kế Sản phẩm",
       location: "Quận 1, TP. Hồ Chí Minh",
       employmentType: "Toàn thời gian",
       minExperienceYears: 2,
@@ -217,7 +217,7 @@ QUYỀN LỢI ĐÃI NGỘ:
     },
     {
       title: "DevOps & Cloud Platform Engineer (AWS, Kubernetes, Terraform)",
-      department: "Khối Nền Tảng Đám Mây (Cloud & Platform Engineering)",
+      department: "Hạ tầng & Cloud",
       location: "Quận 1, TP. Hồ Chí Minh (Hybrid)",
       employmentType: "Toàn thời gian",
       minExperienceYears: 3,
@@ -242,14 +242,14 @@ QUYỀN LỢI ĐÃI NGỘ:
     },
     {
       title: "IT Business Analyst (ITBA - Enterprise Solutions)",
-      department: "Khối Tư Vấn & Nghiệp Vụ (Business Consulting & Analysis)",
+      department: "Phân tích Nghiệp vụ",
       location: "Quận 1, TP. Hồ Chí Minh",
       employmentType: "Toàn thời gian",
       minExperienceYears: 3,
       requiredSkills: JSON.stringify(["Business Analysis", "BPMN 2.0", "UML", "Requirement Engineering", "Agile/Scrum", "Jira", "User Stories"]),
       requirementsJd: `MÔ TẢ CÔNG VIỆC:
 - Khảo sát, thu thập và phân tích yêu cầu nghiệp vụ từ khách hàng doanh nghiệp quốc tế.
-- Xây dựng mô hình quy trình nghiệp vụ (BPMN 2.0), sơ đồ Use Case, Activity Diagram và User Stories chi tiết.
+- Xây dựng mô hình quy trình nghiệp vụ, sơ đồ Use Case, Activity Diagram và User Stories chi tiết.
 - Soạn thảo tài liệu đặc tả yêu cầu phần mềm (BRD, SRS) chuẩn mực và quản lý Product Backlog.
 - Đóng vai trò cầu nối chiến lược giữa Product Owner và đội ngũ kỹ sư phát triển phần mềm.
 

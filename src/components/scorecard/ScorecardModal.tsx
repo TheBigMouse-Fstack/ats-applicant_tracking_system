@@ -145,7 +145,7 @@ export default function ScorecardModal({
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[11px] font-bold border border-purple-200 mb-1.5">
               <Award className="w-3.5 h-3.5" />
-              Quy tắc chuẩn BRL-08
+              Phiếu Đánh Giá Chuyên Môn
             </div>
             <h3 className="text-lg font-bold text-slate-900">
               Đánh Giá Phỏng Vấn (Scorecard)

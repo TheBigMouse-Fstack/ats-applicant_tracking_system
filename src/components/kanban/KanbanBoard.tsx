@@ -56,7 +56,7 @@ const COLUMNS_CONFIG: ColumnConfig[] = [
     badgeColor: "bg-indigo-100 text-indigo-700 border-indigo-200",
     headerBg: "bg-indigo-50/70 border-b border-indigo-100",
     dotColor: "bg-indigo-500",
-    description: "AI Match & HR duyệt sơ bộ",
+    description: "Đánh giá sơ bộ hồ sơ",
   },
   {
     id: "INTERVIEW",
@@ -72,7 +72,7 @@ const COLUMNS_CONFIG: ColumnConfig[] = [
     badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
     headerBg: "bg-emerald-50/70 border-b border-emerald-100",
     dotColor: "bg-emerald-500",
-    description: "Đạt chuẩn & có Scorecard (BRL-06)",
+    description: "Đã hoàn thành đánh giá phỏng vấn",
   },
   {
     id: "REJECTED",
@@ -80,7 +80,7 @@ const COLUMNS_CONFIG: ColumnConfig[] = [
     badgeColor: "bg-rose-100 text-rose-700 border-rose-200",
     headerBg: "bg-rose-50/70 border-b border-rose-100",
     dotColor: "bg-rose-500",
-    description: "Email hoãn 12-24h (BRL-05)",
+    description: "Tạm lưu trữ hồ sơ chưa phù hợp",
   },
 ];
 
@@ -186,7 +186,7 @@ export default function KanbanBoard() {
       // Thông báo thành công nếu có hẹn giờ email
       if (toStage === "REJECTED") {
         setAlertSuccess(
-          "Đã chuyển sang Từ chối. Email thông báo từ chối đã được lên lịch hoãn 12 tiếng theo quy tắc BRL-05."
+          "Đã chuyển sang Từ chối. Email phản hồi đã được lên lịch tự động."
         );
       } else if (toStage === "HIRED") {
         setAlertSuccess("Chúc mừng! Ứng viên đã được chuyển sang Tuyển chọn (HIRED) thành công.");
@@ -293,7 +293,7 @@ export default function KanbanBoard() {
               Pipeline Tuyển Dụng (Kanban 5 Cột)
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Quy trình chuẩn hóa 5 giai đoạn theo BPMN 2.0 & kiểm soát ràng buộc BRL-05, BRL-06, BRL-07.
+              Quy trình theo dõi và quản lý hồ sơ ứng viên qua các giai đoạn tuyển dụng.
             </p>
           </div>
 
@@ -380,7 +380,7 @@ export default function KanbanBoard() {
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-red-700">
-                Chặn chuyển trạng thái (Quy tắc Nghiệp vụ ATS)
+                Chưa thể chuyển giai đoạn
               </h4>
               <p className="text-xs font-medium text-red-800 mt-0.5 leading-relaxed">
                 {alertError}
@@ -429,7 +429,7 @@ export default function KanbanBoard() {
                 Chế độ Quản lý Chuyên môn (Hiring Manager — {currentUser.fullName})
               </p>
               <p className="text-[11px] text-amber-700 mt-0.5">
-                Theo ma trận phân quyền RBAC: Chức năng kéo-thả chuyển cột được khóa. Bạn có quyền xem hồ sơ CV gốc và mở phiếu chấm điểm Scorecard.
+                Chức năng kéo-thả được quản lý bởi bộ phận Tuyển dụng (HR). Bạn có quyền xem hồ sơ CV gốc và tạo phiếu đánh giá Scorecard.
               </p>
             </div>
           </div>
