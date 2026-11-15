@@ -5,7 +5,6 @@ import {
   MapPin,
   Clock,
   ChevronRight,
-  Sparkles,
   ArrowLeft,
   Building2,
   Calendar,
@@ -82,7 +81,7 @@ export default async function JobsPublicPage() {
       <div className="bg-gradient-to-b from-white to-slate-50 border-b border-slate-200/80 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5" />
+            <Briefcase className="w-3.5 h-3.5" />
             Cơ Hội Phát Triển Sự Nghiệp Công Nghệ 2026
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">

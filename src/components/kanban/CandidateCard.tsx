@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   ChevronRight,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 
 interface CandidateCardProps {

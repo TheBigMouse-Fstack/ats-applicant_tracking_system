@@ -25,7 +25,6 @@ import {
   UserPlus,
   Star,
   ArrowUpDown,
-  Sparkles,
 } from "lucide-react";
 
 interface JobOption {

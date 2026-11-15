@@ -134,7 +134,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Vui lòng nhập Link phòng họp trực tuyến (Google Meet/Zoom) hoặc Phòng họp thực tế",
+          error: "Vui lòng nhập link phòng họp trực tuyến hoặc địa chỉ phòng họp trực tiếp",
         },
         { status: 400 }
       );

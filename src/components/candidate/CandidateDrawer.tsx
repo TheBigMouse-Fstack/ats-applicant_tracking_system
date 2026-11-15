@@ -197,13 +197,13 @@ export default function CandidateDrawer({
       const resData = await res.json();
       if (resData.success && resData.data) {
         setData(resData.data);
-        setReparseNotice("Đã phân tích lại CV bằng AI thành công!");
+        setReparseNotice("Đã cập nhật lại thông tin hồ sơ thành công!");
         setTimeout(() => setReparseNotice(null), 5000);
       } else {
-        setActionError(resData.error || "Không thể phân tích lại CV");
+        setActionError(resData.error || "Không thể cập nhật hồ sơ");
       }
     } catch (e: any) {
-      setActionError("Lỗi kết nối khi chạy lại AI bóc tách.");
+      setActionError("Lỗi kết nối khi trích xuất hồ sơ.");
     } finally {
       setReparsing(false);
     }
@@ -434,7 +434,7 @@ export default function CandidateDrawer({
                   : "border-transparent text-slate-500 hover:text-slate-900"
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <ClipboardCheck className="w-3.5 h-3.5" />
               Hồ sơ & Đối chiếu Tiêu chuẩn
             </button>
 
@@ -789,8 +789,8 @@ export default function CandidateDrawer({
                     <div className="bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-slate-50 p-5 rounded-2xl border border-indigo-200/80 shadow-xs space-y-4">
                       <div className="flex items-center justify-between pb-3 border-b border-indigo-100">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-md shadow-brand-500/20">
-                            <Sparkles className="w-5 h-5" />
+                          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+                            <ClipboardCheck className="w-5 h-5 text-brand-400" />
                           </div>
                           <div>
                             <h3 className="text-xs font-bold uppercase tracking-wider text-brand-900">
@@ -1147,7 +1147,7 @@ export default function CandidateDrawer({
                                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center text-[11px]">
                                     <div className="p-2.5 rounded-xl bg-purple-50/50 border border-purple-100 text-left">
                                       <div className="flex items-center justify-between">
-                                        <span className="text-slate-500 text-[10px] font-semibold">Chuyên Môn (40%)</span>
+                                        <span className="text-slate-500 text-[10px] font-semibold">Chuyên Môn</span>
                                         <strong className="text-purple-700 font-extrabold text-xs">{ev.technicalScore}/5★</strong>
                                       </div>
                                       {ev.technicalNotes && (
@@ -1157,7 +1157,7 @@ export default function CandidateDrawer({
 
                                     <div className="p-2.5 rounded-xl bg-blue-50/50 border border-blue-100 text-left">
                                       <div className="flex items-center justify-between">
-                                        <span className="text-slate-500 text-[10px] font-semibold">Giao Tiếp (30%)</span>
+                                        <span className="text-slate-500 text-[10px] font-semibold">Giao Tiếp</span>
                                         <strong className="text-blue-700 font-extrabold text-xs">{ev.communicationScore}/5★</strong>
                                       </div>
                                       {ev.communicationNotes && (
@@ -1167,7 +1167,7 @@ export default function CandidateDrawer({
 
                                     <div className="p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100 text-left">
                                       <div className="flex items-center justify-between">
-                                        <span className="text-slate-500 text-[10px] font-semibold">Văn Hóa (30%)</span>
+                                        <span className="text-slate-500 text-[10px] font-semibold">Văn Hóa</span>
                                         <strong className="text-emerald-700 font-extrabold text-xs">{ev.culturalFitScore}/5★</strong>
                                       </div>
                                       {ev.cultureNotes && (
@@ -1455,13 +1455,13 @@ export default function CandidateDrawer({
 
                             <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100 text-[11px]">
                               <div>
-                                Chuyên môn (40%): <b>{ev.technicalScore}/5★</b>
+                                Chuyên môn: <b>{ev.technicalScore}/5★</b>
                               </div>
                               <div>
-                                Giao tiếp (30%): <b>{ev.communicationScore}/5★</b>
+                                Giao tiếp: <b>{ev.communicationScore}/5★</b>
                               </div>
                               <div>
-                                Văn hóa (30%): <b>{ev.culturalFitScore}/5★</b>
+                                Văn hóa: <b>{ev.culturalFitScore}/5★</b>
                               </div>
                             </div>
 

@@ -17,7 +17,6 @@ import {
   Building2,
   Mail,
   Phone,
-  Sparkles,
   ExternalLink,
   Loader2,
   ShieldCheck,

@@ -10,7 +10,7 @@ import {
   Calendar,
   CheckCircle2,
   Building2,
-  Sparkles,
+  Layers,
   ShieldCheck,
   Award,
 } from "lucide-react";
@@ -141,7 +141,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               {requiredSkills.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-brand-600" />
+                    <Layers className="w-3.5 h-3.5 text-brand-600" />
                     Kỹ năng chuyên môn yêu cầu
                   </h3>
                   <div className="flex flex-wrap gap-2 pt-1">

@@ -20,7 +20,6 @@ import {
   MapPin,
   ChevronRight,
   Layers,
-  Sparkles,
   Search,
   Clock,
   Terminal,

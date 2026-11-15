@@ -16,7 +16,7 @@ import {
   Mail,
   Phone,
   Clock,
-  Sparkles,
+  FileUp,
 } from "lucide-react";
 
 interface JobOption {
@@ -521,7 +521,7 @@ export default function AddCandidateModal({
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
+                  <FileUp className="w-4 h-4" />
                   <span>Tiếp Nhận Vào Pipeline</span>
                 </>
               )}

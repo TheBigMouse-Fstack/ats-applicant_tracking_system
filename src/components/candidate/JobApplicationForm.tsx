@@ -7,7 +7,7 @@ import {
   X,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
+  Send,
   Loader2,
   ArrowRight,
   ShieldCheck,
@@ -235,7 +235,7 @@ export default function JobApplicationForm({
         {/* Thông điệp phản hồi lịch sự & Quy trình tiếp theo */}
         <div className="text-xs text-slate-600 space-y-2.5 border-t border-slate-100 pt-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
           <p className="font-semibold text-emerald-900 flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             Cảm ơn bạn đã quan tâm và ứng tuyển vào RecoverX!
           </p>
           <p className="text-slate-600 leading-relaxed">
@@ -284,7 +284,7 @@ export default function JobApplicationForm({
           Ứng tuyển vị trí này
         </h3>
         <p className="text-xs text-slate-500 mt-1">
-          Điền thông tin và tải lên CV để hệ thống AI tự động đối chiếu với tiêu chuẩn tuyển dụng.
+          Điền thông tin và tải lên CV của bạn để hoàn tất hồ sơ ứng tuyển vị trí này.
         </p>
       </div>
 
@@ -539,7 +539,7 @@ export default function JobApplicationForm({
           </>
         ) : (
           <>
-            <Sparkles className="w-4 h-4" />
+            <Send className="w-4 h-4" />
             <span>Nộp hồ sơ ứng tuyển ngay</span>
           </>
         )}

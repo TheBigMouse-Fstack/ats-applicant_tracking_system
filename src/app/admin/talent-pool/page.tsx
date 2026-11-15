@@ -7,7 +7,6 @@ import {
   Download,
   RefreshCw,
   Briefcase,
-  Sparkles,
   RotateCcw,
   CheckCircle,
   AlertCircle,

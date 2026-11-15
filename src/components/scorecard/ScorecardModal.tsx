@@ -240,22 +240,19 @@ export default function ScorecardModal({
             </div>
           </div>
 
-          {/* 3 Tiêu chí cốt lõi có trọng số */}
+          {/* Tiêu chí cốt lõi */}
           <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-purple-600" />
-              Chấm Điểm Theo Trọng Số
+              Tiêu Chí Đánh Giá Năng Lực
             </h4>
 
-            {/* Tiêu chí 1: Kỹ năng Chuyên môn (40%) */}
+            {/* Tiêu chí 1: Kỹ năng Chuyên môn */}
             <div className="pt-1">
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-700">
                   1. Kỹ năng chuyên môn kỹ thuật
                 </label>
-                <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                  Trọng số 40%
-                </span>
               </div>
               {renderStarButtons(techScore, setTechScore, "techScore")}
               <input
@@ -267,62 +264,56 @@ export default function ScorecardModal({
               />
             </div>
 
-            {/* Tiêu chí 2: Giao tiếp & Thuyết trình (30%) */}
+            {/* Tiêu chí 2: Giao tiếp & Thuyết trình */}
             <div className="pt-2 border-t border-slate-100">
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-700">
-                  2. Kỹ năng giao tiếp, thuyết trình & ngoại ngữ
+                  2. Kỹ năng giao tiếp & thuyết trình
                 </label>
-                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                  Trọng số 30%
-                </span>
               </div>
               {renderStarButtons(commScore, setCommScore, "commScore")}
               <input
                 type="text"
                 value={communicationNotes}
                 onChange={(e) => setCommunicationNotes(e.target.value)}
-                placeholder="Nhận xét giao tiếp: Khả năng diễn đạt mạch lạc, phản biện, giao tiếp tiếng Anh..."
+                placeholder="Nhận xét giao tiếp: Khả năng diễn đạt mạch lạc, phản biện, ngoại ngữ..."
                 className="mt-1.5 w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-1.5 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
 
-            {/* Tiêu chí 3: Phù hợp Văn hóa & Thái độ (30%) */}
+            {/* Tiêu chí 3: Phù hợp Văn hóa & Thái độ */}
             <div className="pt-2 border-t border-slate-100">
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-700">
-                  3. Độ phù hợp văn hóa & tinh thần làm việc nhóm
+                  3. Độ phù hợp văn hóa & làm việc nhóm
                 </label>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  Trọng số 30%
-                </span>
               </div>
               {renderStarButtons(cultScore, setCultScore, "cultScore")}
               <input
                 type="text"
                 value={cultureNotes}
                 onChange={(e) => setCultureNotes(e.target.value)}
-                placeholder="Nhận xét văn hóa: Thái độ cầu thị, chủ động, gắn kết đội ngũ, tính kỷ luật..."
+                placeholder="Nhận xét văn hóa: Thái độ cầu thị, chủ động, gắn kết đội ngũ, kỷ luật..."
                 className="mt-1.5 w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-1.5 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>
 
-          {/* Preview Điểm có trọng số */}
-          <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200/80 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
+          {/* Tổng Hợp Điểm Đánh Giá */}
+          <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-2xs">
             <div>
-              <p className="text-xs font-bold text-purple-950 uppercase tracking-wider">
-                Điểm Đánh Giá Tổng Hợp:
-              </p>
-              <p className="text-[11px] text-purple-700 mt-0.5">
-                = (Chuyên môn × 0.4) + (Giao tiếp × 0.3) + (Văn hóa × 0.3)
-              </p>
+              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider block">
+                Điểm Đánh Giá Tổng Hợp
+              </span>
+              <span className="text-[11px] text-slate-500 mt-0.5 block">
+                Tổng hợp đánh giá năng lực ứng viên
+              </span>
             </div>
             <div className="text-right">
               <span className="text-3xl font-black text-purple-700">
                 {overallScore}
               </span>
-              <span className="text-xs font-bold text-purple-600"> / 5.0★</span>
+              <span className="text-xs font-bold text-slate-500"> / 5.0★</span>
             </div>
           </div>
 

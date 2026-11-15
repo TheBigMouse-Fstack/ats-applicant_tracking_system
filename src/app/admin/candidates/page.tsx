@@ -23,7 +23,6 @@ import {
   Building2,
   Calendar,
   ArrowUpDown,
-  Sparkles,
 } from "lucide-react";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
