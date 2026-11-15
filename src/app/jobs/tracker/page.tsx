@@ -201,15 +201,14 @@ export default function CandidateTrackerPage() {
 
                 <div>
                   <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
-                      result.currentStage === "HIRED"
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${result.currentStage === "HIRED"
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : result.currentStage === "INTERVIEW"
-                        ? "bg-purple-50 text-purple-700 border-purple-200"
-                        : result.currentStage === "REJECTED"
-                        ? "bg-slate-100 text-slate-700 border-slate-200"
-                        : "bg-blue-50 text-blue-700 border-blue-200"
-                    }`}
+                          ? "bg-purple-50 text-purple-700 border-purple-200"
+                          : result.currentStage === "REJECTED"
+                            ? "bg-slate-100 text-slate-700 border-slate-200"
+                            : "bg-blue-50 text-blue-700 border-blue-200"
+                      }`}
                   >
                     <Clock className="w-3.5 h-3.5" />
                     {result.stageInfo.title}
@@ -244,15 +243,14 @@ export default function CandidateTrackerPage() {
 
               {/* Status Message */}
               <div
-                className={`p-4 rounded-xl border text-xs leading-relaxed ${
-                  result.currentStage === "HIRED"
+                className={`p-4 rounded-xl border text-xs leading-relaxed ${result.currentStage === "HIRED"
                     ? "bg-emerald-50/80 border-emerald-200 text-emerald-900"
                     : result.currentStage === "INTERVIEW"
-                    ? "bg-purple-50/80 border-purple-200 text-purple-900"
-                    : result.currentStage === "REJECTED"
-                    ? "bg-slate-50 border-slate-200 text-slate-700"
-                    : "bg-blue-50/80 border-blue-200 text-blue-900"
-                }`}
+                      ? "bg-purple-50/80 border-purple-200 text-purple-900"
+                      : result.currentStage === "REJECTED"
+                        ? "bg-slate-50 border-slate-200 text-slate-700"
+                        : "bg-blue-50/80 border-blue-200 text-blue-900"
+                  }`}
               >
                 <div className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
@@ -342,15 +340,14 @@ export default function CandidateTrackerPage() {
                     <div key={idx} className="relative pl-6 sm:pl-8">
                       {/* Node icon */}
                       <div
-                        className={`absolute -left-[17px] top-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
-                          isDone
+                        className={`absolute -left-[17px] top-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isDone
                             ? "bg-emerald-500 border-emerald-600 text-white shadow-sm"
                             : isActive
-                            ? "bg-brand-600 border-brand-700 text-white animate-pulse"
-                            : isArchived
-                            ? "bg-slate-300 border-slate-400 text-slate-600"
-                            : "bg-white border-slate-300 text-slate-400"
-                        }`}
+                              ? "bg-brand-600 border-brand-700 text-white animate-pulse"
+                              : isArchived
+                                ? "bg-slate-300 border-slate-400 text-slate-600"
+                                : "bg-white border-slate-300 text-slate-400"
+                          }`}
                       >
                         {isDone ? (
                           <CheckCircle2 className="w-4 h-4" />
@@ -364,13 +361,12 @@ export default function CandidateTrackerPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <h4
-                            className={`text-sm font-bold ${
-                              isDone
+                            className={`text-sm font-bold ${isDone
                                 ? "text-slate-900"
                                 : isActive
-                                ? "text-brand-700 font-extrabold"
-                                : "text-slate-400"
-                            }`}
+                                  ? "text-brand-700 font-extrabold"
+                                  : "text-slate-400"
+                              }`}
                           >
                             Bước {item.step}: {item.title}
                           </h4>
@@ -403,3 +399,4 @@ export default function CandidateTrackerPage() {
     </div>
   );
 }
+

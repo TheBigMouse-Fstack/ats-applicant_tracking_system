@@ -34,8 +34,8 @@ function getCandidateStageInfo(stage: string, interviewDetails?: {
         statusColor: "purple",
         description: interviewDetails?.date
           ? `Bạn đã được xếp lịch phỏng vấn vào lúc ${new Date(
-              interviewDetails.date
-            ).toLocaleString("vi-VN")}. Vui lòng kiểm tra email thư mời chi tiết.`
+            interviewDetails.date
+          ).toLocaleString("vi-VN")}. Vui lòng kiểm tra email thư mời chi tiết.`
           : "Chúc mừng bạn đã vượt qua vòng sơ tuyển! Chuyên viên nhân sự đang sắp xếp lịch phỏng vấn và sẽ gửi email thông báo cụ thể.",
         hasInterview: !!interviewDetails?.date,
         interviewDate: interviewDetails?.date,
@@ -189,10 +189,10 @@ export async function POST(req: Request) {
           matchedApp.currentStage === "NEW"
             ? "IN_PROGRESS"
             : ["SCREENING", "INTERVIEW", "HIRED", "REJECTED"].includes(
-                matchedApp.currentStage
-              )
-            ? "COMPLETED"
-            : "WAITING",
+              matchedApp.currentStage
+            )
+              ? "COMPLETED"
+              : "WAITING",
         description: "Đối chiếu kinh nghiệm và năng lực chuyên môn.",
       },
       {
@@ -203,10 +203,10 @@ export async function POST(req: Request) {
           matchedApp.currentStage === "INTERVIEW"
             ? "IN_PROGRESS"
             : matchedApp.currentStage === "HIRED"
-            ? "COMPLETED"
-            : matchedApp.currentStage === "REJECTED"
-            ? "SKIPPED"
-            : "WAITING",
+              ? "COMPLETED"
+              : matchedApp.currentStage === "REJECTED"
+                ? "SKIPPED"
+                : "WAITING",
         description: matchedApp.interviewDate
           ? `Lịch hẹn: ${new Date(matchedApp.interviewDate).toLocaleString("vi-VN")}`
           : "Trao đổi kỹ năng & văn hóa doanh nghiệp.",
@@ -219,14 +219,14 @@ export async function POST(req: Request) {
           matchedApp.currentStage === "HIRED"
             ? "COMPLETED"
             : matchedApp.currentStage === "REJECTED"
-            ? "ARCHIVED"
-            : "WAITING",
+              ? "ARCHIVED"
+              : "WAITING",
         description:
           matchedApp.currentStage === "HIRED"
             ? "Đã trúng tuyển và ban hành Thư mời nhận việc."
             : matchedApp.currentStage === "REJECTED"
-            ? "Lưu hồ sơ vào Kho tài năng dự phòng."
-            : "Chờ quyết định chính thức từ Hội đồng Tuyển dụng.",
+              ? "Lưu hồ sơ vào Kho tài năng dự phòng."
+              : "Chờ quyết định chính thức từ Hội đồng Tuyển dụng.",
       },
     ];
 
@@ -276,3 +276,4 @@ export async function GET(req: Request) {
   });
   return POST(fakeReq);
 }
+

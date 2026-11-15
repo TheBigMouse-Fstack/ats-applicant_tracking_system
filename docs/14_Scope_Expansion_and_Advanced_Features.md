@@ -73,3 +73,4 @@ Sau phiên rà soát nghiệp vụ thực tế (Persona Audit) theo 4 vai trò (
 | **Lên lịch Phỏng vấn & Thư mời trực tiếp** | *Out-of-Scope* | **IN-SCOPE (Đã hoàn thiện)** | Chuyên viên HR, Hiring Manager |
 | **Cổng Tra cứu Tiến độ cho Ứng viên** | *Chưa có* | **IN-SCOPE (Đã hoàn thiện)** | Ứng viên (Candidate Experience) |
 | **Công cụ Dọn dẹp Vòng đời 6 tháng (BRL-10)** | *Tài liệu có, Code thiếu* | **IN-SCOPE (Đã hoàn thiện)** | Quản trị viên (System Admin) |
+

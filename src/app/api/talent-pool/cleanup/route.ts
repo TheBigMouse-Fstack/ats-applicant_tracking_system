@@ -103,7 +103,7 @@ export async function POST(req: Request) {
           where: { candidateId: cId },
         });
         if (remaining === 0) {
-          await prisma.candidate.delete({ where: { id: cId } }).catch(() => {});
+          await prisma.candidate.delete({ where: { id: cId } }).catch(() => { });
           deletedCandidatesCount++;
         }
       }
@@ -131,3 +131,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

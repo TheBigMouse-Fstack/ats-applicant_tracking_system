@@ -12,33 +12,48 @@ import {
 } from "lucide-react";
 import { SessionUser } from "@/lib/auth";
 
-export default function AdminNavbar() {
+interface AdminNavbarProps {
+  initialUser?: SessionUser | null;
+}
+
+export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(initialUser);
 
-  // Lấy thông tin user hiện tại nếu không phải trang login
+  // Lấy thông tin user hiện tại nếu chưa có initialUser và không phải trang login
   useEffect(() => {
     if (pathname === "/admin/login") return;
 
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.user) {
-          setCurrentUser(data.user);
-        } else {
-          // Chưa đăng nhập thì chuyển hướng về trang login
+    if (!currentUser) {
+      fetch("/api/auth/me")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.user) {
+            setCurrentUser(data.user);
+          } else {
+            router.push("/admin/login");
+          }
+        })
+        .catch(() => {
           router.push("/admin/login");
-        }
-      })
-      .catch(() => {
-        router.push("/admin/login");
-      });
-  }, [pathname, router]);
+        });
+    }
+  }, [pathname, router, currentUser]);
 
   // Tuyệt đối không hiển thị Navbar trên trang Login
   if (pathname === "/admin/login") {
     return null;
+  }
+
+  // Nếu chưa có phiên xác thực, hiển thị thanh tải tinh gọn tránh Flash giao diện nội bộ
+  if (!currentUser) {
+    return (
+      <div className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 animate-pulse">
+        <div className="h-6 w-36 bg-slate-200 rounded-md" />
+        <div className="h-8 w-24 bg-slate-200 rounded-lg" />
+      </div>
+    );
   }
 
   // Đăng xuất

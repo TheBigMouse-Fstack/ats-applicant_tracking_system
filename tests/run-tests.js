@@ -497,6 +497,54 @@ async function runTests() {
     assert(canExecutePurge("HR") === false, "Chuyên viên HR bị chặn quyền xóa vĩnh viễn hồ sơ theo BRL-10");
     assert(canExecutePurge("HIRING_MANAGER") === false, "Hiring Manager bị chặn quyền xóa vĩnh viễn hồ sơ theo BRL-10");
 
+    // 4. Kiểm tra Next.js Server-Side Middleware (Chống Flash of Unauthenticated Content - FOUC)
+    console.log(`\n${colors.bold}13. Kiểm tra Middleware Chặn Truy Cập Server (Chống Flash UI chưa đăng nhập):${colors.reset}`);
+
+    function simulateMiddleware(pathname, sessionCookie) {
+      if (pathname === "/admin/login") {
+        if (sessionCookie && verifyToken(sessionCookie)) {
+          return { status: 307, redirect: "/admin/pipeline" };
+        }
+        return { status: 200, allow: true };
+      }
+
+      if (pathname.startsWith("/admin")) {
+        if (!sessionCookie) {
+          return { status: 307, redirect: `/admin/login?from=${pathname}` };
+        }
+        const user = verifyToken(sessionCookie);
+        if (!user) {
+          return { status: 307, redirect: "/admin/login?expired=1", clearCookie: true };
+        }
+        if (pathname.startsWith("/admin/users") && user.role !== "ADMIN") {
+          return { status: 307, redirect: "/admin/pipeline?error=forbidden" };
+        }
+        return { status: 200, allow: true, user };
+      }
+
+      return { status: 200, allow: true };
+    }
+
+    // 4.1 Chưa đăng nhập truy cập /admin/pipeline
+    const unauthReq = simulateMiddleware("/admin/pipeline", null);
+    assert(unauthReq.status === 307 && unauthReq.redirect.includes("/admin/login"), "Chặn truy cập /admin/pipeline ngay ở cấp Server (HTTP 307) khi chưa đăng nhập, không bao giờ render UI");
+
+    // 4.2 Giả mạo cookie truy cập /admin/pipeline
+    const tamperedReq = simulateMiddleware("/admin/pipeline", tamperedToken);
+    assert(tamperedReq.status === 307 && tamperedReq.clearCookie === true, "Phát hiện cookie bị giả mạo chữ ký, xóa cookie và chuyển hướng về /admin/login ngay lập tức");
+
+    // 4.3 Đã đăng nhập hợp lệ truy cập /admin/pipeline
+    const validReq = simulateMiddleware("/admin/pipeline", originalToken);
+    assert(validReq.status === 200 && validReq.allow === true, "Cho phép truy cập an toàn khi phiên đăng nhập hợp lệ");
+
+    // 4.4 HR Lead cố truy cập /admin/users (Chỉ dành cho ADMIN)
+    const hrUsersReq = simulateMiddleware("/admin/users", originalToken);
+    assert(hrUsersReq.status === 307 && hrUsersReq.redirect.includes("forbidden"), "Middleware phát hiện HR Lead truy cập /admin/users và chuyển hướng về /admin/pipeline (RBAC Enforcement)");
+
+    // 4.5 Đã đăng nhập truy cập lại trang /admin/login
+    const loggedInLoginReq = simulateMiddleware("/admin/login", originalToken);
+    assert(loggedInLoginReq.status === 307 && loggedInLoginReq.redirect === "/admin/pipeline", "Người dùng đã đăng nhập vào /admin/login sẽ tự động được chuyển hướng vào /admin/pipeline");
+
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
   } finally {

@@ -46,7 +46,9 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.push("/admin/pipeline");
+      const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const redirectTarget = params?.get("from") || "/admin/pipeline";
+      router.push(redirectTarget);
       router.refresh();
     } catch {
       setGeneralError("Không thể kết nối đến máy chủ. Vui lòng thử lại.");
