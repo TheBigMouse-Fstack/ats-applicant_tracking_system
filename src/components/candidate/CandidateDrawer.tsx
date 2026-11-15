@@ -31,9 +31,11 @@ import {
   Check,
   Eye,
   Image as ImageIcon,
+  AlertTriangle,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import ScorecardModal from "@/components/scorecard/ScorecardModal";
+import StageMismatchConfirmModal from "@/components/candidate/StageMismatchConfirmModal";
 
 interface CandidateDrawerProps {
   applicationId: number | null;
@@ -72,6 +74,12 @@ export default function CandidateDrawer({
   // Lightbox xem ảnh Bằng cấp / Chứng chỉ phóng to
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewImageTitle, setPreviewImageTitle] = useState<string>("");
+
+  // Modal cảnh báo tiêu chuẩn tuyển dụng khi chuyển vòng hoặc xếp lịch (tránh HR bấm nhầm)
+  const [mismatchWarning, setMismatchWarning] = useState<{
+    targetStage: string;
+    actionType: "MOVE_STAGE" | "SCHEDULE_INTERVIEW";
+  } | null>(null);
 
   // Tải chi tiết hồ sơ
   useEffect(() => {
@@ -118,8 +126,28 @@ export default function CandidateDrawer({
 
   if (!applicationId) return null;
 
+  // Phân tích tiêu chuẩn ứng viên so với JD (Tránh HR thao tác nhầm)
+  let missingSkillsList: string[] = [];
+  try {
+    if (typeof data?.aiMissingSkills === "string") {
+      missingSkillsList = JSON.parse(data.aiMissingSkills);
+    } else if (Array.isArray(data?.aiMissingSkills)) {
+      missingSkillsList = data.aiMissingSkills;
+    }
+  } catch (e) {}
+
+  const minExpRequired = data?.job?.minExperienceYears || 0;
+  const candidateExp = data?.candidate?.experienceYears || 0;
+
+  const isUnderQualified = Boolean(
+    data &&
+      ((data.aiMatchScore != null && data.aiMatchScore < 60) ||
+        missingSkillsList.length >= 2 ||
+        (minExpRequired > 0 && candidateExp < minExpRequired))
+  );
+
   // Xử lý chuyển trạng thái nhanh từ trong Drawer
-  const handleQuickMove = async (toStage: string) => {
+  const executeQuickMove = async (toStage: string) => {
     setActionError("");
     setActionLoading(true);
     const result = await onStageChange(applicationId, toStage);
@@ -133,6 +161,14 @@ export default function CandidateDrawer({
         .then((r) => r.json())
         .then((r) => r.success && setData(r.data));
     }
+  };
+
+  const handleQuickMove = async (toStage: string) => {
+    if (isUnderQualified && (toStage === "SCREENING" || toStage === "INTERVIEW")) {
+      setMismatchWarning({ targetStage: toStage, actionType: "MOVE_STAGE" });
+      return;
+    }
+    await executeQuickMove(toStage);
   };
 
   // Kích hoạt AI phân tích lại CV
@@ -159,8 +195,7 @@ export default function CandidateDrawer({
   };
 
   // Lên lịch Phỏng vấn & Tạo thư mời (UC-05A)
-  const handleScheduleInterview = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeScheduleInterview = async () => {
     setInterviewError(null);
     setInterviewLoading(true);
 
@@ -191,6 +226,15 @@ export default function CandidateDrawer({
     } finally {
       setInterviewLoading(false);
     }
+  };
+
+  const handleScheduleInterview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isUnderQualified) {
+      setMismatchWarning({ targetStage: "INTERVIEW", actionType: "SCHEDULE_INTERVIEW" });
+      return;
+    }
+    await executeScheduleInterview();
   };
 
   // Parse JSON helper
@@ -718,7 +762,12 @@ export default function CandidateDrawer({
                             <Award className="w-3.5 h-3.5 text-indigo-600" />
                             Tóm tắt đối chiếu hồ sơ (Tham khảo cho HR):
                           </span>
-                          <p className="font-medium text-slate-700">{data.aiMatchRationale}</p>
+                          <p className="font-medium text-slate-700">
+                            {data.aiMatchRationale
+                              .replace(/Điểm đánh giá:\s*\d+%\.?/gi, "")
+                              .replace(/\(\d+%\)/gi, "")
+                              .trim()}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -1093,6 +1142,28 @@ export default function CandidateDrawer({
               </button>
             </div>
 
+            {isUnderQualified && (
+              <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3.5 text-xs text-amber-900 space-y-1.5 animate-in fade-in">
+                <div className="flex items-center gap-2 font-bold text-amber-950">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Lưu ý: Hồ sơ ứng viên chưa đạt đầy đủ tiêu chuẩn yêu cầu</span>
+                </div>
+                {missingSkillsList.length > 0 && (
+                  <div className="flex flex-wrap gap-1 text-[11px]">
+                    <span className="font-semibold text-amber-800">Thiếu:</span>
+                    {missingSkillsList.map((sk, i) => (
+                      <span key={i} className="px-1.5 py-0.5 rounded bg-white text-red-700 text-[10px] font-bold border border-red-200">
+                        ✖ {sk}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  Bạn đang thực hiện xếp lịch phỏng vấn đặc cách cho ứng viên này. Vui lòng kiểm tra kỹ trước khi bấm xác nhận để tránh gửi nhầm thư mời.
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleScheduleInterview} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -1271,6 +1342,32 @@ export default function CandidateDrawer({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal Cảnh báo khi chuyển vòng / xếp lịch hồ sơ chưa đạt chuẩn */}
+      {mismatchWarning && (
+        <StageMismatchConfirmModal
+          isOpen={true}
+          onClose={() => setMismatchWarning(null)}
+          onConfirm={async () => {
+            const action = mismatchWarning.actionType;
+            const target = mismatchWarning.targetStage;
+            setMismatchWarning(null);
+            if (action === "MOVE_STAGE") {
+              await executeQuickMove(target);
+            } else if (action === "SCHEDULE_INTERVIEW") {
+              await executeScheduleInterview();
+            }
+          }}
+          candidateName={data?.candidate?.fullName || "Ứng viên"}
+          jobTitle={data?.job?.title || "Vị trí tuyển dụng"}
+          targetStage={mismatchWarning.targetStage}
+          missingSkills={missingSkillsList}
+          expYears={candidateExp}
+          minExpYears={minExpRequired}
+          rationale={data?.aiMatchRationale || ""}
+          actionType={mismatchWarning.actionType}
+        />
       )}
     </div>
   );

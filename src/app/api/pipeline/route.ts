@@ -56,7 +56,13 @@ export async function GET(req: Request) {
       include: {
         candidate: true,
         job: {
-          select: { id: true, title: true, department: true },
+          select: {
+            id: true,
+            title: true,
+            department: true,
+            minExperienceYears: true,
+            requiredSkills: true,
+          },
         },
         evaluations: {
           select: { id: true, overallScore: true, recommendation: true },

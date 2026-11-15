@@ -358,9 +358,9 @@ export function heuristicParseAndMatch(
   } else if (totalScore >= 75) {
     rationale = `Ứng viên đáp ứng xuất sắc các tiêu chuẩn của vị trí ${job.title} (${matchedSkills.length}/${requiredSkills.length} kỹ năng trọng yếu: ${matchedSkills.join(", ")}). Kinh nghiệm ${expYears} năm và học vấn phù hợp.`;
   } else if (totalScore >= 60) {
-    rationale = `Ứng viên có nền tảng ${expYears} năm kinh nghiệm tốt, đáp ứng một phần tiêu chuẩn (${totalScore}%). Cần phỏng vấn thêm về các kỹ năng: ${missingSkills.join(", ") || "nâng cao"}.`;
+    rationale = `Ứng viên có nền tảng ${expYears} năm kinh nghiệm tốt, đáp ứng một phần tiêu chuẩn kỹ năng (${matchedSkills.join(", ")}). Cần đánh giá thêm về các kỹ năng: ${missingSkills.join(", ") || "nâng cao"}.`;
   } else {
-    rationale = `Hồ sơ ứng viên chưa phù hợp với vị trí ${job.title}. Thiếu các kỹ năng chuyên môn bắt buộc: ${missingSkills.join(", ") || "cốt lõi"}. Điểm đánh giá: ${totalScore}%.`;
+    rationale = `Hồ sơ ứng viên chưa phù hợp với vị trí ${job.title}. Thiếu các kỹ năng chuyên môn bắt buộc: ${missingSkills.join(", ") || "cốt lõi"}.`;
   }
 
   return {
@@ -438,7 +438,7 @@ QUY TẮC ĐÁNH GIÁ:
    - matchedSkills: các kỹ năng trong JD mà ứng viên có
    - missingSkills: các kỹ năng trong JD mà ứng viên thiếu
    - matchScore: Điểm phần trăm từ 0.0 đến 100.0 (chấm khách quan, nhiệt độ 0)
-   - rationale: Đoạn giải thích súc tích bằng tiếng Việt (2-3 câu) vì sao đạt số điểm trên.
+   - rationale: Đoạn đối chiếu súc tích bằng tiếng Việt (2-3 câu) về các tiêu chí kỹ năng và kinh nghiệm đáp ứng hoặc còn thiếu so với JD. TUYỆT ĐỐI KHÔNG ghi số điểm % hay nhắc đến tỷ lệ phần trăm trong đoạn văn bản này.
 
 TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON HỢP LỆ VỚI CÁC TRƯỜNG:
 {
@@ -476,7 +476,10 @@ TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON HỢP LỆ VỚI CÁC TRƯỜNG
           education: Array.isArray(parsed.education) ? parsed.education : [],
           experience: Array.isArray(parsed.experience) ? parsed.experience : [],
           matchScore: Math.round(Number(parsed.matchScore) || 50),
-          rationale: String(parsed.rationale || "Đã phân tích hồ sơ qua Gemini AI."),
+          rationale: String(parsed.rationale || "Đã phân tích đối chiếu hồ sơ.")
+            .replace(/Điểm đánh giá:\s*\d+%\.?/gi, "")
+            .replace(/\(\d+%\)/gi, "")
+            .trim(),
           matchedSkills: Array.isArray(parsed.matchedSkills) ? parsed.matchedSkills : [],
           missingSkills: Array.isArray(parsed.missingSkills) ? parsed.missingSkills : [],
         };
