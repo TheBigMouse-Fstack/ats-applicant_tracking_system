@@ -4,7 +4,7 @@ title: "Các Mô hình Động: Finite State Machine, Activity & Sequence Diagra
 type: "diagram"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "state-machine"
@@ -22,7 +22,7 @@ last_updated: "2026-11-18"
 
 # CÁC MÔ HÌNH ĐỘNG: STATE MACHINE, ACTIVITY & SEQUENCE DIAGRAMS
 
-> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)
+> **Dự án:** ATS — Applicant Tracking System
 
 ---
 
@@ -30,7 +30,7 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 
@@ -52,7 +52,7 @@ Bước phù hợp và logic nhất để làm ngay bây giờ là:
 
 ### PHẦN 1: SƠ ĐỒ TRẠNG THÁI ỨNG VIÊN (STATE MACHINE DIAGRAM — CHUẨN HÓA MỚI NHẤT)
 
-Dưới đây là sơ đồ vòng đời trạng thái của một hồ sơ ứng tuyển (`Application.currentStage`) trong hệ thống **ReCoverX Career (ATS)** theo nguyên tắc **Human-in-the-loop**, **Phân quyền chuyển vòng rõ ràng (HR max `SCREENING`, Hiring Manager phụ trách `INTERVIEW` & `HIRED`)**, **Cấm nhảy cóc giai đoạn**, và **Bắt buộc lý do từ chối (`BRL-11`)**:
+Dưới đây là sơ đồ vòng đời trạng thái của một hồ sơ ứng tuyển (`Application.currentStage`) trong hệ thống **ATS — Applicant Tracking System** theo nguyên tắc **Human-in-the-loop**, **Phân quyền chuyển vòng rõ ràng (HR max `SCREENING`, Hiring Manager phụ trách `INTERVIEW` & `HIRED`)**, **Cấm nhảy cóc giai đoạn**, và **Bắt buộc lý do từ chối (`BRL-11`)**:
 
 ```mermaid
 stateDiagram-v2
@@ -285,7 +285,7 @@ Bạn có thể mở Draw.io vẽ ngay sơ đồ này. Khi vẽ xong bạn cứ 
 
 ## 3. T?ng h?p 4 Sequence Diagrams (S? ?? tu?n t?)
 
-Dưới đây là bộ **4 Sequence Diagram (Sơ đồ tuần tự)** chuẩn mực nhất, phủ kín **5 Use Case cốt lõi** và các luồng kiến trúc 3 lớp (UI ➔ Service ➔ Database / AI / Mail) của hệ thống **ReCoverX Career (ATS)** theo đúng checklist:
+Dưới đây là bộ **4 Sequence Diagram (Sơ đồ tuần tự)** chuẩn mực nhất, phủ kín **5 Use Case cốt lõi** và các luồng kiến trúc 3 lớp (UI ➔ Service ➔ Database / AI / Mail) của hệ thống **ATS — Applicant Tracking System** theo đúng checklist:
 
 ---
 

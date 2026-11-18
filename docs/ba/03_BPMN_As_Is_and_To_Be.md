@@ -4,7 +4,7 @@ title: "Quy trình Nghiệp vụ AS-IS & TO-BE (BPMN 2.0 — Human-in-the-loop)"
 type: "diagram"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "bpmn-2.0"
@@ -21,7 +21,7 @@ last_updated: "2026-11-18"
 
 # QUY TRÌNH NGHIỆP VỤ AS-IS & TO-BE (BPMN 2.0)
 
-> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)
+> **Dự án:** ATS — Applicant Tracking System
 > **Tiêu chuẩn biên soạn:** Universal BA Toolkit (`RULE-18`, `RULE-19`, BPMN 2.0 Swimlane)
 
 ---
@@ -30,7 +30,7 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 
@@ -388,7 +388,7 @@ Quy trình vận hành theo trình tự các bước như sau:
 
 ---
 
-## 2. QUY TRÌNH TO-BE (TƯƠNG LAI VỚI RECOVERX CAREER ATS)
+## 2. QUY TRÌNH TO-BE (TƯƠNG LAI VỚI ATS — Applicant Tracking System)
 
 ### H??ng d?n thi?t k? quy tr?nh To-Be chu?n BPMN 2.0:
 
@@ -535,7 +535,7 @@ Dưới đây là phần diễn giải toàn bộ quy trình **To-Be** được 
 
 ### 2.1 MÔ TẢ TỔNG QUAN (HÌNH NÀY LÀ GÌ?)
 
-Đây là **Sơ đồ Quy trình nghiệp vụ chuẩn BPMN 2.0** mô tả **Quy trình Tuyển dụng Tương lai (To-Be)** của hệ thống ReCoverX Career ATS. Sơ đồ được thiết kế dạng phân làn (Swimlanes) gồm 3 chủ thể: **Ứng viên (Candidate)**, **Hệ thống tự động (System)** và **Chuyên viên Tuyển dụng (HR)**; thể hiện chuỗi hoạt động từ 2 kênh tiếp nhận hồ sơ (Ứng viên tự nộp trực tuyến & HR chủ động nạp CV nội bộ/Referral), qua các bước xử lý bóc tách và đối chiếu tự động bằng AI, đưa lên bảng điều khiển Kanban theo cơ chế *Human-in-the-loop*, tổ chức phỏng vấn và đánh giá năng lực qua Scorecard, cho đến khi ra quyết định tuyển dụng và tự động hóa quy trình gửi thư từ chối (có độ trễ buffer) lưu vào Kho nhân tài (Talent Pool).
+Đây là **Sơ đồ Quy trình nghiệp vụ chuẩn BPMN 2.0** mô tả **Quy trình Tuyển dụng Tương lai (To-Be)** của Hệ thống ATS — Applicant Tracking System. Sơ đồ được thiết kế dạng phân làn (Swimlanes) gồm 3 chủ thể: **Ứng viên (Candidate)**, **Hệ thống tự động (System)** và **Chuyên viên Tuyển dụng (HR)**; thể hiện chuỗi hoạt động từ 2 kênh tiếp nhận hồ sơ (Ứng viên tự nộp trực tuyến & HR chủ động nạp CV nội bộ/Referral), qua các bước xử lý bóc tách và đối chiếu tự động bằng AI, đưa lên bảng điều khiển Kanban theo cơ chế *Human-in-the-loop*, tổ chức phỏng vấn và đánh giá năng lực qua Scorecard, cho đến khi ra quyết định tuyển dụng và tự động hóa quy trình gửi thư từ chối (có độ trễ buffer) lưu vào Kho nhân tài (Talent Pool).
 
 ---
 

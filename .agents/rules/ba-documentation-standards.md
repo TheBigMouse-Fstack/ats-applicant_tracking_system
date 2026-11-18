@@ -1,7 +1,7 @@
 # Rule: Universal BA Documentation Standards (Adopted from Universal_BA_Toolkit)
 
 > **Source:** `https://github.com/MrSilent205/Universal_BA_Toolkit`  
-> **Scope:** Áp dụng bắt buộc cho toàn bộ tài liệu phân tích nghiệp vụ trong thư mục `docs/` của dự án **ReCoverX Career (ATS)**.
+> **Scope:** Áp dụng bắt buộc cho toàn bộ tài liệu trong `docs/ba/` (Nghiệp vụ cho doanh nghiệp) và `docs/dev-context/` (Kỹ thuật cho Dev & AI Agent) của dự án **ATS — Applicant Tracking System**.
 
 ---
 

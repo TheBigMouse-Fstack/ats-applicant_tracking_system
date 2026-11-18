@@ -4,7 +4,7 @@ title: "Đặc tả Chi tiết Ca sử dụng (Chuẩn 12 Thành phần Alistair
 type: "srs"
 version: "2.2.0"
 status: "approved"
-owner: "ReCoverX BA Team"
+owner: "ATS BA Team"
 domain: "recruitment-ats"
 tags:
   - "use-case"

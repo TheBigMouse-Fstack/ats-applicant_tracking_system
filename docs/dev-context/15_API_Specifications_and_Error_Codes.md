@@ -4,7 +4,7 @@ title: "Đặc tả Hợp đồng API Chính & Hệ thống Mã lỗi Chuẩn"
 type: "api-spec"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "api-contract"
@@ -22,7 +22,7 @@ last_updated: "2026-11-18"
 
 # ĐẶC TẢ API CHÍNH & DANH MỤC MÃ LỖI (API SPECIFICATIONS & ERROR CODES)
 
-> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
+> **Dự án:** ATS — Applicant Tracking System  
 > **Phiên bản tài liệu:** v1.0  
 > **Kiến trúc:** Next.js 14 App Router Route Handlers (`src/app/api/`) + TypeScript + Prisma ORM  
 
@@ -32,8 +32,8 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
-| `v2.2.0` | 2026-11-18 | ReCoverX BA Team | **Added** | Bổ sung hợp đồng API `GET /api/dashboard` cho Bảng điều khiển Tổng quan Vận hành phân quyền theo Role (`ADMIN`, `HR`, `HIRING_MANAGER`). | Product Owner |
+| `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.2.0` | 2026-11-18 | ATS BA Team | **Added** | Bổ sung hợp đồng API `GET /api/dashboard` cho Bảng điều khiển Tổng quan Vận hành phân quyền theo Role (`ADMIN`, `HR`, `HIRING_MANAGER`). | Product Owner |
 
 ---
 

@@ -4,7 +4,7 @@ title: "Danh mục Business Rules 3 Vế, Ma trận Lỗi 7 Cột & Acceptance C
 type: "srs"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & QA Team"
+owner: "ATS BA & QA Team"
 domain: "recruitment-ats"
 tags:
   - "business-rules"
@@ -28,7 +28,7 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Người Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.1.0` | 2026-11-18 | BA & QA Team | **Initial** | Chuẩn hóa trọn bộ Business Rules (3 vế `WHEN/THEN/UNLESS`), Ma trận Lỗi 7 cột chuẩn `ERR-[MOD]-[HTTP]-[SEQ]` và Acceptance Criteria Gherkin BDD bám sát 100% mã nguồn ReCoverX Career ATS. | Product Owner & Tech Lead |
+| `v2.1.0` | 2026-11-18 | BA & QA Team | **Initial** | Chuẩn hóa trọn bộ Business Rules (3 vế `WHEN/THEN/UNLESS`), Ma trận Lỗi 7 cột chuẩn `ERR-[MOD]-[HTTP]-[SEQ]` và Acceptance Criteria Gherkin BDD bám sát 100% mã nguồn ATS — Applicant Tracking System. | Product Owner & Tech Lead |
 
 ---
 

@@ -1,32 +1,21 @@
-# Quy tắc Dự án: ReCoverX Career - Hệ thống ATS (Applicant Tracking System)
+# Quy tắc Dự án: ATS — Applicant Tracking System
 
 ## 1. Thông tin Dự án & Kiến trúc
-- **Tên dự án:** ReCoverX Career (ATS)
+- **Tên hệ thống nội bộ:** ATS — Applicant Tracking System *(Cổng ứng tuyển công khai giả lập: RecoverX)*
 - **Kiến trúc:** Next.js Fullstack (App Router) + TypeScript + Tailwind CSS
 - **ORM & Database:** Prisma ORM. Môi trường phát triển: SQLite (`file:./dev.db`); Sản xuất: PostgreSQL.
-- **AI Engine:** Mô hình Lai (Hybrid): Lớp 1 (Regex/Validation cứng cục bộ) + Lớp 2 (Google Gemini API `@google/genai` nhiệt độ 0 cho AI Parsing & Match Scoring).
-- **UI Kit:** Tailwind CSS, Lucide React, shadcn/ui components pattern.
+- **AI Engine:** Mô hình Lai (Hybrid): Lớp 1 (trích xuất text cục bộ + NLP dự phòng) + Lớp 2 (Google Gemini API `@google/genai` nhiệt độ 0 cho phân tích ngữ nghĩa & đối chiếu JD 3 mức màu).
 - **Kéo thả Pipeline:** `@hello-pangea/dnd` (Kanban 5 cột: New, Screening, Interview, Hired, Rejected).
 
-## 2. Nguồn Chân lý Nghiệp vụ (Single Source of Truth)
-Khi sinh mã và kiểm thử, tuyệt đối tuân thủ các tài liệu đặc tả trong thư mục `docs/`:
-- `docs/02_BRD_Updated_Full.md`: Phạm vi nghiệp vụ (In-Scope), dòng chảy tuyển dụng.
-- `docs/03_BPMN_As_Is_and_To_Be.md`: Quy trình As-Is & To-Be BPMN 2.0.
-- `docs/04_FDD_and_Use_Case_List.md`: Danh sách 7 Use Case cốt lõi (UC-01 đến UC-07).
-- `docs/05_Use_Case_Specifications.md`: Bảng đặc tả chi tiết giao diện và luồng sự kiện.
-- `docs/06_Dynamic_Models_Activity_Sequence_State.md`: Sơ đồ tuần tự (SD-01 đến SD-04) và Máy trạng thái (State Machine).
-- `docs/07_Database_Design_ERD.md`: 8 bảng CSDL (`User`, `Job`, `Candidate`, `Application`, `AIParseResult`, `AIMatchScore`, `Interview`, `EvaluationScorecard`).
-- `docs/08_NonFunctional_and_Permissions.md`: Ma trận phân quyền RBAC và yêu cầu phi chức năng.
+## 2. Nguồn Chân lý Tài liệu (2 Thư mục Tách biệt)
+- **`docs/ba/` (Hồ sơ BA cho Doanh nghiệp / Non-Tech):** `00_BA_Documentation_Index_and_RTM.md`, `02_BRD_Updated_Full.md`, `03_BPMN_As_Is_and_To_Be.md`, `04_FDD_and_Use_Case_List.md`, `05_Use_Case_Specifications.md`, `06_Dynamic_Models_Activity_Sequence_State.md`, `08_NonFunctional_and_Permissions.md`, `10_Scope_and_System_Comparison.md`, `11_UI_UX_Design_and_Form_Validation_Guidelines.md`, `14_Scope_Expansion_and_Advanced_Features.md`, `18_Brief_Compliance_and_Value_Added_Analysis.md`, `TEST_SCENARIOS_AND_UAT_GUIDE.md`.
+- **`docs/dev-context/` (Ngữ cảnh Kỹ thuật cho AI Agent & Dev):** `07_Database_Design_ERD.md`, `09_Technical_Setup_and_Antigravity_Guide.md`, `12_Hybrid_AI_Architecture_and_Scoring_Engine.md`, `13_System_Architecture_and_Technology_Stack.md`, `15_API_Specifications_and_Error_Codes.md`, `16_SDD_Prompt_Playbook.md`, `17_Business_Rules_and_Error_Matrix.md`.
 
-## 3. Các Quy tắc Nghiệp vụ Bắt buộc (Business Rules - BRL)
-- **BRL-01 (Định dạng & Dung lượng tệp):** Chỉ chấp nhận định dạng PDF, DOCX; dung lượng tối đa 10MB.
-- **BRL-02 (Khử trùng lặp - Deduplication):** Khóa nhận diện ứng viên là cặp `(Email, Phone)`. Trùng lặp trong vòng 30 ngày cho cùng 1 Job sẽ báo lỗi hoặc cập nhật đơn cũ.
-- **BRL-03 (Bóc tách dữ liệu AI):** Trích xuất thông tin cá nhân, học vấn, kỹ năng chính và năm kinh nghiệm lưu vào bảng `ai_parse_results`.
-- **BRL-04 (Chấm điểm AI Match):** Tính điểm % phù hợp và tóm tắt lý do (Rationale). Điểm >= 60% chuyển sang vòng Phỏng vấn/Xem xét; dưới 60% xếp vào luồng Từ chối.
-- **BRL-05 (Độ trễ gửi Email từ chối):** Email từ chối tự động không gửi ngay lập tức mà hoãn lại từ 12 - 24 giờ (Delay Buffer).
-- **BRL-08 (Tính điểm Scorecard):** Tính điểm trung bình có trọng số từ các tiêu chí đánh giá của các giám khảo phỏng vấn.
+## 3. Quy tắc Nghiệp vụ & UI/UX Bắt buộc
+- **Không hiển thị mã kỹ thuật (`BRL-*`, `NFR-*`, `RBAC`, `Magic Bytes`) hay chữ `AI` phô trương trên giao diện người dùng cuối.**
+- **Phân tách quyền vòng tuyển:** `HR` chuyển tối đa đến `SCREENING` + chỉnh sửa 5 trường CV; `HIRING_MANAGER` phụ trách `SCREENING ➔ INTERVIEW ➔ HIRED` & lịch phỏng vấn; bắt buộc lý do khi `REJECTED` (`BRL-11`) và bắt buộc có Phiếu đánh giá đạt chuẩn trước khi `HIRED` (`BRL-06`).
+- **Kho Nhân Tài:** Chỉ gồm hồ sơ đã qua sàng lọc theo 3 nhóm thực tế (*Tiềm năng / Dự bị*, *Đang chờ đợt khác*, *Lưu trữ dự phòng 180 ngày*), loại trừ `NEW` và `HIRED`.
 
-## 4. Hướng dẫn Lập trình (Coding Standards)
-- Luôn kiểm tra tính tương thích TypeScript, không dùng `any` bừa bãi.
-- Giữ cấu trúc component rõ ràng, tách biệt logic API và giao diện UI.
-- Viết mã xử lý lỗi rõ ràng (Try/Catch, hiển thị Toast thông báo cho người dùng).
+## 4. Hướng dẫn Lập trình
+- Luôn kiểm tra TypeScript (`npx tsc --noEmit`) và chạy bộ kiểm thử (`node tests/run-tests.js`) sau mỗi thay đổi.
+- Giữ giao diện phẳng, dịu mắt (60-30-10), tách bạch Tổng quan và Chi tiết 5 tab, không trùng lặp nút thao tác.

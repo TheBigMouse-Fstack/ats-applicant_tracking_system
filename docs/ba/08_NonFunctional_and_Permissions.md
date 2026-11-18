@@ -4,7 +4,7 @@ title: "Phân loại Tác nhân, Ma trận Phân quyền RBAC & Yêu cầu Phi c
 type: "srs"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & Security Team"
+owner: "ATS BA & Security Team"
 domain: "recruitment-ats"
 tags:
   - "rbac"
@@ -22,7 +22,7 @@ last_updated: "2026-11-18"
 
 # PHÂN LOẠI TÁC NHÂN, MA TRẬN PHÂN QUYỀN (RBAC) & YÊU CẦU PHI CHỨC NĂNG (NFR)
 
-> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
+> **Dự án:** ATS — Applicant Tracking System  
 > **Tiêu chuẩn áp dụng:** Universal BA Toolkit (`RULE-04` ISO/IEC 25010, `RULE-17` Actor Taxonomy & Least Privilege, `RULE-18`, `RULE-19`).
 
 ## Lịch Sử Phiên Bản (Revision History)
@@ -40,7 +40,7 @@ last_updated: "2026-11-18"
 
 ### 0. Phân Loại 4 Nhóm Tác Nhân Hệ Thống (Actor Taxonomy — RULE-17)
 
-| Nhóm Tác Nhân | Tác Nhân Cụ Thể Trong ReCoverX Career ATS | Vai Trò Tương Tác |
+| Nhóm Tác Nhân | Tác Nhân Cụ Thể Trong ATS — Applicant Tracking System | Vai Trò Tương Tác |
 | :--- | :--- | :--- |
 | **1. Primary Actor** *(Tác nhân chính)* | Ứng viên (`Public`), Chuyên viên HR (`HR`), Quản lý Chuyên môn (`HIRING_MANAGER`), Quản trị viên (`ADMIN`) | Trực tiếp khởi xướng thao tác nghiệp vụ trên hệ thống. |
 | **2. Secondary Actor** *(Tác nhân phụ)* | Dịch vụ AI phân tích ngôn ngữ (Google Gemini), Dịch vụ gửi Email | Hỗ trợ phân tích ngữ nghĩa hồ sơ CV và gửi thông báo phỏng vấn/từ chối. |

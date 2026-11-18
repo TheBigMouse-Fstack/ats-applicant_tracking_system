@@ -4,7 +4,7 @@ title: "Quy chuẩn Trải nghiệm Người dùng (UI/UX) & Quy tắc Kiểm tr
 type: "spec"
 version: "2.2.0"
 status: "approved"
-owner: "ReCoverX BA & Product Team"
+owner: "ATS BA & Product Team"
 domain: "recruitment-ats"
 tags:
   - "ui-ux"

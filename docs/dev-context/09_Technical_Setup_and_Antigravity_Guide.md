@@ -4,7 +4,7 @@ title: "Danh sách Màn hình (SCR-xx) & Hướng dẫn Thiết lập Kỹ thu�
 type: "guide"
 version: "2.0.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "screens"
@@ -20,7 +20,7 @@ last_updated: "2026-11-18"
 
 # DANH SÁCH MÀN HÌNH (SCR-XX) & CHIẾN LƯỢC KỸ THUẬT
 
-> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)
+> **Dự án:** ATS — Applicant Tracking System
 
 ---
 
@@ -28,7 +28,7 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.0.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.0.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 
@@ -71,7 +71,7 @@ Trong quá trình trao đổi, chúng ta đã tối ưu và sửa đổi rất n
 Để biết hệ thống này khi đem ra thị trường thực tế có "sống" được không, bạn có thể kiểm chứng qua **3 lăng kính** sau:
 
 #### A. So sánh với các hệ thống ATS hàng đầu thực tế
-Hệ thống **ReCoverX Career (ATS)** mà bạn thiết kế đang khớp hoàn toàn với kiến trúc của các phần mềm tuyển dụng hàng đầu hiện nay như **Base E-Hiring (Việt Nam)**, **Greenhouse (Mỹ)** và **Lever**:
+Hệ thống **ATS — Applicant Tracking System** mà bạn thiết kế đang khớp hoàn toàn với kiến trúc của các phần mềm tuyển dụng hàng đầu hiện nay như **Base E-Hiring (Việt Nam)**, **Greenhouse (Mỹ)** và **Lever**:
 * **Thực tế:** Mọi công ty đều cần 1 Cổng nộp hồ sơ công khai (Careers page) để ứng viên tự nộp ➔ **Hệ thống của bạn đã có (UC-01).**
 * **Thực tế:** Các ATS hiện đại đều dùng AI Parsing (như Textkernel, Affinda hoặc OpenAI/Gemini) để đọc file PDF ➔ **Hệ thống của bạn đã có (UC-02).**
 * **Thực tế:** Quản lý tuyển dụng chuẩn quốc tế luôn dùng bảng Kanban kéo-thả 5 giai đoạn ➔ **Hệ thống của bạn khớp 100% (UC-04).**
@@ -138,7 +138,7 @@ Dựa trên cấu trúc clone của các hệ thống trên, toàn bộ hệ th�
 
 ```text
 +----------------------------------------------------------------------------------------------------+
-| LOGO  ReCoverX ATS  |  [Vị trí: Backend Java Dev v]  |  [Tìm kiếm từ khóa...]  [Lọc kỹ năng v]  (HR)|
+| LOGO  ATS — Applicant Tracking System  |  [Vị trí: Backend Java Dev v]  |  [Tìm kiếm từ khóa...]  [Lọc kỹ năng v]  (HR)|
 +----------------------------------------------------------------------------------------------------+
 | [+ Tải lên CV]                                                                  [Xuất Excel]       |
 |                                                                                                    |
@@ -202,7 +202,7 @@ Về vấn đề này, mình xin chia sẻ thẳng thắn về mặt kỹ thuậ
 ### BƯỚC 1: THIẾT LẬP WORKSPACE (KHÔNG GIAN LÀM VIỆC)
 Hiện tại bạn chưa chọn thư mục làm việc (Workspace). Để bắt đầu:
 1. Bạn hãy tạo một thư mục dự án, ví dụ:  
-   `C:\Users\ACER\.gemini\antigravity\scratch\recoverx-career-ats`
+   `D:\ATS project`
 2. Mở thư mục này làm **Active Workspace** trong Antigravity IDE (hoặc mình có thể tạo thư mục này ngay cho bạn bằng dòng lệnh).
 
 ---
@@ -297,10 +297,10 @@ Máy tính của bạn đã có sẵn môi trường **cực kỳ xịn và mớ
 ### BƯỚC 1: TẠO THƯ MỤC DỰ ÁN VÀ MỞ ACTIVE WORKSPACE
 
 1. Mình sẽ khởi tạo thư mục dự án cho bạn tại:  
-   `C:\Users\ACER\.gemini\antigravity\scratch\recoverx-career-ats`
+   `D:\ATS project`
 2. **Hành động của bạn trên Antigravity IDE:**
    * Nhìn lên thanh menu của Antigravity IDE: Chọn **File ➔ Open Folder...**
-   * Trỏ đến thư mục: `C:\Users\ACER\.gemini\antigravity\scratch\recoverx-career-ats`
+   * Trỏ đến thư mục: `D:\ATS project`
    * *Điều này giúp Antigravity nhận diện đúng Workspace và toàn quyền đọc/ghi code tự động.*
 
 ---

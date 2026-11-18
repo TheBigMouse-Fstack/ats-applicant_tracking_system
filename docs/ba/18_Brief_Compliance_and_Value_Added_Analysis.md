@@ -24,7 +24,7 @@ last_updated: "2026-11-18"
 # BÁO CÁO ĐỐI CHIẾU ĐỀ BÀI GỐC, PHÂN TÍCH CẢI TIẾN & LÝ DO KIẾN TRÚC
 
 > **Tên đề tài gốc:** ATS — Applicant Tracking System  
-> **Tên sản phẩm Demo:** ReCoverX Career — Applicant Tracking System (ATS)  
+> **Tên sản phẩm Demo:** ATS — Applicant Tracking System  
 > **Thời gian triển khai:** 5 tuần  
 > **Đại diện doanh nghiệp (Stakeholder):** Anh Nguyễn Anh Duy — Trưởng phòng Tuyển dụng (`0814431111`)  
 > **Mục đích tài liệu:** Thẩm định mức độ tuân thủ 100% yêu cầu đề bài cơ bản, phân tích giá trị của các hạng mục tự nghiên cứu & cải tiến thêm, minh bạch hóa hệ thống mẫu đã tham chiếu (Clone/Benchmark), lý giải quyết định chọn kiến trúc **Hybrid AI** và chứng minh không bị "làm thừa" (Gold Plating).
@@ -33,7 +33,7 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Người Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v1.0.0` | 2026-11-18 | Nguyễn Quốc Khánh | **Initial** | Lập báo cáo đối chiếu toàn diện giữa Đề bài doanh nghiệp cơ bản và Sản phẩm ReCoverX Career ATS thực tế. | Trưởng phòng Tuyển dụng / Hội đồng |
+| `v1.0.0` | 2026-11-18 | Nguyễn Quốc Khánh | **Initial** | Lập báo cáo đối chiếu toàn diện giữa Đề bài doanh nghiệp cơ bản và Sản phẩm ATS — Applicant Tracking System thực tế. | Trưởng phòng Tuyển dụng / Hội đồng |
 | `v1.1.0` | 2026-11-18 | Nguyễn Quốc Khánh | **Changed** | Đồng bộ chuẩn hóa thương hiệu kép (Nội bộ: `ATS — Applicant Tracking System`, Public: `RecoverX`) và bổ sung Bảng điều khiển Tổng quan Vận hành phân quyền theo vai trò (`/admin/dashboard`). | Trưởng phòng Tuyển dụng / Hội đồng |
 
 ---
@@ -57,7 +57,7 @@ last_updated: "2026-11-18"
 
 ## 2. MA TRẬN ĐỐI CHIẾU 1:1 — ĐỀ BÀI CƠ BẢN VS SẢN PHẨM HIỆN TẠI
 
-| Hạng Mục Đề Bài Yêu Cầu | Chi Tiết Yêu Cầu Trong Đề Bài | Hiện Trạng Sản Phẩm ReCoverX Career ATS | Mức Độ Đạt |
+| Hạng Mục Đề Bài Yêu Cầu | Chi Tiết Yêu Cầu Trong Đề Bài | Hiện Trạng Sản Phẩm ATS — Applicant Tracking System | Mức Độ Đạt |
 | :--- | :--- | :--- | :---: |
 | **Upload CV** | Hỗ trợ tải lên tệp CV (`.pdf`, `.doc`). | Hỗ trợ tải lên `.pdf`, `.docx` tối đa 10MB (từ cả Cổng công khai & HR nạp nội bộ) kèm **kiểm tra tính xác thực cấu trúc tệp tin gốc** chặn tệp giả mạo. *(Chủ động không nhận `.doc` cũ Word 97–2003 vì nguy cơ mã độc Macro để đảm bảo NFR Bảo mật)*. | ✅ **Đạt + Nâng chuẩn Bảo mật** |
 | **Parsing CV (5 trường cơ bản)** | Trích xuất ít nhất **5 trường thông tin cơ bản**: Tên, Email, Vị trí ứng tuyển, Kinh nghiệm, Kỹ năng. | Trích xuất tự động và hiển thị ban đầu **gọn đúng 5 trường cốt lõi theo JD**, gộp thông tin mở rộng vào nút *"Xem chi tiết hồ sơ"*, đồng thời cho phép **HR chỉnh sửa/thêm thủ công** nếu máy đọc sót. | ✅ **Đạt 100% + Cải tiến UX** |

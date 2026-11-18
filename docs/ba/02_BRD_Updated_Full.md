@@ -1,6 +1,6 @@
 ---
 id: "BRD-ATS-01"
-title: "Tài liệu Yêu cầu Nghiệp vụ Doanh nghiệp (BRD) — ReCoverX Career ATS"
+title: "Tài liệu Yêu cầu Nghiệp vụ Doanh nghiệp (BRD) — ATS — Applicant Tracking System"
 type: "brd"
 version: "2.1.0"
 status: "approved"
@@ -23,7 +23,7 @@ last_updated: "2026-11-18"
 ---
 
 # BUSINESS REQUIREMENTS DOCUMENT (BRD)
-## Hệ Thống Quản Lý Tuyển Dụng Thông Minh — ReCoverX Career ATS
+## Hệ Thống Quản Lý Tuyển Dụng Thông Minh — ATS — Applicant Tracking System
 
 > **Địa điểm:** TP. Hồ Chí Minh  
 > **Tiêu chuẩn biên soạn:** Universal BA Toolkit (`/brd`, `RULE-02`, `RULE-16`, `RULE-18`, `RULE-19`)

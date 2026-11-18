@@ -1,53 +1,48 @@
-# 🎯 ReCoverX Career - Hệ thống Quản lý Tuyển dụng (ATS)
-## Dữ liệu Toàn bộ Phiên làm việc & Tài liệu Kỹ thuật
+# 🎯 ATS — Applicant Tracking System (Hệ thống Quản lý Tuyển dụng)
+## Tài liệu Tổng quan Dự án & Cấu trúc Kho tài liệu
 
-> **Mã định danh phiên làm việc gốc (Source Conversation ID):** `8a254095-a9f4-4286-9307-fe701b5b5a78`  
-> **Thời gian thực hiện phân tích:** 08/11/2026 - 11/11/2026  
-> **Tổng số lượt tương tác:** 102 steps  
+> **Tên hệ thống nội bộ:** `ATS — Applicant Tracking System`  
+> **Thương hiệu giả lập Cổng Tuyển dụng Công khai (Public Careers Portal):** `RecoverX`  
 > **Thư mục lưu trữ dự án:** `D:\ATS project`
 
 ---
 
-## 📁 Cấu trúc Thư mục Dự án
+## 📁 Cấu trúc Thư mục Tài liệu (Tách biệt 2 nhóm)
 
 ```text
 D:\ATS project/
-├── README.md                                    # Tài liệu tổng quan dự án & chỉ mục tập tin
-├── CHAT_HISTORY.md                              # Toàn bộ lịch sử trò chuyện chi tiết (102 steps)
+├── README.md                                       # Tài liệu tổng quan dự án & chỉ mục tập tin
+├── AGENTS.md / GEMINI.md                           # Quy tắc vận hành cho AI Agent & Dev
 │
-├── docs/                                        # Bộ tài liệu đặc tả nghiệp vụ & kỹ thuật chi tiết
-│   ├── 01_BRD_Original.md                       # Bản BRD gốc do người dùng tải lên
-│   ├── 02_BRD_Updated_Full.md                   # Toàn văn BRD cập nhật hợp nhất đầy đủ
-│   ├── 03_BPMN_As_Is_and_To_Be.md               # Quy trình As-Is & To-Be (chuẩn BPMN 2.0 & SOP)
-│   ├── 04_FDD_and_Use_Case_List.md              # Sơ đồ FDD, danh sách FR và 7 Use Case cốt lõi
-│   ├── 05_Use_Case_Specifications.md            # Bản đặc tả chi tiết dạng bảng (UC-01 đến UC-05)
-│   ├── 06_Dynamic_Models_Activity_Sequence_State.md # State Machine, Swimlane Activity & 4 Sequence Diagrams
-│   ├── 07_Database_Design_ERD.md                # Thiết kế CSDL PostgreSQL, Data Dictionary, mã SQL DDL, ERD Draw.io & Mermaid
-│   ├── 08_NonFunctional_and_Permissions.md      # Ma trận phân quyền RBAC & Yêu cầu phi chức năng (NFR)
-│   ├── 09_Technical_Setup_and_Antigravity_Guide.md # Định hướng Frontend, Clone Dashboard & Hướng dẫn thiết lập Antigravity CI
-│   ├── 10_Scope_and_System_Comparison.md        # Bản phân định In/Out-Scope, hệ thống clone & so sánh điểm hơn/kém
-│   ├── 11_UI_UX_Design_and_Form_Validation_Guidelines.md # Quy chuẩn bắt buộc UI/UX, đánh đỏ ô lỗi & thông điệp rõ ràng
-│   └── TEST_SCENARIOS_AND_UAT_GUIDE.md          # Hướng dẫn 7 kịch bản kiểm thử thực hành (UAT Test Scenarios)
+├── docs/
+│   ├── README.md                                   # Hướng dẫn phân loại 2 thư mục tài liệu
+│   │
+│   ├── ba/                                         # 📘 TÀI LIỆU BA (Dành cho Doanh nghiệp / Khách hàng / Non-Tech)
+│   │   ├── 00_BA_Documentation_Index_and_RTM.md    # Chỉ mục tổng thể & Ma trận Truy vết (RTM)
+│   │   ├── 02_BRD_Updated_Full.md                  # Tài liệu Yêu cầu Nghiệp vụ (BRD)
+│   │   ├── 03_BPMN_As_Is_and_To_Be.md              # Quy trình Tuyển dụng Hiện tại (As-Is) & Đề xuất (To-Be)
+│   │   ├── 04_FDD_and_Use_Case_List.md             # Cây phân rã chức năng & Danh mục 7 Use Case cốt lõi
+│   │   ├── 05_Use_Case_Specifications.md           # Đặc tả chi tiết từng nghiệp vụ sử dụng
+│   │   ├── 06_Dynamic_Models_Activity_Sequence_State.md # Vòng đời hồ sơ & Luồng phối hợp giữa các vai trò
+│   │   ├── 08_NonFunctional_and_Permissions.md     # Ma trận Phân quyền & Yêu cầu chất lượng hệ thống
+│   │   ├── 10_Scope_and_System_Comparison.md       # Phạm vi dự án (In/Out-of-Scope) & Đối sánh chuẩn thị trường
+│   │   ├── 11_UI_UX_Design_and_Form_Validation_Guidelines.md # Quy chuẩn giao diện & Thông báo hướng dẫn người dùng
+│   │   ├── 14_Scope_Expansion_and_Advanced_Features.md # Khai phóng tính năng nâng cao & Bảo mật dữ liệu
+│   │   ├── 18_Brief_Compliance_and_Value_Added_Analysis.md # Báo cáo kiểm chứng bám sát đề bài & Giá trị gia tăng
+│   │   └── TEST_SCENARIOS_AND_UAT_GUIDE.md         # Kịch bản nghiệm thu thực tế (UAT) cho doanh nghiệp
+│   │
+│   └── dev-context/                                # ⚙️ TÀI LIỆU KỸ THUẬT (Dành cho Dev / QA / AI Agent lập trình)
+│       ├── 07_Database_Design_ERD.md               # Thiết kế CSDL, Từ điển dữ liệu & Sơ đồ ERD
+│       ├── 09_Technical_Setup_and_Antigravity_Guide.md # Hướng dẫn cài đặt môi trường & Quy trình phát triển
+│       ├── 12_Hybrid_AI_Architecture_and_Scoring_Engine.md # Kiến trúc bộ lọc Lai & Thuật toán chấm điểm độ phù hợp
+│       ├── 13_System_Architecture_and_Technology_Stack.md # Kiến trúc hệ thống & Công nghệ sử dụng
+│       ├── 15_API_Specifications_and_Error_Codes.md # Hợp đồng REST API & Mã lỗi hệ thống
+│       ├── 16_SDD_Prompt_Playbook.md               # Bộ Prompt chuẩn Spec-Driven Development cho AI Agent
+│       └── 17_Business_Rules_and_Error_Matrix.md   # Quy tắc nghiệp vụ 3 vế, Ma trận lỗi & Tiêu chí chấp nhận Gherkin
 │
-├── media/                                       # Toàn bộ 14 hình ảnh sơ đồ & tệp đính kèm gốc
-│   ├── media_1794120545429_f88cf311.png         # Sơ đồ As-Is vẽ tay ban đầu
-│   ├── media_1794122049232_eed6d462.png         # Sơ đồ As-Is hiệu chỉnh lần 1
-│   ├── media_1794123728379_fc258178.png         # Sơ đồ As-Is hoàn thiện
-│   ├── media_1794128176475_45763b00.png         # Sơ đồ To-Be phác thảo
-│   ├── media_1794128522818_5c0509af.png         # Sơ đồ To-Be hoàn chỉnh
-│   ├── media_1794140899553_825e7d95.png         # Sơ đồ UC-01
-│   ├── media_1794141059009_c909493d.png         # Sơ đồ UC-01 & UC-02
-│   ├── media_1794141359783_3ed746bd.png         # Template bảng đặc tả chuẩn BA
-│   ├── media_1794141685181_0df5ac8c.png         # Sơ đồ UC-03
-│   ├── media_1794141906077_59b44b76.png         # Sơ đồ UC-03 hiệu chỉnh
-│   ├── media_1794142185408_d39d1cdf.png         # Sơ đồ UC-04
-│   ├── media_1794142468418_01d2dd7c.png         # Sơ đồ UC-05
-│   ├── media_1794143664055_378c39ac.png         # Sơ đồ Máy trạng thái (State Machine)
-│   └── media_1794147297222_b86539a0.png         # Sơ đồ Tuần tự SD-02
-│
-└── raw_logs/                                    # Nhật ký giao tiếp gốc hệ thống
-    ├── transcript.jsonl                         # File log tóm tắt gọn
-    └── transcript_full.jsonl                    # File log đầy đủ dữ liệu gốc (Full Context)
+├── src/                                            # Mã nguồn Next.js Fullstack (App Router + TypeScript)
+├── prisma/                                         # Schema CSDL & Seed data
+└── tests/                                          # Bộ kiểm thử nghiệp vụ tự động (112 test cases)
 ```
 
 ---

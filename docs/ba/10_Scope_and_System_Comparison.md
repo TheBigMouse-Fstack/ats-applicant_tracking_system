@@ -4,7 +4,7 @@ title: "Phạm vi Dự án (In/Out-of-Scope) & Đối chiếu Hệ thống Mẫu
 type: "brd"
 version: "2.0.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "scope"
@@ -20,7 +20,7 @@ last_updated: "2026-11-18"
 
 # TÀI LIỆU PHẠM VI DỰ ÁN & ĐỐI CHIẾU HỆ THỐNG MẪU (SCOPE & BENCHMARK COMPARISON)
 
-> **Dự án:** ReCoverX Career — Hệ thống Quản lý Tuyển dụng (ATS)  
+> **Dự án:** ATS — Applicant Tracking System — Hệ thống Quản lý Tuyển dụng (ATS)  
 > **Mục tiêu tài liệu:** Làm rõ phạm vi Làm (In-Scope) / Không làm (Out-of-Scope), xác định rõ hệ thống đang clone theo, phân tích điểm khác biệt, ưu thế vượt trội (Điểm HƠN) và các giới hạn chấp nhận được (Điểm KÉM).
 
 ---
@@ -29,13 +29,13 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.0.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.0.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 
 ## I. CHÚNG TA ĐANG CLONE THEO HỆ THỐNG NÀO?
 
-Hệ thống **ReCoverX Career (ATS)** được định vị theo mô hình kết hợp (Hybrid Benchmark) từ các hệ thống ATS dẫn đầu thị trường:
+Hệ thống **ATS — Applicant Tracking System** được định vị theo mô hình kết hợp (Hybrid Benchmark) từ các hệ thống ATS dẫn đầu thị trường:
 
 1. **Hệ thống lõi để Clone quy trình nghiệp vụ: [Base E-Hiring (Base.vn)](https://base.vn/e-hiring)**
    * **Lý do chọn:** Base E-Hiring là phần mềm ATS phổ biến và chuẩn mực nhất tại các doanh nghiệp Việt Nam hiện nay.
@@ -100,7 +100,7 @@ So với Base E-Hiring nguyên bản, hệ thống của bạn có **3 điểm �
 ## IV. BẢNG ĐỐI ĐẦU: CÓ GÌ HƠN VÀ CÓ GÌ KÉM?
 
 ```text
-               [ ReCoverX Career (ATS) ]
+               [ ATS — Applicant Tracking System ]
                   /                 \
         ĐIỂM HƠN (Ưu thế)       ĐIỂM KÉM (Ranh giới MVP)
         -----------------       ------------------------
@@ -127,5 +127,5 @@ So với Base E-Hiring nguyên bản, hệ thống của bạn có **3 điểm �
 
 ## V. TỔNG KẾT ĐỊNH VỊ SẢN PHẨM
 
-> 💡 **Khẩu hiệu cốt lõi của ReCoverX Career:**  
+> 💡 **Khẩu hiệu cốt lõi của ATS — Applicant Tracking System:**  
 > *"Một hệ thống ATS tinh gọn, chuẩn mực như Base E-Hiring nhưng sở hữu bộ não AI hiện đại như Greenhouse, tập trung giải quyết triệt để 2 nút thắt tốn thời gian nhất của nhà tuyển dụng: Bóc tách đọc CV tự động và Sàng lọc ứng viên có độ phù hợp cao."*

@@ -4,7 +4,7 @@ title: "Kiến trúc Hybrid AI, Thuật toán Chấm điểm & Rule 5 Trường 
 type: "spec"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "hybrid-ai"
@@ -21,7 +21,7 @@ last_updated: "2026-11-18"
 ---
 
 # TÀI LIỆU CHUYÊN SÂU: KIẾN TRÚC HYBRID AI & CƠ CHẾ CHẤM ĐIỂM TỰ ĐỘNG
-## Dự án: ReCoverX Career — Hệ thống Tuyển dụng ATS Thông minh
+## Dự án: ATS — Applicant Tracking System — Hệ thống Tuyển dụng ATS Thông minh
 
 > **Mục tiêu tài liệu:**  
 > 1. Giải thích chi tiết kiến trúc **Mô hình Lai (Hybrid AI Model)**: Sự kết hợp giữa Lớp 1 (NLP/Regex tất định cục bộ) và Lớp 2 (Google Gemini LLM API).  
@@ -34,7 +34,7 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 
@@ -45,7 +45,7 @@ Trong các hệ thống ATS tiên tiến trên thế giới (như Greenhouse, Wo
 2. **Hiện tượng "Ảo giác" (AI Hallucination):** LLM có thể tự bịa đặt kỹ năng không có thật hoặc chấm điểm cảm tính nếu không bị ràng buộc chặt chẽ.
 3. **Chi phí vận hành (API Cost):** Gọi API liên tục cho mọi thao tác nhỏ sẽ làm tăng chi phí của doanh nghiệp.
 
-Do đó, **ReCoverX Career ATS** áp dụng **Kiến trúc Lai 2 Lớp (Hybrid Two-Layer Architecture)**:
+Do đó, **ATS — Applicant Tracking System** áp dụng **Kiến trúc Lai 2 Lớp (Hybrid Two-Layer Architecture)**:
 
 ```mermaid
 flowchart TD
@@ -105,7 +105,7 @@ const response = await ai.models.generateContent({
 
 ### 3. Cấu trúc Prompt Kỹ thuật (System Instruction)
 Prompt được thiết kế với các chỉ thị giới hạn ngữ cảnh nghiêm ngặt:
-1. **Định danh vai trò:** Chuyên gia nhân sự cấp cao của ReCoverX Career.
+1. **Định danh vai trò:** Chuyên gia nhân sự cấp cao của ATS — Applicant Tracking System.
 2. **Cung cấp dữ liệu đối chiếu:** Đưa toàn bộ tiêu chuẩn vị trí tuyển dụng (JD) gồm: Tên vị trí, Kinh nghiệm tối thiểu, Kỹ năng bắt buộc (`requiredSkills`), Chi tiết JD.
 3. **Cung cấp văn bản CV:** Trích xuất từ file tải lên.
 4. **Quy tắc trích xuất thực tế:**

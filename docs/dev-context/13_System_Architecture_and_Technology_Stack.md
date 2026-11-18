@@ -4,7 +4,7 @@ title: "Kiến trúc Hệ thống & Chi tiết Công nghệ (Next.js 14 Fullstac
 type: "spec"
 version: "2.0.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "architecture"
@@ -20,7 +20,7 @@ last_updated: "2026-11-18"
 ---
 
 # TÀI LIỆU KIẾN TRÚC HỆ THỐNG & CHI TIẾT CÔNG NGHỆ (SYSTEM ARCHITECTURE & TECH STACK)
-## Dự án: ReCoverX Career — Applicant Tracking System (ATS)
+## Dự án: ATS — Applicant Tracking System
 
 > **Mục tiêu tài liệu:**  
 > 1. Mô tả chi tiết Kiến trúc Tổng thể Hệ thống (**System Architecture**) theo mô hình phân tầng chuẩn công nghiệp (5-Tier Layered Architecture).  
@@ -33,13 +33,13 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.0.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.0.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 
 ## I. KIẾN TRÚC TỔNG THỂ HỆ THỐNG (HIGH-LEVEL ARCHITECTURE)
 
-Hệ thống **ReCoverX Career ATS** được thiết kế theo mô hình **Fullstack Tích hợp (Next.js Monolithic Architecture)** kết hợp với **Kiến trúc Phân tầng Dịch vụ (Layered Services)**:
+Hệ thống **ATS — Applicant Tracking System** được thiết kế theo mô hình **Fullstack Tích hợp (Next.js Monolithic Architecture)** kết hợp với **Kiến trúc Phân tầng Dịch vụ (Layered Services)**:
 
 ```mermaid
 flowchart TB
@@ -214,7 +214,7 @@ sequenceDiagram
 
 ## V. TỔNG KẾT & CHỨNG NHẬN ĐỒNG BỘ 100%
 
-Hệ thống mã nguồn của dự án **ReCoverX Career ATS** tại thư mục `D:\ATS project` hiện đã đạt mức độ **hoàn thiện và đồng bộ tuyệt đối**:
+Hệ thống mã nguồn của dự án **ATS — Applicant Tracking System** tại thư mục `D:\ATS project` hiện đã đạt mức độ **hoàn thiện và đồng bộ tuyệt đối**:
 1. Toàn bộ **7 Use Case cốt lõi (UC-00 đến UC-07)** đều có giao diện tương tác thực tế và API hoạt động ổn định.
 2. Toàn bộ **10 Quy tắc Nghiệp vụ (BRL-01 đến BRL-10)** đều được kiểm soát bằng logic phần mềm và được bảo vệ bởi **45 kịch bản kiểm thử tự động (Unit/Integration Tests)** chạy xanh $100\%$.
 3. Toàn bộ thiết kế giao diện đều tuân thủ nghiêm ngặt **Quy chuẩn Form Validation & UI/UX** (viền đỏ khi sai, thông báo lỗi inline dưới ô nhập liệu, xem trước tệp PDF gốc trực quan).

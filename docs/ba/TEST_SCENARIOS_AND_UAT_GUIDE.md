@@ -4,7 +4,7 @@ title: "Kịch bản Kiểm thử Thực hành UAT & Đối chiếu 97 Test Tự
 type: "test-suite"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "uat"
@@ -21,7 +21,7 @@ last_updated: "2026-11-18"
 ---
 
 # BẢNG TÌNH HUỐNG KIỂM THỬ THỰC HÀNH TOÀN DIỆN (FULL UAT TEST SCENARIOS GUIDE)
-## Dự án: ReCoverX Career — Hệ thống Quản trị Tuyển dụng ATS
+## Dự án: ATS — Applicant Tracking System — Hệ thống Quản trị Tuyển dụng ATS
 
 > **Dành cho:** Sinh viên / Chuyên viên Phân tích Nghiệp vụ (ITBA) tự kiểm tra và diễn tập thuyết trình Demo.  
 > **Mục tiêu:** Từng bước thao tác thực tế trên giao diện để kiểm chứng 100% các Use Case (UC-00 đến UC-07) và các Quy tắc Nghiệp vụ cốt lõi (**BRL-01 đến BRL-10**).
@@ -32,7 +32,7 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 
@@ -250,7 +250,7 @@ Trước khi bắt đầu kiểm thử, bạn mở cửa sổ Terminal/PowerShel
 * **Màn hình:** `http://localhost:3000/admin/talent-pool`
 * **Các bước thực hiện:**
   1. Tại góc trên bên phải trang Kho Nhân tài, bấm nút màu xanh lá: **`Xuất Báo Cáo CSV (Excel)`**.
-  2. Trình duyệt tự động tải xuống tệp: `recoverx_talent_report_YYYY-MM-DD.csv`.
+  2. Trình duyệt tự động tải xuống tệp: `ats_candidates_report_YYYY-MM-DD.csv`.
   3. Mở tệp bằng Microsoft Excel, Google Sheets hoặc Notepad.
 * **Kết quả mong đợi:**
   * Toàn bộ font tiếng Việt có dấu hiển thị chuẩn 100% không bị lỗi font (nhờ chuẩn UTF-8 BOM `\uFEFF`).

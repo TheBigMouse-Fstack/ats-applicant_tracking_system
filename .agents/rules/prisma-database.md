@@ -18,7 +18,7 @@ export const prisma = globalForPrisma.prisma || new PrismaClient()
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 ```
 
-## 3. Database Schema Models (Aligned with docs/07_Database_Design_ERD.md)
+## 3. Database Schema Models (Aligned with docs/dev-context/07_Database_Design_ERD.md)
 The system comprises 8 core entities:
 
 1. `User`: Recruiter, Hiring Manager, or Admin accounts.

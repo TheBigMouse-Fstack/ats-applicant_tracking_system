@@ -4,7 +4,7 @@ title: "Thiết kế Cơ sở Dữ liệu, Sơ đồ ERD & Từ điển Dữ li�
 type: "diagram"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & Backend Team"
+owner: "ATS BA & Backend Team"
 domain: "recruitment-ats"
 tags:
   - "erd"
@@ -22,7 +22,7 @@ last_updated: "2026-11-18"
 
 # THIẾT KẾ CƠ SỞ DỮ LIỆU, SƠ ĐỒ ERD & TỪ ĐIỂN DỮ LIỆU CHUẨN 10 CỘT
 
-> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
+> **Dự án:** ATS — Applicant Tracking System  
 > **ORM & DBMS:** Prisma ORM (`prisma/schema.prisma`) — SQLite (`file:./dev.db`) trên môi trường phát triển, PostgreSQL trên môi trường sản xuất.  
 > **Tiêu chuẩn biên soạn:** Universal BA Toolkit (`RULE-09` — Từ điển dữ liệu 10 cột & Data Masking Nghị định 13/2023/NĐ-CP, `RULE-18`, `RULE-19`).
 

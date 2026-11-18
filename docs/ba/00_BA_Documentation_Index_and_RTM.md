@@ -4,7 +4,7 @@ title: "Hồ sơ Tổng thể BA, Ma trận Truy vết Hai chiều (RTM) & Báo 
 type: "overview"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & Product Team"
+owner: "ATS BA & Product Team"
 domain: "recruitment-ats"
 tags:
   - "master-index"
@@ -28,42 +28,49 @@ last_updated: "2026-11-18"
 
 # HỒ SƠ TỔNG THỂ BA, MA TRẬN TRUY VẾT HAI CHIỀU (RTM) & BÁO CÁO DOC-DRIFT
 
-> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
+> **Dự án:** ATS — Applicant Tracking System  
 > **Tiêu chuẩn áp dụng:** Universal BA Toolkit (19 BA Rules: IEEE 830, Alistair Cockburn, ISO/IEC 25010, Gherkin BDD, SemVer, Bi-directional RTM)
 
 ## Lịch Sử Phiên Bản (Revision History)
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Người Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v1.0.0` | 2026-11-10 | BA Team | **Initial** | Khởi tạo danh mục tài liệu dự án ReCoverX Career ATS. | Product Owner |
+| `v1.0.0` | 2026-11-10 | BA Team | **Initial** | Khởi tạo danh mục tài liệu dự án ATS — Applicant Tracking System. | Product Owner |
 | `v2.0.0` | 2026-11-15 | BA & Dev Team | **Added** | Đồng bộ Scope Expansion (Interview Lifecycle, Public Tracker, Deep Scorecard, BRL-10 Purge). | Tech Lead |
 | `v2.1.0` | 2026-11-18 | BA & Dev Team | **Changed** | Áp dụng trọn bộ chuẩn `Universal_BA_Toolkit` (19 Rules): xóa bản nháp BRD cũ, bổ sung RTM hai chiều, Business Rules 3 vế, Error Matrix 7 cột, Gherkin BDD AC, phân tách quyền HR vs Hiring Manager và 5 trường cốt lõi CV. | Product Owner & Tech Lead |
 
 ---
 
-## 1. MỤC LỤC HỒ SƠ PHÂN TÍCH NGHIỆP VỤ (KNOWLEDGE GRAPH INDEX)
+## 1. MỤC LỤC HỒ SƠ TÀI LIỆU (CHIA 2 THƯ MỤC ĐỘC LẬP)
 
-| Mã Tài Liệu (`id`) | Tệp Tài Liệu | Phân Loại (`type`) | Phiên Bản | Trạng Thái | Vai Trò Trong Vòng Đời SDD |
+### 1A. Thư mục `docs/ba/` — Hồ sơ Nghiệp vụ BA (Dành cho Doanh nghiệp & Khách hàng Non-Tech)
+
+| Mã Tài Liệu (`id`) | Tệp Tài Liệu | Phân Loại | Phiên Bản | Trạng Thái | Vai Trò |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `[[IDX-ATS-00]]` | `docs/00_BA_Documentation_Index_and_RTM.md` | `overview` | `v2.1.0` | Approved | Điểm khởi đầu tra cứu, RTM hai chiều & Doc-Drift Report. |
-| `[[BRD-ATS-01]]` | `docs/02_BRD_Updated_Full.md` | `brd` | `v2.1.0` | Approved | Bài toán kinh doanh, Mục tiêu SMART, ROI, AS-IS/TO-BE, Compliance. |
-| `[[BPMN-ATS-03]]` | `docs/03_BPMN_As_Is_and_To_Be.md` | `diagram` | `v2.1.0` | Approved | Quy trình BPMN 2.0 phân làn chuẩn Human-in-the-loop. |
-| `[[FDD-ATS-04]]` | `docs/04_FDD_and_Use_Case_List.md` | `srs` | `v2.1.0` | Approved | Cây phân rã chức năng FDD, Bảng FR chuẩn `RULE-01` & Use Case Diagram. |
-| `[[UC-ATS-05]]` | `docs/05_Use_Case_Specifications.md` | `srs` | `v2.1.0` | Approved | Đặc tả chi tiết 7 Use Case chuẩn 12 thành phần Alistair Cockburn (`RULE-06`). |
-| `[[FSM-ATS-06]]` | `docs/06_Dynamic_Models_Activity_Sequence_State.md` | `diagram` | `v2.1.0` | Approved | Máy trạng thái hữu hạn (`RULE-12`), Ma trận Guard Rules & 4 Sequence Diagrams. |
-| `[[ERD-ATS-07]]` | `docs/07_Database_Design_ERD.md` | `diagram` | `v2.1.0` | Approved | Sơ đồ ERD & Từ điển dữ liệu 10 cột chuẩn PII/Masking (`RULE-09`). |
-| `[[RBAC-NFR-08]]` | `docs/08_NonFunctional_and_Permissions.md` | `srs` | `v2.1.0` | Approved | Phân loại 4 nhóm Actor (`RULE-17`), Ma trận RBAC & NFR ISO 25010 (`RULE-04`). |
-| `[[GUIDE-TECH-09]]` | `docs/09_Technical_Setup_and_Antigravity_Guide.md` | `guide` | `v2.0.0` | Approved | Danh sách màn hình `SCR-xx` & hướng dẫn thiết lập môi trường kỹ thuật. |
-| `[[SCOPE-ATS-10]]` | `docs/10_Scope_and_System_Comparison.md` | `brd` | `v2.0.0` | Approved | Ranh giới In-Scope / Out-of-Scope & đối chiếu Base E-Hiring / Greenhouse. |
-| `[[UIUX-ATS-11]]` | `docs/11_UI_UX_Design_and_Form_Validation_Guidelines.md` | `spec` | `v2.0.0` | Approved | Quy chuẩn giao diện nội bộ, validation form & loại bỏ khẩu hiệu AI phô trương. |
-| `[[AI-ARCH-12]]` | `docs/12_Hybrid_AI_Architecture_and_Scoring_Engine.md` | `spec` | `v2.1.0` | Approved | Kiến trúc Hybrid AI 2 lớp, Rule trích xuất 5 trường cốt lõi & HR Manual Edit. |
-| `[[SYS-ARCH-13]]` | `docs/13_System_Architecture_and_Technology_Stack.md` | `spec` | `v2.0.0` | Approved | Kiến trúc hệ thống Next.js 14 Fullstack, Prisma ORM & Edge Middleware. |
-| `[[EXP-ATS-14]]` | `docs/14_Scope_Expansion_and_Advanced_Features.md` | `cr` | `v2.1.0` | Approved | Nhật ký mở rộng phạm vi (Interview Lifecycle, Public Tracker, Deep Scorecard). |
-| `[[API-ATS-15]]` | `docs/15_API_Specifications_and_Error_Codes.md` | `api-spec` | `v2.1.0` | Approved | Đặc tả 15 RESTful API Contracts & Hệ thống mã lỗi chuẩn (`RULE-03`, `RULE-10`). |
-| `[[SDD-PLAY-16]]` | `docs/16_SDD_Prompt_Playbook.md` | `guide` | `v1.0.0` | Approved | Bộ 7 mẫu Prompt chuẩn Spec-Driven Development & Câu khóa an toàn. |
-| `[[BR-ERR-17]]` | `docs/17_Business_Rules_and_Error_Matrix.md` | `srs` | `v2.1.0` | Approved | Business Rules 3 vế (`RULE-02`), Ma trận Lỗi 7 cột (`RULE-11`) & Gherkin BDD AC (`RULE-08`). |
-| `[[BRIEF-CMP-18]]` | `docs/18_Brief_Compliance_and_Value_Added_Analysis.md` | `brd` | `v1.0.0` | Approved | Đối chiếu Đề bài gốc vs Hệ thống thực tế, Hệ thống tham chiếu (Clone), Lý do Hybrid AI & Thẩm định Gold Plating. |
-| `[[UAT-ATS-18]]` | `docs/TEST_SCENARIOS_AND_UAT_GUIDE.md` | `test-suite` | `v2.1.0` | Approved | Kịch bản kiểm thử UAT thủ công & đối chiếu 97 bài kiểm thử tự động. |
+| `[[IDX-ATS-00]]` | `docs/ba/00_BA_Documentation_Index_and_RTM.md` | `overview` | `v2.2.0` | Approved | Mục lục tổng, RTM hai chiều & Báo cáo Doc-Drift. |
+| `[[BRD-ATS-01]]` | `docs/ba/02_BRD_Updated_Full.md` | `brd` | `v2.2.0` | Approved | Bài toán kinh doanh, Mục tiêu SMART, ROI, AS-IS/TO-BE, Compliance. |
+| `[[BPMN-ATS-03]]` | `docs/ba/03_BPMN_As_Is_and_To_Be.md` | `diagram` | `v2.1.0` | Approved | Quy trình BPMN 2.0 phân làn giữa Ứng viên, HR và Quản lý chuyên môn. |
+| `[[FDD-ATS-04]]` | `docs/ba/04_FDD_and_Use_Case_List.md` | `srs` | `v2.2.0` | Approved | Cây phân rã chức năng FDD, Bảng FR & Danh mục 8 Use Case. |
+| `[[UC-ATS-05]]` | `docs/ba/05_Use_Case_Specifications.md` | `srs` | `v2.2.0` | Approved | Đặc tả chi tiết 8 Use Case chuẩn 12 thành phần Alistair Cockburn. |
+| `[[FSM-ATS-06]]` | `docs/ba/06_Dynamic_Models_Activity_Sequence_State.md` | `diagram` | `v2.1.0` | Approved | Vòng đời trạng thái hồ sơ, Quy tắc chuyển vòng & 4 Sơ đồ tuần tự. |
+| `[[RBAC-NFR-08]]` | `docs/ba/08_NonFunctional_and_Permissions.md` | `srs` | `v2.2.0` | Approved | Phân loại Tác nhân, Ma trận Phân quyền & Yêu cầu Chất lượng ISO 25010. |
+| `[[SCOPE-ATS-10]]` | `docs/ba/10_Scope_and_System_Comparison.md` | `brd` | `v2.1.0` | Approved | Ranh giới In-Scope / Out-of-Scope & Đối chiếu hệ thống mẫu. |
+| `[[UIUX-ATS-11]]` | `docs/ba/11_UI_UX_Design_and_Form_Validation_Guidelines.md` | `spec` | `v2.2.0` | Approved | Quy chuẩn Giao diện dịu mắt & Kiểm tra dữ liệu đầu vào thân thiện. |
+| `[[EXP-ATS-14]]` | `docs/ba/14_Scope_Expansion_and_Advanced_Features.md` | `cr` | `v2.1.0` | Approved | Nhật ký mở rộng phạm vi & các tính năng nâng cao. |
+| `[[BRIEF-CMP-18]]` | `docs/ba/18_Brief_Compliance_and_Value_Added_Analysis.md` | `brd` | `v1.2.0` | Approved | Đối chiếu Đề bài gốc vs Hệ thống thực tế, Hệ thống mẫu & Lý do Hybrid AI. |
+| `[[UAT-ATS-18]]` | `docs/ba/TEST_SCENARIOS_AND_UAT_GUIDE.md` | `test-suite` | `v2.2.0` | Approved | Kịch bản kiểm thử nghiệm thu UAT cho Doanh nghiệp. |
+
+### 1B. Thư mục `docs/dev-context/` — Ngữ cảnh Kỹ thuật (Dành cho AI Agent, Dev & QA)
+
+| Mã Tài Liệu (`id`) | Tệp Tài Liệu | Phân Loại | Phiên Bản | Trạng Thái | Vai Trò Trong Lập Trình SDD |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| `[[ERD-ATS-07]]` | `docs/dev-context/07_Database_Design_ERD.md` | `diagram` | `v2.1.0` | Approved | Sơ đồ ERD & Từ điển dữ liệu 10 cột chuẩn PII/Masking (`RULE-09`). |
+| `[[GUIDE-TECH-09]]` | `docs/dev-context/09_Technical_Setup_and_Antigravity_Guide.md` | `guide` | `v2.0.0` | Approved | Danh sách màn hình `SCR-xx` & hướng dẫn thiết lập môi trường kỹ thuật. |
+| `[[AI-ARCH-12]]` | `docs/dev-context/12_Hybrid_AI_Architecture_and_Scoring_Engine.md` | `spec` | `v2.2.0` | Approved | Kiến trúc Hybrid AI 2 lớp, Rule 5 trường cốt lõi & Phân tầng 3 mức màu. |
+| `[[SYS-ARCH-13]]` | `docs/dev-context/13_System_Architecture_and_Technology_Stack.md` | `spec` | `v2.0.0` | Approved | Kiến trúc hệ thống Next.js 14 Fullstack, Prisma ORM & Bảo mật Edge. |
+| `[[API-ATS-15]]` | `docs/dev-context/15_API_Specifications_and_Error_Codes.md` | `api-spec` | `v2.2.0` | Approved | Đặc tả 16 RESTful API Contracts & Hệ thống mã lỗi chuẩn (`RULE-03`, `RULE-10`). |
+| `[[SDD-PLAY-16]]` | `docs/dev-context/16_SDD_Prompt_Playbook.md` | `guide` | `v1.0.0` | Approved | Bộ 7 mẫu Prompt chuẩn Spec-Driven Development & Câu khóa an toàn. |
+| `[[BR-ERR-17]]` | `docs/dev-context/17_Business_Rules_and_Error_Matrix.md` | `srs` | `v2.1.0` | Approved | Business Rules 3 vế (`RULE-02`), Ma trận Lỗi 7 cột (`RULE-11`) & Gherkin BDD AC. |
 
 > **Lưu ý kiểm soát phiên bản (`RULE-19`):** Tài liệu bản nháp cũ `01_BRD_Original.md` đã được loại bỏ chính thức nhằm tránh xung đột nguồn chân lý; toàn bộ lịch sử tiến hóa từ `v1.0.0` được lưu tại bảng Revision History của `[[BRD-ATS-01]]`.
 

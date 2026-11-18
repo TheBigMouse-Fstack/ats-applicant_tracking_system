@@ -4,7 +4,7 @@ title: "Sơ đồ Phân rã Chức năng (FDD), Bảng Yêu cầu Chức năng (
 type: "srs"
 version: "2.1.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "fdd"
@@ -22,7 +22,7 @@ last_updated: "2026-11-18"
 
 # SƠ ĐỒ PHÂN RÃ CHỨC NĂNG (FDD), BẢNG FR & USE CASE DIAGRAM
 
-> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)
+> **Dự án:** ATS — Applicant Tracking System
 
 ---
 
@@ -30,7 +30,7 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 
@@ -92,7 +92,7 @@ flowchart TD
 
 ### GỢI Ý CẤU TRÚC FDD CHO HỆ THỐNG ATS CỦA BẠN (CÓ THỂ DÙNG NGAY)
 
-Hệ thống **ReCoverX Career - ATS** của bạn có thể phân rã thành **5 Module cốt lõi**:
+Hệ thống **ATS — Applicant Tracking System** của bạn có thể phân rã thành **5 Module cốt lõi**:
 
 1. **Module 1: Cổng ứng tuyển trực tuyến (Candidate Portal)**
    * 1.1 Xem danh sách và chi tiết vị trí tuyển dụng (JD).
@@ -199,7 +199,7 @@ Bạn có muốn mình **vẽ Sơ đồ Use Case Diagram** và **bắt đầu vi
 
 ## 3. Sơ đồ Use Case Tổng thể (Use Case Diagram)
 
-Dưới đây là thiết kế hoàn chỉnh của **Sơ đồ Use Case Diagram Tổng thể** cho hệ thống **ReCoverX Career - ATS**, kết nối đầy đủ **4 Tác nhân (Actors)** với **7 Use Case cốt lõi** và các mối quan hệ nghiệp vụ chuẩn UML (`<<include>>`, `<<extend>>`).
+Dưới đây là thiết kế hoàn chỉnh của **Sơ đồ Use Case Diagram Tổng thể** cho hệ thống **ATS — Applicant Tracking System**, kết nối đầy đủ **4 Tác nhân (Actors)** với **7 Use Case cốt lõi** và các mối quan hệ nghiệp vụ chuẩn UML (`<<include>>`, `<<extend>>`).
 
 ---
 
@@ -215,7 +215,7 @@ flowchart LR
     end
 
     %% Khung ranh giới Hệ thống (System Boundary)
-    subgraph SYSTEM_BOUNDARY ["HỆ THỐNG RECOVERX CAREER (ATS)"]
+    subgraph SYSTEM_BOUNDARY ["HỆ THỐNG ATS — Applicant Tracking System"]
         
         %% 7 Use Cases cốt lõi
         UC1(["<b>UC-01</b><br>Nộp hồ sơ ứng tuyển<br>trực tuyến"]):::ucCore
@@ -303,7 +303,7 @@ Bảng này giúp chứng minh tính logic của sơ đồ khi đưa vào báo c
 
 ### 4. HƯỚNG DẪN KHI VẼ TRÊN DRAW.IO / STARUML
 
-* **Khung viền lớn bao quanh (System Boundary):** Dùng hình chữ nhật lớn, đặt tên trên đỉnh là `Hệ thống ReCoverX Career (ATS)`.
+* **Khung viền lớn bao quanh (System Boundary):** Dùng hình chữ nhật lớn, đặt tên trên đỉnh là `Hệ thống ATS — Applicant Tracking System`.
 * **Ký hiệu Tác nhân (Actor):** Dùng hình người (Stick Man). Đặt 3 người bên trái (Ứng viên, HR, Manager) và 1 người/hộp dịch vụ bên phải đại diện cho `Hệ thống ATS`.
 * **Ký hiệu Use Case:** Dùng hình Ovan (Eclipse). Use case chính viền liền, Use case con (`include`/`extend`) có thể để nét đứt mảnh để làm nổi bật.
 
@@ -323,7 +323,7 @@ Bạn có muốn bắt đầu viết **Đặc tả chi tiết cho 5 Use Case nà
 
 ## 4. T?m t?t 7 Use Case c?t l?i & Lu?n c? ph?m vi
 
-Dưới đây là danh sách tổng hợp toàn bộ các **Use Case** của hệ thống **ReCoverX Career (ATS)**, được phân loại theo phân hệ và tác nhân thực hiện:
+Dưới đây là danh sách tổng hợp toàn bộ các **Use Case** của hệ thống **ATS — Applicant Tracking System**, được phân loại theo phân hệ và tác nhân thực hiện:
 
 ---
 
@@ -421,7 +421,7 @@ flowchart LR
     Actor_HM["💼 Quản lý Chuyên môn"]
 
     %% Khung ranh giới Hệ thống
-    subgraph ATS ["HỆ THỐNG RECOVERX CAREER (ATS)"]
+    subgraph ATS ["HỆ THỐNG ATS — Applicant Tracking System"]
         UC1(["UC-01: Nộp hồ sơ ứng tuyển trực tuyến"])
         UC2(["UC-02: Tải lên & Xử lý bóc tách CV"])
         UC3(["UC-03: Sàng lọc & Phản hồi tự động bằng AI"])
