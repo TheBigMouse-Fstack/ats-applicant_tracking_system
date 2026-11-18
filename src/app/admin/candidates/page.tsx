@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
+import { getAiMatchTier } from "@/lib/match-score";
 
 interface JobOption {
   id: number;
@@ -496,6 +497,19 @@ export default function CandidatesListPage() {
                           >
                             {sourceBadge.label}
                           </span>
+
+                          {app.aiMatchScore !== null && app.aiMatchScore !== undefined && (() => {
+                            const tier = getAiMatchTier(app.aiMatchScore);
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${tier.badgeClass}`}
+                                title={`${tier.label}: ${tier.recommendation}`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${tier.dotClass}`} />
+                                AI {tier.score}%
+                              </span>
+                            );
+                          })()}
                         </div>
                         <div className="text-[11px] text-slate-500 mt-0.5">
                           {candidate?.email} &bull; {candidate?.phone}

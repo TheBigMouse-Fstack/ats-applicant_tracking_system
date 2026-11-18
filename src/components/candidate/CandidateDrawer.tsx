@@ -49,6 +49,7 @@ import ScorecardModal from "@/components/scorecard/ScorecardModal";
 import StageMismatchConfirmModal from "@/components/candidate/StageMismatchConfirmModal";
 import RejectReasonModal from "@/components/candidate/RejectReasonModal";
 import { getAllowedTargetStages, validateStageTransition } from "@/lib/stage-rules";
+import { getAiMatchTier } from "@/lib/match-score";
 
 interface CandidateDrawerProps {
   applicationId: number | null;
@@ -68,7 +69,7 @@ export default function CandidateDrawer({
   const [data, setData] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "cv" | "history">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "jd" | "cv" | "history">("overview");
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
   const [isScorecardOpen, setIsScorecardOpen] = useState(false);
@@ -468,6 +469,7 @@ export default function CandidateDrawer({
   const aiMatchedSkills = safeParseJSON(data?.aiMatchedSkills, []);
   const aiMissingSkills = safeParseJSON(data?.aiMissingSkills, []);
   const jobRequiredSkills = safeParseJSON(data?.job?.requiredSkills, []);
+  const matchTier = getAiMatchTier(data?.aiMatchScore);
 
   const stages = [
     { key: "NEW", label: "Mới nộp" },
@@ -497,6 +499,17 @@ export default function CandidateDrawer({
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-800">
                   Cột: {data?.currentStage}
                 </span>
+                {matchTier.score !== null && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-md border ${matchTier.badgeClass}`}
+                    title={matchTier.recommendation}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${matchTier.dotClass}`} />
+                    <span>
+                      AI {matchTier.score}% &bull; {matchTier.shortLabel}
+                    </span>
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -559,22 +572,34 @@ export default function CandidateDrawer({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-slate-200 px-6 bg-white gap-6">
+          <div className="flex border-b border-slate-200 px-6 bg-white gap-5 overflow-x-auto">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 activeTab === "overview"
                   ? "border-brand-600 text-brand-600"
                   : "border-transparent text-slate-500 hover:text-slate-900"
               }`}
             >
-              <ClipboardCheck className="w-3.5 h-3.5" />
-              Hồ sơ & Đối chiếu Tiêu chuẩn
+              <User className="w-3.5 h-3.5" />
+              Hồ sơ &amp; Đánh giá AI
+            </button>
+
+            <button
+              onClick={() => setActiveTab("jd")}
+              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === "jd"
+                  ? "border-brand-600 text-brand-600"
+                  : "border-transparent text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              Tiêu chuẩn vị trí (JD)
             </button>
 
             <button
               onClick={() => setActiveTab("cv")}
-              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 activeTab === "cv"
                   ? "border-brand-600 text-brand-600"
                   : "border-transparent text-slate-500 hover:text-slate-900"
@@ -586,14 +611,14 @@ export default function CandidateDrawer({
 
             <button
               onClick={() => setActiveTab("history")}
-              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 activeTab === "history"
                   ? "border-brand-600 text-brand-600"
                   : "border-transparent text-slate-500 hover:text-slate-900"
               }`}
             >
               <History className="w-3.5 h-3.5" />
-              Nhật ký luân chuyển & Đánh giá ({data?.evaluations?.length || 0})
+              Nhật ký &amp; Đánh giá ({data?.evaluations?.length || 0})
             </button>
           </div>
 
@@ -643,24 +668,36 @@ export default function CandidateDrawer({
                       </div>
                     )}
 
-                    {/* KHỐI 1: 5 TRƯỜNG DỮ LIỆU CỐT LÕI THEO JD (Họ tên, Email, Vị trí, Kỹ năng, Số năm kinh nghiệm) */}
-                    <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                            <User className="w-4 h-4" />
+                    {/* KHỐI 1 (HERO): THÔNG TIN CÁ NHÂN & 5 TRƯỜNG DỮ LIỆU CỐT LÕI */}
+                    <div className="bg-white rounded-2xl border-2 border-brand-200/80 p-5 shadow-sm space-y-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-100">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className="w-12 h-12 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-extrabold text-lg shadow-sm shadow-brand-500/25 shrink-0">
+                            {(data?.candidate?.fullName || "U").charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                              1. Thông Tin Cốt Lõi Theo JD
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600 block">
+                              1. Thông Tin Cá Nhân &amp; Hồ Sơ Cốt Lõi
+                            </span>
+                            <h3 className="text-lg font-extrabold text-slate-900 tracking-tight truncate">
+                              {data?.candidate?.fullName}
                             </h3>
-                            <p className="text-[11px] text-slate-400">
-                              5 trường chuẩn: Họ tên, Email, Vị trí ứng tuyển, Kỹ năng, Số năm kinh nghiệm
-                            </p>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 mt-0.5">
+                              <span className="inline-flex items-center gap-1 font-medium text-slate-800">
+                                <Mail className="w-3.5 h-3.5 text-brand-500 shrink-0" />
+                                {data?.candidate?.email}
+                              </span>
+                              {data?.candidate?.phone && (
+                                <span className="inline-flex items-center gap-1 font-medium text-slate-700">
+                                  <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  {data?.candidate?.phone}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           {canEditProfile && !isEditingProfile && (
                             <button
                               type="button"
@@ -826,39 +863,40 @@ export default function CandidateDrawer({
                         </div>
                       ) : (
                         <>
-                          {/* CHẾ ĐỘ HIỂN THỊ CHUẨN: ĐÚNG 5 TRƯỜNG DỮ LIỆU CỐT LÕI THEO JD */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 p-4 rounded-xl border border-slate-200/80 text-xs">
-                            <div>
-                              <span className="text-slate-400 block mb-0.5">1. Họ tên ứng viên</span>
-                              <span className="font-bold text-slate-900 text-sm">
-                                {data?.candidate?.fullName}
-                              </span>
+                          {/* CHẾ ĐỘ HIỂN THỊ CHUẨN: VỊ TRÍ ỨNG TUYỂN & KINH NGHIỆM NỔI BẬT */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div className="bg-brand-50/40 p-3.5 rounded-xl border border-brand-100 flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">
+                                  Vị trí ứng tuyển
+                                </span>
+                                <span className="font-bold text-slate-900 text-sm flex items-center gap-1.5 truncate">
+                                  <Briefcase className="w-4 h-4 text-brand-600 shrink-0" />
+                                  <span className="truncate">{data?.job?.title}</span>
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setActiveTab("jd")}
+                                className="text-[11px] font-bold text-brand-700 hover:text-brand-800 bg-white px-2.5 py-1 rounded-lg border border-brand-200 shrink-0 cursor-pointer"
+                              >
+                                Xem JD
+                              </button>
                             </div>
-                            <div>
-                              <span className="text-slate-400 block mb-0.5">2. Email liên hệ</span>
-                              <span className="font-semibold text-slate-800 flex items-center gap-1.5 truncate">
-                                <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                {data?.candidate?.email}
+
+                            <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/80">
+                              <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">
+                                Số năm kinh nghiệm
                               </span>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 block mb-0.5">3. Vị trí ứng tuyển</span>
-                              <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                                <Briefcase className="w-3.5 h-3.5 text-brand-500 shrink-0" />
-                                {data?.job?.title}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 block mb-0.5">4. Số năm kinh nghiệm</span>
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span
-                                  className={`font-bold flex items-center gap-1 ${
+                                  className={`font-extrabold text-sm flex items-center gap-1 ${
                                     minExpRequired > 0 && candidateExp < minExpRequired
                                       ? "text-rose-600"
                                       : "text-emerald-700"
                                   }`}
                                 >
-                                  <Clock className="w-3.5 h-3.5 shrink-0" />
+                                  <Clock className="w-4 h-4 shrink-0" />
                                   {candidateExp} năm
                                 </span>
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white border border-slate-200 text-slate-600">
@@ -871,7 +909,7 @@ export default function CandidateDrawer({
                           {/* Trường thứ 5: Kỹ năng theo JD */}
                           <div className="space-y-2">
                             <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                              5. Kỹ Năng Trích Xuất ({parsedSkills.length})
+                              Kỹ Năng Trích Xuất ({parsedSkills.length})
                             </h4>
                             <div className="flex flex-wrap gap-1.5">
                               {parsedSkills.length > 0 ? (
@@ -1084,94 +1122,93 @@ export default function CandidateDrawer({
                       )}
                     </div>
 
-                    {/* KHỐI 2: TIÊU CHUẨN CỦA VỊ TRÍ ĐANG TUYỂN DỤNG (JD) */}
-                    <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs space-y-3.5">
-                      <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
-                        <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                          <Building2 className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                            2. Tiêu Chuẩn Yêu Cầu Vị Trí
-                          </h3>
-                          <p className="text-[11px] text-slate-400">
-                            Cơ sở đối chiếu và đánh giá mức độ phù hợp
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/70 p-3 rounded-xl border border-slate-200/80 text-xs">
-                        <div>
-                          <span className="text-slate-400 block mb-0.5">Vị trí</span>
-                          <span className="font-bold text-slate-900">{data?.job?.title}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block mb-0.5">Phòng ban</span>
-                          <span className="font-semibold text-slate-800">{data?.job?.department}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block mb-0.5">Yêu cầu kinh nghiệm</span>
-                          <span className="font-bold text-amber-700">
-                            Tối thiểu {data?.job?.minExperienceYears || 0} năm
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Kỹ năng bắt buộc trong JD */}
-                      <div>
-                        <span className="text-xs font-bold text-slate-700 block mb-1.5 uppercase tracking-wider">
-                          Kỹ năng bắt buộc:
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {jobRequiredSkills.map((sk: string, idx: number) => (
-                            <span
-                              key={idx}
-                              className="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200"
-                            >
-                              {sk}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Tóm tắt mô tả công việc */}
-                      <div>
-                        <span className="text-xs font-bold text-slate-700 block mb-1 uppercase tracking-wider">
-                          Mô tả công việc:
-                        </span>
-                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-line font-medium">
-                          {data?.job?.requirementsJd}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* KHỐI 3: KẾT QUẢ ĐỐI CHIẾU TIÊU CHUẨN TUYỂN DỤNG */}
-                    <div className="bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-slate-50 p-5 rounded-2xl border border-indigo-200/80 shadow-xs space-y-4">
-                      <div className="flex items-center justify-between pb-3 border-b border-indigo-100">
+                    {/* KHỐI 2: ĐÁNH GIÁ MỨC ĐỘ PHÙ HỢP AI (% MATCH SCORE - THANG 3 MỨC TRAFFIC-LIGHT) */}
+                    <div className={`p-5 rounded-2xl border shadow-xs space-y-4 ${matchTier.panelClass}`}>
+                      <div className="flex flex-wrap items-start justify-between gap-3 pb-3.5 border-b border-slate-200/80">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
-                            <ClipboardCheck className="w-5 h-5 text-brand-400" />
+                          <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs shrink-0">
+                            <Sparkles className="w-5 h-5 text-brand-400" />
                           </div>
                           <div>
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-brand-900">
-                              3. Đối Chiếu Kỹ Năng & Tiêu Chuẩn Tuyển Dụng
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                              2. Đánh Giá Mức Độ Phù Hợp AI
                             </h3>
                             <p className="text-[11px] text-slate-500">
-                              Đối chiếu kỹ năng thực tế với tiêu chuẩn yêu cầu
+                              Đối chiếu CV với tiêu chuẩn JD • Gợi ý hỗ trợ HR (Human-in-the-loop)
                             </p>
                           </div>
                         </div>
 
-                        <div className="text-right">
-                          <span className="px-3 py-1.5 rounded-xl text-xs font-bold border bg-white text-slate-700 border-indigo-200 shadow-2xs">
-                            Đối chiếu: {aiMatchedSkills.length}/{jobRequiredSkills.length} kỹ năng đáp ứng
+                        <div className="flex items-center gap-2">
+                          {canEditProfile && (
+                            <button
+                              type="button"
+                              onClick={handleReparse}
+                              disabled={reparsing}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition-all cursor-pointer"
+                              title="Chạy lại Hybrid AI phân tích CV và tính lại % phù hợp"
+                            >
+                              <RotateCw className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-brand-600" : ""}`} />
+                              <span>{reparsing ? "Đang phân tích..." : "Đánh giá lại AI"}</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab("jd")}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-700 bg-white hover:bg-brand-50 border border-brand-200 transition-all cursor-pointer"
+                          >
+                            <Building2 className="w-3.5 h-3.5" />
+                            <span>Xem JD</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Chỉ số % AI Match nổi bật + Thanh tiến trình + Phân tầng 3 mức chuẩn ngành */}
+                      <div className="bg-white rounded-xl border border-slate-200/90 p-4 space-y-3 shadow-2xs">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-baseline gap-2.5">
+                            <span className={`text-3xl font-extrabold tracking-tight ${matchTier.scoreTextClass}`}>
+                              {matchTier.score !== null ? `${matchTier.score}%` : "—"}
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${matchTier.badgeClass}`}
+                            >
+                              <span className={`w-2 h-2 rounded-full ${matchTier.dotClass}`} />
+                              {matchTier.label}
+                            </span>
+                          </div>
+                          <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                            Đáp ứng {aiMatchedSkills.length}/{jobRequiredSkills.length} kỹ năng JD
                           </span>
+                        </div>
+
+                        {/* Thanh tiến trình trực quan */}
+                        <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            style={{ width: `${matchTier.score ?? 0}%` }}
+                            className={`h-full rounded-full transition-all duration-500 ${matchTier.barClass}`}
+                          />
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                          <span className="font-medium text-slate-600">{matchTier.recommendation}</span>
+                          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 shrink-0">
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-rose-500" /> &lt;50% Thấp
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-amber-500" /> 50–74% Cân nhắc
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500" /> ≥75% Cao
+                            </span>
+                          </div>
                         </div>
                       </div>
 
                       {/* Phân tích Kỹ năng Đạt vs Còn thiếu */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="bg-white/90 p-3.5 rounded-xl border border-emerald-200 shadow-2xs">
+                        <div className="bg-white/95 p-3.5 rounded-xl border border-emerald-200 shadow-2xs">
                           <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5 mb-2">
                             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                             Kỹ năng Trùng khớp ({aiMatchedSkills.length}):
@@ -1194,9 +1231,9 @@ export default function CandidateDrawer({
                           </div>
                         </div>
 
-                        <div className="bg-white/90 p-3.5 rounded-xl border border-red-200 shadow-2xs">
-                          <span className="text-xs font-bold text-red-800 flex items-center gap-1.5 mb-2">
-                            <XCircle className="w-4 h-4 text-red-600" />
+                        <div className="bg-white/95 p-3.5 rounded-xl border border-rose-200 shadow-2xs">
+                          <span className="text-xs font-bold text-rose-800 flex items-center gap-1.5 mb-2">
+                            <XCircle className="w-4 h-4 text-rose-600" />
                             Kỹ năng Còn thiếu ({aiMissingSkills.length}):
                           </span>
                           <div className="flex flex-wrap gap-1">
@@ -1204,7 +1241,7 @@ export default function CandidateDrawer({
                               aiMissingSkills.map((s: string, idx: number) => (
                                 <span
                                   key={idx}
-                                  className="px-2 py-0.5 rounded bg-red-50 text-red-700 text-[11px] font-bold border border-red-200"
+                                  className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-200"
                                 >
                                   ✖ {s}
                                 </span>
@@ -1218,24 +1255,19 @@ export default function CandidateDrawer({
                         </div>
                       </div>
 
-                      {/* Gợi ý đối chiếu cho HR */}
+                      {/* Giải trình chi tiết từ Hybrid AI */}
                       {data?.aiMatchRationale && (
-                        <div className="bg-white/90 p-4 rounded-xl border border-indigo-100 text-xs text-slate-800 leading-relaxed shadow-2xs">
-                          <span className="font-bold text-indigo-900 block mb-1 flex items-center gap-1">
-                            <Award className="w-3.5 h-3.5 text-indigo-600" />
-                            Tóm tắt đối chiếu hồ sơ:
+                        <div className="bg-white/95 p-4 rounded-xl border border-slate-200 text-xs text-slate-800 leading-relaxed shadow-2xs">
+                          <span className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
+                            <Award className="w-3.5 h-3.5 text-brand-600" />
+                            Tóm tắt nhận định từ AI:
                           </span>
-                          <p className="font-medium text-slate-700">
-                            {data.aiMatchRationale
-                              .replace(/Điểm đánh giá:\s*\d+%\.?/gi, "")
-                              .replace(/\(\d+%\)/gi, "")
-                              .trim()}
-                          </p>
+                          <p className="font-medium text-slate-700">{data.aiMatchRationale}</p>
                         </div>
                       )}
                     </div>
 
-                    {/* KHỐI 4: LỊCH HẸN PHỎNG VẤN & ĐÁNH GIÁ CHUYÊN GIA */}
+                    {/* KHỐI 3: LỊCH HẸN PHỎNG VẤN & ĐÁNH GIÁ CHUYÊN GIA */}
                     {(data?.interviewDate ||
                       data?.currentStage === "INTERVIEW" ||
                       (canManageInterview && data?.currentStage === "SCREENING") ||
@@ -1248,7 +1280,7 @@ export default function CandidateDrawer({
                             </div>
                             <div>
                               <h3 className="text-xs font-bold uppercase tracking-wider text-purple-950 flex items-center gap-2">
-                                <span>4. Lịch Hẹn Phỏng Vấn & Đánh Giá Chuyên Gia</span>
+                                <span>3. Lịch Hẹn Phỏng Vấn & Đánh Giá Chuyên Gia</span>
                                 {data?.interviewDate && (
                                   <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-200/70 text-purple-800 font-bold">
                                     Đã có lịch
@@ -1600,7 +1632,97 @@ export default function CandidateDrawer({
                 )}
 
                 {/* ========================================================================= */}
-                {/* TAB 2: XEM TRƯỚC CV GỐC (FULL EMBEDDED VISUAL PDF VIEWER) */}
+                {/* TAB 2: TIÊU CHUẨN YÊU CẦU VỊ TRÍ (JD) - MỞ KHI HR/MANAGER CẦN ĐỐI CHIẾU */}
+                {/* ========================================================================= */}
+                {activeTab === "jd" && (
+                  <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs space-y-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold border border-amber-100">
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
+                            Tiêu Chuẩn Yêu Cầu Vị Trí (JD)
+                          </h3>
+                          <p className="text-xs text-slate-500">
+                            Cơ sở đối chiếu năng lực ứng viên và tiêu chuẩn chấm điểm AI
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("overview")}
+                        className="text-xs font-semibold text-brand-600 hover:text-brand-700 cursor-pointer"
+                      >
+                        ← Quay lại Hồ sơ ứng viên
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200/80 text-xs">
+                      <div>
+                        <span className="text-slate-400 block mb-0.5">Vị trí tuyển dụng</span>
+                        <span className="font-bold text-slate-900 text-sm">{data?.job?.title}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block mb-0.5">Phòng ban</span>
+                        <span className="font-semibold text-slate-800">{data?.job?.department}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block mb-0.5">Yêu cầu kinh nghiệm</span>
+                        <span className="font-bold text-amber-700">
+                          Tối thiểu {data?.job?.minExperienceYears || 0} năm
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Kỹ năng bắt buộc trong JD (highlight ứng viên đã đáp ứng vs chưa có) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                          Kỹ năng bắt buộc ({jobRequiredSkills.length}):
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-500">
+                          Ứng viên đáp ứng {aiMatchedSkills.length}/{jobRequiredSkills.length} kỹ năng
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {jobRequiredSkills.map((sk: string, idx: number) => {
+                          const isMatched = aiMatchedSkills.some(
+                            (m: string) => m.toLowerCase() === sk.toLowerCase()
+                          );
+                          return (
+                            <span
+                              key={idx}
+                              className={`px-3 py-1 rounded-lg text-xs font-bold border inline-flex items-center gap-1 ${
+                                isMatched
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                  : "bg-amber-50 text-amber-800 border-amber-200"
+                              }`}
+                            >
+                              {isMatched && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                              {sk}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Mô tả công việc đầy đủ (không bị bóp hẹp) */}
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-slate-700 block uppercase tracking-wider">
+                        Mô tả công việc &amp; Quyền lợi chi tiết:
+                      </span>
+                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed whitespace-pre-line font-medium">
+                        {data?.job?.requirementsJd}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ========================================================================= */}
+                {/* TAB 3: XEM TRƯỚC CV GỐC (FULL EMBEDDED VISUAL PDF VIEWER) */}
                 {/* ========================================================================= */}
                 {activeTab === "cv" && (
                   <div className="space-y-4">

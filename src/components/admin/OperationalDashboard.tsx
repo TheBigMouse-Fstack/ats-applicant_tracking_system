@@ -30,6 +30,7 @@ import {
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 import { formatDateTime } from "@/lib/utils";
+import { getAiMatchTier } from "@/lib/match-score";
 
 interface QueueCandidateItem {
   id: number;
@@ -1095,17 +1096,18 @@ function CandidateQueueList({
                   {item.slaMessage}
                 </span>
               )}
-              {item.aiMatchScore !== null && (
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    item.aiMatchScore >= 60
-                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                      : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  Phù hợp JD: {Math.round(item.aiMatchScore)}%
-                </span>
-              )}
+              {item.aiMatchScore !== null && (() => {
+                const tier = getAiMatchTier(item.aiMatchScore);
+                return (
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.badgeClass}`}
+                    title={tier.recommendation}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${tier.dotClass}`} />
+                    AI {tier.score}% • {tier.shortLabel}
+                  </span>
+                );
+              })()}
             </div>
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">

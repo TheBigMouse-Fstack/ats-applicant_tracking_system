@@ -8,7 +8,9 @@ import {
   AlertTriangle,
   ChevronRight,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
+import { getAiMatchTier } from "@/lib/match-score";
 
 interface CandidateCardProps {
   application: any;
@@ -36,6 +38,7 @@ export default function CandidateCard({
 
   const isNewStage = currentStage === "NEW";
   const isUnviewedNew = isNewStage && !isViewed;
+  const matchTier = getAiMatchTier(application.aiMatchScore);
 
   return (
     <Draggable
@@ -147,8 +150,19 @@ export default function CandidateCard({
             </p>
           )}
 
-          {/* Thông tin năng lực: Kỹ năng & Kinh nghiệm */}
+          {/* Thông tin năng lực: AI Match %, Kỹ năng & Kinh nghiệm */}
           <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
+            {/* Chỉ số AI đánh giá % theo chuẩn 3 tầng Traffic-Light */}
+            {matchTier.score !== null && (
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${matchTier.badgeClass}`}
+                title={`AI đánh giá: ${matchTier.score}% (${matchTier.label}) — ${matchTier.recommendation}`}
+              >
+                <Sparkles className="w-3 h-3 shrink-0" />
+                <span>{matchTier.score}%</span>
+              </span>
+            )}
+
             {/* Kỹ năng tiêu biểu */}
             {skills.slice(0, 2).map((sk) => (
               <span

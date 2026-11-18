@@ -208,6 +208,17 @@ $$\text{Score}_{\text{experience}} = \text{Ratio}_{\text{exp}} \times 100$$
 
 * *Ghi chú:* Hàm $\min(1.0, \dots)$ đảm bảo rằng ứng viên có số năm vượt quá yêu cầu (ví dụ yêu cầu 2 năm nhưng ứng viên có 10 năm) sẽ đạt điểm kinh nghiệm tối đa là $100\%$, không bị làm sai lệch trọng số tổng thể.
 
+### 4. Chuẩn Phân Tầng Màu Sắc 3 Mức (Traffic-Light Scoring — `src/lib/match-score.ts`)
+Thay vì phân loại nhị phân cứng nhắc (`<50%` Đỏ / `≥50%` Xanh — dễ gây lỗi gộp ứng viên 52% vào cùng nhóm ưu tiên với ứng viên 92% và tạo thiên kiến loại nhầm), hệ thống áp dụng **chuẩn 3 tầng Traffic-Light** được sử dụng rộng rãi tại các nền tảng ATS hàng đầu thế giới (**iCIMS Role Fit**, **Eightfold AI**, **Workable**, **Manatal**, **Base E-Hiring**):
+
+| Ngưỡng Điểm AI (%) | Mức Xếp Loại | Màu Sắc Hiển Thị | Ý Nghĩa Nghiệp Vụ & Hành Động Gợi Ý |
+| :---: | :--- | :---: | :--- |
+| **`≥ 75%`** | **Phù hợp cao** *(Strong Match)* | 🟢 **Xanh lá (`emerald`)** | Đáp ứng tốt hầu hết kỹ năng bắt buộc & kinh nghiệm JD — **Ưu tiên chuyển sang Sàng lọc (`SCREENING`)**. |
+| **`50% – 74%`** | **Tiềm năng / Cân nhắc** *(Potential Match)* | 🟡 **Vàng hổ phách (`amber`)** | Đáp ứng một phần tiêu chuẩn JD (có thể thiếu 1–2 kỹ năng phụ hoặc đang ở vùng chuyển ngành) — **HR cần đọc kỹ CV trước khi duyệt/loại**. |
+| **`< 50%`** | **Phù hợp thấp** *(Low Match)* | 🔴 **Đỏ (`rose`)** | Thiếu đa số kỹ năng bắt buộc hoặc lệch chuyên môn sâu — **Cảnh báo trực quan** (vẫn tuân thủ **Human-in-the-loop**, AI không tự động loại). |
+
+> **Chuẩn UX & Bố cục Drawer (`CandidateDrawer.tsx`):** Tab mặc định (`Hồ sơ & Đánh giá AI`) tập trung làm nổi bật **Thông tin cá nhân / 5 trường cốt lõi** và **Khối đánh giá % AI**; toàn bộ **Tiêu chuẩn Yêu cầu Vị trí (JD)** được tách lên tab riêng **`Tiêu chuẩn vị trí (JD)`** để HR chỉ bấm xem khi cần đối chiếu chi tiết.
+
 ---
 
 ## V. THẨM ĐỊNH TÍNH ĐÚNG ĐẮN CỦA CÁCH TÍNH ĐIỂM (EVALUATION & BENCHMARK VALIDATION)

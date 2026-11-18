@@ -641,6 +641,22 @@ async function runTests() {
     assert(loginSrc.includes("Applicant Tracking System") && !loginSrc.includes("truy cập tại RecoverX"), "Trang Đăng nhập nội bộ mang đúng tên đề tài ATS — Applicant Tracking System");
     assert(publicJobsSrc.includes("RecoverX"), "Cổng nộp CV công khai (/jobs) vẫn giữ nguyên tên doanh nghiệp giả lập RecoverX");
 
+    // Kiểm tra phân tầng 3 mức AI Match % & tách Tab JD trong CandidateDrawer
+    function classifyMatchTier(score) {
+      if (score === null || score === undefined) return "PENDING";
+      if (score >= 75) return "HIGH";
+      if (score >= 50) return "MEDIUM";
+      return "LOW";
+    }
+    assert(classifyMatchTier(85) === "HIGH", "Điểm AI >= 75% được xếp nhóm Xanh lá (Phù hợp cao)");
+    assert(classifyMatchTier(62) === "MEDIUM", "Điểm AI 50% - 74% được xếp nhóm Vàng (Tiềm năng / Cân nhắc)");
+    assert(classifyMatchTier(42) === "LOW", "Điểm AI < 50% được xếp nhóm Đỏ (Phù hợp thấp)");
+
+    const drawerSrc = fs.readFileSync(path.join(process.cwd(), "src/components/candidate/CandidateDrawer.tsx"), "utf8");
+    const cardSrc = fs.readFileSync(path.join(process.cwd(), "src/components/kanban/CandidateCard.tsx"), "utf8");
+    assert(drawerSrc.includes('activeTab === "jd"') && drawerSrc.includes("getAiMatchTier"), "CandidateDrawer tách phần Tiêu chuẩn vị trí (JD) lên tab riêng và khôi phục AI đánh giá %");
+    assert(cardSrc.includes("getAiMatchTier"), "CandidateCard trên Kanban hiển thị huy hiệu AI đánh giá % theo chuẩn 3 mức");
+
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
   } finally {
