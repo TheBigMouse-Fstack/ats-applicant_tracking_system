@@ -658,6 +658,12 @@ async function runTests() {
     assert(drawerSrc.includes('activeTab === "evaluation"') && drawerSrc.includes('activeTab === "history"') && drawerSrc.includes("ScorecardPanel") && !drawerSrc.includes("<ScorecardModal"), "CandidateDrawer tách riêng Tab Phiếu đánh giá (inline ScorecardPanel) và Tab Nhật ký (AuditLog), bỏ popup modal");
     assert(cardSrc.includes("getAiMatchTier"), "CandidateCard trên Kanban hiển thị huy hiệu AI đánh giá % theo chuẩn 3 mức");
 
+    // Kiểm tra logic nghiệp vụ Kho Nhân Tài (loại trừ NEW & HIRED, không có bộ lọc Chưa xem, 3 trạng thái chuẩn)
+    const talentPoolApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/talent-pool/route.ts"), "utf8");
+    const talentPoolPageSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/talent-pool/page.tsx"), "utf8");
+    assert(talentPoolApiSrc.includes('["REJECTED", "SCREENING", "INTERVIEW"]') && talentPoolApiSrc.includes("SILVER_MEDALIST"), "API Kho Nhân Tài loại trừ hoàn toàn NEW & HIRED và phân loại 3 nhóm nhân tài chuẩn (Silver Medalist / Đang chờ đợt khác / Lưu trữ dự phòng)");
+    assert(!talentPoolPageSrc.includes("Chưa xem") && talentPoolPageSrc.includes("SILVER_MEDALIST"), "UI Kho Nhân Tài đã bỏ nút Chưa xem vô lý và lọc theo 3 trạng thái Kho Nhân Tài thực tế");
+
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
   } finally {

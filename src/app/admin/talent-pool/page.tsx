@@ -28,12 +28,12 @@ export default function TalentPoolPage() {
   const [data, setData] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
 
-  // Filters
+  // Bộ lọc chuẩn nghiệp vụ Kho Nhân Tài (chỉ lọc theo nhóm dự bị & gắn sao)
   const [search, setSearch] = useState("");
   const [selectedJobId, setSelectedJobId] = useState("ALL");
-  const [selectedStage, setSelectedStage] = useState("ALL");
-  const [sortBy, setSortBy] = useState("NEWEST");
-  const [quickFilter, setQuickFilter] = useState<"ALL" | "STARRED" | "UNVIEWED">("ALL");
+  const [selectedPoolStatus, setSelectedPoolStatus] = useState("ALL");
+  const [sortBy, setSortBy] = useState("MATCH_DESC");
+  const [starredOnly, setStarredOnly] = useState(false);
 
   // Re-pool Modal State
   const [repoolCandidate, setRepoolCandidate] = useState<any | null>(null);
@@ -88,10 +88,9 @@ export default function TalentPoolPage() {
       const params = new URLSearchParams();
       if (search.trim()) params.append("search", search.trim());
       if (selectedJobId !== "ALL") params.append("jobId", selectedJobId);
-      if (selectedStage !== "ALL") params.append("stage", selectedStage);
+      if (selectedPoolStatus !== "ALL") params.append("poolStatus", selectedPoolStatus);
       if (sortBy) params.append("sortBy", sortBy);
-      if (quickFilter === "STARRED") params.append("starred", "true");
-      if (quickFilter === "UNVIEWED") params.append("unviewed", "true");
+      if (starredOnly) params.append("starred", "true");
 
       const res = await fetch(`/api/talent-pool?${params.toString()}`);
       const resData = await res.json();
@@ -103,7 +102,7 @@ export default function TalentPoolPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, selectedJobId, selectedStage, sortBy, quickFilter]);
+  }, [search, selectedJobId, selectedPoolStatus, sortBy, starredOnly]);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -250,114 +249,76 @@ export default function TalentPoolPage() {
         </div>
       )}
 
-      {/* 2. Filters & Quick Sort Controls */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-center">
-          {/* Search */}
-          <div className="md:col-span-4 relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+      {/* 2. Bộ lọc gọn 1 hàng theo đúng logic Kho Nhân Tài */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2.5 text-xs">
+          {/* Tìm kiếm */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo tên ứng viên, email hoặc kỹ năng..."
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-9 pr-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="Tìm tên, email hoặc kỹ năng..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2 pl-8 pr-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all"
             />
           </div>
 
-          {/* Job filter */}
-          <div className="md:col-span-3">
-            <select
-              value={selectedJobId}
-              onChange={(e) => setSelectedJobId(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              <option value="ALL">Tất cả vị trí tuyển dụng</option>
-              {jobs.map((j) => (
-                <option key={j.id} value={String(j.id)}>
-                  {j.title} ({j.department})
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Lọc theo Trạng thái Kho Nhân Tài */}
+          <select
+            value={selectedPoolStatus}
+            onChange={(e) => setSelectedPoolStatus(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white lg:w-56"
+          >
+            <option value="ALL">Tất cả nhóm nhân tài ({data.length})</option>
+            <option value="SILVER_MEDALIST">Tiềm năng / Dự bị (Đánh giá tốt)</option>
+            <option value="IN_PIPELINE_WATCH">Đang chờ ở đợt tuyển khác</option>
+            <option value="ARCHIVED_RESERVE">Lưu trữ dự phòng (Hạn 180 ngày)</option>
+          </select>
 
-          {/* Stage filter */}
-          <div className="md:col-span-3">
-            <select
-              value={selectedStage}
-              onChange={(e) => setSelectedStage(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
-            >
-              <option value="ALL">Tất cả trạng thái Kanban</option>
-              <option value="NEW">NEW — Mới tiếp nhận</option>
-              <option value="SCREENING">SCREENING — Sàng lọc</option>
-              <option value="INTERVIEW">INTERVIEW — Phỏng vấn</option>
-              <option value="HIRED">HIRED — Đã tuyển</option>
-              <option value="REJECTED">REJECTED — Đã từ chối</option>
-            </select>
-          </div>
+          {/* Lọc theo vị trí từng ứng tuyển */}
+          <select
+            value={selectedJobId}
+            onChange={(e) => setSelectedJobId(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white lg:w-52"
+          >
+            <option value="ALL">Tất cả vị trí</option>
+            {jobs.map((j) => (
+              <option key={j.id} value={String(j.id)}>
+                {j.title}
+              </option>
+            ))}
+          </select>
 
-          {/* Sort By */}
-          <div className="md:col-span-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setStarredOnly((prev) => !prev)}
+              className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl font-medium transition-colors cursor-pointer border ${
+                starredOnly
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <Star
+                className={`w-3.5 h-3.5 ${
+                  starredOnly ? "fill-amber-400 text-amber-400" : "text-slate-400"
+                }`}
+              />
+              <span>Gắn sao</span>
+            </button>
+
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer"
             >
-              <option value="NEWEST">Mới nhất trước</option>
-              <option value="OLDEST">Cũ nhất trước</option>
-              <option value="STARRED_FIRST">⭐ Đã gắn sao</option>
-              <option value="UNVIEWED_FIRST">🔔 Chưa xem trước</option>
+              <option value="MATCH_DESC">AI phù hợp cao nhất</option>
+              <option value="STARRED_FIRST">Gắn sao trước</option>
+              <option value="NEWEST">Mới cập nhật</option>
+              <option value="OLDEST">Lưu lâu nhất</option>
             </select>
           </div>
-        </div>
-
-        {/* Quick Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 text-xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">Bộ lọc nhanh:</span>
-          <button
-            type="button"
-            onClick={() => setQuickFilter("ALL")}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              quickFilter === "ALL"
-                ? "bg-slate-900 text-white shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            Tất cả
-          </button>
-          <button
-            type="button"
-            onClick={() => setQuickFilter("STARRED")}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              quickFilter === "STARRED"
-                ? "bg-amber-500 text-white shadow-xs"
-                : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
-            }`}
-          >
-            <span>⭐ Đã gắn sao</span>
-            {data.filter((a) => a.isStarred).length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/30 text-current font-black">
-                {data.filter((a) => a.isStarred).length}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setQuickFilter("UNVIEWED")}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              quickFilter === "UNVIEWED"
-                ? "bg-blue-600 text-white shadow-xs"
-                : "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
-            }`}
-          >
-            <span>🔔 Chưa xem</span>
-            {data.filter((a) => !a.isViewed).length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-200 text-blue-900 font-black">
-                {data.filter((a) => !a.isViewed).length}
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
@@ -481,23 +442,40 @@ export default function TalentPoolPage() {
                         )}
                       </td>
 
-                      {/* Trạng thái */}
+                      {/* Trạng thái Kho Nhân Tài (nghiệp vụ thực tế thay cho raw Kanban stage) */}
                       <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                            app.currentStage === "HIRED"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : app.currentStage === "REJECTED"
-                              ? "bg-rose-50 text-rose-700 border-rose-200"
-                              : app.currentStage === "INTERVIEW"
-                              ? "bg-amber-50 text-amber-800 border-amber-200"
-                              : app.currentStage === "SCREENING"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200"
-                          }`}
-                        >
-                          {app.currentStage}
-                        </span>
+                        {app.poolStatus === "SILVER_MEDALIST" ? (
+                          <div className="inline-flex flex-col items-center">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                              Tiềm năng / Dự bị
+                            </span>
+                            {app.retentionDaysLeft !== null && (
+                              <span className="text-[10px] text-slate-400 mt-0.5">
+                                Còn {app.retentionDaysLeft} ngày lưu trữ
+                              </span>
+                            )}
+                          </div>
+                        ) : app.poolStatus === "IN_PIPELINE_WATCH" ? (
+                          <div className="inline-flex flex-col items-center">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-blue-50 text-blue-700 border-blue-200">
+                              Đang chờ đợt khác
+                            </span>
+                            <span className="text-[10px] text-slate-400 mt-0.5">
+                              {app.currentStage === "INTERVIEW" ? "Đang phỏng vấn" : "Đang sàng lọc"}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="inline-flex flex-col items-center">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-slate-100 text-slate-600 border-slate-200">
+                              Lưu trữ dự phòng
+                            </span>
+                            {app.retentionDaysLeft !== null && (
+                              <span className="text-[10px] text-slate-400 mt-0.5">
+                                Còn {app.retentionDaysLeft} ngày (BRL-10)
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* Thao tác duy nhất: Khôi phục (Re-pooling) */}

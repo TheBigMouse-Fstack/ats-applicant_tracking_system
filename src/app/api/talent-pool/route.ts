@@ -4,6 +4,41 @@ import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+export type TalentPoolStatus =
+  | "SILVER_MEDALIST"
+  | "IN_PIPELINE_WATCH"
+  | "ARCHIVED_RESERVE";
+
+/**
+ * Phân loại trạng thái nghiệp vụ chuẩn cho hồ sơ trong Kho Nhân Tài:
+ * - Không bao gồm NEW (CV chưa qua sơ loại) và HIRED (đã trở thành nhân viên công ty).
+ * - SILVER_MEDALIST (Ứng viên Tiềm năng / Dự bị): Đã kết thúc đợt cũ (REJECTED) nhưng có đánh giá tốt
+ *   (Gắn sao ưu tiên, AI >= 60%, hoặc có Scorecard trung bình >= 3.5/5 — VD: bộ phận cũ đã đủ người).
+ * - IN_PIPELINE_WATCH (Đang chờ ở đợt tuyển khác): Đang ở vòng SCREENING/INTERVIEW ở một vị trí khác,
+ *   có thể cân nhắc luân chuyển chéo sang phòng ban phù hợp hơn.
+ * - ARCHIVED_RESERVE (Lưu trữ dự phòng 180 ngày): Hồ sơ REJECTED còn lại được lưu tối đa 180 ngày (BRL-10).
+ */
+function classifyTalentPoolStatus(app: {
+  currentStage: string;
+  isStarred: boolean;
+  aiMatchScore: number | null;
+  evaluations: { overallScore: number | null }[];
+}): TalentPoolStatus {
+  if (app.currentStage === "SCREENING" || app.currentStage === "INTERVIEW") {
+    return "IN_PIPELINE_WATCH";
+  }
+
+  const hasGoodScorecard = app.evaluations.some(
+    (ev) => ev.overallScore !== null && ev.overallScore >= 3.5
+  );
+  const isHighPotential =
+    app.isStarred ||
+    (app.aiMatchScore !== null && app.aiMatchScore >= 60) ||
+    hasGoodScorecard;
+
+  return isHighPotential ? "SILVER_MEDALIST" : "ARCHIVED_RESERVE";
+}
+
 // GET: Lấy danh sách ứng viên trong Kho nhân tài (SCR-07 / UC-06)
 export async function GET(req: Request) {
   try {
@@ -15,19 +50,32 @@ export async function GET(req: Request) {
       );
     }
 
+    if (sessionUser.role === "HIRING_MANAGER") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Chỉ Chuyên viên HR và Quản trị viên mới có quyền truy cập Kho nhân tài",
+        },
+        { status: 403 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search")?.trim().toLowerCase() || "";
     const jobId = searchParams.get("jobId");
-    const stage = searchParams.get("stage");
-    const sortBy = searchParams.get("sortBy") || "NEWEST";
+    const poolStatusFilter = searchParams.get("poolStatus") || "ALL";
+    const sortBy = searchParams.get("sortBy") || "MATCH_DESC";
     const starredOnly = searchParams.get("starred") === "true";
-    const unviewedOnly = searchParams.get("unviewed") === "true";
 
-    const where: any = {};
+    // Kho Nhân Tài CHỈ gồm hồ sơ đã qua sàng lọc / lưu trữ dự phòng (LOẠI TRỪ NEW & HIRED)
+    const where: Record<string, unknown> = {
+      currentStage: {
+        in: ["REJECTED", "SCREENING", "INTERVIEW"],
+      },
+    };
+
     if (jobId && jobId !== "ALL") where.jobId = Number(jobId);
-    if (stage && stage !== "ALL") where.currentStage = stage;
     if (starredOnly) where.isStarred = true;
-    if (unviewedOnly) where.isViewed = false;
 
     if (search) {
       where.candidate = {
@@ -40,15 +88,6 @@ export async function GET(req: Request) {
       };
     }
 
-    let orderBy: any = { createdAt: "desc" };
-    if (sortBy === "OLDEST") {
-      orderBy = { createdAt: "asc" };
-    } else if (sortBy === "STARRED_FIRST") {
-      orderBy = [{ isStarred: "desc" }, { createdAt: "desc" }];
-    } else if (sortBy === "UNVIEWED_FIRST") {
-      orderBy = [{ isViewed: "asc" }, { createdAt: "desc" }];
-    }
-
     const applications = await prisma.application.findMany({
       where,
       include: {
@@ -56,11 +95,51 @@ export async function GET(req: Request) {
         job: true,
         evaluations: true,
       },
-      orderBy,
+      orderBy: { stageUpdatedAt: "desc" },
     });
 
-    return NextResponse.json({ success: true, data: applications });
-  } catch (error: any) {
+    const nowMs = Date.now();
+    const enriched = applications
+      .map((app) => {
+        const poolStatus = classifyTalentPoolStatus(app);
+        const daysSinceUpdated = Math.max(
+          0,
+          Math.floor((nowMs - new Date(app.stageUpdatedAt).getTime()) / (1000 * 60 * 60 * 24))
+        );
+        const retentionDaysLeft =
+          app.currentStage === "REJECTED" ? Math.max(0, 180 - daysSinceUpdated) : null;
+
+        return {
+          ...app,
+          poolStatus,
+          daysInPool: daysSinceUpdated,
+          retentionDaysLeft,
+        };
+      })
+      .filter((item) => {
+        if (poolStatusFilter !== "ALL" && item.poolStatus !== poolStatusFilter) {
+          return false;
+        }
+        return true;
+      });
+
+    // Sắp xếp phù hợp nghiệp vụ săn tìm nhân tài dự bị
+    enriched.sort((a, b) => {
+      if (sortBy === "MATCH_DESC") {
+        return (b.aiMatchScore ?? -1) - (a.aiMatchScore ?? -1);
+      }
+      if (sortBy === "STARRED_FIRST") {
+        if (a.isStarred !== b.isStarred) return a.isStarred ? -1 : 1;
+        return (b.aiMatchScore ?? -1) - (a.aiMatchScore ?? -1);
+      }
+      if (sortBy === "OLDEST") {
+        return new Date(a.stageUpdatedAt).getTime() - new Date(b.stageUpdatedAt).getTime();
+      }
+      return new Date(b.stageUpdatedAt).getTime() - new Date(a.stageUpdatedAt).getTime();
+    });
+
+    return NextResponse.json({ success: true, data: enriched });
+  } catch (error) {
     console.error("GET /api/talent-pool error:", error);
     return NextResponse.json(
       { success: false, error: "Không thể lấy danh sách kho nhân tài" },
@@ -93,7 +172,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Kiểm tra Ứng viên & Job đích
     const candidate = await prisma.candidate.findUnique({
       where: { id: Number(candidateId) },
     });
@@ -114,7 +192,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Tìm đơn ứng tuyển gần nhất để đánh dấu nguồn re-pool
     const previousApp = await prisma.application.findFirst({
       where: { candidateId: candidate.id },
       orderBy: { createdAt: "desc" },
@@ -122,19 +199,20 @@ export async function POST(req: Request) {
 
     const userId = sessionUser ? sessionUser.id : null;
 
-    // 3. Tạo Application mới ở trạng thái SCREENING
+    // Tạo Application mới ở trạng thái SCREENING (vì nhân tài đã qua sơ loại)
     const newApp = await prisma.application.create({
       data: {
         candidateId: candidate.id,
         jobId: targetJob.id,
         currentStage: "SCREENING",
+        isViewed: true,
+        viewedAt: new Date(),
         repooledFromId: previousApp ? previousApp.id : null,
-        aiMatchScore: previousApp?.aiMatchScore || 70,
-        aiMatchRationale: `Hồ sơ được khôi phục từ Kho nhân tài và chuyển sang vị trí ${targetJob.title} bởi chuyên viên tuyển dụng.`,
+        aiMatchScore: previousApp?.aiMatchScore ?? 70,
+        aiMatchRationale: `Hồ sơ được khôi phục từ Kho nhân tài và luân chuyển sang vị trí ${targetJob.title} bởi chuyên viên tuyển dụng.`,
       },
     });
 
-    // 4. Ghi nhận AuditLog
     await prisma.auditLog.create({
       data: {
         applicationId: newApp.id,
@@ -142,6 +220,7 @@ export async function POST(req: Request) {
         fromStage: previousApp?.currentStage || "TALENT_POOL",
         toStage: "SCREENING",
         action: "TALENT_REPOOL",
+        reason: `Khôi phục từ Kho nhân tài sang vị trí ${targetJob.title}`,
       },
     });
 
@@ -150,7 +229,7 @@ export async function POST(req: Request) {
       message: `Đã khôi phục và chuyển ứng viên ${candidate.fullName} sang vị trí "${targetJob.title}" thành công.`,
       data: newApp,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("POST /api/talent-pool repool error:", error);
     return NextResponse.json(
       { success: false, error: "Lỗi hệ thống khi tái sử dụng hồ sơ ứng viên" },
@@ -158,4 +237,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
