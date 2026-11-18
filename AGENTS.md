@@ -30,6 +30,7 @@ When generating code, schema, API endpoints, or UI layouts, AI agents MUST stric
 - `docs/15_API_Specifications_and_Error_Codes.md` — REST API Contracts & System Error Codes
 - `docs/16_SDD_Prompt_Playbook.md` — Spec-Driven Development Prompt Playbook
 - `docs/17_Business_Rules_and_Error_Matrix.md` — 3-Clause Business Rules (`WHEN/THEN/UNLESS`), 7-Column Error Matrix & Gherkin BDD AC
+- `docs/18_Brief_Compliance_and_Value_Added_Analysis.md` — Original Brief Compliance, Benchmark Clone, Hybrid AI Rationale & Value-Added Audit
 
 ## 4. Specialized Rules & BA Skills Directory
 AI agents must consult modular rules located in `.agents/rules/` and BA skills in `.agents/skills/`:

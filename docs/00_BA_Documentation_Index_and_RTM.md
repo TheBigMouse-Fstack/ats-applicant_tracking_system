@@ -22,6 +22,7 @@ downstream_deps:
   - "RBAC-NFR-08"
   - "API-ATS-15"
   - "BR-ERR-17"
+  - "BRIEF-CMP-18"
 last_updated: "2026-11-18"
 ---
 
@@ -61,6 +62,7 @@ last_updated: "2026-11-18"
 | `[[API-ATS-15]]` | `docs/15_API_Specifications_and_Error_Codes.md` | `api-spec` | `v2.1.0` | Approved | Đặc tả 15 RESTful API Contracts & Hệ thống mã lỗi chuẩn (`RULE-03`, `RULE-10`). |
 | `[[SDD-PLAY-16]]` | `docs/16_SDD_Prompt_Playbook.md` | `guide` | `v1.0.0` | Approved | Bộ 7 mẫu Prompt chuẩn Spec-Driven Development & Câu khóa an toàn. |
 | `[[BR-ERR-17]]` | `docs/17_Business_Rules_and_Error_Matrix.md` | `srs` | `v2.1.0` | Approved | Business Rules 3 vế (`RULE-02`), Ma trận Lỗi 7 cột (`RULE-11`) & Gherkin BDD AC (`RULE-08`). |
+| `[[BRIEF-CMP-18]]` | `docs/18_Brief_Compliance_and_Value_Added_Analysis.md` | `brd` | `v1.0.0` | Approved | Đối chiếu Đề bài gốc vs Hệ thống thực tế, Hệ thống tham chiếu (Clone), Lý do Hybrid AI & Thẩm định Gold Plating. |
 | `[[UAT-ATS-18]]` | `docs/TEST_SCENARIOS_AND_UAT_GUIDE.md` | `test-suite` | `v2.1.0` | Approved | Kịch bản kiểm thử UAT thủ công & đối chiếu 97 bài kiểm thử tự động. |
 
 > **Lưu ý kiểm soát phiên bản (`RULE-19`):** Tài liệu bản nháp cũ `01_BRD_Original.md` đã được loại bỏ chính thức nhằm tránh xung đột nguồn chân lý; toàn bộ lịch sử tiến hóa từ `v1.0.0` được lưu tại bảng Revision History của `[[BRD-ATS-01]]`.
