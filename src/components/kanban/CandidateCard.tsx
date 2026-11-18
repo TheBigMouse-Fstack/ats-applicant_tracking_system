@@ -121,7 +121,7 @@ export default function CandidateCard({
               {matchTier.score !== null && (
                 <span
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold border ${matchTier.badgeClass}`}
-                  title={`AI đánh giá: ${matchTier.score}% (${matchTier.label})`}
+                  title={`Mức độ phù hợp: ${matchTier.score}% (${matchTier.label})`}
                 >
                   <span className={`w-1.5 h-1.5 rounded-full ${matchTier.dotClass}`} />
                   {matchTier.score}%

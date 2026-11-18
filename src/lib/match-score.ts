@@ -25,9 +25,9 @@ export function getAiMatchTier(rawScore: number | null | undefined): AiMatchTier
     return {
       tier: "PENDING",
       score: null,
-      label: "Chưa đánh giá",
-      shortLabel: "Chờ AI",
-      recommendation: "Chưa có kết quả phân tích tự động — HR có thể bấm Phân tích lại.",
+      label: "Chưa đối chiếu",
+      shortLabel: "Chưa đối chiếu",
+      recommendation: "Chưa hoàn tất đối chiếu tiêu chuẩn vị trí — HR có thể bấm Đối chiếu lại.",
       badgeClass: "bg-slate-100 text-slate-600 border-slate-200",
       barClass: "bg-slate-300",
       panelClass: "bg-slate-50/80 border-slate-200",

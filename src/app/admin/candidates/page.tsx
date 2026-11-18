@@ -296,7 +296,7 @@ export default function CandidatesListPage() {
                 <th className="py-3 px-4">Ứng viên</th>
                 <th className="py-3 px-4">Vị trí &amp; Kinh nghiệm</th>
                 <th className="py-3 px-4">Kỹ năng trích xuất</th>
-                <th className="py-3 px-4 text-center">AI Đánh giá</th>
+                <th className="py-3 px-4 text-center">Độ phù hợp</th>
                 <th className="py-3 px-4 text-center">Trạng thái</th>
                 <th className="py-3 px-3 w-8" />
               </tr>

@@ -545,7 +545,7 @@ export default function CandidateDrawer({
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              Hồ sơ &amp; AI
+              Hồ sơ
             </button>
 
             <button
@@ -1066,7 +1066,7 @@ export default function CandidateDrawer({
                     <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                          Đánh giá độ phù hợp AI
+                          Mức độ phù hợp với vị trí
                         </h3>
 
                         {canEditProfile && needsAiRetry && (
@@ -1075,10 +1075,10 @@ export default function CandidateDrawer({
                             onClick={handleReparse}
                             disabled={reparsing}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors cursor-pointer"
-                            title="AI chưa chấm được điểm do lỗi mạng hoặc máy chủ — bấm để thử lại"
+                            title="Hệ thống chưa hoàn tất đối chiếu do lỗi kết nối — bấm để thử lại"
                           >
                             <RotateCw className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-amber-600" : ""}`} />
-                            <span>{reparsing ? "Đang thử lại..." : "Thử đánh giá lại AI"}</span>
+                            <span>{reparsing ? "Đang đối chiếu..." : "Đối chiếu lại"}</span>
                           </button>
                         )}
                       </div>
@@ -1180,7 +1180,7 @@ export default function CandidateDrawer({
                         <div className="bg-white/95 p-4 rounded-xl border border-slate-200 text-xs text-slate-800 leading-relaxed shadow-2xs">
                           <span className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
                             <Award className="w-3.5 h-3.5 text-brand-600" />
-                            Tóm tắt nhận định từ AI:
+                            Tóm tắt đối chiếu hồ sơ:
                           </span>
                           <p className="font-medium text-slate-700">{data.aiMatchRationale}</p>
                         </div>

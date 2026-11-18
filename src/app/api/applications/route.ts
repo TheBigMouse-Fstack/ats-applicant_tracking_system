@@ -460,7 +460,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Hồ sơ của bạn đã được tiếp nhận và phân tích AI thành công!",
+      message: "Hồ sơ của bạn đã được tiếp nhận và đối chiếu tiêu chuẩn thành công!",
       data: {
         applicationId: application.id,
         candidateName: candidate.fullName,

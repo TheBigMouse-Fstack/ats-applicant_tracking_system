@@ -313,7 +313,7 @@ export default function TalentPoolPage() {
               onChange={(e) => setSortBy(e.target.value)}
               className="rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer"
             >
-              <option value="MATCH_DESC">AI phù hợp cao nhất</option>
+              <option value="MATCH_DESC">Phù hợp nhất</option>
               <option value="STARRED_FIRST">Gắn sao trước</option>
               <option value="NEWEST">Mới cập nhật</option>
               <option value="OLDEST">Lưu lâu nhất</option>
@@ -332,7 +332,7 @@ export default function TalentPoolPage() {
                 <th className="py-3 px-4">Ứng viên</th>
                 <th className="py-3 px-4">Vị trí &amp; Kinh nghiệm</th>
                 <th className="py-3 px-4">Kỹ năng chính</th>
-                <th className="py-3 px-4 text-center">AI Đánh giá</th>
+                <th className="py-3 px-4 text-center">Độ phù hợp</th>
                 <th className="py-3 px-4 text-center">Trạng thái</th>
                 <th className="py-3 px-4 text-right">Luân chuyển</th>
               </tr>
