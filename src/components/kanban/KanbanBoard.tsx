@@ -10,6 +10,8 @@ import CandidateCard from "@/components/kanban/CandidateCard";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 import StageMismatchConfirmModal from "@/components/candidate/StageMismatchConfirmModal";
+import RejectReasonModal from "@/components/candidate/RejectReasonModal";
+import { canRoleDragFromStage, validateStageTransition } from "@/lib/stage-rules";
 import {
   Search,
   Filter,
@@ -120,7 +122,7 @@ export default function KanbanBoard() {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Modal cảnh báo khi chuyển vòng ứng viên chưa đạt tiêu chí (tránh HR bấm nhầm)
+  // Modal cảnh báo khi chuyển vòng ứng viên chưa đạt tiêu chí (tránh bấm nhầm)
   const [pendingMismatchMove, setPendingMismatchMove] = useState<{
     applicationId: number;
     toStage: string;
@@ -130,6 +132,14 @@ export default function KanbanBoard() {
     expYears: number;
     minExpYears: number;
     rationale: string;
+  } | null>(null);
+
+  // Modal bắt buộc nhập Lý do từ chối khi chuyển sang REJECTED (BRL-11)
+  const [pendingRejectMove, setPendingRejectMove] = useState<{
+    applicationId: number;
+    fromStage: string;
+    candidateName: string;
+    jobTitle: string;
   } | null>(null);
 
   // Error / Notification alert banner
@@ -222,13 +232,14 @@ export default function KanbanBoard() {
   // Stage change logic (used both by Drag-Drop and CandidateDrawer)
   const handleMoveStage = async (
     applicationId: number,
-    toStage: string
+    toStage: string,
+    rejectionReason?: string
   ): Promise<boolean | string> => {
     try {
       const res = await fetch("/api/pipeline/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ applicationId, toStage }),
+        body: JSON.stringify({ applicationId, toStage, rejectionReason }),
       });
 
       const result = await res.json();
@@ -241,7 +252,7 @@ export default function KanbanBoard() {
       // Thông báo thành công nếu có hẹn giờ email
       if (toStage === "REJECTED") {
         setAlertSuccess(
-          "Đã chuyển sang Từ chối. Email phản hồi đã được lên lịch tự động."
+          "Đã chuyển sang Từ chối kèm lý do lưu vết. Email phản hồi đã được lên lịch tự động sau 12 giờ."
         );
       } else if (toStage === "HIRED") {
         setAlertSuccess("Ứng viên đã được chuyển sang Tuyển chọn thành công.");
@@ -282,7 +293,35 @@ export default function KanbanBoard() {
 
     const movedCandidate = (columns[sourceColId] || [])[source.index];
 
-    // KIỂM TRA HỒ SƠ CHƯA ĐẠT TIÊU CHUẨN KHI CHUYỂN SANG SCREENING HOẶC INTERVIEW (TRÁNH HR BẤM NHẦM)
+    // 1. KIỂM TRA SƠ BỘ QUYỀN VAI TRÒ & TRÌNH TỰ STATE MACHINE TRƯỚC KHI MỞ MODAL HAY OPTIMISTIC UPDATE
+    if (sourceColId !== destColId && currentUser?.role) {
+      const preCheck = validateStageTransition({
+        fromStage: sourceColId,
+        toStage: destColId,
+        role: currentUser.role,
+        evaluationsCount: movedCandidate?.evaluationsCount ?? (movedCandidate?.evaluations?.length || 0),
+        rejectionReason: destColId === "REJECTED" ? "placeholder-for-precheck" : undefined,
+      });
+
+      if (!preCheck.allowed) {
+        setAlertError(preCheck.error || "Không được phép chuyển sang giai đoạn này.");
+        return;
+      }
+    }
+
+    // 2. BẮT BUỘC NHẬP LÝ DO TỪ CHỐI KHI KÉO SANG CỘT REJECTED (BRL-11)
+    if (sourceColId !== destColId && destColId === "REJECTED" && movedCandidate) {
+      setAlertError(null);
+      setPendingRejectMove({
+        applicationId: appId,
+        fromStage: sourceColId,
+        candidateName: movedCandidate.candidate?.fullName || "Ứng viên",
+        jobTitle: movedCandidate.job?.title || "Vị trí tuyển dụng",
+      });
+      return;
+    }
+
+    // 3. KIỂM TRA HỒ SƠ CHƯA ĐẠT TIÊU CHUẨN KHI CHUYỂN SANG SCREENING HOẶC INTERVIEW (TRÁNH BẤM NHẦM)
     if (movedCandidate && (destColId === "SCREENING" || destColId === "INTERVIEW")) {
       let missingSkills: string[] = [];
       try {
@@ -384,7 +423,11 @@ export default function KanbanBoard() {
               Quy Trình Tuyển Dụng
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Theo dõi và quản lý hồ sơ ứng viên qua các giai đoạn tuyển dụng.
+              {currentUser?.role === "HR"
+                ? "Phạm vi HR: Tiếp nhận, chuẩn hóa hồ sơ và chuyển tối đa đến vòng Sàng lọc tiêu chuẩn."
+                : currentUser?.role === "HIRING_MANAGER"
+                ? "Phạm vi Quản lý chuyên môn: Duyệt Phỏng vấn từ vòng Sàng lọc, đánh giá Scorecard và quyết định Tuyển chọn."
+                : "Theo dõi và quản lý hồ sơ ứng viên qua các giai đoạn tuyển dụng."}
             </p>
           </div>
 
@@ -673,7 +716,7 @@ export default function KanbanBoard() {
                             index={index}
                             onOpenDrawer={(id) => setSelectedAppId(id)}
                             onToggleStar={handleToggleStar}
-                            isDragDisabled={currentUser?.role === "HIRING_MANAGER"}
+                            isDragDisabled={!canRoleDragFromStage(col.id, currentUser?.role)}
                           />
                         ))
                       )}
@@ -694,8 +737,8 @@ export default function KanbanBoard() {
           setSelectedAppId(null);
           fetchPipeline();
         }}
-        onStageChange={async (appId, toStage) => {
-          const res = await handleMoveStage(appId, toStage);
+        onStageChange={async (appId, toStage, rejectionReason) => {
+          const res = await handleMoveStage(appId, toStage, rejectionReason);
           return res;
         }}
       />
@@ -729,6 +772,22 @@ export default function KanbanBoard() {
           minExpYears={pendingMismatchMove.minExpYears}
           rationale={pendingMismatchMove.rationale}
           actionType="MOVE_STAGE"
+        />
+      )}
+
+      {/* 7. Modal Bắt buộc nhập Lý do Từ chối (BRL-11) */}
+      {pendingRejectMove && (
+        <RejectReasonModal
+          isOpen={true}
+          onClose={() => setPendingRejectMove(null)}
+          onConfirm={async (reason) => {
+            const { applicationId } = pendingRejectMove;
+            setPendingRejectMove(null);
+            await handleMoveStage(applicationId, "REJECTED", reason);
+          }}
+          candidateName={pendingRejectMove.candidateName}
+          jobTitle={pendingRejectMove.jobTitle}
+          currentStage={pendingRejectMove.fromStage}
         />
       )}
     </div>

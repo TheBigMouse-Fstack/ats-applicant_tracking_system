@@ -222,3 +222,40 @@ Dưới đây là 4 luận cứ chứng minh tính đúng đắn:
 | **Kiểm soát tính nhất quán**| Toán học tất định 100% | `temperature: 0` + `JSON Schema` tất định |
 | **Độ tin cậy cho Demo** | Tuyệt đối (Bảo vệ bài thi không bao giờ sập) | Trực quan, cao cấp, thông minh |
 
+---
+
+## VII. QUY TẮC TRÍCH XUẤT 5 TRƯỜNG DỮ LIỆU CỐT LÕI THEO JD & HIỂN THỊ TỪNG BƯỚC (BRL-03)
+
+Nhằm tránh tình trạng đổ quá nhiều thông tin chi tiết gây nhiễu mắt khi HR/Hiring Manager rà soát nhanh hồ sơ, hệ thống quy định **Nguyên tắc Hiển thị 2 Tầng (Progressive Disclosure)** và **Rule trích xuất 5 trường cốt lõi chuẩn hóa theo JD**:
+
+### 1. Rule Lấy & Hiển Thị Ban Đầu Đúng 5 Trường Dữ Liệu Cốt Lõi (Default View)
+
+| STT | Trường dữ liệu cốt lõi | Nguồn trích xuất & Rule lấy dữ liệu | Ánh xạ đối chiếu với JD | Lưu trữ CSDL |
+| :---: | :--- | :--- | :--- | :--- |
+| **1** | **Họ tên ứng viên** (`fullName`) | Ưu tiên lấy từ biểu mẫu nộp hồ sơ trực tuyến (`FormData`); nếu HR tải CV nội bộ trống tên thì lấy từ Header dòng đầu của CV. Chuẩn hóa viết hoa, tối thiểu ≥ 2 ký tự. | Định danh hồ sơ ứng viên. | `Candidate.fullName` |
+| **2** | **Email liên hệ** (`email`) | Chuẩn hóa chữ thường (`trim().toLowerCase()`), xác thực định dạng RFC Email regex (`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`). Là một nửa khóa khử trùng lặp BRL-02. | Định danh liên lạc & gửi thư tự động. | `Candidate.email` |
+| **3** | **Vị trí ứng tuyển** (`job.title`) | Gắn trực tiếp theo khóa ngoại `jobId` của tin tuyển dụng (`Job`) đang ở trạng thái `ACTIVE`. Không tự suy đoán chức danh khác với JD đã nộp. | Xác định bộ tiêu chuẩn JD (`requiredSkills`, `minExperienceYears`). | `Application.jobId ➔ Job.title` |
+| **4** | **Kỹ năng** (`parsedSkills`) | Lớp 2 (Gemini `temperature: 0`) hoặc Lớp 1 (Section `SKILLS` + Từ điển đa ngành) trích xuất mảng chuỗi kỹ năng thực tế có trong CV, **khử trùng lặp không phân biệt hoa thường**, tuyệt đối không bịa đặt kỹ năng trái ngành. Các kỹ năng trùng với `Job.requiredSkills` được gắn nhãn nổi bật (màu xanh). | Đối chiếu trực tiếp với `Job.requiredSkills` (chiếm 60% trọng số điểm Match). | `Candidate.parsedSkills` (JSON) |
+| **5** | **Số năm kinh nghiệm** (`experienceYears`) | Trích xuất tổng số năm kinh nghiệm làm việc thực tế dạng số nguyên `[0..50]` (loại trừ năm học đại học). Nếu là sinh viên mới ra trường chưa có kinh nghiệm gán `0`. | So sánh trực tiếp với `Job.minExperienceYears` (hiển thị badge *"JD yêu cầu ≥ X năm"*, chiếm 40% trọng số điểm Match). | `Candidate.experienceYears` |
+
+### 2. Nguyên Tắc Mở Rộng Chi Tiết Khi Cần (Progressive Disclosure — "Xem chi tiết hồ sơ")
+* Mặc định khi mở `CandidateDrawer`, hệ thống **chỉ hiển thị gọn gàng đúng 5 trường cốt lõi** nêu trên để HR ra quyết định sàng lọc nhanh trong 5 giây.
+* Khi cần thẩm định sâu hơn, HR hoặc Hiring Manager nhấn nút **"Xem chi tiết hồ sơ"** để mở rộng tầng dữ liệu bổ trợ:
+  * Số điện thoại liên hệ (`phone`).
+  * Học vấn & Bằng cấp (`parsedEducation`).
+  * Lịch sử kinh nghiệm công tác chi tiết theo từng công ty & mốc thời gian (`parsedExperience`).
+  * Thư viện Bằng cấp / Chứng chỉ đính kèm (`certificates` — hỗ trợ phóng to Lightbox).
+  * Nút **"Trích xuất lại từ CV"** (`POST /api/applications/[id]/re-parse`).
+
+### 3. Quyền Chỉnh Sửa & Bổ Sung Thủ Công Cho HR (Manual Override — Khắc Phục Lỗi Bóc Tách)
+* **Mục đích:** Phòng ngừa trường hợp CV trình bày 2 cột, font chữ lạ hoặc PDF scan khiến máy chủ/AI bóc tách thiếu kỹ năng, sai số năm kinh nghiệm hoặc sai chính tả tên/email.
+* **Thẩm quyền:** Chỉ **Chuyên viên HR** và **Quản trị viên (Admin)** được nhấn nút **"Chỉnh sửa"** (`PATCH /api/applications/[id]/profile`); **Hiring Manager** chỉ có quyền xem (API trả `403 Forbidden` với mã `RBAC-PROFILE-EDIT`).
+* **Các thao tác hỗ trợ:**
+  * Sửa trực tiếp: Họ tên, Email, Số điện thoại, Số năm kinh nghiệm.
+  * Quản lý danh sách Kỹ năng: **Thêm mới kỹ năng bị sót** và **Xóa kỹ năng bị bóc nhầm** ngay dưới dạng tag.
+* **Tác động tự động sau khi lưu:**
+  1. Kiểm tra ràng buộc khóa khử trùng lặp `(email, phone)` (BRL-02).
+  2. **Tự động tính lại** `aiMatchedSkills`, `aiMissingSkills` và `aiMatchScore` theo bộ tiêu chuẩn của JD ngay lập tức.
+  3. Ghi vết bất biến vào bảng `AuditLog` với `action: "PROFILE_EDITED"` và liệt kê rõ tên các trường HR đã chỉnh sửa.
+
+

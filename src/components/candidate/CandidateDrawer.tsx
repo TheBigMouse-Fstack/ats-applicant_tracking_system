@@ -39,15 +39,25 @@ import {
   ThumbsUp,
   ThumbsDown,
   Plus,
+  ChevronDown,
+  ChevronUp,
+  Save,
+  Lock,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import ScorecardModal from "@/components/scorecard/ScorecardModal";
 import StageMismatchConfirmModal from "@/components/candidate/StageMismatchConfirmModal";
+import RejectReasonModal from "@/components/candidate/RejectReasonModal";
+import { getAllowedTargetStages, validateStageTransition } from "@/lib/stage-rules";
 
 interface CandidateDrawerProps {
   applicationId: number | null;
   onClose: () => void;
-  onStageChange: (appId: number, toStage: string) => Promise<boolean | string>;
+  onStageChange: (
+    appId: number,
+    toStage: string,
+    rejectionReason?: string
+  ) => Promise<boolean | string>;
 }
 
 export default function CandidateDrawer({
@@ -56,11 +66,28 @@ export default function CandidateDrawer({
   onStageChange,
 }: CandidateDrawerProps) {
   const [data, setData] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "cv" | "history">("overview");
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
   const [isScorecardOpen, setIsScorecardOpen] = useState(false);
+
+  // Progressive Disclosure: Mặc định chỉ hiển thị 5 trường cốt lõi theo JD; bấm để xem chi tiết
+  const [showDetailedProfile, setShowDetailedProfile] = useState(false);
+
+  // Chỉnh sửa thủ công hồ sơ cho HR/Admin (khắc phục bóc tách text sai)
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [editFullName, setEditFullName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editExpYears, setEditExpYears] = useState<number>(0);
+  const [editSkills, setEditSkills] = useState<string[]>([]);
+  const [newSkillInput, setNewSkillInput] = useState("");
+
+  // Modal bắt buộc nhập Lý do từ chối (BRL-11)
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   // Chế độ xem CV gốc: "pdf" (Visual PDF iframe) hoặc "text" (Văn bản trích xuất)
   const [cvViewMode, setCvViewMode] = useState<"pdf" | "text">("pdf");
@@ -92,6 +119,14 @@ export default function CandidateDrawer({
     actionType: "MOVE_STAGE" | "SCHEDULE_INTERVIEW";
   } | null>(null);
 
+  // Tải thông tin tài khoản hiện tại để phân quyền UI (RBAC)
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((d) => d.success && setCurrentUser(d.user))
+      .catch(() => {});
+  }, []);
+
   // Tải chi tiết hồ sơ
   useEffect(() => {
     if (!applicationId) return;
@@ -101,6 +136,9 @@ export default function CandidateDrawer({
     setReparseNotice(null);
     setInterviewSuccessEmail(null);
     setInterviewError(null);
+    setShowDetailedProfile(false);
+    setIsEditingProfile(false);
+    setIsRejectModalOpen(false);
 
     fetch(`/api/applications/${applicationId}`)
       .then((res) => res.json())
@@ -141,7 +179,75 @@ export default function CandidateDrawer({
 
   if (!applicationId) return null;
 
-  // Phân tích tiêu chuẩn ứng viên so với JD (Tránh HR thao tác nhầm)
+  const canEditProfile = currentUser?.role === "HR" || currentUser?.role === "ADMIN";
+  const canManageInterview =
+    currentUser?.role === "HIRING_MANAGER" || currentUser?.role === "ADMIN";
+
+  // Bật chế độ chỉnh sửa 5 trường thông tin cốt lõi cho HR / Admin
+  const handleStartEditProfile = () => {
+    setEditFullName(data?.candidate?.fullName || "");
+    setEditEmail(data?.candidate?.email || "");
+    setEditPhone(data?.candidate?.phone || "");
+    setEditExpYears(Number(data?.candidate?.experienceYears ?? 0));
+    let currentSkills: string[] = [];
+    try {
+      currentSkills = JSON.parse(data?.candidate?.parsedSkills || "[]");
+    } catch {
+      currentSkills = [];
+    }
+    setEditSkills(Array.isArray(currentSkills) ? currentSkills : []);
+    setNewSkillInput("");
+    setActionError("");
+    setIsEditingProfile(true);
+  };
+
+  const handleAddSkill = () => {
+    const trimmed = newSkillInput.trim();
+    if (!trimmed) return;
+    if (!editSkills.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      setEditSkills((prev) => [...prev, trimmed]);
+    }
+    setNewSkillInput("");
+  };
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setEditSkills((prev) => prev.filter((s) => s !== skillToRemove));
+  };
+
+  const handleSaveProfile = async () => {
+    setActionError("");
+    setSavingProfile(true);
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/profile`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: editFullName,
+          email: editEmail,
+          phone: editPhone,
+          experienceYears: editExpYears,
+          skills: editSkills,
+        }),
+      });
+      const resData = await res.json();
+      if (!res.ok || !resData.success) {
+        setActionError(resData.error || "Không thể lưu chỉnh sửa hồ sơ.");
+      } else {
+        setData(resData.data);
+        setIsEditingProfile(false);
+        setReparseNotice(
+          resData.message || "Đã lưu chỉnh sửa thông tin hồ sơ và cập nhật đối chiếu JD thành công."
+        );
+        setTimeout(() => setReparseNotice(null), 5000);
+      }
+    } catch (e: any) {
+      setActionError("Lỗi kết nối khi lưu chỉnh sửa hồ sơ.");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Phân tích tiêu chuẩn ứng viên so với JD (Tránh thao tác nhầm)
   let missingSkillsList: string[] = [];
   try {
     if (typeof data?.aiMissingSkills === "string") {
@@ -162,14 +268,14 @@ export default function CandidateDrawer({
   );
 
   // Xử lý chuyển trạng thái nhanh từ trong Drawer
-  const executeQuickMove = async (toStage: string) => {
+  const executeQuickMove = async (toStage: string, rejectionReason?: string) => {
     setActionError("");
     setActionLoading(true);
-    const result = await onStageChange(applicationId, toStage);
+    const result = await onStageChange(applicationId, toStage, rejectionReason);
     setActionLoading(false);
 
     if (typeof result === "string") {
-      setActionError(result); // Báo lỗi BRL-06 hoặc lỗi nghiệp vụ
+      setActionError(result); // Báo lỗi quy tắc chuyển trạng thái hoặc RBAC
     } else if (result === true) {
       // Reload dữ liệu drawer
       fetch(`/api/applications/${applicationId}`)
@@ -179,6 +285,34 @@ export default function CandidateDrawer({
   };
 
   const handleQuickMove = async (toStage: string) => {
+    setActionError("");
+
+    // Kiểm tra sơ bộ quy tắc vai trò & trình tự State Machine
+    if (data?.currentStage && currentUser?.role) {
+      const hasPassing = (data?.evaluations || []).some(
+        (ev: any) => ev.recommendation === "HIRE" || ev.recommendation === "STRONG_HIRE"
+      );
+      const check = validateStageTransition({
+        fromStage: data.currentStage,
+        toStage,
+        role: currentUser.role,
+        evaluationsCount: data?.evaluations?.length || 0,
+        hasPassingEvaluation: (data?.evaluations?.length || 0) > 0 ? hasPassing : undefined,
+        rejectionReason: toStage === "REJECTED" ? "placeholder-for-precheck" : undefined,
+      });
+
+      if (!check.allowed) {
+        setActionError(check.error || "Không được phép thực hiện thao tác chuyển trạng thái này.");
+        return;
+      }
+    }
+
+    // Nếu chuyển sang REJECTED ➔ mở Modal bắt buộc nhập Lý do từ chối (BRL-11)
+    if (toStage === "REJECTED") {
+      setIsRejectModalOpen(true);
+      return;
+    }
+
     if (isUnderQualified && (toStage === "SCREENING" || toStage === "INTERVIEW")) {
       setMismatchWarning({ targetStage: toStage, actionType: "MOVE_STAGE" });
       return;
@@ -496,232 +630,458 @@ export default function CandidateDrawer({
                 {/* ========================================================================= */}
                 {activeTab === "overview" && (
                   <div className="space-y-6">
-                    {/* KHỐI 1: HỒ SƠ ỨNG VIÊN TRÍCH XUẤT TỪ CV */}
+                    {/* BANNER LÝ DO TỪ CHỐI (Nếu đang ở trạng thái REJECTED) */}
+                    {data?.currentStage === "REJECTED" && data?.rejectionReason && (
+                      <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start gap-3">
+                        <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="font-bold text-rose-900 uppercase tracking-wider text-[11px]">
+                            Lý Do Từ Chối Hồ Sơ
+                          </p>
+                          <p className="font-medium leading-relaxed">{data.rejectionReason}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* KHỐI 1: 5 TRƯỜNG DỮ LIỆU CỐT LÕI THEO JD (Họ tên, Email, Vị trí, Kỹ năng, Số năm kinh nghiệm) */}
                     <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs space-y-4">
-                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
                             <User className="w-4 h-4" />
                           </div>
                           <div>
                             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-                              1. Thông Tin Trích Xuất Từ CV
+                              1. Thông Tin Cốt Lõi Theo JD
                             </h3>
                             <p className="text-[11px] text-slate-400">
-                              Dữ liệu học vấn, số năm kinh nghiệm và kỹ năng trích xuất
+                              5 trường chuẩn: Họ tên, Email, Vị trí ứng tuyển, Kỹ năng, Số năm kinh nghiệm
                             </p>
                           </div>
                         </div>
 
-                        {/* Nút Cập nhật thông tin */}
-                        <button
-                          type="button"
-                          onClick={handleReparse}
-                          disabled={reparsing}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-all cursor-pointer"
-                          title="Cập nhật lại thông tin trích xuất từ CV"
-                        >
-                          <RotateCw
-                            className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-brand-600" : ""}`}
-                          />
-                          <span>{reparsing ? "Đang cập nhật..." : "Cập nhật thông tin CV"}</span>
-                        </button>
-                      </div>
+                        <div className="flex items-center gap-2">
+                          {canEditProfile && !isEditingProfile && (
+                            <button
+                              type="button"
+                              onClick={handleStartEditProfile}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer"
+                              title="Chỉnh sửa hoặc bổ sung thủ công các trường trích xuất từ CV"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Chỉnh sửa</span>
+                            </button>
+                          )}
 
-                      {/* Thông tin liên hệ nhanh */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80 text-xs">
-                        <div>
-                          <span className="text-slate-400 block mb-0.5">Email liên hệ</span>
-                          <span className="font-semibold text-slate-800 flex items-center gap-1 truncate">
-                            <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
-                            {data?.candidate?.email}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block mb-0.5">Số điện thoại</span>
-                          <span className="font-semibold text-slate-800 flex items-center gap-1">
-                            <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />{" "}
-                            {data?.candidate?.phone}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block mb-0.5">Tổng số năm kinh nghiệm</span>
-                          <span className="font-bold text-brand-600 flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-brand-500 shrink-0" />{" "}
-                            {data?.candidate?.experienceYears ?? 0} năm thực tế
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 1.1 Học vấn & Bằng cấp */}
-                      <div className="space-y-2">
-                        <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
-                          <GraduationCap className="w-4 h-4 text-brand-600" />
-                          Học Vấn & Bằng Cấp Hiện Tại:
-                        </h4>
-                        {parsedEducation.length === 0 ? (
-                          <div className="p-3 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
-                            Không tìm thấy thông tin học vấn trong CV.
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {parsedEducation.map((edu: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className="p-3 rounded-xl border border-slate-200/90 bg-white text-xs flex items-start justify-between gap-3 shadow-2xs"
-                              >
-                                <div>
-                                  <p className="font-bold text-slate-900 text-sm">
-                                    {edu.degree || "Bằng cấp chuyên môn"}
-                                  </p>
-                                  <p className="text-slate-600 font-medium mt-0.5">
-                                    {edu.school || edu.institution}
-                                  </p>
-                                </div>
-                                <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
-                                  {edu.year || edu.grad_year || "2011 - 2015"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 1.2 Kinh nghiệm làm việc chi tiết */}
-                      <div className="space-y-2 pt-1">
-                        <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
-                          <Briefcase className="w-4 h-4 text-brand-600" />
-                          Lịch Sử Kinh Nghiệm Làm Việc ({data?.candidate?.experienceYears || 0} năm):
-                        </h4>
-                        {parsedExperience.length === 0 ? (
-                          <div className="p-3 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
-                            Chưa có thông tin kinh nghiệm chi tiết.
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            {parsedExperience.map((exp: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className="p-3.5 rounded-xl border border-slate-200/90 bg-white space-y-1.5 text-xs shadow-2xs"
-                              >
-                                <div className="flex items-start justify-between gap-2">
-                                  <div>
-                                    <h5 className="font-bold text-slate-900 text-sm">
-                                      {exp.role || exp.position}
-                                    </h5>
-                                    <p className="font-semibold text-brand-700 text-xs">
-                                      {exp.company}
-                                    </p>
-                                  </div>
-                                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-                                    {exp.duration}
-                                  </span>
-                                </div>
-                                {exp.description && (
-                                  <p className="text-slate-600 text-xs leading-relaxed pt-1 border-t border-slate-100">
-                                    {exp.description}
-                                  </p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 1.3 Kỹ năng bóc tách thực tế từ CV */}
-                      <div className="space-y-2 pt-1">
-                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                          Kỹ Năng & Chuyên Môn Trong CV ({parsedSkills.length}):
-                        </h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {parsedSkills.length > 0 ? (
-                            parsedSkills.map((skill: string, idx: number) => (
-                              <span
-                                key={idx}
-                                className="px-3 py-1 rounded-lg bg-slate-100 text-slate-800 text-xs font-semibold border border-slate-200 shadow-2xs"
-                              >
-                                {skill}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-slate-400">Chưa có thông tin kỹ năng</span>
+                          {!isEditingProfile && (
+                            <button
+                              type="button"
+                              onClick={() => setShowDetailedProfile((prev) => !prev)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-all cursor-pointer"
+                            >
+                              {showDetailedProfile ? (
+                                <>
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                  <span>Thu gọn chi tiết</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                  <span>Xem chi tiết hồ sơ</span>
+                                </>
+                              )}
+                            </button>
                           )}
                         </div>
                       </div>
 
-                      {/* 1.4 Bằng cấp & Chứng chỉ đính kèm (Ảnh / PDF) */}
-                      <div className="space-y-2.5 pt-3 border-t border-slate-100">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
-                            <Award className="w-4 h-4 text-purple-600" />
-                            Bằng Cấp & Chứng Chỉ Đính Kèm ({certificates.length}):
-                          </h4>
-                          <span className="text-[11px] text-slate-400">Xem trực tiếp trên web</span>
-                        </div>
-
-                        {certificates.length === 0 ? (
-                          <div className="p-3.5 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400 bg-slate-50/50">
-                            Ứng viên chưa tải lên tệp chứng chỉ hoặc bằng cấp bổ sung.
+                      {/* CHẾ ĐỘ CHỈNH SỬA THỦ CÔNG CHO HR / ADMIN */}
+                      {isEditingProfile ? (
+                        <div className="space-y-4 bg-slate-50/80 p-4 rounded-xl border border-brand-200">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <label className="block font-bold text-slate-700 mb-1">
+                                1. Họ và tên <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={editFullName}
+                                onChange={(e) => setEditFullName(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-bold text-slate-700 mb-1">
+                                2. Email liên hệ <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="email"
+                                value={editEmail}
+                                onChange={(e) => setEditEmail(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-bold text-slate-700 mb-1">
+                                3. Số năm kinh nghiệm <span className="text-rose-500">*</span>
+                              </label>
+                              <input
+                                type="number"
+                                min={0}
+                                max={50}
+                                value={editExpYears}
+                                onChange={(e) => setEditExpYears(Number(e.target.value))}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-bold text-slate-700 mb-1">
+                                Số điện thoại
+                              </label>
+                              <input
+                                type="text"
+                                value={editPhone}
+                                onChange={(e) => setEditPhone(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              />
+                            </div>
                           </div>
-                        ) : (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            {certificates.map((cert: any, idx: number) => {
-                              const isImg =
-                                cert.fileType === "image" ||
-                                /\.(jpg|jpeg|png|webp)$/i.test(cert.fileUrl || "");
-                              return (
-                                <div
-                                  key={idx}
-                                  className="group relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs hover:shadow-md hover:border-purple-300 transition-all flex flex-col justify-between"
+
+                          {/* Chỉnh sửa danh sách Kỹ năng */}
+                          <div className="space-y-2 text-xs">
+                            <label className="block font-bold text-slate-700">
+                              4. Kỹ năng chuyên môn ({editSkills.length})
+                            </label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {editSkills.map((sk) => (
+                                <span
+                                  key={sk}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white text-slate-800 font-semibold border border-slate-300"
                                 >
-                                  {isImg ? (
-                                    <div
-                                      onClick={() => {
-                                        setPreviewImage(cert.fileUrl);
-                                        setPreviewImageTitle(cert.name || `Chứng chỉ #${idx + 1}`);
-                                      }}
-                                      className="h-28 bg-slate-100 flex items-center justify-center cursor-pointer relative overflow-hidden"
+                                  <span>{sk}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveSkill(sk)}
+                                    className="text-slate-400 hover:text-rose-600 cursor-pointer"
+                                    title="Xóa kỹ năng"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={newSkillInput}
+                                onChange={(e) => setNewSkillInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddSkill();
+                                  }
+                                }}
+                                placeholder="Nhập thêm kỹ năng bị sót (VD: TypeScript, Docker, SQL)..."
+                                className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleAddSkill}
+                                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold cursor-pointer"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Thêm</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
+                            <button
+                              type="button"
+                              onClick={() => setIsEditingProfile(false)}
+                              disabled={savingProfile}
+                              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 bg-white hover:bg-slate-100 border border-slate-300 cursor-pointer"
+                            >
+                              Hủy
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSaveProfile}
+                              disabled={savingProfile}
+                              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs disabled:opacity-60 cursor-pointer"
+                            >
+                              {savingProfile ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Đang lưu...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="w-3.5 h-3.5" />
+                                  <span>Lưu thay đổi</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {/* CHẾ ĐỘ HIỂN THỊ CHUẨN: ĐÚNG 5 TRƯỜNG DỮ LIỆU CỐT LÕI THEO JD */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 p-4 rounded-xl border border-slate-200/80 text-xs">
+                            <div>
+                              <span className="text-slate-400 block mb-0.5">1. Họ tên ứng viên</span>
+                              <span className="font-bold text-slate-900 text-sm">
+                                {data?.candidate?.fullName}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block mb-0.5">2. Email liên hệ</span>
+                              <span className="font-semibold text-slate-800 flex items-center gap-1.5 truncate">
+                                <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                {data?.candidate?.email}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block mb-0.5">3. Vị trí ứng tuyển</span>
+                              <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                                <Briefcase className="w-3.5 h-3.5 text-brand-500 shrink-0" />
+                                {data?.job?.title}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 block mb-0.5">4. Số năm kinh nghiệm</span>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span
+                                  className={`font-bold flex items-center gap-1 ${
+                                    minExpRequired > 0 && candidateExp < minExpRequired
+                                      ? "text-rose-600"
+                                      : "text-emerald-700"
+                                  }`}
+                                >
+                                  <Clock className="w-3.5 h-3.5 shrink-0" />
+                                  {candidateExp} năm
+                                </span>
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-white border border-slate-200 text-slate-600">
+                                  JD yêu cầu ≥ {minExpRequired} năm
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Trường thứ 5: Kỹ năng theo JD */}
+                          <div className="space-y-2">
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                              5. Kỹ Năng Trích Xuất ({parsedSkills.length})
+                            </h4>
+                            <div className="flex flex-wrap gap-1.5">
+                              {parsedSkills.length > 0 ? (
+                                parsedSkills.map((skill: string, idx: number) => {
+                                  const isRequiredByJd = jobRequiredSkills.some(
+                                    (req: string) =>
+                                      req.toLowerCase() === skill.toLowerCase() ||
+                                      skill.toLowerCase().includes(req.toLowerCase())
+                                  );
+                                  return (
+                                    <span
+                                      key={idx}
+                                      className={`px-3 py-1 rounded-lg text-xs font-semibold border shadow-2xs ${
+                                        isRequiredByJd
+                                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                          : "bg-slate-100 text-slate-700 border-slate-200"
+                                      }`}
                                     >
-                                      <img
-                                        src={cert.fileUrl}
-                                        alt={cert.name}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                      />
-                                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
-                                        <Eye className="w-4 h-4" />
-                                        <span>Phóng to</span>
+                                      {skill}
+                                    </span>
+                                  );
+                                })
+                              ) : (
+                                <span className="text-xs text-slate-400">
+                                  Chưa trích xuất được kỹ năng — HR có thể bấm &quot;Chỉnh sửa&quot; để bổ sung
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* PHẦN MỞ RỘNG KHI CẦN: XEM CHI TIẾT HỒ SƠ (Progressive Disclosure) */}
+                      {showDetailedProfile && !isEditingProfile && (
+                        <div className="pt-4 mt-2 border-t border-slate-200 space-y-5 animate-in fade-in">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-xs">
+                              <span className="text-slate-500">Số điện thoại:</span>
+                              <span className="font-bold text-slate-800 flex items-center gap-1">
+                                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                {data?.candidate?.phone}
+                              </span>
+                            </div>
+
+                            {canEditProfile && (
+                              <button
+                                type="button"
+                                onClick={handleReparse}
+                                disabled={reparsing}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-all cursor-pointer"
+                                title="Trích xuất lại toàn bộ dữ liệu từ file CV gốc"
+                              >
+                                <RotateCw
+                                  className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-brand-600" : ""}`}
+                                />
+                                <span>{reparsing ? "Đang trích xuất..." : "Trích xuất lại từ CV"}</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Học vấn & Bằng cấp */}
+                          <div className="space-y-2">
+                            <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                              <GraduationCap className="w-4 h-4 text-brand-600" />
+                              Học Vấn & Bằng Cấp:
+                            </h4>
+                            {parsedEducation.length === 0 ? (
+                              <div className="p-3 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
+                                Không tìm thấy thông tin học vấn trong CV.
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {parsedEducation.map((edu: any, idx: number) => (
+                                  <div
+                                    key={idx}
+                                    className="p-3 rounded-xl border border-slate-200/90 bg-white text-xs flex items-start justify-between gap-3 shadow-2xs"
+                                  >
+                                    <div>
+                                      <p className="font-bold text-slate-900 text-sm">
+                                        {edu.degree || "Bằng cấp chuyên môn"}
+                                      </p>
+                                      <p className="text-slate-600 font-medium mt-0.5">
+                                        {edu.school || edu.institution}
+                                      </p>
+                                    </div>
+                                    <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+                                      {edu.year || edu.grad_year || "N/A"}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Kinh nghiệm làm việc chi tiết */}
+                          <div className="space-y-2">
+                            <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                              <Briefcase className="w-4 h-4 text-brand-600" />
+                              Lịch Sử Kinh Nghiệm Làm Việc Chi Tiết:
+                            </h4>
+                            {parsedExperience.length === 0 ? (
+                              <div className="p-3 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
+                                Chưa có thông tin kinh nghiệm chi tiết.
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {parsedExperience.map((exp: any, idx: number) => (
+                                  <div
+                                    key={idx}
+                                    className="p-3.5 rounded-xl border border-slate-200/90 bg-white space-y-1.5 text-xs shadow-2xs"
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div>
+                                        <h5 className="font-bold text-slate-900 text-sm">
+                                          {exp.role || exp.position}
+                                        </h5>
+                                        <p className="font-semibold text-brand-700 text-xs">
+                                          {exp.company}
+                                        </p>
+                                      </div>
+                                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+                                        {exp.duration}
+                                      </span>
+                                    </div>
+                                    {exp.description && (
+                                      <p className="text-slate-600 text-xs leading-relaxed pt-1 border-t border-slate-100">
+                                        {exp.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Bằng cấp & Chứng chỉ đính kèm (Ảnh / PDF) */}
+                          <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                                <Award className="w-4 h-4 text-purple-600" />
+                                Bằng Cấp & Chứng Chỉ Đính Kèm ({certificates.length}):
+                              </h4>
+                              <span className="text-[11px] text-slate-400">Xem trực tiếp trên web</span>
+                            </div>
+
+                            {certificates.length === 0 ? (
+                              <div className="p-3.5 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400 bg-slate-50/50">
+                                Ứng viên chưa tải lên tệp chứng chỉ hoặc bằng cấp bổ sung.
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {certificates.map((cert: any, idx: number) => {
+                                  const isImg =
+                                    cert.fileType === "image" ||
+                                    /\.(jpg|jpeg|png|webp)$/i.test(cert.fileUrl || "");
+                                  return (
+                                    <div
+                                      key={idx}
+                                      className="group relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs hover:shadow-md hover:border-purple-300 transition-all flex flex-col justify-between"
+                                    >
+                                      {isImg ? (
+                                        <div
+                                          onClick={() => {
+                                            setPreviewImage(cert.fileUrl);
+                                            setPreviewImageTitle(cert.name || `Chứng chỉ #${idx + 1}`);
+                                          }}
+                                          className="h-28 bg-slate-100 flex items-center justify-center cursor-pointer relative overflow-hidden"
+                                        >
+                                          <img
+                                            src={cert.fileUrl}
+                                            alt={cert.name}
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                          />
+                                          <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                                            <Eye className="w-4 h-4" />
+                                            <span>Phóng to</span>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <a
+                                          href={cert.fileUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="h-28 bg-slate-50 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-slate-100 transition-colors"
+                                        >
+                                          <FileText className="w-8 h-8 text-red-500 mb-1" />
+                                          <span className="text-[10px] font-bold text-slate-700 line-clamp-1">
+                                            Tài liệu PDF
+                                          </span>
+                                        </a>
+                                      )}
+                                      <div className="p-2 border-t border-slate-100 bg-white">
+                                        <p
+                                          className="text-[11px] font-bold text-slate-800 truncate"
+                                          title={cert.name}
+                                        >
+                                          {cert.name || "Bằng cấp / Chứng chỉ"}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">
+                                          {isImg ? "Ảnh chứng chỉ" : "Tài liệu PDF"}
+                                        </p>
                                       </div>
                                     </div>
-                                  ) : (
-                                    <a
-                                      href={cert.fileUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="h-28 bg-slate-50 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-slate-100 transition-colors"
-                                    >
-                                      <FileText className="w-8 h-8 text-red-500 mb-1" />
-                                      <span className="text-[10px] font-bold text-slate-700 line-clamp-1">
-                                        Tài liệu PDF
-                                      </span>
-                                    </a>
-                                  )}
-                                  <div className="p-2 border-t border-slate-100 bg-white">
-                                    <p
-                                      className="text-[11px] font-bold text-slate-800 truncate"
-                                      title={cert.name}
-                                    >
-                                      {cert.name || "Bằng cấp / Chứng chỉ"}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400">
-                                      {isImg ? "Ảnh chứng chỉ" : "Tài liệu PDF"}
-                                    </p>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* KHỐI 2: TIÊU CHUẨN CỦA VỊ TRÍ ĐANG TUYỂN DỤNG (JD) */}
@@ -876,7 +1236,10 @@ export default function CandidateDrawer({
                     </div>
 
                     {/* KHỐI 4: LỊCH HẸN PHỎNG VẤN & ĐÁNH GIÁ CHUYÊN GIA */}
-                    {(data?.interviewDate || data?.currentStage === "INTERVIEW" || (data?.evaluations && data.evaluations.length > 0)) && (
+                    {(data?.interviewDate ||
+                      data?.currentStage === "INTERVIEW" ||
+                      (canManageInterview && data?.currentStage === "SCREENING") ||
+                      (data?.evaluations && data.evaluations.length > 0)) && (
                       <div className="bg-gradient-to-r from-purple-50/80 via-indigo-50/40 to-white rounded-2xl border border-purple-200/90 p-5 shadow-2xs space-y-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-purple-100 gap-3">
                           <div className="flex items-center gap-2.5">
@@ -901,8 +1264,34 @@ export default function CandidateDrawer({
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {data?.interviewDate ? (
-                              <>
+                            {canManageInterview ? (
+                              data?.interviewDate ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIsInterviewModalOpen(true);
+                                      setInterviewSuccessEmail(null);
+                                      setInterviewError(null);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-xs transition-all cursor-pointer"
+                                    title="Chỉnh sửa ngày giờ, link họp hoặc ghi chú"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <span>Sửa Lịch Hẹn</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleCancelInterview}
+                                    disabled={isCancellingInterview}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 shadow-xs transition-all cursor-pointer"
+                                    title="Hủy lịch hẹn phỏng vấn này"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>{isCancellingInterview ? "Đang hủy..." : "Hủy Lịch"}</span>
+                                  </button>
+                                </>
+                              ) : (
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -910,36 +1299,17 @@ export default function CandidateDrawer({
                                     setInterviewSuccessEmail(null);
                                     setInterviewError(null);
                                   }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-xs transition-all cursor-pointer"
-                                  title="Chỉnh sửa ngày giờ, link họp hoặc ghi chú"
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-500/20 transition-all cursor-pointer"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                  <span>Sửa Lịch Hẹn</span>
+                                  <Calendar className="w-4 h-4" />
+                                  <span>+ Lên Lịch Phỏng Vấn</span>
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={handleCancelInterview}
-                                  disabled={isCancellingInterview}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 shadow-xs transition-all cursor-pointer"
-                                  title="Hủy lịch hẹn phỏng vấn này"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  <span>{isCancellingInterview ? "Đang hủy..." : "Hủy Lịch"}</span>
-                                </button>
-                              </>
+                              )
                             ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setIsInterviewModalOpen(true);
-                                  setInterviewSuccessEmail(null);
-                                  setInterviewError(null);
-                                }}
-                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-md shadow-purple-500/20 transition-all cursor-pointer"
-                              >
-                                <Calendar className="w-4 h-4" />
-                                <span>+ Lên Lịch Phỏng Vấn</span>
-                              </button>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-semibold border border-slate-200">
+                                <Lock className="w-3 h-3" />
+                                Do Hiring Manager phụ trách
+                              </span>
                             )}
                           </div>
                         </div>
@@ -1501,14 +1871,16 @@ export default function CandidateDrawer({
                         {data?.auditLogs?.map((log: any) => (
                           <div
                             key={log.id}
-                            className="p-3 rounded-xl border border-slate-100 bg-slate-50/70 text-xs flex justify-between items-center"
+                            className="p-3 rounded-xl border border-slate-100 bg-slate-50/70 text-xs flex justify-between items-start gap-3"
                           >
-                            <div>
+                            <div className="space-y-0.5">
                               <p className="font-semibold text-slate-800">
                                 {log.action === "SCORECARD_EVALUATE" ? (
                                   <span className="text-purple-700 font-bold">★ Đánh giá Scorecard phỏng vấn</span>
                                 ) : log.action === "INTERVIEW_CANCELLED" ? (
                                   <span className="text-red-600 font-bold">✕ Hủy lịch hẹn phỏng vấn</span>
+                                ) : log.action === "PROFILE_EDITED" ? (
+                                  <span className="text-blue-700 font-bold">✎ Chỉnh sửa thủ công hồ sơ</span>
                                 ) : log.action === "STARRED" ? (
                                   <span className="text-amber-600 font-bold">⭐ Gắn sao ưu tiên hồ sơ</span>
                                 ) : log.action === "UNSTARRED" ? (
@@ -1520,11 +1892,16 @@ export default function CandidateDrawer({
                                   </>
                                 )}
                               </p>
+                              {log.reason && (
+                                <p className="text-[11px] text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200 mt-1">
+                                  {log.reason}
+                                </p>
+                              )}
                               <p className="text-[11px] text-slate-400 mt-0.5">
                                 Thực hiện bởi: {log.user?.fullName || "Hệ thống"} &bull; {log.user?.role || "SYSTEM"}
                               </p>
                             </div>
-                            <span className="text-[10px] text-slate-400 font-mono">
+                            <span className="text-[10px] text-slate-400 font-mono shrink-0">
                               {formatDateTime(log.createdAt)}
                             </span>
                           </div>
@@ -1537,25 +1914,47 @@ export default function CandidateDrawer({
             )}
           </div>
 
-          {/* Footer Actions: Chuyển Stage nhanh */}
+          {/* Footer Actions: Chuyển Stage nhanh (Áp dụng State Machine & RBAC) */}
           <div className="p-5 border-t border-slate-200 bg-slate-50/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold text-slate-700">Chuyển vòng tuyển:</span>
-              <div className="flex flex-wrap gap-1">
-                {stages.map((st) => (
-                  <button
-                    key={st.key}
-                    onClick={() => handleQuickMove(st.key)}
-                    disabled={actionLoading || data?.currentStage === st.key}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                      data?.currentStage === st.key
-                        ? "bg-brand-600 text-white border-brand-600 shadow-xs cursor-default"
-                        : "bg-white hover:bg-slate-100 text-slate-700 border-slate-300"
-                    }`}
-                  >
-                    {st.key}
-                  </button>
-                ))}
+              <div className="flex flex-wrap gap-1.5">
+                {(() => {
+                  const allowedTargets = getAllowedTargetStages(
+                    data?.currentStage || "",
+                    currentUser?.role
+                  );
+                  return stages.map((st) => {
+                    const isCurrent = data?.currentStage === st.key;
+                    const isAllowed = allowedTargets.includes(st.key as any);
+                    return (
+                      <button
+                        key={st.key}
+                        onClick={() => handleQuickMove(st.key)}
+                        disabled={actionLoading || isCurrent}
+                        title={
+                          isCurrent
+                            ? "Trạng thái hiện tại"
+                            : isAllowed
+                            ? `Chuyển sang ${st.label}`
+                            : "Không nằm trong bước kế tiếp hợp lệ hoặc vượt thẩm quyền vai trò hiện tại"
+                        }
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all inline-flex items-center gap-1 ${
+                          isCurrent
+                            ? "bg-brand-600 text-white border-brand-600 shadow-xs cursor-default"
+                            : isAllowed
+                            ? st.key === "REJECTED"
+                              ? "bg-white hover:bg-rose-50 text-rose-700 border-rose-300 cursor-pointer"
+                              : "bg-white hover:bg-brand-50 text-slate-800 border-slate-300 hover:border-brand-400 cursor-pointer"
+                            : "bg-slate-100 text-slate-400 border-slate-200 opacity-60 cursor-pointer"
+                        }`}
+                      >
+                        {!isCurrent && !isAllowed && <Lock className="w-3 h-3" />}
+                        <span>{st.key}</span>
+                      </button>
+                    );
+                  });
+                })()}
               </div>
             </div>
 
@@ -1568,6 +1967,19 @@ export default function CandidateDrawer({
           </div>
         </div>
       </div>
+
+      {/* Modal Bắt buộc nhập Lý do Từ chối (BRL-11) */}
+      <RejectReasonModal
+        isOpen={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
+        onConfirm={async (reason) => {
+          setIsRejectModalOpen(false);
+          await executeQuickMove("REJECTED", reason);
+        }}
+        candidateName={data?.candidate?.fullName || "Ứng viên"}
+        jobTitle={data?.job?.title || "Vị trí tuyển dụng"}
+        currentStage={data?.currentStage || ""}
+      />
 
       {/* Scorecard Modal (BRL-08) */}
       <ScorecardModal

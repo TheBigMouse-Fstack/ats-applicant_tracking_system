@@ -43,9 +43,12 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 | **`MAGIC_BYTES_INVALID`** | `400 Bad Request` | "Tệp tin không đúng định dạng PDF/DOCX hợp lệ (Chữ ký nhị phân Magic Bytes không khớp)." | Chặn tấn công đổi đuôi file giả mạo (Polyglot File Upload) ở tầng Controller. |
 | **`BRL-02`** | `400 Bad Request` | "Ứng viên đã nộp hồ sơ cho vị trí này trong vòng 30 ngày qua. Vui lòng không nộp lặp lại." | Khử trùng lặp: Cặp (Email, SĐT) nộp trùng cùng 1 Job trong 30 ngày. |
 | **`BRL-09`** | `400 Bad Request` | "Bạn đã nộp tối đa 3 vị trí công việc trong vòng 90 ngày qua. Vui lòng chờ kết quả phản hồi." | Hạn ngạch ứng tuyển: Vượt quá 03 vị trí khác nhau trong 90 ngày. |
-| **`BRL-06`** | `400 Bad Request` | "Chưa thể tuyển chọn: Cần có ít nhất 01 phiếu đánh giá Scorecard hoàn tất từ người phỏng vấn chuyên môn trước khi xác nhận tuyển." | Chốt chặn Stage-Gate: Chặn kéo sang `HIRED` khi chưa có Scorecard hợp lệ. |
-| **`RBAC-MGR-BLOCK`** | `403 Forbidden` | "Quản lý chuyên môn (Hiring Manager) chỉ có quyền xem hồ sơ và đánh giá Scorecard; quyền luân chuyển trạng thái do bộ phận Tuyển dụng (HR) phụ trách." | Phân quyền RBAC Mục 13: Chặn Hiring Manager kéo-thả chuyển cột Kanban tại `POST /api/pipeline/move`. |
-| **`RBAC-SCHED-BLOCK`**| `403 Forbidden` | "Quản lý chuyên môn (Hiring Manager) chỉ có quyền xem lịch và đánh giá, không được xếp/sửa lịch phỏng vấn theo quy chuẩn RBAC." | Chặn Hiring Manager lên lịch/đổi lịch/hủy lịch tại `POST /api/interviews/schedule`. |
+| **`BRL-06`** | `400 Bad Request` | "Chưa thể tuyển chọn (BRL-06): Cần có ít nhất 01 phiếu đánh giá Scorecard hoàn tất với khuyến nghị đạt chuẩn trước khi xác nhận Tuyển chọn." | Chốt chặn Stage-Gate: Chặn kéo sang `HIRED` khi chưa có Scorecard đạt chuẩn. |
+| **`BRL-11`** | `400 Bad Request` | "Bắt buộc nhập Lý do từ chối (tối thiểu 5 ký tự) khi chuyển hồ sơ sang trạng thái Từ chối (BRL-11)." | Bắt buộc cung cấp `rejectionReason` khi chuyển sang `REJECTED` tại `POST /api/pipeline/move`. |
+| **`BRL-STAGE-ORDER`** | `400 Bad Request` | "Vi phạm trình tự quy trình (BRL-STAGE-ORDER): Không thể nhảy cóc giai đoạn..." | Cấm nhảy cóc State Machine (`NEW -> INTERVIEW`, `SCREENING -> HIRED`, `REJECTED -> HIRED`). |
+| **`BRL-STAGE-TERMINAL`** | `400 Bad Request` | "Quy tắc trạng thái (BRL-STAGE-TERMINAL): Hồ sơ đã ở trạng thái Tuyển chọn (HIRED), không thể chuyển ngược." | Khóa trạng thái kết thúc `HIRED`. |
+| **`RBAC-STAGE-LIMIT`** | `403 Forbidden` | "Phân quyền HR: Chuyên viên HR chỉ được chuyển tối đa đến vòng Sàng lọc tiêu chuẩn (SCREENING)..." / "Phân quyền Hiring Manager..." | Phân tách thẩm quyền vòng tuyển: HR max `SCREENING`; Hiring Manager phụ trách `INTERVIEW` & `HIRED` và lịch phỏng vấn. |
+| **`RBAC-PROFILE-EDIT`** | `403 Forbidden` | "Quản lý chuyên môn (Hiring Manager) chỉ có quyền xem hồ sơ; quyền chuẩn hóa dữ liệu trích xuất CV thuộc bộ phận HR." | Chặn Hiring Manager gọi `PATCH /api/applications/[id]/profile`. |
 | **`RBAC-PURGE-BLOCK`**| `403 Forbidden` | "Truy cập bị từ chối: Chỉ Quản trị viên (Admin) mới có quyền thực thi tác vụ dọn dẹp vòng đời hồ sơ BRL-10." | Chặn HR và Manager gọi lệnh xóa vĩnh viễn tại `POST /api/talent-pool/cleanup`. |
 | **`AUTH_INVALID_CRED`**| `401 Unauthorized` | "Mật khẩu không chính xác. Vui lòng kiểm tra lại." | Xác thực đăng nhập thất bại qua PBKDF2 tại `POST /api/auth/login`. |
 | **`AUTH_USER_LOCKED`** | `403 Forbidden` | "Tài khoản của bạn đã bị Quản trị viên tạm khóa. Vui lòng liên hệ Admin." | Tài khoản có `isActive = false` không được phép đăng nhập. |
@@ -189,6 +192,23 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 
 ---
 
+#### 7A. `PATCH /api/applications/[id]/profile` — Chỉnh sửa & Bổ sung thủ công 5 trường trích xuất hồ sơ
+* **Mục đích:** Cho phép HR và Admin sửa lỗi bóc tách text CV (Họ tên, Email, SĐT, Số năm kinh nghiệm, thêm/xóa Kỹ năng) và tự động tính lại đối chiếu kỹ năng so với JD.
+* **Yêu cầu phân quyền:** `HR` và `ADMIN` (**Chặn `HIRING_MANAGER` với HTTP 403 — `RBAC-PROFILE-EDIT`**).
+* **Request Body:**
+  ```json
+  {
+    "fullName": "Nguyễn Văn Minh",
+    "email": "minh.nguyen@gmail.com",
+    "phone": "0909123456",
+    "experienceYears": 4,
+    "skills": ["React", "TypeScript", "Next.js", "PostgreSQL"]
+  }
+  ```
+* **Tác động tự động:** Cập nhật bảng `Candidate`, tự động đối chiếu lại `aiMatchedSkills`, `aiMissingSkills`, `aiMatchScore` theo JD, và ghi nhật ký `AuditLog` (`action: "PROFILE_EDITED"`).
+
+---
+
 ### Phân hệ 3: Quản trị Quy trình Tuyển dụng (Kanban Pipeline)
 
 #### 8. `GET /api/pipeline` — Lấy toàn bộ dữ liệu Pipeline
@@ -199,7 +219,7 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
   {
     "success": true,
     "jobs": [ { "id": 1, "title": "Fullstack Developer", "status": "ACTIVE" } ],
-    "pipeline": {
+    "columns": {
       "NEW": [ ... danh sách Application ... ],
       "SCREENING": [ ... ],
       "INTERVIEW": [ ... ],
@@ -212,21 +232,26 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 ---
 
 #### 9. `POST /api/pipeline/move` — Luân chuyển trạng thái thẻ Kanban
-* **Mục đích:** Kéo - thả thẻ giữa các cột hoặc cập nhật trạng thái tuyển dụng.
-* **Yêu cầu phân quyền:** HR và Admin. **Cấm Hiring Manager (RBAC-MGR-BLOCK).**
+* **Mục đích:** Kéo - thả thẻ giữa các cột hoặc cập nhật trạng thái tuyển dụng theo State Machine.
+* **Yêu cầu phân quyền (`RBAC-STAGE-LIMIT`):**
+  * **`HR`:** Tối đa đến `SCREENING` (`NEW ➔ SCREENING`, `NEW/SCREENING ➔ REJECTED`, `REJECTED ➔ NEW/SCREENING`). **Cấm chuyển sang `INTERVIEW` / `HIRED`.**
+  * **`HIRING_MANAGER`:** Phụ trách từ `SCREENING` trở đi (`SCREENING ➔ INTERVIEW`, `INTERVIEW ➔ HIRED`, `SCREENING/INTERVIEW ➔ REJECTED`, `REJECTED ➔ INTERVIEW`). **Cấm can thiệp vòng `NEW`.**
+  * **`ADMIN`:** Toàn quyền các chuyển đổi hợp lệ theo State Machine.
 * **Request Body:**
   ```json
   {
     "applicationId": 42,
-    "toStage": "INTERVIEW"
+    "toStage": "REJECTED",
+    "rejectionReason": "Thiếu kinh nghiệm thực chiến về Node.js và thiết kế CSDL theo yêu cầu JD"
   }
   ```
-* **Ràng buộc nghiệp vụ tích hợp:**
-  1. **Chốt chặn Stage-Gate BRL-06:** Nếu `toStage === "HIRED"` và `app.evaluations.length === 0` ➔ Báo lỗi HTTP 400.
-  2. **Bộ đệm độ trễ BRL-05:**
-     * Khi `toStage === "REJECTED"`: Tự động gán `emailScheduledAt = Date.now() + 12h`.
-     * Khi kéo thẻ rời khỏi `REJECTED`: Tự động hủy lịch `emailScheduledAt = null`.
-  3. **Kiểm toán (Audit Trail):** Tự động tạo bản ghi `AuditLog` với `action: "STAGE_CHANGE"`.
+* **Ràng buộc nghiệp vụ tích hợp (`src/lib/stage-rules.ts`):**
+  1. **Cấm nhảy cóc giai đoạn (`BRL-STAGE-ORDER`):** Bắt buộc tuân thủ tuần tự `NEW ➔ SCREENING ➔ INTERVIEW ➔ HIRED`.
+  2. **Khóa trạng thái kết thúc (`BRL-STAGE-TERMINAL`):** Không cho phép kéo ngược hồ sơ đã `HIRED`.
+  3. **Lý do từ chối bắt buộc (`BRL-11`):** Khi `toStage === "REJECTED"`, bắt buộc truyền `rejectionReason` ≥ 5 ký tự.
+  4. **Chốt chặn Stage-Gate (`BRL-06`):** Nếu `toStage === "HIRED"`, bắt buộc có ≥ 01 Scorecard với khuyến nghị đạt (`HIRE` / `STRONG_HIRE`).
+  5. **Bộ đệm độ trễ (`BRL-05`):** Tự động gán `emailScheduledAt = Date.now() + 12h` khi vào `REJECTED`; tự động hủy lịch và xóa `rejectionReason` khi phục hồi.
+  6. **Kiểm toán (Audit Trail):** Tự động ghi `AuditLog` (`action: "STAGE_CHANGE"`, lưu kèm `reason`).
 * **Success Response (HTTP 200):**
   ```json
   {
@@ -240,9 +265,9 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 
 ### Phân hệ 4: Lịch phỏng vấn & Đánh giá Scorecard (Interview & Scorecard)
 
-#### 10. `POST /api/interviews/schedule` — Thiết lập, sửa, hủy lịch phỏng vấn
+#### 10. `POST /api/interviews/schedule` & `DELETE /api/interviews/schedule` — Thiết lập, sửa, hủy lịch phỏng vấn
 * **Mục đích:** Lên lịch phỏng vấn mới, đổi lịch (Reschedule), hủy lịch hoặc lưu ghi chú trước/sau phỏng vấn.
-* **Yêu cầu phân quyền:** HR và Admin. **Chặn Hiring Manager (HTTP 403).**
+* **Yêu cầu phân quyền:** `HIRING_MANAGER` và `ADMIN` (chỉ áp dụng khi hồ sơ đang ở `SCREENING` hoặc `INTERVIEW`). **Chặn `HR` xếp/sửa/hủy lịch phỏng vấn (`HTTP 403 — RBAC-STAGE-LIMIT`); HR chỉ có thể cập nhật ghi chú nhanh khi `isQuickNotesUpdate: true`.**
 * **Request Body:**
   ```json
   {
@@ -259,7 +284,7 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
   ```json
   {
     "success": true,
-    "message": "Đã xác nhận và tạo thư mời phỏng vấn thành công",
+    "message": "Đã lên lịch phỏng vấn thành công",
     "data": { ... }
   }
   ```

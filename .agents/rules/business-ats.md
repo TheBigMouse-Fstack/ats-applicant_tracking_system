@@ -34,33 +34,26 @@ Hệ thống kết hợp 2 lớp phòng vệ tối ưu giữa Bộ lọc quy t�
 
 ---
 
-### BRL-03: AI CV Parsing Requirements
-- Gemini API must parse raw CV text into structured JSON matching this schema:
-  ```json
-  {
-    "full_name": "string",
-    "email": "string",
-    "phone": "string",
-    "years_of_experience": 3.5,
-    "skills": ["TypeScript", "Next.js", "PostgreSQL"],
-    "education": [
-      {
-        "institution": "University ABC",
-        "degree": "Bachelor of Computer Science",
-        "grad_year": 2022
-      }
-    ],
-    "experience": [
-      {
-        "company": "Company XYZ",
-        "position": "Frontend Developer",
-        "duration": "2022 - 2024",
-        "summary": "Built dashboard using React..."
-      }
-    ]
-  }
-  ```
-- Store the raw parsed JSON in `AIParseResult.parsed_data`.
+### BRL-03: AI CV Parsing & 5 Core Fields Display Rule
+- Mặc định ban đầu trên giao diện hồ sơ ứng viên (`CandidateDrawer`, `CandidateCard`) **chỉ hiển thị đúng 5 trường dữ liệu cốt lõi đối chiếu theo JD**:
+  1. **Họ tên** (`fullName`)
+  2. **Email** (`email`)
+  3. **Vị trí ứng tuyển** (`job.title`)
+  4. **Kỹ năng** (`parsedSkills` — highlight kỹ năng khớp `Job.requiredSkills`)
+  5. **Số năm kinh nghiệm** (`experienceYears` — đối chiếu `Job.minExperienceYears`)
+- **Progressive Disclosure:** Các thông tin mở rộng (SĐT, Học vấn, Lịch sử công tác chi tiết, Chứng chỉ đính kèm) được ẩn mặc định dưới nút **"Xem chi tiết hồ sơ"**.
+- **Manual HR Override:** Cho phép `HR` và `ADMIN` chỉnh sửa/bổ sung thủ công 5 trường trên (thêm/xóa kỹ năng, sửa năm kinh nghiệm, tên, email) qua `PATCH /api/applications/[id]/profile`, tự động tính lại độ khớp JD và lưu vết `AuditLog` (`PROFILE_EDITED`).
+
+---
+
+### BRL-11: Mandatory Rejection Reason & Strict State Transition Rules
+- **Bắt buộc lý do khi từ chối (`BRL-11`):** Mọi thao tác chuyển sang `REJECTED` bắt buộc phải có `rejectionReason` rõ ràng (≥ 5 ký tự), lưu vào `Application.rejectionReason` và `AuditLog.reason`.
+- **Phân tách thẩm quyền chuyển vòng (`RBAC-STAGE-LIMIT`):**
+  - **`HR`**: Chuyển tối đa đến `SCREENING` (`NEW ➔ SCREENING`, `NEW/SCREENING ➔ REJECTED`, `REJECTED ➔ NEW/SCREENING`). **Cấm chuyển sang `INTERVIEW` / `HIRED` và cấm quản lý lịch phỏng vấn.**
+  - **`HIRING_MANAGER`**: Phụ trách từ `SCREENING` trở đi (`SCREENING ➔ INTERVIEW`, `INTERVIEW ➔ HIRED`, `SCREENING/INTERVIEW ➔ REJECTED`, `REJECTED ➔ INTERVIEW`) và quản lý lịch phỏng vấn. **Cấm thao tác vòng `NEW`.**
+  - **`ADMIN`**: Toàn quyền các chuyển đổi hợp lệ theo State Machine.
+- **Trình tự tuyến tính (`BRL-STAGE-ORDER`):** Cấm nhảy cóc giai đoạn (`NEW ➔ INTERVIEW`, `NEW ➔ HIRED`, `SCREENING ➔ HIRED`, `REJECTED ➔ HIRED`).
+- **Trạng thái kết thúc (`BRL-STAGE-TERMINAL`):** Hồ sơ đã `HIRED` không cho phép kéo ngược tùy tiện.
 
 ---
 

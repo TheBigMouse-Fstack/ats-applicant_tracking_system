@@ -20,59 +20,58 @@ Bước phù hợp và logic nhất để làm ngay bây giờ là:
 
 ---
 
-### PHẦN 1: SƠ ĐỒ TRẠNG THÁI ỨNG VIÊN (STATE MACHINE DIAGRAM)
+### PHẦN 1: SƠ ĐỒ TRẠNG THÁI ỨNG VIÊN (STATE MACHINE DIAGRAM — CHUẨN HÓA MỚI NHẤT)
 
-Dưới đây là sơ đồ vòng đời trạng thái của một ứng viên trong hệ thống **ReCoverX Career (ATS)**:
+Dưới đây là sơ đồ vòng đời trạng thái của một hồ sơ ứng tuyển (`Application.currentStage`) trong hệ thống **ReCoverX Career (ATS)** theo nguyên tắc **Human-in-the-loop**, **Phân quyền chuyển vòng rõ ràng (HR max `SCREENING`, Hiring Manager phụ trách `INTERVIEW` & `HIRED`)**, **Cấm nhảy cóc giai đoạn**, và **Bắt buộc lý do từ chối (`BRL-11`)**:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Submitted: Ứng viên nộp CV / HR Upload
-    
-    state "Submitted (Tiếp nhận)" as Submitted
-    state "Processing (Đang bóc tách & Khử trùng)" as Processing
-    state "Screening (Chờ sàng lọc HR)" as Screening
-    state "Interview (Vòng phỏng vấn)" as Interview
-    state "Hired (Trúng tuyển)" as Hired
-    state "Rejected (Không đạt)" as Rejected
-    state "TalentPool (Lưu trữ kho nhân tài)" as TalentPool
+    [*] --> NEW: Ứng viên nộp CV / HR tải lên (BRL-01, BRL-02, BRL-03)
 
-    Submitted --> Processing: Hệ thống tiếp nhận tệp CV
-    
-    Processing --> Screening: AI Match Score ≥ 60% & Đủ tiêu chuẩn JD
-    Processing --> Rejected: AI Match Score < 60% hoặc Thiếu tiêu chí bắt buộc
-    
-    Screening --> Interview: HR duyệt hồ sơ & Hẹn phỏng vấn
-    Screening --> Rejected: HR đánh giá hồ sơ không phù hợp
-    
-    Interview --> Hired: Đậu phỏng vấn (Điểm Scorecard ≥ 3.5 & Gửi Offer)
-    Interview --> Rejected: Rớt phỏng vấn (Điểm Scorecard < 3.5)
-    
-    Rejected --> TalentPool: Lưu trữ hồ sơ & Hẹn giờ gửi email từ chối
-    
-    TalentPool --> Submitted: HR luân chuyển sang vị trí khác (Repooling)
-    TalentPool --> [*]: Quá hạn 06 tháng (Tự động Hard Delete)
-    Hired --> [*]: Hoàn tất tuyển dụng (Onboarding)
+    state "NEW (Mới tiếp nhận)" as NEW
+    state "SCREENING (Sàng lọc tiêu chuẩn)" as SCREENING
+    state "INTERVIEW (Phỏng vấn chuyên môn)" as INTERVIEW
+    state "HIRED (Tuyển chọn — Terminal)" as HIRED
+    state "REJECTED (Từ chối — Delay 12h + Talent Pool)" as REJECTED
+
+    NEW --> SCREENING: [HR / Admin] Duyệt sơ bộ 5 trường cốt lõi
+    NEW --> REJECTED: [HR / Admin] Bắt buộc Lý do từ chối (BRL-11)
+
+    SCREENING --> NEW: [HR / Admin] Trả về kiểm tra lại
+    SCREENING --> INTERVIEW: [Hiring Manager / Admin] Duyệt phỏng vấn (Cấm HR)
+    SCREENING --> REJECTED: [HR / Hiring Manager / Admin] Bắt buộc Lý do từ chối (BRL-11)
+
+    INTERVIEW --> SCREENING: [Hiring Manager / Admin] Trả về xem xét thêm
+    INTERVIEW --> HIRED: [Hiring Manager / Admin] Có >= 1 Scorecard Đạt (BRL-06, Cấm HR)
+    INTERVIEW --> REJECTED: [Hiring Manager / Admin] Bắt buộc Lý do từ chối (BRL-11, Cấm HR)
+
+    REJECTED --> NEW: [HR / Admin] Phục hồi hồ sơ (Hủy lịch email BRL-05)
+    REJECTED --> SCREENING: [HR / Admin] Phục hồi vào Sàng lọc (Hủy lịch email BRL-05)
+    REJECTED --> INTERVIEW: [Hiring Manager / Admin] Phục hồi vào Phỏng vấn (Hủy lịch email BRL-05)
+
+    HIRED --> [*]: Trạng thái kết thúc (BRL-STAGE-TERMINAL)
+    REJECTED --> [*]: Quá hạn 180 ngày -> Admin Hard Delete (BRL-10)
 ```
 
 ---
 
-### PHẦN 2: BẢNG CHUYỂN TRẠNG THÁI CHI TIẾT (STATE TRANSITION TABLE)
+### PHẦN 2: BẢNG QUY TẮC CHUYỂN TRẠNG THÁI CHI TIẾT (STATE TRANSITION RULES MATRIX)
 
-Bảng này mô tả chính xác điều kiện kỹ thuật khi hệ thống chuyển trạng thái của một hồ sơ:
+Mọi thao tác chuyển trạng thái tại `POST /api/pipeline/move` đều được kiểm tra bắt buộc qua bộ quy tắc tập trung `src/lib/stage-rules.ts`:
 
-| STT | Trạng thái hiện tại (Source State) | Sự kiện kích hoạt (Event / Trigger) | Điều kiện kiểm tra (Guard Condition) | Hành động thực thi của Hệ thống (Action) | Trạng thái kế tiếp (Target State) | Tác nhân thay đổi |
-| :---: | :--- | :--- | :--- | :--- | :--- | :---: |
-| **1** | `None` (Chưa có) | Ứng viên nộp CV (UC-01) hoặc HR tải lên (UC-02) | Tệp đúng định dạng `.pdf/.doc/.docx` và `≤ 10MB` (BRL-01) | Lưu tệp vào máy chủ, tạo bản ghi ứng viên tạm thời. | **Submitted** (Tiếp nhận) | Ứng viên / HR |
-| **2** | **Submitted** | Tự động chuyển vào hàng đợi xử lý ngầm | Không có lỗi tệp | Quét trùng lặp Email/SĐT (BRL-03) và chạy AI Parsing bóc tách dữ liệu (BRL-04). | **Processing** (Đang bóc tách) | Hệ thống |
-| **3** | **Processing** | Hoàn tất bóc tách dữ liệu AI | Điểm AI Match Score **≥ 60%** VÀ Đủ kinh nghiệm bắt buộc (BRL-05) | Khởi tạo thẻ ứng viên trên bảng Kanban tại cột *Screening*. | **Screening** (Chờ HR lọc) | Hệ thống (AI) |
-| **4** | **Processing** | Hoàn tất bóc tách dữ liệu AI | Điểm AI Match Score **< 60%** HOẶC Thiếu tiêu chí bắt buộc (BRL-05) | Chuyển thẻ sang cột *Rejected*, gắn nhãn lý do loại và lên lịch gửi mail từ chối sau 12h (BRL-06). | **Rejected** (Bị loại vòng AI) | Hệ thống (AI) |
-| **5** | **Screening** | HR kéo thẻ sang cột Interview | HR xác nhận hồ sơ đạt yêu cầu | Ghi nhận thời gian chuyển cột (Audit Log), nhắc HR hẹn lịch phỏng vấn. | **Interview** (Phỏng vấn) | Chuyên viên HR |
-| **6** | **Screening** | HR kéo thẻ sang cột Rejected | HR đánh giá hồ sơ không đạt | Ghi nhận lý do loại, chuyển hồ sơ vào danh sách từ chối. | **Rejected** (Loại vòng CV) | Chuyên viên HR |
-| **7** | **Interview** | HR kéo thẻ sang cột Hired | Điểm Scorecard **≥ 3.5/5.0** (BRL-08) và có quyết định tuyển dụng | Gửi Thư mời nhận việc (Offer Letter) cho ứng viên. | **Hired** (Trúng tuyển) | Chuyên viên HR |
-| **8** | **Interview** | HR kéo thẻ sang cột Rejected | Điểm Scorecard **< 3.5/5.0** (BRL-08) hoặc từ chối Offer | Soạn/Gửi email thông báo kết quả phỏng vấn không trúng tuyển. | **Rejected** (Rớt phỏng vấn) | Chuyên viên HR |
-| **9** | **Rejected** | Hồ sơ rơi vào trạng thái bị loại | Tất cả các nguồn bị loại (AI, vòng CV, vòng Phỏng vấn) | Đồng bộ dữ liệu vào Kho nhân tài (Talent Pool) và kích hoạt bộ đếm thời gian lưu trữ 06 tháng. | **TalentPool** (Kho nhân tài) | Hệ thống |
-| **10**| **TalentPool** | HR thực hiện Repooling (UC-04) | Vị trí đích đang mở tuyển dụng | Tạo bản sao thẻ ứng viên ở trạng thái *Submitted* của vị trí mới, bảo lưu lịch sử cũ. | **Submitted** (Vị trí mới) | Chuyên viên HR |
-| **11**| **TalentPool** | Tác vụ quét ngầm hàng đêm (Cron Job) | Thời gian lưu trữ trong Kho nhân tài **> 06 tháng** (BRL-10) | Thực hiện xóa vĩnh viễn (Hard Delete) hồ sơ và tệp CV khỏi CSDL để bảo mật dữ liệu. | `End` (Xóa vĩnh viễn) | Hệ thống |
+| STT | Chuyển đổi (`From ➔ To`) | Vai trò được phép | Điều kiện / Rule bắt buộc (Guard Conditions) | Hành động thực thi của Hệ thống (Side Effects) | Mã Rule |
+| :---: | :--- | :---: | :--- | :--- | :---: |
+| **1** | `None ➔ NEW` | Ứng viên / HR / Admin | Tệp `.pdf`/`.docx` ≤ 10MB, Magic Bytes hợp lệ (`BRL-01`), không trùng 30 ngày (`BRL-02`), không vượt quá 3 Job/90 ngày (`BRL-09`). | Trích xuất 5 trường cốt lõi (`BRL-03`), tính điểm đối chiếu JD (`BRL-04`), tạo thẻ tại cột `NEW` (Human-in-the-loop). | `BRL-01..04` |
+| **2** | **`NEW ➔ SCREENING`** | **`HR`, `ADMIN`**<br>*(Cấm Hiring Manager)* | HR đã kiểm tra 5 trường cốt lõi (có thể tự sửa nếu AI bóc sai). Nếu hồ sơ thiếu tiêu chuẩn JD (< 60%), bật Modal xác nhận đặc cách (`StageMismatchConfirmModal`). | Cập nhật `currentStage = "SCREENING"`, đánh dấu `isViewed = true`, cập nhật `stageUpdatedAt`, ghi `AuditLog`. | `RBAC-STAGE-LIMIT` |
+| **3** | **`SCREENING ➔ INTERVIEW`** | **`HIRING_MANAGER`, `ADMIN`**<br>*(**CẤM HR**)* | Hồ sơ bắt buộc đã qua vòng `SCREENING` (không cho nhảy cóc từ `NEW`). | Cập nhật `currentStage = "INTERVIEW"`, cho phép Hiring Manager thiết lập lịch phỏng vấn & tạo link họp, ghi `AuditLog`. | `RBAC-STAGE-LIMIT`<br>`BRL-STAGE-ORDER` |
+| **4** | **`INTERVIEW ➔ HIRED`** | **`HIRING_MANAGER`, `ADMIN`**<br>*(**CẤM HR**)* | 1. Đang ở vòng `INTERVIEW` (cấm nhảy cóc từ `NEW`/`SCREENING`).<br>2. **BRL-06:** Có **ít nhất 01 phiếu Scorecard hoàn tất** với khuyến nghị đạt chuẩn (`HIRE` hoặc `STRONG_HIRE`). | Chốt trạng thái `HIRED` (Terminal State), ghi `AuditLog`, sẵn sàng phát hành Offer Letter. | `BRL-06`<br>`RBAC-STAGE-LIMIT` |
+| **5** | **`NEW / SCREENING ➔ REJECTED`** | `HR` (`NEW`/`SCREENING`), `HIRING_MANAGER` (`SCREENING`), `ADMIN` | **BRL-11:** Bắt buộc cung cấp **Lý do từ chối (`rejectionReason`)** rõ ràng (≥ 5 ký tự) thông qua `RejectReasonModal`. | Lưu `rejectionReason`, kích hoạt **BRL-05** (`emailScheduledAt = now + 12h`), đồng bộ Talent Pool, ghi `AuditLog.reason`. | `BRL-11`<br>`BRL-05` |
+| **6** | **`INTERVIEW ➔ REJECTED`** | **`HIRING_MANAGER`, `ADMIN`**<br>*(**CẤM HR**)* | **BRL-11:** Bắt buộc cung cấp **Lý do từ chối (`rejectionReason`)** rõ ràng (≥ 5 ký tự). | Lưu `rejectionReason`, kích hoạt **BRL-05** (`emailScheduledAt = now + 12h`), đồng bộ Talent Pool, ghi `AuditLog.reason`. | `BRL-11`<br>`RBAC-STAGE-LIMIT` |
+| **7** | **`REJECTED ➔ NEW / SCREENING`** | **`HR`, `ADMIN`** | Phục hồi hồ sơ ở giai đoạn sơ loại. | **BRL-05 Exception:** Tự động hủy lịch gửi email từ chối (`emailScheduledAt = null`), xóa `rejectionReason`, ghi `AuditLog`. | `BRL-05` |
+| **8** | **`REJECTED ➔ INTERVIEW`** | **`HIRING_MANAGER`, `ADMIN`** | Phục hồi hồ sơ vào vòng phỏng vấn chuyên môn. | Tự động hủy lịch gửi email từ chối (`emailScheduledAt = null`), xóa `rejectionReason`, ghi `AuditLog`. | `BRL-05`<br>`RBAC-STAGE-LIMIT` |
+| **9** | **Nhảy cóc (`NEW ➔ INTERVIEW`, `NEW ➔ HIRED`, `SCREENING ➔ HIRED`, `REJECTED ➔ HIRED`)** | **CẤM TẤT CẢ** | Vi phạm trình tự tuyến tính của State Machine. | Chặn thao tác ở cả UI và API (HTTP 400), giữ nguyên thẻ ở cột cũ. | `BRL-STAGE-ORDER` |
+| **10** | **`HIRED ➔ Bất kỳ cột nào`** | **BỊ KHÓA (Terminal State)** | Trạng thái Tuyển chọn là trạng thái kết thúc, bảo vệ toàn vẹn dữ liệu tuyển dụng. | Chặn thao tác chuyển cột (HTTP 400). | `BRL-STAGE-TERMINAL` |
+| **11** | **`REJECTED` > 180 ngày ➔ Xóa vĩnh viễn** | **`ADMIN`** *(Chỉ Admin)* | Hồ sơ ở trạng thái `REJECTED` lưu trữ quá 06 tháng (180 ngày). | Thực thi Hard Delete dữ liệu và tệp CV gốc (`POST /api/talent-pool/cleanup`). | `BRL-10` |
 
 ---
 

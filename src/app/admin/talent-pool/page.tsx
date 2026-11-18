@@ -806,12 +806,12 @@ export default function TalentPoolPage() {
           setDrawerAppId(null);
           fetchTalentPool();
         }}
-        onStageChange={async (appId, toStage) => {
+        onStageChange={async (appId, toStage, rejectionReason) => {
           try {
             const res = await fetch("/api/pipeline/move", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ applicationId: appId, toStage }),
+              body: JSON.stringify({ applicationId: appId, toStage, rejectionReason }),
             });
             const r = await res.json();
             if (!res.ok || !r.success) return r.error || "Lỗi chuyển trạng thái";

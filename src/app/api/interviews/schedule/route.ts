@@ -15,17 +15,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // RBAC: Hiring Manager chỉ xem lịch, chỉ HR và Admin được xếp/sửa lịch
-    if (sessionUser.role === "HIRING_MANAGER") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Quản lý chuyên môn (Hiring Manager) chỉ có quyền xem lịch và đánh giá, không được xếp/sửa lịch phỏng vấn theo quy chuẩn RBAC.",
-        },
-        { status: 403 }
-      );
-    }
-
     const body = await req.json();
     const {
       applicationId,
@@ -38,6 +27,20 @@ export async function POST(req: Request) {
       moveToInterviewStage,
       isQuickNotesUpdate,
     } = body;
+
+    // RBAC mới: Chỉ Quản lý Chuyên môn (Hiring Manager) và Admin được xếp/sửa lịch phỏng vấn & chuyển sang INTERVIEW
+    // HR chỉ có thể cập nhật ghi chú hỗ trợ khi isQuickNotesUpdate = true
+    if (!isQuickNotesUpdate && sessionUser.role === "HR") {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Phân quyền HR: Chuyên viên HR chỉ chuyển tối đa đến vòng Sàng lọc tiêu chuẩn (SCREENING). Quyền xếp lịch và duyệt Phỏng vấn (INTERVIEW) thuộc thẩm quyền Quản lý chuyên môn (Hiring Manager).",
+          rule: "RBAC-STAGE-LIMIT",
+        },
+        { status: 403 }
+      );
+    }
 
     if (!applicationId) {
       return NextResponse.json(
@@ -149,7 +152,22 @@ export async function POST(req: Request) {
       : null;
     const postNotes = interviewPostNotes ? String(interviewPostNotes).trim() : null;
 
-    // Chuyển sang INTERVIEW nếu được yêu cầu và hiện tại đang ở NEW/SCREENING
+    // Kiểm tra quy tắc tuần tự State Machine: Chỉ được xếp lịch phỏng vấn cho hồ sơ ở SCREENING hoặc INTERVIEW
+    if (app.currentStage === "NEW" || app.currentStage === "HIRED") {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            app.currentStage === "NEW"
+              ? "Vi phạm trình tự quy trình (BRL-STAGE-ORDER): Hồ sơ ở vòng Mới tiếp nhận (NEW) cần được HR chuyển sang Sàng lọc tiêu chuẩn (SCREENING) trước khi xếp lịch phỏng vấn."
+              : "Hồ sơ đã ở trạng thái Tuyển chọn (HIRED), không thể lên lịch phỏng vấn mới.",
+          rule: "BRL-STAGE-ORDER",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Chuyển sang INTERVIEW nếu được yêu cầu và hiện tại đang ở SCREENING/REJECTED
     const targetStage =
       moveToInterviewStage && app.currentStage !== "INTERVIEW"
         ? "INTERVIEW"
@@ -257,11 +275,13 @@ export async function DELETE(req: Request) {
       );
     }
 
-    if (sessionUser.role === "HIRING_MANAGER") {
+    if (sessionUser.role === "HR") {
       return NextResponse.json(
         {
           success: false,
-          error: "Quản lý chuyên môn (Hiring Manager) chỉ có quyền xem lịch, không được hủy lịch phỏng vấn theo quy chuẩn RBAC.",
+          error:
+            "Phân quyền HR: Chỉ Quản lý chuyên môn (Hiring Manager) hoặc Admin mới có quyền hủy lịch phỏng vấn theo quy chuẩn RBAC.",
+          rule: "RBAC-STAGE-LIMIT",
         },
         { status: 403 }
       );

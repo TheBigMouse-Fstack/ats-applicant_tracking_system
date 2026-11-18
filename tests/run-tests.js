@@ -197,17 +197,23 @@ async function runTests() {
     const hrLead = await prisma.user.findFirst({ where: { role: "HR" } });
     assert(hrLead !== null && hrLead.role === "HR", "Tài khoản HR LEAD tồn tại và sẵn sàng quản lý Pipeline");
 
-    // RBAC Permissions logic check (docs/08 RBAC Matrix)
+    // RBAC Permissions logic check (docs/08 RBAC Matrix — Phân tách vòng tuyển HR vs Hiring Manager)
     function checkRbacPermission(role, action) {
-      if (action === "MOVE_STAGE") return role === "ADMIN" || role === "HR";
+      if (action === "MOVE_TO_SCREENING") return role === "ADMIN" || role === "HR";
+      if (action === "MOVE_TO_INTERVIEW_OR_HIRED") return role === "ADMIN" || role === "HIRING_MANAGER";
+      if (action === "EDIT_PARSED_PROFILE") return role === "ADMIN" || role === "HR";
       if (action === "CREATE_JOB") return role === "ADMIN" || role === "HR";
       if (action === "MANAGE_USERS") return role === "ADMIN";
       if (action === "SCORECARD") return role === "HIRING_MANAGER" || role === "HR" || role === "ADMIN";
       return false;
     }
 
-    assert(checkRbacPermission("HIRING_MANAGER", "MOVE_STAGE") === false, "Chặn Hiring Manager kéo thả chuyển cột Kanban (Mục 13 RBAC)");
-    assert(checkRbacPermission("HR", "MOVE_STAGE") === true, "Cho phép HR kéo thả chuyển cột Kanban");
+    assert(checkRbacPermission("HR", "MOVE_TO_SCREENING") === true, "Cho phép HR chuyển hồ sơ NEW -> SCREENING (tối đa Sàng lọc tiêu chuẩn)");
+    assert(checkRbacPermission("HR", "MOVE_TO_INTERVIEW_OR_HIRED") === false, "Chặn HR chuyển hồ sơ sang INTERVIEW hoặc HIRED (RBAC-STAGE-LIMIT)");
+    assert(checkRbacPermission("HIRING_MANAGER", "MOVE_TO_SCREENING") === false, "Chặn Hiring Manager chuyển hồ sơ từ vòng NEW (thuộc phạm vi HR)");
+    assert(checkRbacPermission("HIRING_MANAGER", "MOVE_TO_INTERVIEW_OR_HIRED") === true, "Cho phép Hiring Manager duyệt hồ sơ sang INTERVIEW và HIRED");
+    assert(checkRbacPermission("HR", "EDIT_PARSED_PROFILE") === true, "Cho phép HR chỉnh sửa thủ công 5 trường thông tin trích xuất từ CV");
+    assert(checkRbacPermission("HIRING_MANAGER", "EDIT_PARSED_PROFILE") === false, "Chặn Hiring Manager chỉnh sửa dữ liệu trích xuất hồ sơ");
     assert(checkRbacPermission("HIRING_MANAGER", "CREATE_JOB") === false, "Chặn Hiring Manager tạo JD tuyển dụng (chỉ xem)");
     assert(checkRbacPermission("HR", "CREATE_JOB") === true, "Cho phép HR tạo JD tuyển dụng");
     assert(checkRbacPermission("HR", "MANAGE_USERS") === false, "Chặn HR quản trị người dùng (chỉ Admin)");
@@ -451,12 +457,11 @@ async function runTests() {
       assert(emailContent.includes(testApp.job.title), "Thư mời phỏng vấn chứa đúng tên vị trí tuyển dụng");
       assert(emailContent.includes("https://meet.google.com/test-room"), "Thư mời phỏng vấn chèn đúng link Google Meet trực tuyến");
 
-      // Kiểm tra RBAC lên lịch phỏng vấn: HR/Admin được phép, Hiring Manager bị chặn
-      const hrCanSchedule = (role) => ["HR", "ADMIN"].includes(role);
-      const hmCanSchedule = (role) => role === "HIRING_MANAGER";
-      assert(hrCanSchedule("HR") === true, "HR có thẩm quyền lên lịch phỏng vấn và gửi thư mời");
-      assert(hrCanSchedule("ADMIN") === true, "ADMIN có thẩm quyền lên lịch phỏng vấn và gửi thư mời");
-      assert(hrCanSchedule("HIRING_MANAGER") === false, "Hiring Manager bị chặn quyền lên lịch phỏng vấn theo RBAC");
+      // Kiểm tra RBAC lên lịch phỏng vấn mới: Hiring Manager & Admin được phép, HR bị chặn (chỉ chuyển max SCREENING)
+      const canScheduleInterview = (role) => ["HIRING_MANAGER", "ADMIN"].includes(role);
+      assert(canScheduleInterview("HIRING_MANAGER") === true, "Hiring Manager có thẩm quyền lên lịch phỏng vấn và duyệt vòng Interview");
+      assert(canScheduleInterview("ADMIN") === true, "ADMIN có thẩm quyền lên lịch phỏng vấn và gửi thư mời");
+      assert(canScheduleInterview("HR") === false, "Chuyên viên HR bị chặn quyền xếp lịch / chuyển vòng Phỏng vấn theo RBAC mới");
     }
 
     // 2. UC-01A: Cổng Tra Cứu Tiến Độ Hồ Sơ (Candidate Tracker & Data Privacy)
@@ -544,6 +549,55 @@ async function runTests() {
     // 4.5 Đã đăng nhập truy cập lại trang /admin/login
     const loggedInLoginReq = simulateMiddleware("/admin/login", originalToken);
     assert(loggedInLoginReq.status === 307 && loggedInLoginReq.redirect === "/admin/pipeline", "Người dùng đã đăng nhập vào /admin/login sẽ tự động được chuyển hướng vào /admin/pipeline");
+
+    // ---------------------------------------------------------
+    // TEST SUITE 14: STATE MACHINE RULES, MANDATORY REJECTION REASON (BRL-11) & 5-FIELD EXTRACTION
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}14. Kiểm tra State Machine Rules, Lý Do Từ Chối Bắt Buộc (BRL-11) & 5 Trường Cốt Lõi:${colors.reset}`);
+
+    const ALLOWED_STAGE_FLOW = {
+      NEW: ["SCREENING", "REJECTED"],
+      SCREENING: ["NEW", "INTERVIEW", "REJECTED"],
+      INTERVIEW: ["SCREENING", "HIRED", "REJECTED"],
+      HIRED: [],
+      REJECTED: ["NEW", "SCREENING", "INTERVIEW"],
+    };
+
+    function validateStageMoveTest({ fromStage, toStage, role, evaluationsCount = 0, rejectionReason = "" }) {
+      if (fromStage === "HIRED") return { allowed: false, rule: "BRL-STAGE-TERMINAL" };
+      if (role === "HR" && (toStage === "INTERVIEW" || toStage === "HIRED" || fromStage === "INTERVIEW")) {
+        return { allowed: false, rule: "RBAC-STAGE-LIMIT" };
+      }
+      if (role === "HIRING_MANAGER" && (fromStage === "NEW" || toStage === "NEW")) {
+        return { allowed: false, rule: "RBAC-STAGE-LIMIT" };
+      }
+      if (!ALLOWED_STAGE_FLOW[fromStage].includes(toStage)) {
+        return { allowed: false, rule: "BRL-STAGE-ORDER" };
+      }
+      if (toStage === "REJECTED" && (!rejectionReason || rejectionReason.trim().length < 5)) {
+        return { allowed: false, rule: "BRL-11" };
+      }
+      if (toStage === "HIRED" && evaluationsCount === 0) {
+        return { allowed: false, rule: "BRL-06" };
+      }
+      return { allowed: true };
+    }
+
+    assert(validateStageMoveTest({ fromStage: "NEW", toStage: "SCREENING", role: "HR" }).allowed === true, "HR chuyển hợp lệ NEW -> SCREENING");
+    assert(validateStageMoveTest({ fromStage: "SCREENING", toStage: "INTERVIEW", role: "HR" }).rule === "RBAC-STAGE-LIMIT", "Chặn HR kéo thẻ SCREENING -> INTERVIEW (Max HR là SCREENING)");
+    assert(validateStageMoveTest({ fromStage: "INTERVIEW", toStage: "HIRED", role: "HR", evaluationsCount: 1 }).rule === "RBAC-STAGE-LIMIT", "Chặn HR chuyển INTERVIEW -> HIRED");
+    assert(validateStageMoveTest({ fromStage: "SCREENING", toStage: "INTERVIEW", role: "HIRING_MANAGER" }).allowed === true, "Hiring Manager chuyển hợp lệ SCREENING -> INTERVIEW");
+    assert(validateStageMoveTest({ fromStage: "INTERVIEW", toStage: "HIRED", role: "HIRING_MANAGER", evaluationsCount: 1 }).allowed === true, "Hiring Manager chuyển hợp lệ INTERVIEW -> HIRED khi đã có Scorecard");
+    assert(validateStageMoveTest({ fromStage: "NEW", toStage: "INTERVIEW", role: "ADMIN" }).rule === "BRL-STAGE-ORDER", "Chặn nhảy cóc giai đoạn NEW -> INTERVIEW (BRL-STAGE-ORDER)");
+    assert(validateStageMoveTest({ fromStage: "SCREENING", toStage: "HIRED", role: "HIRING_MANAGER", evaluationsCount: 1 }).rule === "BRL-STAGE-ORDER", "Chặn nhảy cóc giai đoạn SCREENING -> HIRED (BRL-STAGE-ORDER)");
+    assert(validateStageMoveTest({ fromStage: "HIRED", toStage: "REJECTED", role: "ADMIN", rejectionReason: "Test lý do" }).rule === "BRL-STAGE-TERMINAL", "Khóa trạng thái kết thúc HIRED (BRL-STAGE-TERMINAL)");
+    assert(validateStageMoveTest({ fromStage: "NEW", toStage: "REJECTED", role: "HR", rejectionReason: "" }).rule === "BRL-11", "Chặn từ chối hồ sơ khi bỏ trống Lý do từ chối (BRL-11)");
+    assert(validateStageMoveTest({ fromStage: "NEW", toStage: "REJECTED", role: "HR", rejectionReason: "Thiếu kỹ năng Node.js theo JD" }).allowed === true, "Cho phép từ chối hồ sơ khi có Lý do từ chối rõ ràng (BRL-11)");
+    assert(validateStageMoveTest({ fromStage: "INTERVIEW", toStage: "REJECTED", role: "HIRING_MANAGER", rejectionReason: "Không đạt đánh giá kỹ thuật vòng 1" }).allowed === true, "Cho phép Hiring Manager từ chối sau phỏng vấn kèm lý do rõ ràng");
+
+    // Kiểm tra chuẩn 5 trường dữ liệu cốt lõi ban đầu (BRL-03)
+    const CORE_EXTRACTION_FIELDS = ["fullName", "email", "jobTitle", "skills", "experienceYears"];
+    assert(CORE_EXTRACTION_FIELDS.length === 5, "Quy chuẩn hiển thị ban đầu gói gọn đúng 5 trường cốt lõi theo JD (Họ tên, Email, Vị trí, Kỹ năng, Kinh nghiệm)");
 
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);

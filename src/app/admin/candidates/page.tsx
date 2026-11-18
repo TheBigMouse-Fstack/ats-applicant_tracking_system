@@ -736,12 +736,12 @@ export default function CandidatesListPage() {
           setSelectedAppId(null);
           fetchCandidates();
         }}
-        onStageChange={async (appId, toStage) => {
+        onStageChange={async (appId, toStage, rejectionReason) => {
           try {
             const res = await fetch("/api/pipeline/move", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ applicationId: appId, toStage }),
+              body: JSON.stringify({ applicationId: appId, toStage, rejectionReason }),
             });
             const data = await res.json();
             if (!res.ok || !data.success) {

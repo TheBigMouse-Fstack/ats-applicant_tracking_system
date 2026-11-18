@@ -1,23 +1,27 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { validateStageTransition } from "@/lib/stage-rules";
 
 export async function POST(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Yêu cầu đăng nhập tài khoản nội bộ để luân chuyển trạng thái hồ sơ.",
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
-    const { applicationId, toStage } = body;
+    const { applicationId, toStage, rejectionReason, note } = body;
 
     if (!applicationId || !toStage) {
       return NextResponse.json(
         { success: false, error: "Thiếu ID hồ sơ hoặc trạng thái đích" },
-        { status: 400 }
-      );
-    }
-
-    const validStages = ["NEW", "SCREENING", "INTERVIEW", "HIRED", "REJECTED"];
-    if (!validStages.includes(toStage)) {
-      return NextResponse.json(
-        { success: false, error: `Trạng thái "${toStage}" không hợp lệ` },
         { status: 400 }
       );
     }
@@ -46,53 +50,52 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, data: app });
     }
 
-    // 2. KIỂM TRA BRL-06: STAGE GATE RULE TRƯỚC KHI HIRED
-    if (toStage === "HIRED") {
-      if (app.evaluations.length === 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "Chưa thể tuyển chọn: Cần có ít nhất 01 phiếu đánh giá Scorecard hoàn tất từ người phỏng vấn chuyên môn trước khi xác nhận tuyển.",
-            rule: "BRL-06",
-          },
-          { status: 400 }
-        );
-      }
-    }
+    // 2. KIỂM TRA TOÀN BỘ RULE CHUYỂN TRẠNG THÁI (State Machine + RBAC + BRL-06 + BRL-11)
+    const hasPassingEvaluation = app.evaluations.some(
+      (ev) => ev.recommendation === "HIRE" || ev.recommendation === "STRONG_HIRE"
+    );
 
-    // 4. Lấy thông tin người thực hiện từ session & KIỂM TRA PHÂN QUYỀN RBAC
-    const sessionUser = getSessionUser();
-    const userId = sessionUser ? sessionUser.id : null;
+    const validation = validateStageTransition({
+      fromStage,
+      toStage,
+      role: sessionUser.role,
+      evaluationsCount: app.evaluations.length,
+      hasPassingEvaluation: app.evaluations.length > 0 ? hasPassingEvaluation : undefined,
+      rejectionReason,
+    });
 
-    // RBAC: Hiring Manager tuyệt đối cấm kéo - thả chuyển cột trạng thái (Mục 13 RBAC Matrix)
-    if (sessionUser && sessionUser.role === "HIRING_MANAGER") {
+    if (!validation.allowed) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Quản lý chuyên môn (Hiring Manager) chỉ có quyền xem hồ sơ và đánh giá Scorecard; quyền luân chuyển trạng thái do bộ phận Tuyển dụng (HR) phụ trách.",
-          rule: "RBAC-MGR-BLOCK",
+          error: validation.error,
+          rule: validation.rule,
         },
-        { status: 403 }
+        { status: validation.statusCode || 400 }
       );
     }
 
-    // 3. KIỂM TRA BRL-05: DELAY BUFFER CHO EMAIL TỪ CHỐI & HỦY NẾU RỜI KHỎI REJECTED
+    // 3. KIỂM TRA BRL-05: DELAY BUFFER CHO EMAIL TỪ CHỐI & LÝ DO TỪ CHỐI (BRL-11)
     let emailScheduledAt: Date | null = app.emailScheduledAt;
     let isEmailSent = app.isEmailSent;
+    let savedRejectionReason: string | null = app.rejectionReason;
+    let auditReason: string | null = note ? String(note).trim() : null;
 
     if (toStage === "REJECTED") {
       // Hẹn giờ sau 12 tiếng nếu chuyển sang REJECTED
       emailScheduledAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
       isEmailSent = false;
+      savedRejectionReason = String(rejectionReason).trim();
+      auditReason = `Lý do từ chối: ${savedRejectionReason}`;
     } else if (fromStage === "REJECTED" && toStage !== "REJECTED") {
-      // BRL-05 Exception: Nếu HR can thiệp kéo thẻ rời khỏi cột REJECTED, tự động hủy lịch gửi email từ chối
+      // BRL-05 Exception: Nếu kéo thẻ rời khỏi cột REJECTED, tự động hủy lịch gửi email từ chối
       emailScheduledAt = null;
       isEmailSent = false;
+      savedRejectionReason = null;
+      auditReason = auditReason || "Phục hồi hồ sơ từ cột Từ chối (tự động hủy lịch gửi email từ chối)";
     }
 
-    // 5. Cập nhật Application và tạo AuditLog trong 1 Transaction
+    // 4. Cập nhật Application và tạo AuditLog trong 1 Transaction
     const [updatedApp] = await prisma.$transaction([
       prisma.application.update({
         where: { id: app.id },
@@ -101,15 +104,19 @@ export async function POST(req: Request) {
           stageUpdatedAt: new Date(),
           emailScheduledAt,
           isEmailSent,
+          rejectionReason: savedRejectionReason,
+          isViewed: true,
+          viewedAt: app.viewedAt || new Date(),
         },
       }),
       prisma.auditLog.create({
         data: {
           applicationId: app.id,
-          userId,
+          userId: sessionUser.id,
           fromStage,
           toStage,
           action: "STAGE_CHANGE",
+          reason: auditReason,
         },
       }),
     ]);
@@ -127,4 +134,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

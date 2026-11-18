@@ -91,6 +91,7 @@ model Application {
   interviewNotes            String?      // Ghi chú chuẩn bị cho ứng viên (Trước PV)
   interviewInterviewerNotes String?      // Ghi chú nội bộ cho chuyên gia / giám khảo (Trước PV)
   interviewPostNotes        String?      // Biên bản & ghi chú tổng kết sau phỏng vấn (Sau PV)
+  rejectionReason           String?      // BRL-11: Lý do từ chối bắt buộc khi chuyển sang REJECTED
   createdAt          DateTime     @default(now())
 
   evaluations        Evaluation[]
@@ -134,7 +135,8 @@ model AuditLog {
   user          User?        @relation(fields: [userId], references: [id])
   fromStage     String?
   toStage       String
-  action        String       // STAGE_CHANGE, CV_UPLOAD, SCORECARD_EVALUATE
+  action        String       // STAGE_CHANGE, CV_UPLOAD, SCORECARD_EVALUATE, PROFILE_EDITED
+  reason        String?      // Lý do từ chối / Ghi chú chuyển trạng thái hoặc chỉnh sửa dữ liệu
   createdAt     DateTime     @default(now())
 
   @@map("audit_logs")

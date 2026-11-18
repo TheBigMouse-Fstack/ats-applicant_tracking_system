@@ -3,6 +3,7 @@
 import { Draggable } from "@hello-pangea/dnd";
 import {
   Briefcase,
+  Mail,
   Star,
   AlertTriangle,
   ChevronRight,
@@ -122,11 +123,29 @@ export default function CandidateCard({
             <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
           </div>
 
+          {/* Email ứng viên */}
+          {candidate?.email && (
+            <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5 flex items-center gap-1.5 pl-5">
+              <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+              <span className="truncate">{candidate.email}</span>
+            </p>
+          )}
+
           {/* Vị trí ứng tuyển */}
           <p className="text-xs text-slate-500 line-clamp-1 mt-0.5 flex items-center gap-1.5 pl-5">
             <Briefcase className="w-3 h-3 text-slate-400 shrink-0" />
             <span>{job?.title || "Vị trí không xác định"}</span>
           </p>
+
+          {/* Lý do từ chối nếu đang ở cột REJECTED */}
+          {currentStage === "REJECTED" && application.rejectionReason && (
+            <p
+              className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200/80 rounded-lg px-2 py-1 mt-2 line-clamp-2"
+              title={application.rejectionReason}
+            >
+              <strong className="font-bold">Lý do:</strong> {application.rejectionReason}
+            </p>
+          )}
 
           {/* Thông tin năng lực: Kỹ năng & Kinh nghiệm */}
           <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
