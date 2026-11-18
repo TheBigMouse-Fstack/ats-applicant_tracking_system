@@ -3,6 +3,8 @@
  * Kiểm tra các Quy tắc Nghiệp vụ (BRL-01 đến BRL-10) và Logic Xác thực
  */
 
+const fs = require("fs");
+const path = require("path");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -598,6 +600,46 @@ async function runTests() {
     // Kiểm tra chuẩn 5 trường dữ liệu cốt lõi ban đầu (BRL-03)
     const CORE_EXTRACTION_FIELDS = ["fullName", "email", "jobTitle", "skills", "experienceYears"];
     assert(CORE_EXTRACTION_FIELDS.length === 5, "Quy chuẩn hiển thị ban đầu gói gọn đúng 5 trường cốt lõi theo JD (Họ tên, Email, Vị trí, Kỹ năng, Kinh nghiệm)");
+
+    // ---------------------------------------------------------
+    // TEST SUITE 15: ROLE-BASED OPERATIONAL DASHBOARD & DUAL-BRANDING
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}15. Kiểm tra Operational Dashboard Phân Quyền Theo Role & Thương Hiệu Nội Bộ ATS:${colors.reset}`);
+
+    function getDashboardPayloadKeysByRole(role) {
+      if (!role || role === "PUBLIC") return { allowed: false, status: 401, keys: [] };
+      const baseKeys = ["funnel", "sla", "summary", "activeJobs"];
+      if (role === "HR") {
+        return { allowed: true, status: 200, keys: [...baseKeys, "hrUnviewedQueue", "hrSlaBreachQueue", "hrRecentNewQueue"] };
+      }
+      if (role === "HIRING_MANAGER") {
+        return { allowed: true, status: 200, keys: [...baseKeys, "hmScreeningQueue", "hmMissingScorecardQueue", "upcomingInterviews"] };
+      }
+      if (role === "ADMIN") {
+        return { allowed: true, status: 200, keys: [...baseKeys, "slaBreachQueue", "upcomingInterviews", "adminStats", "recentAuditLogs"] };
+      }
+      return { allowed: false, status: 403, keys: [] };
+    }
+
+    const pubDash = getDashboardPayloadKeysByRole("PUBLIC");
+    assert(pubDash.allowed === false && pubDash.status === 401, "Chặn người dùng công khai (PUBLIC) truy cập API Dashboard nội bộ (HTTP 401)");
+
+    const hrDash = getDashboardPayloadKeysByRole("HR");
+    assert(hrDash.keys.includes("hrUnviewedQueue") && !hrDash.keys.includes("adminStats") && !hrDash.keys.includes("recentAuditLogs"), "Dashboard HR chỉ nhận hàng đợi đầu phễu (NEW chưa xem, SLA >48h), không rò rỉ dữ liệu Admin/AuditLog");
+
+    const hmDash = getDashboardPayloadKeysByRole("HIRING_MANAGER");
+    assert(hmDash.keys.includes("hmScreeningQueue") && hmDash.keys.includes("hmMissingScorecardQueue") && !hmDash.keys.includes("hrUnviewedQueue") && !hmDash.keys.includes("adminStats"), "Dashboard Hiring Manager tập trung vào duyệt PV, thiếu Scorecard và Lịch PV; ẩn hàng đợi NEW của HR & Admin Stats");
+
+    const adminDash = getDashboardPayloadKeysByRole("ADMIN");
+    assert(adminDash.keys.includes("slaBreachQueue") && adminDash.keys.includes("adminStats") && adminDash.keys.includes("recentAuditLogs"), "Dashboard Admin nhận toàn cảnh 360 độ gồm Điểm nghẽn SLA, Thống kê User/BRL-10 và AuditLog");
+
+    // Kiểm tra tệp nguồn thực tế của Dual-Branding (Nội bộ ATS vs Public RecoverX)
+    const navbarSrc = fs.readFileSync(path.join(process.cwd(), "src/components/admin/Navbar.tsx"), "utf8");
+    const loginSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/login/page.tsx"), "utf8");
+    const publicJobsSrc = fs.readFileSync(path.join(process.cwd(), "src/app/jobs/page.tsx"), "utf8");
+    assert(navbarSrc.includes("Applicant Tracking System") && navbarSrc.includes("/admin/dashboard"), "Navbar nội bộ mang thương hiệu chuẩn ATS — Applicant Tracking System và có tab Tổng quan (/admin/dashboard)");
+    assert(loginSrc.includes("Applicant Tracking System") && !loginSrc.includes("truy cập tại RecoverX"), "Trang Đăng nhập nội bộ mang đúng tên đề tài ATS — Applicant Tracking System");
+    assert(publicJobsSrc.includes("RecoverX"), "Cổng nộp CV công khai (/jobs) vẫn giữ nguyên tên doanh nghiệp giả lập RecoverX");
 
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);

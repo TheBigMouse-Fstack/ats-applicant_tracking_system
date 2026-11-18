@@ -33,6 +33,7 @@ last_updated: "2026-11-18"
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
 | `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.2.0` | 2026-11-18 | ReCoverX BA Team | **Added** | Bổ sung hợp đồng API `GET /api/dashboard` cho Bảng điều khiển Tổng quan Vận hành phân quyền theo Role (`ADMIN`, `HR`, `HIRING_MANAGER`). | Product Owner |
 
 ---
 
@@ -88,6 +89,48 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 ---
 
 ## 3. ĐẶC TẢ CHI TIẾT CÁC ĐIỂM CUỐI API CHÍNH (CORE API ENDPOINTS)
+
+### Phân hệ 0: Bảng Điều Khiển Tổng Quan Vận Hành (Role-Based Operational Dashboard)
+
+#### 0. `GET /api/dashboard` — Dữ liệu Tổng quan Vận hành theo Vai trò
+* **Mục đích:** Trả về số liệu phễu 5 giai đoạn, cảnh báo SLA (`BRL-07`), hàng đợi việc cần xử lý ngay (Action Queue), lịch phỏng vấn sắp tới và thông số quản trị **được lọc chặt chẽ theo vai trò người dùng đang đăng nhập** (Least Privilege).
+* **Yêu cầu phân quyền:** Đã đăng nhập nội bộ (`ADMIN`, `HR`, `HIRING_MANAGER`). Trả về `401 Unauthorized` nếu chưa có phiên hợp lệ.
+* **Quy tắc phân tách Payload theo Role:**
+  * **`HR`:** Nhận `funnel`, `sla`, `hrQueue` (CV `NEW` chưa xem & hồ sơ quá hạn SLA `NEW > 48h`), `activeJobs`. **Không trả** `adminStats` và `recentAuditLogs`.
+  * **`HIRING_MANAGER`:** Nhận `funnel`, `sla`, `hmScreeningQueue` (hồ sơ `SCREENING` chờ duyệt phỏng vấn, kèm cảnh báo SLA `> 72h`), `hmMissingScorecardQueue` (hồ sơ `INTERVIEW` chưa có Scorecard chặn `BRL-06`), `upcomingInterviews`. **Không trả** `hrQueue`, `adminStats`, `recentAuditLogs`.
+  * **`ADMIN`:** Nhận toàn cảnh vận hành (`funnel`, `sla`, `activeJobs`, `slaBreachQueue`, `upcomingInterviews`, `adminStats` gồm số user hoạt động & số hồ sơ quá 180 ngày theo `BRL-10`, và `recentAuditLogs`).
+* **Success Response (HTTP 200):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "role": "HR",
+      "generatedAt": "2026-11-18T14:30:00.000Z",
+      "funnel": {
+        "total": 24,
+        "NEW": 6,
+        "SCREENING": 5,
+        "INTERVIEW": 4,
+        "HIRED": 3,
+        "REJECTED": 6
+      },
+      "sla": {
+        "newBreachCount": 2,
+        "screeningBreachCount": 1,
+        "totalBreaches": 3
+      },
+      "summary": {
+        "activeJobsCount": 4,
+        "unviewedNewCount": 3,
+        "starredCount": 5,
+        "pendingScorecardCount": 2,
+        "upcomingInterviewsCount": 3
+      }
+    }
+  }
+  ```
+
+---
 
 ### Phân hệ 1: Xác thực & Quản trị Người dùng (Internal Auth & Users)
 

@@ -66,14 +66,14 @@ export async function middleware(request: NextRequest) {
 
   // 1. Nếu đang truy cập trang Login: /admin/login
   if (pathname === "/admin/login") {
-    // Nếu người dùng ĐÃ có phiên đăng nhập hợp lệ, chuyển hướng thẳng vào Pipeline
+    // Nếu người dùng ĐÃ có phiên đăng nhập hợp lệ, chuyển hướng thẳng vào Dashboard Tổng quan
     if (user) {
-      return NextResponse.redirect(new URL("/admin/pipeline", request.url));
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
     return NextResponse.next();
   }
 
-  // 2. Bảo vệ tất cả các trang nội bộ: /admin/* (pipeline, jobs, talent-pool, users)
+  // 2. Bảo vệ tất cả các trang nội bộ: /admin/* (dashboard, pipeline, candidates, jobs, talent-pool, users)
   if (pathname.startsWith("/admin")) {
     if (!user) {
       // Chưa đăng nhập -> Chuyển hướng ngay lập tức về /admin/login ở cấp Server
@@ -86,11 +86,18 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // 3. Phân quyền RBAC tại tầng Edge: Trang Quản trị User chỉ dành cho ADMIN
+    // 3. Phân quyền RBAC tại tầng Edge:
+    // - Trang Quản trị User chỉ dành cho ADMIN
     if (pathname.startsWith("/admin/users") && user.role !== "ADMIN") {
-      const pipelineUrl = new URL("/admin/pipeline", request.url);
-      pipelineUrl.searchParams.set("error", "forbidden");
-      return NextResponse.redirect(pipelineUrl);
+      const dashUrl = new URL("/admin/dashboard", request.url);
+      dashUrl.searchParams.set("error", "forbidden");
+      return NextResponse.redirect(dashUrl);
+    }
+    // - Kho Nhân tài chỉ dành cho HR và ADMIN (chặn HIRING_MANAGER theo RBAC-NFR-08)
+    if (pathname.startsWith("/admin/talent-pool") && user.role === "HIRING_MANAGER") {
+      const dashUrl = new URL("/admin/dashboard", request.url);
+      dashUrl.searchParams.set("error", "forbidden");
+      return NextResponse.redirect(dashUrl);
     }
 
     // Đã xác thực thành công -> Bổ sung thông tin xác thực vào Request Headers cho Server Components

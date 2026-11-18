@@ -32,6 +32,7 @@ last_updated: "2026-11-18"
 | `v1.0.0` | 2026-11-12 | BA Team | **Initial** | Khởi tạo Ma trận phân quyền RBAC và NFR ban đầu. | Product Owner |
 | `v2.0.0` | 2026-11-15 | BA & Security Team | **Security** | Đồng bộ chuẩn băm mật khẩu NIST PBKDF2-SHA512, chữ ký phiên HMAC-SHA256, Magic Bytes và Edge Middleware. | Tech Lead |
 | `v2.1.0` | 2026-11-18 | BA & Security Team | **Changed** | Bổ sung Phân loại 4 nhóm Tác nhân (`RULE-17`); phân tách thẩm quyền vòng tuyển: `HR` max `SCREENING` + sửa 5 trường CV; `HIRING_MANAGER` phụ trách `INTERVIEW`/`HIRED` & lịch phỏng vấn. | Product Owner & Tech Lead |
+| `v2.2.0` | 2026-11-18 | BA & Security Team | **Added** | Đặc tả phân quyền **Operational Dashboard** (`/admin/dashboard`) theo từng vai trò (Least Privilege + Job-to-be-Done) và tách biệt thương hiệu Nội bộ (`ATS — Applicant Tracking System`) vs Public (`RecoverX`). | Product Owner & Tech Lead |
 
 ---
 
@@ -65,6 +66,11 @@ last_updated: "2026-11-18"
 
 | STT | Phân hệ & Chức năng nghiệp vụ | 👤 Ứng viên (Public) | 👔 Chuyên viên HR | 💼 Hiring Manager | 🛠️ Quản trị viên (Admin) | Ghi chú ràng buộc bảo mật & Thực thi Code |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
+| **0** | **Bảng điều khiển Tổng quan Vận hành (Operational Dashboard)** | | | | | |
+| 0a | Truy cập Dashboard Tổng quan (`/admin/dashboard`, `GET /api/dashboard`) | **`-` (CẤM)** | **R** *(Góc nhìn Đầu phễu)* | **R** *(Góc nhìn Chuyên môn)* | **R** *(Toàn cảnh 360°)* | **Phân quyền dữ liệu tại Backend API:** Mỗi Role chỉ nhận đúng KPI và hàng đợi thuộc phạm vi trách nhiệm; không phải BI Analytics Dashboard (tôn trọng Out-of-Scope đề bài). |
+| 0b | Hàng đợi CV `NEW` chưa xem & SLA >48h (Đầu phễu HR) | - | **R** | - | **R** | HR thấy ngay CV cần sơ loại; Manager không bị nhiễu bởi CV chưa qua vòng HR. |
+| 0c | Hàng đợi duyệt Phỏng vấn (`SCREENING`), thiếu Scorecard (`INTERVIEW`) & Lịch PV | - | - | **R** | **R** | Hiring Manager tập trung ra quyết định chuyên môn (`SCREENING ➔ INTERVIEW ➔ HIRED`). |
+| 0d | Giám sát Quản trị (User hoạt động, Hồ sơ quá hạn 180 ngày BRL-10, AuditLog gần nhất) | - | **`-` (CẤM)** | **`-` (CẤM)** | **R** | API không trả trường `adminStats` / `recentAuditLogs` cho `HR` và `HIRING_MANAGER`. |
 | **I** | **Cổng ứng tuyển & Tra cứu trực tuyến** | | | | | |
 | 1 | Xem danh sách tin tuyển dụng & JD | **R** | **R** | **R** | **R** | Truy cập công khai tại `/jobs` |
 | 2 | Nộp hồ sơ & Tải CV, chứng chỉ (.pdf, .docx ≤ 10MB) | **C** | - | - | - | Chống spam: Rate Limit 5 lần/10 phút & Magic Bytes |

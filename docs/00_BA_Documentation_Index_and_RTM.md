@@ -78,6 +78,7 @@ last_updated: "2026-11-18"
 | `BRD-GOAL-01` (Chống Ghosting ứng viên) | `FR-PORT-TRK-002` | `FR-01A` | `UC-01A` | `NFR-SEC-04` | `GET /api/tracker` | Suite 12.2 (4 tests) | **Pass (100%)** |
 | `BRD-GOAL-02` (Bóc 5 trường cốt lõi & HR sửa tay) | `FR-INTK-PRS-001` | `FR-04..06` | `UC-02` | `BRL-03`, `RBAC-PROFILE-EDIT` | `POST /api/applications`, `PATCH /api/applications/[id]/profile`, `POST .../re-parse` | Suite 7, 9, 14 (6 tests) | **Pass (100%)** |
 | `BRD-GOAL-02` (Hybrid AI đối chiếu JD & Delay từ chối) | `FR-AI-SCR-001` | `FR-07..08` | `UC-03` | `BRL-04`, `BRL-05` | `POST /api/applications`, `POST /api/pipeline/move` | Suite 5, 9 (5 tests) | **Pass (100%)** |
+| `BRD-GOAL-03` (Bảng điều khiển Tổng quan Vận hành theo Role) | `FR-DASH-OVW-001` | `FR-08A` | `UC-04` | `RBAC-DASH-SCOPE`, `BRL-07`, `BRL-06`, `BRL-10` | `GET /api/dashboard` | Suite 15 (Dashboard RBAC & Metrics) | **Pass (100%)** |
 | `BRD-GOAL-03` (Quản trị Kanban 5 cột, SLA & RBAC phân vòng) | `FR-PIPE-MOV-001` | `FR-09..13` | `UC-04` | `BRL-07`, `BRL-11`, `BRL-STAGE-ORDER`, `BRL-STAGE-TERMINAL`, `RBAC-STAGE-LIMIT` | `GET /api/pipeline`, `POST /api/pipeline/move`, `POST .../star` | Suite 7, 8, 14 (22 tests) | **Pass (100%)** |
 | `BRD-GOAL-03` (Vòng đời lịch phỏng vấn) | `FR-INTV-SCH-001` | `FR-15A` | `UC-05A` | `RBAC-STAGE-LIMIT`, `BRL-STAGE-ORDER` | `POST/DELETE /api/interviews/schedule` | Suite 12.1 (6 tests) | **Pass (100%)** |
 | `BRD-GOAL-03` (Scorecard chuyên sâu & Stage-Gate Hired) | `FR-EVAL-SCR-001` | `FR-14..15B` | `UC-05` | `BRL-06`, `BRL-08` | `GET/POST /api/scorecards`, `POST /api/pipeline/move` | Suite 3, 4, 8, 10 (10 tests) | **Pass (100%)** |
@@ -86,8 +87,8 @@ last_updated: "2026-11-18"
 
 ### Chỉ Số Bao Phủ Kiểm Thử (Coverage Gate — `RULE-14`)
 * **Quy tắc nghiệp vụ cốt lõi (`BRL-01`..`BRL-11`, `BRL-Auth`, State Rules):** **100%** được phủ bởi test tự động.
-* **Tổng số kịch bản kiểm thử tự động (`node tests/run-tests.js`):** **97 / 97 Passed (0 Failed)**.
-* **Kiểm tra kiểu tĩnh & Production Build (`npm run build`):** **17/17 Routes compiled, 0 TypeScript / Lint Errors**.
+* **Tổng số kịch bản kiểm thử tự động (`node tests/run-tests.js`):** **104 / 104 Passed (0 Failed)**.
+* **Kiểm tra kiểu tĩnh & Production Build (`npx next build`):** **19/19 Routes compiled, 0 TypeScript / Lint Errors**.
 
 ---
 
@@ -102,4 +103,5 @@ Thực thi theo quy trình `skills/doc-drift/SKILL.md` vào ngày **2026-11-18**
 | **Phân Quyền Chuyển Vòng (HR max SCREENING, HM phụ trách INTERVIEW/HIRED)** | Đồng bộ toàn diện tại `[[FSM-ATS-06]]`, `[[RBAC-NFR-08]]`, `[[BR-ERR-17]]`. | Hiện thực hóa tập trung tại `src/lib/stage-rules.ts`, `move/route.ts`, `schedule/route.ts`, `KanbanBoard.tsx`. | **0% (Matched)** | ✅ Đạt |
 | **Bắt Buộc Lý Do Khi Từ Chối (`BRL-11`)** | Đặc tả tại `[[FSM-ATS-06]]`, `[[ERD-ATS-07]]`, `[[BR-ERR-17]]`. | Cột `Application.rejectionReason` + `AuditLog.reason`, `RejectReasonModal.tsx`, validate API ≥ 5 ký tự. | **0% (Matched)** | ✅ Đạt |
 | **Cấm Nhảy Cóc State Machine & Khóa `HIRED`** | Đặc tả tại `[[FSM-ATS-06]]` (`BRL-STAGE-ORDER`, `BRL-STAGE-TERMINAL`). | Kiểm soát đồng bộ cả Frontend (`KanbanBoard`/`CandidateDrawer`) và Backend (`stage-rules.ts`). | **0% (Matched)** | ✅ Đạt |
-| **Loại bỏ tài liệu thừa / văn phong chat rác** | Đã xóa `01_BRD_Original.md`, bổ sung YAML Frontmatter + Revision History chuẩn `RULE-18/19`. | Mã nguồn sạch, 97/97 tests Pass, 0 build errors. | **0% (Clean)** | ✅ Đạt |
+| **Operational Dashboard theo Role & Dual-Branding** | Đặc tả tại `[[RBAC-NFR-08]]`, `[[API-ATS-15]]`, `[[BRIEF-CMP-18]]`. | `GET /api/dashboard`, `/admin/dashboard`, `OperationalDashboard.tsx`; Nội bộ: `ATS — Applicant Tracking System`, Public: `RecoverX`. | **0% (Matched)** | ✅ Đạt |
+| **Loại bỏ tài liệu thừa / văn phong chat rác** | Đã xóa `01_BRD_Original.md`, bổ sung YAML Frontmatter + Revision History chuẩn `RULE-18/19`. | Mã nguồn sạch, 104/104 tests Pass, 0 build errors. | **0% (Clean)** | ✅ Đạt |

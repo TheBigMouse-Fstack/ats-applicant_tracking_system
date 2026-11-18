@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
       }
 
       const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-      const redirectTarget = params?.get("from") || "/admin/pipeline";
+      const redirectTarget = params?.get("from") || "/admin/dashboard";
       router.push(redirectTarget);
       router.refresh();
     } catch {
@@ -66,14 +66,14 @@ export default function AdminLoginPage() {
             <Briefcase className="w-6 h-6" />
           </div>
           <span className="text-2xl font-bold text-slate-900 tracking-tight">
-            RecoverX
+            ATS
           </span>
         </Link>
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-          Cổng Quản Trị Tuyển Dụng Nội Bộ
+          Applicant Tracking System
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          Hệ thống Quản lý Tuyển dụng & Hồ sơ Ứng viên
+          Hệ thống Quản lý &amp; Theo dõi Hồ sơ Ứng viên Nội bộ
         </p>
       </div>
 
@@ -202,7 +202,7 @@ export default function AdminLoginPage() {
         </div>
 
         <p className="mt-4 text-center text-xs text-slate-400">
-          Chỉ dành riêng cho nhân sự được phân quyền truy cập tại RecoverX
+          Chỉ dành riêng cho nhân sự được phân quyền truy cập hệ thống ATS nội bộ
         </p>
       </div>
     </div>

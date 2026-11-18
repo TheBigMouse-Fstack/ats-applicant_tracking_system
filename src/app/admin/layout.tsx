@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import AdminNavbar from "@/components/admin/Navbar";
 import { getSessionUser } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: {
+    default: "ATS — Applicant Tracking System",
+    template: "%s | ATS — Applicant Tracking System",
+  },
+  description: "Hệ thống Quản lý & Theo dõi Hồ sơ Ứng viên Nội bộ (ATS — Applicant Tracking System)",
+};
 
 export default function AdminLayout({
   children,

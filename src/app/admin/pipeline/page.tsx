@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import KanbanBoard from "@/components/kanban/KanbanBoard";
 
 export const metadata: Metadata = {
-  title: "Quy Trình Tuyển Dụng | RecoverX",
-  description: "Theo dõi và quản lý hồ sơ ứng viên qua các giai đoạn tuyển dụng",
+  title: "Quy Trình Tuyển Dụng",
+  description: "Theo dõi và quản lý hồ sơ ứng viên qua 5 giai đoạn tuyển dụng (ATS)",
 };
 
 export default function AdminPipelinePage() {

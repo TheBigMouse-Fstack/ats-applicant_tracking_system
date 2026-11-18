@@ -85,7 +85,7 @@ export async function GET(req: Request) {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="recoverx_talent_report_${dateStr}.csv"`,
+        "Content-Disposition": `attachment; filename="ats_candidates_report_${dateStr}.csv"`,
       },
     });
   } catch (error: any) {

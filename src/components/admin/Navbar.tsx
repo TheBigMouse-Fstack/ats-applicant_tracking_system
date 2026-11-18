@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
+  LayoutDashboard,
   Briefcase,
   Kanban,
   Users,
@@ -66,11 +67,12 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
   };
 
   const navLinks = [
-    { href: "/admin/pipeline", label: "Quy trình tuyển dụng", icon: Kanban },
-    { href: "/admin/candidates", label: "Danh sách Ứng viên", icon: UserCheck },
-    { href: "/admin/jobs", label: "Tin Tuyển dụng", icon: Briefcase },
-    { href: "/admin/talent-pool", label: "Kho Nhân tài", icon: Database },
-    { href: "/admin/users", label: "Quản trị người dùng", icon: Users, adminOnly: true },
+    { href: "/admin/dashboard", label: "Tổng quan", icon: LayoutDashboard },
+    { href: "/admin/pipeline", label: "Pipeline", icon: Kanban },
+    { href: "/admin/candidates", label: "Ứng viên", icon: UserCheck },
+    { href: "/admin/jobs", label: "Tin tuyển dụng", icon: Briefcase },
+    { href: "/admin/talent-pool", label: "Kho nhân tài", icon: Database, hideForManager: true },
+    { href: "/admin/users", label: "Người dùng", icon: Users, adminOnly: true },
   ];
 
   return (
@@ -78,16 +80,21 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo & Navigation */}
-          <div className="flex items-center gap-8">
-            <Link href="/admin/pipeline" className="flex items-center gap-2.5">
+          <div className="flex items-center gap-6">
+            <Link href="/admin/dashboard" className="flex items-center gap-2.5 shrink-0">
               <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-sm shadow-brand-500/30">
                 <Briefcase className="w-5 h-5" />
               </div>
               <div className="leading-tight">
-                <span className="font-bold text-base text-slate-900 tracking-tight">RecoverX</span>
-                <span className="text-xs font-semibold text-brand-600 ml-1.5 px-1.5 py-0.5 bg-brand-50 rounded">
-                  Portal
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-base text-slate-900 tracking-tight">ATS</span>
+                  <span className="text-[10px] font-semibold text-brand-700 px-1.5 py-0.5 bg-brand-50 border border-brand-100 rounded">
+                    Internal
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 font-medium hidden sm:block">
+                  Applicant Tracking System
+                </p>
               </div>
             </Link>
 
@@ -97,19 +104,21 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
                 const isActive = pathname.startsWith(link.href);
                 // Ẩn tab User nếu không phải Admin
                 if (link.adminOnly && currentUser?.role !== "ADMIN") return null;
+                // Ẩn tab Kho nhân tài nếu là Hiring Manager (theo RBAC-NFR-08)
+                if (link.hideForManager && currentUser?.role === "HIRING_MANAGER") return null;
 
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       isActive
                         ? "bg-brand-50 text-brand-700 font-semibold"
                         : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    {link.label}
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="whitespace-nowrap">{link.label}</span>
                   </Link>
                 );
               })}
@@ -154,6 +163,31 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
             )}
           </div>
         </div>
+
+        {/* Mobile Navigation Strip */}
+        <nav className="flex md:hidden items-center gap-1 overflow-x-auto pb-2.5 -mx-1 px-1">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname.startsWith(link.href);
+            if (link.adminOnly && currentUser?.role !== "ADMIN") return null;
+            if (link.hideForManager && currentUser?.role === "HIRING_MANAGER") return null;
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-all ${
+                  isActive
+                    ? "bg-brand-50 text-brand-700 font-semibold"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </header>
   );

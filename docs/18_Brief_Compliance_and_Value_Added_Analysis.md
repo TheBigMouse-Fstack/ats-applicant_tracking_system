@@ -34,6 +34,7 @@ last_updated: "2026-11-18"
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Người Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
 | `v1.0.0` | 2026-11-18 | Nguyễn Quốc Khánh | **Initial** | Lập báo cáo đối chiếu toàn diện giữa Đề bài doanh nghiệp cơ bản và Sản phẩm ReCoverX Career ATS thực tế. | Trưởng phòng Tuyển dụng / Hội đồng |
+| `v1.1.0` | 2026-11-18 | Nguyễn Quốc Khánh | **Changed** | Đồng bộ chuẩn hóa thương hiệu kép (Nội bộ: `ATS — Applicant Tracking System`, Public: `RecoverX`) và bổ sung Bảng điều khiển Tổng quan Vận hành phân quyền theo vai trò (`/admin/dashboard`). | Trưởng phòng Tuyển dụng / Hội đồng |
 
 ---
 
@@ -43,13 +44,13 @@ last_updated: "2026-11-18"
 * **Kết luận:** **ĐÚNG HƯỚNG 100% VÀ HOÀN THÀNH VƯỢT MỨC TẤT CẢ YÊU CẦU CỐT LÕI CỦA ĐỀ BÀI.**
 * Mọi tính năng nâng cao đều được xây dựng xoay quanh đúng 4 bài toán gốc của Bộ phận Tuyển dụng: *(1) Quá tải nhập liệu thủ công, (2) Bỏ sót ứng viên tiềm năng, (3) Phản hồi ứng viên chậm, (4) Quản trị trạng thái phân tán bằng Excel*.
 
-### 1.2 Đánh giá về Tên dự án (`ATS - Applicant Tracking System` vs `ReCoverX Career ATS`)
-* **Đề bài gốc:** `ATS - Applicant Tracking System` (tên gọi chung theo loại phần mềm).
-* **Sản phẩm demo:** `ReCoverX Career — Applicant Tracking System (ATS)`.
-* **Đánh giá:** Việc gắn tên doanh nghiệp/sản phẩm giả lập (`ReCoverX Career`) đi kèm hậu tố chuẩn `ATS` là **phù hợp và chuyên nghiệp** để tạo ngữ cảnh vận hành chân thực cho Cổng tuyển dụng công khai và Thư mời phỏng vấn.
+### 1.2 Đánh giá về Tên dự án (`ATS — Applicant Tracking System` vs Cổng công khai `RecoverX`)
+* **Chiến lược Thương hiệu Kép (Dual-Branding) đã chuẩn hóa:**
+  * **Hệ thống Quản trị Nội bộ (`/admin/login`, `/admin/dashboard`, Navbar nội bộ, Tiêu đề tab):** Sử dụng chính xác tên theo đề bài doanh nghiệp **`ATS — Applicant Tracking System`**, bám sát tinh thần công cụ quản trị tuyển dụng chuẩn hóa.
+  * **Cổng Tuyển dụng Công khai (`/`, `/jobs`, `/jobs/tracker`, Thư mời ứng viên):** Giữ nguyên tên doanh nghiệp giả lập **`RecoverX`** để tạo trải nghiệm ứng tuyển chân thực như một website tuyển dụng thực tế.
 * **Khuyến nghị trình bày trên Trang bìa Báo cáo & Slide:**
   * **Tên Đề Tài:** *Xây dựng Hệ thống Quản lý Hồ sơ Ứng viên (ATS — Applicant Tracking System)*
-  * **Tên Sản Phẩm Demo:** *ReCoverX Career ATS*
+  * **Doanh nghiệp giả lập (Cổng Public):** *RecoverX Technology Solutions*
   * **Đơn vị bảo trợ nghiệp vụ:** Phòng Tuyển dụng — Đại diện: Anh Nguyễn Anh Duy (Trưởng phòng Tuyển dụng).
 
 ---
@@ -62,6 +63,7 @@ last_updated: "2026-11-18"
 | **Parsing CV (5 trường cơ bản)** | Trích xuất ít nhất **5 trường thông tin cơ bản**: Tên, Email, Vị trí ứng tuyển, Kinh nghiệm, Kỹ năng. | Trích xuất tự động và hiển thị ban đầu **gọn đúng 5 trường cốt lõi theo JD** (`CandidateDrawer` & `CandidateCard`), ẩn phần chi tiết dưới nút *"Xem chi tiết hồ sơ"*, đồng thời cho phép **HR chỉnh sửa/thêm thủ công** nếu máy bóc sai (`BRL-03`). | ✅ **Đạt 100% + Cải tiến UX** |
 | **Lọc & Tìm kiếm từ khóa** | Lọc CV theo từ khóa chính xác (VD: `"Java"`, `"Marketing"`, `"4 năm kinh nghiệm"`), tốc độ **≤ 3 giây**. | Thanh tìm kiếm theo Tên/Email/Kỹ năng, lọc theo Vị trí, Đánh sao, Chưa xem, Chưa đánh giá; tốc độ phản hồi thực tế **< 1.0 giây** (vượt chuẩn ≤ 3 giây). | ✅ **Vượt chuẩn** |
 | **Quản lý trạng thái (5 giai đoạn)** | Pipeline 5 giai đoạn (`New`, `Screening`, `Interview`, `Hired`, `Rejected`), cập nhật chỉ với 1 chạm / kéo thả. | Bảng Kanban 5 cột đúng chuẩn kéo-thả mượt mà (`@hello-pangea/dnd`) + nút chuyển nhanh 1 chạm trong Drawer, bổ sung **State Machine Guards** cấm nhảy cóc & khóa trạng thái `HIRED`. | ✅ **Đạt 100% + Quản trị chặt** |
+| **Dashboard / Tổng quan ứng viên** | Mục Mockup/Wireframes yêu cầu: *"Giao diện trang Dashboard/Tổng quan ứng viên"* *(đồng thời giữ Out-of-Scope là Analytics Dashboard BI chuyên sâu)*. | Xây dựng **Operational Dashboard phân quyền theo Role** (`/admin/dashboard` + `GET /api/dashboard`): hiển thị phễu 5 giai đoạn, KPI tác nghiệp hàng ngày, hàng đợi cần xử lý ngay (1-click mở Drawer) riêng cho `HR`, `HIRING_MANAGER`, `ADMIN`. Không nhồi biểu đồ BI nặng (giữ đúng Out-of-Scope). | ✅ **Đạt 100% + Chuẩn UX RBAC** |
 | **Giảm 30% thời gian sàng lọc** | Rút ngắn tối thiểu 30% thời gian sơ loại thủ công so với Excel. | Rút từ 3–5 phút đọc nhập tay xuống còn **≤ 5 giây/CV** (~giảm > 70% thao tác nhập liệu hành chính). | ✅ **Vượt mục tiêu** |
 | **NFR: Bảo mật & Khả năng mở rộng** | Lưu trữ dữ liệu an toàn; kiến trúc dễ dàng mở rộng tích hợp Email Automation sau này. | Băm mật khẩu NIST `PBKDF2-SHA512` (100k vòng), phiên `HMAC-SHA256`, Edge Middleware chặn truy cập trái phép, Rate Limit 5 lần/10p, hàng đợi lịch hẹn `emailScheduledAt` sẵn sàng cắm SMTP/Resend. | ✅ **Đạt chuẩn Doanh nghiệp** |
 | **Đầu ra (Deliverables)** | BRD, Demo Web, Mockup/Wireframes, Slide + Lộ trình. | Bộ 18 tài liệu BA chuẩn `Universal_BA_Toolkit` (BRD, BPMN, FDD, Cockburn UC, State Machine, 10-col ERD, RBAC/NFR, API Spec, 3-clause BR, 7-col Error Matrix, Bi-directional RTM), Demo Web chạy thật + **97/97 test tự động Passed**. | ✅ **Đạt trọn vẹn** |

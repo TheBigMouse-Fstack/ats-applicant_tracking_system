@@ -415,7 +415,7 @@ export async function parseAndScoreCv(
     try {
       const ai = new GoogleGenAI({ apiKey });
       const prompt = `
-Bạn là Trợ lý Tuyển dụng AI cấp cao của hệ thống ATS ReCoverX Career.
+Bạn là Trợ lý Tuyển dụng AI cấp cao của hệ thống ATS — Applicant Tracking System.
 Nhiệm vụ của bạn là phân tích nội dung CV thực tế của ứng viên và chấm điểm độ phù hợp (Match Scoring) so với Tiêu chuẩn tuyển dụng (JD).
 
 THÔNG TIN VỊ TRÍ TUYỂN DỤNG (JD):
