@@ -1,15 +1,7 @@
 "use client";
 
 import { Draggable } from "@hello-pangea/dnd";
-import {
-  Briefcase,
-  Mail,
-  Star,
-  AlertTriangle,
-  ChevronRight,
-  CheckCircle2,
-  Sparkles,
-} from "lucide-react";
+import { Briefcase, Star, AlertTriangle, Clock } from "lucide-react";
 import { getAiMatchTier } from "@/lib/match-score";
 
 interface CandidateCardProps {
@@ -20,6 +12,15 @@ interface CandidateCardProps {
   isDragDisabled?: boolean;
 }
 
+/**
+ * Thẻ ứng viên tối giản trên Kanban (Overview-Only):
+ * Chỉ giữ đúng các tín hiệu cốt lõi để quét nhanh trong 3 giây:
+ * 1. Tên ứng viên (+ chấm xanh tĩnh nếu chưa xem, icon sao)
+ * 2. Vị trí ứng tuyển
+ * 3. AI Match % (3 mức màu) + Số năm kinh nghiệm
+ * 4. Cảnh báo SLA (chỉ hiện khi quá hạn)
+ * Toàn bộ chi tiết (Email, SĐT, kỹ năng đầy đủ, chứng chỉ, lý do...) nằm gọn trong Drawer Chi tiết.
+ */
 export default function CandidateCard({
   application,
   index,
@@ -27,17 +28,18 @@ export default function CandidateCard({
   onToggleStar,
   isDragDisabled = false,
 }: CandidateCardProps) {
-  const { candidate, job, isSlaBreached, slaMessage, evaluations, isStarred, isViewed, currentStage } = application;
+  const {
+    candidate,
+    job,
+    isSlaBreached,
+    slaMessage,
+    evaluations,
+    isStarred,
+    isViewed,
+    currentStage,
+  } = application;
 
-  let skills: string[] = [];
-  try {
-    skills = JSON.parse(candidate?.parsedSkills || "[]");
-  } catch {
-    skills = [];
-  }
-
-  const isNewStage = currentStage === "NEW";
-  const isUnviewedNew = isNewStage && !isViewed;
+  const isUnviewedNew = currentStage === "NEW" && !isViewed;
   const matchTier = getAiMatchTier(application.aiMatchScore);
 
   return (
@@ -52,154 +54,101 @@ export default function CandidateCard({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => onOpenDrawer(application.id)}
-          className={`group rounded-xl border p-4 mb-3 transition-all cursor-pointer relative ${
+          className={`group rounded-xl border p-3.5 mb-2.5 bg-white transition-all cursor-pointer ${
             snapshot.isDragging
-              ? "shadow-2xl border-brand-500 ring-2 ring-brand-500/20 rotate-1 scale-102 bg-white"
+              ? "shadow-xl border-brand-500 ring-2 ring-brand-500/15"
               : isSlaBreached
-              ? "border-red-300 shadow-xs hover:border-red-400 hover:shadow-md bg-white"
-              : isUnviewedNew
-              ? "border-blue-400 ring-2 ring-blue-500/20 bg-gradient-to-br from-blue-50/50 via-white to-white shadow-sm hover:border-blue-500 hover:shadow-md"
-              : isStarred
-              ? "border-amber-300 ring-1 ring-amber-400/30 bg-amber-50/15 shadow-2xs hover:border-amber-400 hover:shadow-md"
-              : "border-slate-200/90 shadow-2xs hover:border-brand-400 hover:shadow-md bg-white"
+              ? "border-rose-200 hover:border-rose-300 shadow-2xs"
+              : "border-slate-200 hover:border-slate-300 hover:shadow-xs"
           }`}
         >
-          {/* Cảnh báo vi phạm SLA đỏ (BRL-07) */}
-          {isSlaBreached && (
-            <div className="mb-2.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-red-100 text-red-700 text-[11px] font-bold border border-red-200">
-              <AlertTriangle className="w-3 h-3 text-red-600 shrink-0" />
-              <span>{slaMessage}</span>
-            </div>
-          )}
-
-          {/* Đánh sáng đặc biệt cho CV vẫn ở giai đoạn NEW để HR không bị miss */}
-          {isNewStage && !isSlaBreached && (
-            <div className="mb-2 flex items-center justify-between gap-1">
-              {isUnviewedNew ? (
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-extrabold border border-blue-300 shadow-2xs animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
-                  <span>MỚI TIẾP NHẬN • CHƯA XEM</span>
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-semibold border border-slate-200">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  <span>Đã xem sơ bộ</span>
-                </div>
-              )}
-
-              {isStarred && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold border border-amber-300">
-                  <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
-                  <span>Đặc biệt</span>
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Tiêu đề: Tên ứng viên, Nút Gắn sao (Star) & Nút xem */}
+          {/* Hàng 1: Tên ứng viên + Chấm chưa xem (tĩnh, không nhấp nháy) + Nút Sao */}
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              {/* Nút Gắn sao như Gmail */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleStar?.(application.id);
-                }}
-                title={isStarred ? "Bỏ gắn sao" : "Gắn sao hồ sơ đặc biệt"}
-                className="p-1 -ml-1 rounded-lg text-slate-300 hover:text-amber-400 hover:bg-amber-50 transition-all shrink-0 cursor-pointer"
-              >
-                <Star
-                  className={`w-4 h-4 transition-transform ${
-                    isStarred
-                      ? "fill-amber-400 text-amber-400 scale-110 drop-shadow-2xs"
-                      : "text-slate-300 hover:text-amber-400 hover:scale-110"
-                  }`}
+            <div className="flex items-center gap-2 min-w-0">
+              {isUnviewedNew && (
+                <span
+                  className="w-2 h-2 rounded-full bg-blue-600 shrink-0"
+                  title="Hồ sơ mới chưa xem"
                 />
-              </button>
-
-              <h4 className="font-bold text-slate-900 text-sm group-hover:text-brand-600 transition-colors line-clamp-1">
+              )}
+              <h4
+                className={`text-sm truncate group-hover:text-brand-600 transition-colors ${
+                  isUnviewedNew
+                    ? "font-bold text-slate-900"
+                    : "font-semibold text-slate-800"
+                }`}
+              >
                 {candidate?.fullName || "Ứng viên chưa cập nhật"}
               </h4>
             </div>
 
-            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleStar?.(application.id);
+              }}
+              title={isStarred ? "Bỏ gắn sao" : "Gắn sao ưu tiên"}
+              className="p-0.5 rounded text-slate-300 hover:text-amber-400 transition-colors shrink-0 cursor-pointer"
+            >
+              <Star
+                className={`w-3.5 h-3.5 ${
+                  isStarred
+                    ? "fill-amber-400 text-amber-400"
+                    : "text-slate-300 hover:text-amber-400"
+                }`}
+              />
+            </button>
           </div>
 
-          {/* Email ứng viên */}
-          {candidate?.email && (
-            <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5 flex items-center gap-1.5 pl-5">
-              <Mail className="w-3 h-3 text-slate-400 shrink-0" />
-              <span className="truncate">{candidate.email}</span>
-            </p>
-          )}
-
-          {/* Vị trí ứng tuyển */}
-          <p className="text-xs text-slate-500 line-clamp-1 mt-0.5 flex items-center gap-1.5 pl-5">
+          {/* Hàng 2: Vị trí ứng tuyển (1 dòng gọn) */}
+          <p className="text-xs text-slate-500 truncate mt-1 flex items-center gap-1.5">
             <Briefcase className="w-3 h-3 text-slate-400 shrink-0" />
-            <span>{job?.title || "Vị trí không xác định"}</span>
+            <span className="truncate">{job?.title || "Vị trí không xác định"}</span>
           </p>
 
-          {/* Lý do từ chối nếu đang ở cột REJECTED */}
-          {currentStage === "REJECTED" && application.rejectionReason && (
-            <p
-              className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200/80 rounded-lg px-2 py-1 mt-2 line-clamp-2"
-              title={application.rejectionReason}
-            >
-              <strong className="font-bold">Lý do:</strong> {application.rejectionReason}
-            </p>
+          {/* Cảnh báo SLA quá hạn (chỉ hiện khi thực sự vi phạm) */}
+          {isSlaBreached && (
+            <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-rose-600">
+              <AlertTriangle className="w-3 h-3 shrink-0" />
+              <span className="truncate">{slaMessage}</span>
+            </div>
           )}
 
-          {/* Thông tin năng lực: AI Match %, Kỹ năng & Kinh nghiệm */}
-          <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
-            {/* Chỉ số AI đánh giá % theo chuẩn 3 tầng Traffic-Light */}
-            {matchTier.score !== null && (
-              <span
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${matchTier.badgeClass}`}
-                title={`AI đánh giá: ${matchTier.score}% (${matchTier.label}) — ${matchTier.recommendation}`}
-              >
-                <Sparkles className="w-3 h-3 shrink-0" />
-                <span>{matchTier.score}%</span>
-              </span>
-            )}
+          {/* Hàng 3: Tín hiệu cốt lõi (AI %, Kinh nghiệm, Điểm PV nếu có) */}
+          <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-100 text-[11px]">
+            <div className="flex items-center gap-1.5">
+              {matchTier.score !== null && (
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold border ${matchTier.badgeClass}`}
+                  title={`AI đánh giá: ${matchTier.score}% (${matchTier.label})`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${matchTier.dotClass}`} />
+                  {matchTier.score}%
+                </span>
+              )}
 
-            {/* Kỹ năng tiêu biểu */}
-            {skills.slice(0, 2).map((sk) => (
-              <span
-                key={sk}
-                className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-brand-50 text-brand-700 border border-brand-200/70"
-              >
-                {sk}
-              </span>
-            ))}
+              {candidate?.experienceYears !== undefined && (
+                <span className="inline-flex items-center gap-1 text-slate-500 font-medium">
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  {candidate.experienceYears > 0
+                    ? `${candidate.experienceYears} năm`
+                    : "< 1 năm"}
+                </span>
+              )}
+            </div>
 
-            {/* Năm kinh nghiệm */}
-            {candidate?.experienceYears !== undefined && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-slate-50 text-slate-600 border border-slate-200">
-                {candidate.experienceYears > 0
-                  ? `${candidate.experienceYears} năm KN`
-                  : "Mới tốt nghiệp"}
-              </span>
-            )}
-
-            {/* Đánh giá phỏng vấn nếu có */}
-            {evaluations && evaluations.length > 0 ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-purple-50 text-purple-700 border border-purple-200 font-semibold ml-auto">
-                <Star className="w-3 h-3 fill-purple-600 text-purple-600" />
+            {evaluations && evaluations.length > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-slate-600 font-semibold">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                 {evaluations[0].overallScore
-                  ? `${evaluations[0].overallScore.toFixed(1)}/5`
-                  : `${evaluations.length} đánh giá`}
+                  ? evaluations[0].overallScore.toFixed(1)
+                  : evaluations.length}
               </span>
-            ) : currentStage === "INTERVIEW" ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] bg-slate-100 text-slate-500 border border-slate-200 font-medium ml-auto">
-                Chưa đánh giá
-              </span>
-            ) : null}
+            )}
           </div>
         </div>
       )}
     </Draggable>
   );
 }
-
-

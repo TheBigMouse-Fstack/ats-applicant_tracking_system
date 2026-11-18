@@ -489,86 +489,62 @@ export default function CandidateDrawer({
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-2xl sm:max-w-3xl lg:max-w-4xl bg-white shadow-2xl flex flex-col justify-between border-l border-slate-200">
-          {/* Header */}
-          <div className="px-6 py-5 border-b border-slate-200 bg-slate-50/70 flex items-start justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-brand-100 text-brand-700 uppercase tracking-wide">
-                  Hồ sơ #{data?.id}
-                </span>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-800">
-                  Cột: {data?.currentStage}
+          {/* Header Tối Giản: Tên + Vị trí + Stage + AI % + Sao + Đóng */}
+          <div className="px-6 py-4 border-b border-slate-200 bg-white flex items-start justify-between gap-4">
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight truncate">
+                  {loading ? "Đang tải hồ sơ..." : data?.candidate?.fullName}
+                </h2>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                  {data?.currentStage}
                 </span>
                 {matchTier.score !== null && (
                   <span
-                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-md border ${matchTier.badgeClass}`}
+                    className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${matchTier.badgeClass}`}
                     title={matchTier.recommendation}
                   >
-                    <span className={`w-2 h-2 rounded-full ${matchTier.dotClass}`} />
-                    <span>
-                      AI {matchTier.score}% &bull; {matchTier.shortLabel}
-                    </span>
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsInterviewModalOpen(true);
-                    setInterviewSuccessEmail(null);
-                    setInterviewError(null);
-                  }}
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200 transition-all cursor-pointer"
-                  title="Lên lịch hoặc xem lịch phỏng vấn chuyên môn"
-                >
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{data?.interviewDate ? "Đã xếp lịch PV" : "Lên lịch PV"}</span>
-                </button>
-
-                {/* Nút Gắn sao hồ sơ đặc biệt (Gmail Star style) */}
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!data?.id) return;
-                    const newStarred = !data.isStarred;
-                    setData((prev: any) => ({ ...prev, isStarred: newStarred }));
-                    try {
-                      await fetch(`/api/applications/${data.id}/star`, { method: "POST" });
-                    } catch {}
-                  }}
-                  title={data?.isStarred ? "Bỏ gắn sao đặc biệt" : "Gắn sao hồ sơ đặc biệt"}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border transition-all cursor-pointer ${
-                    data?.isStarred
-                      ? "bg-amber-100 text-amber-900 border-amber-300 shadow-2xs"
-                      : "bg-white hover:bg-slate-100 text-slate-600 border-slate-200"
-                  }`}
-                >
-                  <Star className={`w-3.5 h-3.5 ${data?.isStarred ? "fill-amber-400 text-amber-500" : "text-slate-400"}`} />
-                  <span>{data?.isStarred ? "Đã gắn sao" : "Gắn sao"}</span>
-                </button>
-
-                {data?.candidate?.cvFileUrl && (
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    PDF Đã lưu trữ
+                    <span className={`w-1.5 h-1.5 rounded-full ${matchTier.dotClass}`} />
+                    AI {matchTier.score}%
                   </span>
                 )}
               </div>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                {loading ? "Đang tải hồ sơ..." : data?.candidate?.fullName}
-              </h2>
-              <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                <span>
-                  Ứng tuyển: <strong>{data?.job?.title}</strong> &bull; {data?.job?.department}
+              <p className="text-xs text-slate-500 flex items-center gap-1.5 truncate">
+                <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="truncate">
+                  {data?.job?.title} &bull; {data?.job?.department}
                 </span>
               </p>
             </div>
 
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!data?.id) return;
+                  const newStarred = !data.isStarred;
+                  setData((prev: any) => ({ ...prev, isStarred: newStarred }));
+                  try {
+                    await fetch(`/api/applications/${data.id}/star`, { method: "POST" });
+                  } catch {}
+                }}
+                title={data?.isStarred ? "Bỏ gắn sao" : "Gắn sao ưu tiên"}
+                className="p-2 rounded-xl text-slate-400 hover:text-amber-500 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <Star
+                  className={`w-4 h-4 ${
+                    data?.isStarred ? "fill-amber-400 text-amber-400" : "text-slate-400"
+                  }`}
+                />
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                title="Đóng"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Navigation Tabs (5 Tab Tách Biệt Rõ Ràng) */}
@@ -681,7 +657,7 @@ export default function CandidateDrawer({
                     )}
 
                     {/* KHỐI 1 (HERO): THÔNG TIN CÁ NHÂN & 5 TRƯỜNG DỮ LIỆU CỐT LÕI */}
-                    <div className="bg-white rounded-2xl border-2 border-brand-200/80 p-5 shadow-sm space-y-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
                       <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-100">
                         <div className="flex items-center gap-3.5 min-w-0">
                           <div className="w-12 h-12 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-extrabold text-lg shadow-sm shadow-brand-500/25 shrink-0">
@@ -877,23 +853,14 @@ export default function CandidateDrawer({
                         <>
                           {/* CHẾ ĐỘ HIỂN THỊ CHUẨN: VỊ TRÍ ỨNG TUYỂN & KINH NGHIỆM NỔI BẬT */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                            <div className="bg-brand-50/40 p-3.5 rounded-xl border border-brand-100 flex items-center justify-between gap-2">
-                              <div className="min-w-0">
-                                <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">
-                                  Vị trí ứng tuyển
-                                </span>
-                                <span className="font-bold text-slate-900 text-sm flex items-center gap-1.5 truncate">
-                                  <Briefcase className="w-4 h-4 text-brand-600 shrink-0" />
-                                  <span className="truncate">{data?.job?.title}</span>
-                                </span>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setActiveTab("jd")}
-                                className="text-[11px] font-bold text-brand-700 hover:text-brand-800 bg-white px-2.5 py-1 rounded-lg border border-brand-200 shrink-0 cursor-pointer"
-                              >
-                                Xem JD
-                              </button>
+                            <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/80">
+                              <span className="text-[11px] font-semibold text-slate-500 block mb-0.5">
+                                Vị trí ứng tuyển
+                              </span>
+                              <span className="font-bold text-slate-900 text-sm flex items-center gap-1.5 truncate">
+                                <Briefcase className="w-4 h-4 text-slate-400 shrink-0" />
+                                <span className="truncate">{data?.job?.title}</span>
+                              </span>
                             </div>
 
                             <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/80">
@@ -957,29 +924,12 @@ export default function CandidateDrawer({
                       {/* PHẦN MỞ RỘNG KHI CẦN: XEM CHI TIẾT HỒ SƠ (Progressive Disclosure) */}
                       {showDetailedProfile && !isEditingProfile && (
                         <div className="pt-4 mt-2 border-t border-slate-200 space-y-5 animate-in fade-in">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 text-xs">
-                              <span className="text-slate-500">Số điện thoại:</span>
-                              <span className="font-bold text-slate-800 flex items-center gap-1">
-                                <Phone className="w-3.5 h-3.5 text-slate-400" />
-                                {data?.candidate?.phone}
-                              </span>
-                            </div>
-
-                            {canEditProfile && (
-                              <button
-                                type="button"
-                                onClick={handleReparse}
-                                disabled={reparsing}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-all cursor-pointer"
-                                title="Trích xuất lại toàn bộ dữ liệu từ file CV gốc"
-                              >
-                                <RotateCw
-                                  className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-brand-600" : ""}`}
-                                />
-                                <span>{reparsing ? "Đang trích xuất..." : "Trích xuất lại từ CV"}</span>
-                              </button>
-                            )}
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className="text-slate-500">Số điện thoại:</span>
+                            <span className="font-bold text-slate-800 flex items-center gap-1">
+                              <Phone className="w-3.5 h-3.5 text-slate-400" />
+                              {data?.candidate?.phone}
+                            </span>
                           </div>
 
                           {/* Học vấn & Bằng cấp */}
@@ -1134,45 +1084,30 @@ export default function CandidateDrawer({
                       )}
                     </div>
 
-                    {/* KHỐI 2: ĐÁNH GIÁ MỨC ĐỘ PHÙ HỢP AI (% MATCH SCORE - THANG 3 MỨC TRAFFIC-LIGHT) */}
-                    <div className={`p-5 rounded-2xl border shadow-xs space-y-4 ${matchTier.panelClass}`}>
-                      <div className="flex flex-wrap items-start justify-between gap-3 pb-3.5 border-b border-slate-200/80">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs shrink-0">
-                            <Sparkles className="w-5 h-5 text-brand-400" />
-                          </div>
-                          <div>
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                              2. Đánh Giá Mức Độ Phù Hợp AI
-                            </h3>
-                            <p className="text-[11px] text-slate-500">
-                              Đối chiếu CV với tiêu chuẩn JD • Gợi ý hỗ trợ HR (Human-in-the-loop)
-                            </p>
-                          </div>
+                    {/* KHỐI 2: ĐÁNH GIÁ MỨC ĐỘ PHÙ HỢP AI (% MATCH SCORE - NỀN TRẮNG PHẲNG THANH LỊCH) */}
+                    <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+                        <div>
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                            2. Đánh Giá Mức Độ Phù Hợp AI
+                          </h3>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            Gợi ý hỗ trợ sàng lọc theo tiêu chuẩn JD (Human-in-the-loop)
+                          </p>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          {canEditProfile && (
-                            <button
-                              type="button"
-                              onClick={handleReparse}
-                              disabled={reparsing}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition-all cursor-pointer"
-                              title="Chạy lại Hybrid AI phân tích CV và tính lại % phù hợp"
-                            >
-                              <RotateCw className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-brand-600" : ""}`} />
-                              <span>{reparsing ? "Đang phân tích..." : "Đánh giá lại AI"}</span>
-                            </button>
-                          )}
+                        {canEditProfile && (
                           <button
                             type="button"
-                            onClick={() => setActiveTab("jd")}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-700 bg-white hover:bg-brand-50 border border-brand-200 transition-all cursor-pointer"
+                            onClick={handleReparse}
+                            disabled={reparsing}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                            title="Chạy lại Hybrid AI phân tích CV và tính lại % phù hợp"
                           >
-                            <Building2 className="w-3.5 h-3.5" />
-                            <span>Xem JD</span>
+                            <RotateCw className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-brand-600" : ""}`} />
+                            <span>{reparsing ? "Đang phân tích..." : "Đánh giá lại AI"}</span>
                           </button>
-                        </div>
+                        )}
                       </div>
 
                       {/* Chỉ số % AI Match nổi bật + Thanh tiến trình + Phân tầng 3 mức chuẩn ngành */}
@@ -1279,20 +1214,19 @@ export default function CandidateDrawer({
                       )}
                     </div>
 
-                    {/* KHỐI 3: LỊCH HẸN PHỎNG VẤN & ĐÁNH GIÁ CHUYÊN GIA */}
+                    {/* KHỐI 3: LỊCH HẸN PHỎNG VẤN */}
                     {(data?.interviewDate ||
                       data?.currentStage === "INTERVIEW" ||
-                      (canManageInterview && data?.currentStage === "SCREENING") ||
-                      (data?.evaluations && data.evaluations.length > 0)) && (
-                      <div className="bg-gradient-to-r from-purple-50/80 via-indigo-50/40 to-white rounded-2xl border border-purple-200/90 p-5 shadow-2xs space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-purple-100 gap-3">
+                      (canManageInterview && data?.currentStage === "SCREENING")) && (
+                      <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold shrink-0">
-                              <Calendar className="w-5 h-5" />
+                            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0">
+                              <Calendar className="w-4 h-4" />
                             </div>
                             <div>
-                              <h3 className="text-xs font-bold uppercase tracking-wider text-purple-950 flex items-center gap-2">
-                                <span>3. Lịch Hẹn Phỏng Vấn & Đánh Giá Chuyên Gia</span>
+                              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                                <span>3. Lịch Hẹn Phỏng Vấn</span>
                                 {data?.interviewDate && (
                                   <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-200/70 text-purple-800 font-bold">
                                     Đã có lịch
@@ -1477,45 +1411,6 @@ export default function CandidateDrawer({
                             </button>
                           </div>
                         )}
-
-                        {/* TÓM TẮT NHANH PHIẾU ĐÁNH GIÁ — CHUYỂN THẲNG SANG TAB PHIẾU ĐÁNH GIÁ */}
-                        <div className="pt-3 border-t border-purple-100">
-                          <div className="p-3.5 bg-white/90 rounded-xl border border-purple-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-2.5">
-                              <Star className="w-4 h-4 text-purple-600 fill-purple-600 shrink-0" />
-                              <div>
-                                <p className="font-bold text-slate-900">
-                                  Phiếu đánh giá phỏng vấn ({data?.evaluations?.length || 0} phiếu)
-                                </p>
-                                <p className="text-[11px] text-slate-500">
-                                  {data?.evaluations && data.evaluations.length > 0
-                                    ? `Điểm trung bình: ${(
-                                        data.evaluations.reduce(
-                                          (s: number, e: any) => s + Number(e.overallScore || 0),
-                                          0
-                                        ) / data.evaluations.length
-                                      ).toFixed(2)}/5.0★ — Chuyển sang tab Phiếu đánh giá để xem chi tiết hoặc chấm thêm`
-                                    : "Chưa có phiếu đánh giá phỏng vấn — Chuyển sang tab Phiếu đánh giá để chấm điểm trực tiếp"}
-                                </p>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOpenEvaluationForm(true);
-                                setActiveTab("evaluation");
-                              }}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
-                            >
-                              <ClipboardCheck className="w-3.5 h-3.5" />
-                              <span>
-                                {data?.evaluations && data.evaluations.length > 0
-                                  ? "Mở tab Phiếu đánh giá"
-                                  : "Đánh giá ngay"}
-                              </span>
-                            </button>
-                          </div>
-                        </div>
                       </div>
                     )}
                   </div>

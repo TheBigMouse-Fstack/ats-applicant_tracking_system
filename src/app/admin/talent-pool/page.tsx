@@ -466,7 +466,7 @@ export default function TalentPoolPage() {
                           </span>
                           {isNewUnviewed && (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                               Mới • Chưa xem
                             </span>
                           )}

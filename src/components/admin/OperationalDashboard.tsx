@@ -4,10 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  LayoutDashboard,
-  RefreshCw,
-  UserPlus,
-  Kanban,
   AlertTriangle,
   Clock,
   CheckCircle2,
@@ -16,19 +12,16 @@ import {
   Calendar,
   ClipboardCheck,
   ShieldAlert,
-  ArrowRight,
+  ChevronRight,
   Star,
-  FileSpreadsheet,
-  Database,
   History,
   Video,
   MapPin,
   Eye,
-  ShieldCheck,
   X,
+  RefreshCw,
 } from "lucide-react";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
-import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 import { formatDateTime } from "@/lib/utils";
 import { getAiMatchTier } from "@/lib/match-score";
 
@@ -130,46 +123,11 @@ interface DashboardData {
 }
 
 const STAGE_META = [
-  {
-    key: "NEW" as const,
-    label: "Mới tiếp nhận",
-    short: "New",
-    barColor: "bg-blue-500",
-    pillColor: "bg-blue-50 text-blue-700 border-blue-200",
-    dotColor: "bg-blue-500",
-  },
-  {
-    key: "SCREENING" as const,
-    label: "Sàng lọc tiêu chuẩn",
-    short: "Screening",
-    barColor: "bg-indigo-500",
-    pillColor: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    dotColor: "bg-indigo-500",
-  },
-  {
-    key: "INTERVIEW" as const,
-    label: "Phỏng vấn",
-    short: "Interview",
-    barColor: "bg-amber-500",
-    pillColor: "bg-amber-50 text-amber-700 border-amber-200",
-    dotColor: "bg-amber-500",
-  },
-  {
-    key: "HIRED" as const,
-    label: "Tuyển chọn",
-    short: "Hired",
-    barColor: "bg-emerald-500",
-    pillColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    dotColor: "bg-emerald-500",
-  },
-  {
-    key: "REJECTED" as const,
-    label: "Từ chối",
-    short: "Rejected",
-    barColor: "bg-rose-400",
-    pillColor: "bg-rose-50 text-rose-700 border-rose-200",
-    dotColor: "bg-rose-400",
-  },
+  { key: "NEW" as const, label: "Mới nộp", dotColor: "bg-blue-500", barColor: "bg-blue-500" },
+  { key: "SCREENING" as const, label: "Sàng lọc", dotColor: "bg-indigo-500", barColor: "bg-indigo-500" },
+  { key: "INTERVIEW" as const, label: "Phỏng vấn", dotColor: "bg-amber-500", barColor: "bg-amber-500" },
+  { key: "HIRED" as const, label: "Tuyển chọn", dotColor: "bg-emerald-500", barColor: "bg-emerald-500" },
+  { key: "REJECTED" as const, label: "Từ chối", dotColor: "bg-rose-400", barColor: "bg-rose-400" },
 ];
 
 const ACTION_LABELS: Record<string, string> = {
@@ -181,31 +139,30 @@ const ACTION_LABELS: Record<string, string> = {
   INTERVIEW_CANCELLED: "Hủy lịch PV",
 };
 
-function getRoleHeaderInfo(role: string) {
+function getRoleMeta(role: string) {
   if (role === "ADMIN") {
     return {
-      badge: "QUẢN TRỊ VIÊN (ADMIN)",
-      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      subtitle:
-        "Toàn cảnh vận hành tuyển dụng: giám sát điểm nghẽn SLA toàn phễu, phân quyền người dùng và nhật ký kiểm toán.",
+      badge: "Admin",
+      subtitle: "Giám sát tổng quan phễu tuyển dụng, cảnh báo SLA và nhật ký kiểm toán.",
     };
   }
   if (role === "HIRING_MANAGER") {
     return {
-      badge: "QUẢN LÝ CHUYÊN MÔN (HIRING MANAGER)",
-      badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
-      subtitle:
-        "Bảng tác nghiệp chuyên môn: duyệt hồ sơ từ Sàng lọc sang Phỏng vấn, quản lý lịch hẹn, chấm Scorecard và quyết định Tuyển chọn.",
+      badge: "Hiring Manager",
+      subtitle: "Hồ sơ chờ duyệt phỏng vấn, lịch hẹn sắp tới và phiếu đánh giá còn thiếu.",
     };
   }
   return {
-    badge: "CHUYÊN VIÊN TUYỂN DỤNG (HR)",
-    badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
-    subtitle:
-      "Bảng tác nghiệp đầu phễu: tiếp nhận CV mới, kiểm tra chuẩn hóa 5 trường cốt lõi, xử lý cảnh báo SLA >48h và chuyển Sàng lọc tiêu chuẩn.",
+    badge: "HR",
+    subtitle: "Hồ sơ mới chưa xem và cảnh báo tồn đọng đầu phễu cần sơ loại.",
   };
 }
 
+/**
+ * Bảng Điều Khiển Tổng Quan Vận Hành (Minimalist Operational Dashboard):
+ * - Triệt tiêu hoàn toàn nút trùng lặp (không lặp nút Tiếp nhận CV, Xuất CSV, Mở Pipeline vốn đã có trên Navbar/trang chuyên biệt).
+ * - Mỗi dòng danh sách chỉ hiển thị đúng 4 tín hiệu tổng quan (Tên, Vị trí, AI %, SLA) — nhấp vào để mở Drawer Chi tiết.
+ */
 export default function OperationalDashboard() {
   const searchParams = useSearchParams();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -213,13 +170,9 @@ export default function OperationalDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [forbiddenDismissed, setForbiddenDismissed] = useState(false);
 
-  // Interactive Tabs per role
   const [hrTab, setHrTab] = useState<"UNVIEWED" | "SLA" | "ALL_NEW">("UNVIEWED");
   const [hmTab, setHmTab] = useState<"SCREENING" | "SCORECARD">("SCREENING");
-
-  // 1-click Modals / Drawer
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -243,7 +196,6 @@ export default function OperationalDashboard() {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  // Xử lý chuyển trạng thái trực tiếp từ CandidateDrawer mở trên Dashboard
   const handleStageChange = async (
     appId: number,
     toStage: string,
@@ -271,18 +223,15 @@ export default function OperationalDashboard() {
 
   if (loading && !data) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-pulse">
-        <div className="h-20 bg-white rounded-2xl border border-slate-200" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-5 animate-pulse">
+        <div className="h-14 bg-white rounded-2xl border border-slate-200" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 bg-white rounded-2xl border border-slate-200" />
+            <div key={i} className="h-24 bg-white rounded-2xl border border-slate-200" />
           ))}
         </div>
-        <div className="h-32 bg-white rounded-2xl border border-slate-200" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 h-80 bg-white rounded-2xl border border-slate-200" />
-          <div className="h-80 bg-white rounded-2xl border border-slate-200" />
-        </div>
+        <div className="h-24 bg-white rounded-2xl border border-slate-200" />
+        <div className="h-72 bg-white rounded-2xl border border-slate-200" />
       </div>
     );
   }
@@ -290,15 +239,15 @@ export default function OperationalDashboard() {
   if (error || !data) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white border border-red-200 rounded-2xl p-8 text-center max-w-lg mx-auto">
-          <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-          <h2 className="text-lg font-bold text-slate-900">Không thể tải Dashboard</h2>
-          <p className="text-sm text-slate-600 mt-1">{error}</p>
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center max-w-md mx-auto">
+          <AlertTriangle className="w-8 h-8 text-rose-500 mx-auto mb-2" />
+          <h2 className="text-base font-bold text-slate-900">Không thể tải dữ liệu</h2>
+          <p className="text-xs text-slate-500 mt-1">{error}</p>
           <button
             onClick={fetchDashboard}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700"
+            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 cursor-pointer"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
             Thử lại
           </button>
         </div>
@@ -306,9 +255,8 @@ export default function OperationalDashboard() {
     );
   }
 
-  const roleMeta = getRoleHeaderInfo(data.role);
+  const roleMeta = getRoleMeta(data.role);
 
-  // Chọn hàng đợi hiển thị cho HR
   const hrActiveList: QueueCandidateItem[] =
     hrTab === "UNVIEWED"
       ? data.hrUnviewedQueue || []
@@ -316,237 +264,161 @@ export default function OperationalDashboard() {
       ? data.hrSlaBreachQueue || []
       : data.hrRecentNewQueue || [];
 
-  // Chọn hàng đợi hiển thị cho Hiring Manager
   const hmActiveList: QueueCandidateItem[] =
     hmTab === "SCREENING"
       ? data.hmScreeningQueue || []
       : data.hmMissingScorecardQueue || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* Cảnh báo phân quyền nếu vừa bị Middleware chuyển hướng */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+      {/* Thông báo phân quyền nếu bị chuyển hướng */}
       {isForbiddenNotice && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl flex items-center justify-between gap-3 text-sm">
-          <div className="flex items-center gap-2.5">
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              Tài khoản của bạn không có quyền truy cập phân hệ vừa yêu cầu. Hệ thống đã chuyển về Bảng điều khiển Tổng quan theo đúng phân quyền RBAC.
+              Tài khoản của bạn không có quyền truy cập phân hệ vừa yêu cầu theo ma trận RBAC.
             </span>
           </div>
           <button
             onClick={() => setForbiddenDismissed(true)}
-            className="p-1 text-amber-600 hover:bg-amber-100 rounded-lg"
-            title="Đóng thông báo"
+            className="p-1 text-amber-600 hover:bg-amber-100 rounded-lg cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* HEADER TỔNG QUAN THEO VAI TRÒ */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <LayoutDashboard className="w-4 h-4 text-brand-600" />
-              Bảng điều khiển Tổng quan Vận hành
-            </span>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${roleMeta.badgeClass}`}
-            >
+      {/* HEADER TỐI GIẢN — KHÔNG NHỒI NÚT THỪA */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Tổng Quan Tuyển Dụng
+            </h1>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
               {roleMeta.badge}
             </span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            Xin chào, {data.userName}
-          </h1>
-          <p className="text-sm text-slate-600 max-w-3xl">{roleMeta.subtitle}</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <button
-            onClick={fetchDashboard}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition-colors"
-            title="Làm mới số liệu"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Làm mới
-          </button>
-
-          {(data.role === "HR" || data.role === "ADMIN") && (
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-sm transition-colors"
-            >
-              <UserPlus className="w-4 h-4" />
-              Tiếp nhận CV
-            </button>
-          )}
-
-          <Link
-            href="/admin/pipeline"
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              data.role === "HIRING_MANAGER"
-                ? "bg-brand-600 hover:bg-brand-700 text-white shadow-sm"
-                : "border border-slate-200 bg-slate-900 hover:bg-slate-800 text-white"
-            }`}
-          >
-            <Kanban className="w-4 h-4" />
-            Mở Kanban Pipeline
-          </Link>
+          <p className="text-xs text-slate-500 mt-0.5">{roleMeta.subtitle}</p>
         </div>
       </div>
 
-      {/* TẦNG 1: 4 THẺ KPI TÁC NGHIỆP CHUYÊN BIỆT THEO ROLE (5-SECOND RULE) */}
+      {/* TẦNG 1: 4 THẺ KPI SẠCH, TỐI GIẢN */}
       {data.role === "HR" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <KpiCard
             label="CV mới chưa xem"
             value={data.summary.unviewedNewCount}
-            subtext={`Trên tổng ${data.funnel.NEW} hồ sơ đang ở cột NEW`}
-            icon={<Eye className="w-5 h-5 text-blue-600" />}
-            accent={data.summary.unviewedNewCount > 0 ? "blue" : "slate"}
-            href="/admin/pipeline"
+            subtext={`Trên ${data.funnel.NEW} hồ sơ cột Mới nộp`}
+            icon={<Eye className="w-4 h-4 text-slate-500" />}
+            highlight={data.summary.unviewedNewCount > 0 ? "info" : "neutral"}
           />
           <KpiCard
-            label="Quá hạn SLA đầu phễu"
+            label="Quá hạn SLA (>48h)"
             value={data.sla.newBreachCount}
-            subtext="Hồ sơ ở cột NEW quá 48h (BRL-07)"
-            icon={<AlertTriangle className="w-5 h-5 text-rose-600" />}
-            accent={data.sla.newBreachCount > 0 ? "rose" : "emerald"}
-            href="/admin/pipeline"
+            subtext="Cần sơ loại sớm (BRL-07)"
+            icon={<AlertTriangle className="w-4 h-4 text-slate-500" />}
+            highlight={data.sla.newBreachCount > 0 ? "danger" : "neutral"}
           />
           <KpiCard
-            label="Đã chuyển Sàng lọc"
+            label="Đang ở Sàng lọc"
             value={data.funnel.SCREENING}
-            subtext="Đang chờ Hiring Manager duyệt PV"
-            icon={<CheckCircle2 className="w-5 h-5 text-indigo-600" />}
-            accent="indigo"
-            href="/admin/pipeline"
+            subtext="Chờ Hiring Manager duyệt PV"
+            icon={<CheckCircle2 className="w-4 h-4 text-slate-500" />}
           />
           <KpiCard
-            label="Vị trí đang tuyển"
+            label="Vị trí đang mở"
             value={data.summary.activeJobsCount}
-            subtext={`Tổng ${data.funnel.total} hồ sơ • ${data.summary.starredCount} gắn sao`}
-            icon={<Briefcase className="w-5 h-5 text-emerald-600" />}
-            accent="emerald"
-            href="/admin/jobs"
+            subtext={`Tổng ${data.funnel.total} hồ sơ toàn hệ thống`}
+            icon={<Briefcase className="w-4 h-4 text-slate-500" />}
           />
         </div>
       )}
 
       {data.role === "HIRING_MANAGER" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <KpiCard
             label="Chờ duyệt Phỏng vấn"
             value={data.funnel.SCREENING}
             subtext={
               data.sla.screeningBreachCount > 0
-                ? `${data.sla.screeningBreachCount} hồ sơ quá hạn >72h (BRL-07)`
-                : "Hồ sơ HR đã sơ loại xong"
+                ? `${data.sla.screeningBreachCount} hồ sơ quá 72h`
+                : "Hồ sơ HR đã sơ loại"
             }
-            icon={<Clock className="w-5 h-5 text-indigo-600" />}
-            accent={data.sla.screeningBreachCount > 0 ? "rose" : "indigo"}
-            href="/admin/pipeline"
+            icon={<Clock className="w-4 h-4 text-slate-500" />}
+            highlight={data.sla.screeningBreachCount > 0 ? "danger" : "neutral"}
           />
           <KpiCard
             label="Đang Phỏng vấn"
             value={data.funnel.INTERVIEW}
             subtext={`${data.summary.upcomingInterviewsCount} lịch hẹn đã xếp`}
-            icon={<Calendar className="w-5 h-5 text-amber-600" />}
-            accent="amber"
-            href="/admin/pipeline"
+            icon={<Calendar className="w-4 h-4 text-slate-500" />}
           />
           <KpiCard
-            label="Chờ chấm Scorecard"
+            label="Thiếu Scorecard"
             value={data.summary.pendingScorecardCount}
-            subtext="Bắt buộc đủ phiếu mới chốt Hired (BRL-06)"
-            icon={<ClipboardCheck className="w-5 h-5 text-rose-600" />}
-            accent={data.summary.pendingScorecardCount > 0 ? "rose" : "emerald"}
-            href="/admin/pipeline"
+            subtext="Cần đủ phiếu mới chốt Hired"
+            icon={<ClipboardCheck className="w-4 h-4 text-slate-500" />}
+            highlight={data.summary.pendingScorecardCount > 0 ? "danger" : "neutral"}
           />
           <KpiCard
             label="Đã Tuyển chọn"
             value={data.funnel.HIRED}
-            subtext={`Tỷ lệ tuyển chọn toàn phễu: ${data.summary.hireRatePercent}%`}
-            icon={<CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-            accent="emerald"
-            href="/admin/candidates"
+            subtext={`Tỷ lệ tuyển chọn: ${data.summary.hireRatePercent}%`}
+            icon={<CheckCircle2 className="w-4 h-4 text-slate-500" />}
           />
         </div>
       )}
 
       {data.role === "ADMIN" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <KpiCard
-            label="Tổng hồ sơ hệ thống"
+            label="Tổng hồ sơ"
             value={data.funnel.total}
-            subtext={`${data.summary.activeJobsCount} vị trí đang mở • ${data.summary.unviewedNewCount} CV mới chưa xem`}
-            icon={<Briefcase className="w-5 h-5 text-blue-600" />}
-            accent="blue"
-            href="/admin/candidates"
+            subtext={`${data.summary.activeJobsCount} vị trí đang mở`}
+            icon={<Briefcase className="w-4 h-4 text-slate-500" />}
           />
           <KpiCard
-            label="Điểm nghẽn SLA toàn phễu"
+            label="Tồn đọng SLA"
             value={data.sla.totalBreaches}
-            subtext={`HR (>48h): ${data.sla.newBreachCount} • Manager (>72h): ${data.sla.screeningBreachCount}`}
-            icon={<AlertTriangle className="w-5 h-5 text-rose-600" />}
-            accent={data.sla.totalBreaches > 0 ? "rose" : "emerald"}
-            href="/admin/pipeline"
+            subtext={`HR: ${data.sla.newBreachCount} • Manager: ${data.sla.screeningBreachCount}`}
+            icon={<AlertTriangle className="w-4 h-4 text-slate-500" />}
+            highlight={data.sla.totalBreaches > 0 ? "danger" : "neutral"}
           />
           <KpiCard
-            label="Đã Tuyển chọn (Hired)"
+            label="Đã Tuyển chọn"
             value={data.funnel.HIRED}
-            subtext={`Tỷ lệ chuyển đổi: ${data.summary.hireRatePercent}% • ${data.funnel.INTERVIEW} đang PV`}
-            icon={<CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-            accent="emerald"
-            href="/admin/pipeline"
+            subtext={`Tỷ lệ: ${data.summary.hireRatePercent}% • ${data.funnel.INTERVIEW} đang PV`}
+            icon={<CheckCircle2 className="w-4 h-4 text-slate-500" />}
           />
           <KpiCard
-            label="Nhân sự nội bộ hoạt động"
+            label="Tài khoản hoạt động"
             value={data.adminStats?.activeUsers ?? 0}
             subtext={`HR: ${data.adminStats?.hrCount ?? 0} • HM: ${data.adminStats?.managerCount ?? 0} • Admin: ${data.adminStats?.adminCount ?? 0}`}
-            icon={<Users className="w-5 h-5 text-indigo-600" />}
-            accent="indigo"
-            href="/admin/users"
+            icon={<Users className="w-4 h-4 text-slate-500" />}
           />
         </div>
       )}
 
-      {/* TẦNG 2: PHỄU TUYỂN DỤNG 5 GIAI ĐOẠN (IN-SCOPE CORE OVERVIEW) */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <div>
-            <h2 className="text-base font-bold text-slate-900">
-              Tổng quan Phễu Tuyển dụng (5 Giai đoạn)
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Phân bổ hồ sơ theo thời gian thực từ Mới tiếp nhận đến Tuyển chọn / Từ chối
-            </p>
-          </div>
-          <Link
-            href="/admin/pipeline"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700"
-          >
-            Xem chi tiết trên Kanban
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+      {/* TẦNG 2: THANH PHỄU 5 GIAI ĐOẠN GỌN NHẸ */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <h2 className="font-bold text-slate-900">Phễu Tuyển Dụng (5 Giai Đoạn)</h2>
+          <span className="text-slate-400">Tổng: {data.funnel.total} hồ sơ</span>
         </div>
 
-        {/* Thanh phân bổ trực quan */}
-        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex mb-4">
+        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex">
           {data.funnel.total > 0 ? (
             STAGE_META.map((stage) => {
-              const count = data.funnel[stage.key];
-              const pct = (count / data.funnel.total) * 100;
+              const pct = (data.funnel[stage.key] / data.funnel.total) * 100;
               if (pct <= 0) return null;
               return (
                 <div
                   key={stage.key}
                   style={{ width: `${pct}%` }}
-                  className={`${stage.barColor} transition-all`}
-                  title={`${stage.label}: ${count} hồ sơ (${Math.round(pct)}%)`}
+                  className={stage.barColor}
+                  title={`${stage.label}: ${data.funnel[stage.key]}`}
                 />
               );
             })
@@ -555,425 +427,280 @@ export default function OperationalDashboard() {
           )}
         </div>
 
-        {/* 5 thẻ giai đoạn */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {STAGE_META.map((stage) => {
-            const count = data.funnel[stage.key];
-            const pct =
-              data.funnel.total > 0
-                ? Math.round((count / data.funnel.total) * 100)
-                : 0;
-            return (
-              <Link
-                key={stage.key}
-                href="/admin/pipeline"
-                className="group p-3.5 rounded-xl border border-slate-200 hover:border-brand-300 hover:bg-slate-50/70 transition-all"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-                    <span className={`w-2 h-2 rounded-full ${stage.dotColor}`} />
-                    {stage.label}
-                  </span>
-                  <span className="text-[11px] font-semibold text-slate-400">
-                    {pct}%
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-slate-900 mt-2 group-hover:text-brand-700 transition-colors">
-                  {count}
-                </p>
-              </Link>
-            );
-          })}
+        <div className="grid grid-cols-5 gap-2 pt-1">
+          {STAGE_META.map((stage) => (
+            <div key={stage.key} className="text-center sm:text-left">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+                <span className={`w-2 h-2 rounded-full ${stage.dotColor}`} />
+                <span className="truncate">{stage.label}</span>
+              </span>
+              <p className="text-lg font-bold text-slate-900 mt-0.5">
+                {data.funnel[stage.key]}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* TẦNG 3: KHU VỰC TÁC NGHIỆP PHÂN QUYỀN THEO TỪNG VAI TRÒ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* CỘT TRÁI (2/3): HÀNG ĐỢI CẦN XỬ LÝ NGAY */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* === HR ACTION QUEUE === */}
-          {data.role === "HR" && (
-            <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-              <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">
-                    Hàng đợi ưu tiên của HR (Vòng Mới tiếp nhận)
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Nhấp vào từng hồ sơ để kiểm tra 5 trường cốt lõi, sửa lỗi bóc tách CV hoặc chuyển sang Sàng lọc tiêu chuẩn
-                  </p>
-                </div>
-                <div className="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-                  <button
-                    onClick={() => setHrTab("UNVIEWED")}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      hrTab === "UNVIEWED"
-                        ? "bg-white text-brand-700 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Chưa xem ({data.hrUnviewedQueue?.length ?? 0})
-                  </button>
-                  <button
-                    onClick={() => setHrTab("SLA")}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      hrTab === "SLA"
-                        ? "bg-white text-rose-700 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Quá hạn SLA ({data.hrSlaBreachQueue?.length ?? 0})
-                  </button>
-                  <button
-                    onClick={() => setHrTab("ALL_NEW")}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      hrTab === "ALL_NEW"
-                        ? "bg-white text-slate-900 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Tất cả NEW ({data.hrRecentNewQueue?.length ?? 0})
-                  </button>
-                </div>
-              </div>
-
-              <CandidateQueueList
-                items={hrActiveList}
-                emptyMessage={
+      {/* TẦNG 3: KHU VỰC VIỆC CẦN LÀM NGAY THEO TỪNG ROLE */}
+      {data.role === "HR" && (
+        <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">
+                Hồ sơ cần HR xử lý (Vòng Mới nộp)
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Nhấp vào từng hồ sơ để xem chi tiết và chuyển sang Sàng lọc tiêu chuẩn
+              </p>
+            </div>
+            <div className="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-medium">
+              <button
+                onClick={() => setHrTab("UNVIEWED")}
+                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                   hrTab === "UNVIEWED"
-                    ? "Tuyệt vời! Bạn đã xem toàn bộ CV mới tiếp nhận."
-                    : hrTab === "SLA"
-                    ? "Không có hồ sơ nào vượt quá hạn SLA 48 giờ ở cột Mới tiếp nhận."
-                    : "Hiện chưa có hồ sơ nào trong cột Mới tiếp nhận."
-                }
-                actionLabel="Mở & Sơ loại"
-                onSelect={(id) => setSelectedAppId(id)}
-              />
-            </section>
-          )}
+                    ? "bg-white text-slate-900 font-semibold shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Chưa xem ({data.hrUnviewedQueue?.length ?? 0})
+              </button>
+              <button
+                onClick={() => setHrTab("SLA")}
+                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                  hrTab === "SLA"
+                    ? "bg-white text-rose-700 font-semibold shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Quá hạn SLA ({data.hrSlaBreachQueue?.length ?? 0})
+              </button>
+              <button
+                onClick={() => setHrTab("ALL_NEW")}
+                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                  hrTab === "ALL_NEW"
+                    ? "bg-white text-slate-900 font-semibold shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Tất cả NEW ({data.hrRecentNewQueue?.length ?? 0})
+              </button>
+            </div>
+          </div>
 
-          {/* === HIRING MANAGER ACTION QUEUE === */}
-          {data.role === "HIRING_MANAGER" && (
-            <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-              <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <MinimalQueueList
+            items={hrActiveList}
+            emptyMessage={
+              hrTab === "UNVIEWED"
+                ? "Bạn đã xem toàn bộ CV mới tiếp nhận."
+                : hrTab === "SLA"
+                ? "Không có hồ sơ nào vượt quá hạn SLA 48h."
+                : "Hiện chưa có hồ sơ nào ở vòng Mới nộp."
+            }
+            onSelect={(id) => setSelectedAppId(id)}
+          />
+        </section>
+      )}
+
+      {data.role === "HIRING_MANAGER" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <section className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">
+                  Hồ sơ chờ Hiring Manager quyết định
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Nhấp vào hồ sơ để duyệt Phỏng vấn hoặc chấm Scorecard trực tiếp
+                </p>
+              </div>
+              <div className="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-medium">
+                <button
+                  onClick={() => setHmTab("SCREENING")}
+                  className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                    hmTab === "SCREENING"
+                      ? "bg-white text-slate-900 font-semibold shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Chờ duyệt PV ({data.hmScreeningQueue?.length ?? 0})
+                </button>
+                <button
+                  onClick={() => setHmTab("SCORECARD")}
+                  className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                    hmTab === "SCORECARD"
+                      ? "bg-white text-rose-700 font-semibold shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Thiếu Scorecard ({data.hmMissingScorecardQueue?.length ?? 0})
+                </button>
+              </div>
+            </div>
+
+            <MinimalQueueList
+              items={hmActiveList}
+              emptyMessage={
+                hmTab === "SCREENING"
+                  ? "Không có hồ sơ nào đang chờ duyệt phỏng vấn."
+                  : "Tất cả ứng viên đang phỏng vấn đều đã có Scorecard."
+              }
+              onSelect={(id) => setSelectedAppId(id)}
+            />
+          </section>
+
+          <UpcomingInterviewsCard
+            items={data.upcomingInterviews || []}
+            onSelect={(id) => setSelectedAppId(id)}
+          />
+        </div>
+      )}
+
+      {data.role === "ADMIN" && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 space-y-5">
+            <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">
-                    Hàng đợi cần Hiring Manager quyết định
+                  <h2 className="text-sm font-bold text-slate-900">
+                    Hồ sơ tồn đọng quá hạn SLA (BRL-07)
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Duyệt ứng viên từ Sàng lọc vào Phỏng vấn hoặc hoàn tất Scorecard để đủ điều kiện Tuyển chọn (BRL-06)
+                    Cột NEW &gt; 48h hoặc SCREENING &gt; 72h
                   </p>
                 </div>
-                <div className="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-                  <button
-                    onClick={() => setHmTab("SCREENING")}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      hmTab === "SCREENING"
-                        ? "bg-white text-indigo-700 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Chờ duyệt PV ({data.hmScreeningQueue?.length ?? 0})
-                  </button>
-                  <button
-                    onClick={() => setHmTab("SCORECARD")}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      hmTab === "SCORECARD"
-                        ? "bg-white text-rose-700 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Thiếu Scorecard ({data.hmMissingScorecardQueue?.length ?? 0})
-                  </button>
-                </div>
-              </div>
-
-              <CandidateQueueList
-                items={hmActiveList}
-                emptyMessage={
-                  hmTab === "SCREENING"
-                    ? "Không có hồ sơ nào đang chờ duyệt phỏng vấn tại vòng Sàng lọc tiêu chuẩn."
-                    : "Tất cả ứng viên đang phỏng vấn đều đã có phiếu đánh giá Scorecard."
-                }
-                actionLabel={hmTab === "SCREENING" ? "Xem & Duyệt PV" : "Chấm Scorecard"}
-                onSelect={(id) => setSelectedAppId(id)}
-              />
-            </section>
-          )}
-
-          {/* === ADMIN CONTROL TOWER LEFT === */}
-          {data.role === "ADMIN" && (
-            <>
-              <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-                <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-bold text-slate-900">
-                      Cảnh báo Điểm nghẽn SLA Toàn phễu (BRL-07)
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Hồ sơ tồn đọng quá 48h ở cột NEW (trách nhiệm HR) hoặc quá 72h ở cột SCREENING (trách nhiệm Hiring Manager)
-                    </p>
-                  </div>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                    {data.sla.totalBreaches} quá hạn
-                  </span>
-                </div>
-
-                <CandidateQueueList
-                  items={data.slaBreachQueue || []}
-                  emptyMessage="Hệ thống đang vận hành đúng chuẩn SLA — chưa ghi nhận hồ sơ nào tồn đọng quá hạn."
-                  actionLabel="Kiểm tra hồ sơ"
-                  onSelect={(id) => setSelectedAppId(id)}
-                />
-              </section>
-
-              {/* Bảng tiến độ theo từng vị trí tuyển dụng */}
-              <ActiveJobsTable jobs={data.activeJobs} />
-            </>
-          )}
-
-          {/* Với HR & Hiring Manager, hiển thị bảng Vị trí đang tuyển phía dưới hàng đợi */}
-          {data.role !== "ADMIN" && <ActiveJobsTable jobs={data.activeJobs} />}
-        </div>
-
-        {/* CỘT PHẢI (1/3): PANEL CHUYÊN BIỆT THEO ROLE */}
-        <div className="space-y-6">
-          {/* LỊCH PHỎNG VẤN SẮP TỚI (Cho Hiring Manager & Admin) */}
-          {(data.role === "HIRING_MANAGER" || data.role === "ADMIN") && (
-            <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-amber-600" />
-                  Lịch phỏng vấn đã xếp
-                </h2>
-                <span className="text-xs font-semibold text-slate-500">
-                  {data.upcomingInterviews?.length ?? 0} lịch hẹn
+                <span className="text-xs font-semibold text-rose-700">
+                  {data.sla.totalBreaches} quá hạn
                 </span>
               </div>
 
-              {!data.upcomingInterviews || data.upcomingInterviews.length === 0 ? (
-                <div className="py-6 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  Chưa có lịch phỏng vấn nào được xếp ở cột Phỏng vấn.
+              <MinimalQueueList
+                items={data.slaBreachQueue || []}
+                emptyMessage="Chưa ghi nhận hồ sơ nào vượt quá hạn SLA."
+                onSelect={(id) => setSelectedAppId(id)}
+              />
+            </section>
+
+            {/* Tiến độ gọn theo Vị trí */}
+            <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-900">
+                  Tiến độ theo Vị trí đang tuyển
+                </h2>
+                <span className="text-xs text-slate-400">
+                  {data.activeJobs.length} vị trí
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
+                      <th className="py-2.5 px-4 font-semibold">Vị trí</th>
+                      <th className="py-2.5 px-2 font-semibold text-center">New</th>
+                      <th className="py-2.5 px-2 font-semibold text-center">Screen</th>
+                      <th className="py-2.5 px-2 font-semibold text-center">PV</th>
+                      <th className="py-2.5 px-2 font-semibold text-center">Hired</th>
+                      <th className="py-2.5 px-4 font-semibold text-right">Tổng</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {data.activeJobs.map((job) => (
+                      <tr key={job.id} className="hover:bg-slate-50/70">
+                        <td className="py-2.5 px-4 font-medium text-slate-900">
+                          {job.title}
+                        </td>
+                        <td className="py-2.5 px-2 text-center text-slate-600">{job.NEW}</td>
+                        <td className="py-2.5 px-2 text-center text-slate-600">{job.SCREENING}</td>
+                        <td className="py-2.5 px-2 text-center text-slate-600">{job.INTERVIEW}</td>
+                        <td className="py-2.5 px-2 text-center font-semibold text-emerald-700">
+                          {job.HIRED}
+                        </td>
+                        <td className="py-2.5 px-4 text-right font-bold text-slate-900">
+                          {job.total}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <div className="space-y-5">
+            {/* Cảnh báo lưu trữ 180 ngày (chỉ hiện nếu Admin) */}
+            {data.adminStats && (
+              <section className="bg-white border border-slate-200 rounded-2xl p-4 text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900">
+                    Lưu trữ 180 ngày (BRL-10)
+                  </span>
+                  <span
+                    className={`font-semibold ${
+                      data.adminStats.purgeEligibleCount > 0
+                        ? "text-amber-700"
+                        : "text-emerald-700"
+                    }`}
+                  >
+                    {data.adminStats.purgeEligibleCount} hồ sơ
+                  </span>
                 </div>
+                <p className="text-slate-500">
+                  {data.adminStats.purgeEligibleCount > 0
+                    ? "Có hồ sơ REJECTED quá 180 ngày cần rà soát tại Kho nhân tài."
+                    : "Chưa có hồ sơ bị từ chối nào vượt quá thời hạn 180 ngày."}
+                </p>
+                {data.adminStats.purgeEligibleCount > 0 && (
+                  <Link
+                    href="/admin/talent-pool"
+                    className="inline-block text-brand-600 font-semibold hover:underline"
+                  >
+                    Kiểm tra tại Kho nhân tài →
+                  </Link>
+                )}
+              </section>
+            )}
+
+            {/* Nhật ký kiểm toán gần nhất */}
+            <section className="bg-white border border-slate-200 rounded-2xl p-4">
+              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-3">
+                <History className="w-4 h-4 text-slate-400" />
+                Nhật ký gần nhất
+              </h2>
+
+              {!data.recentAuditLogs || data.recentAuditLogs.length === 0 ? (
+                <p className="text-xs text-slate-400 text-center py-4">
+                  Chưa có hoạt động nào.
+                </p>
               ) : (
-                <div className="space-y-2.5">
-                  {data.upcomingInterviews.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setSelectedAppId(item.id)}
-                      className="w-full text-left p-3 rounded-xl border border-slate-200 hover:border-brand-300 hover:bg-slate-50 transition-all"
+                <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                  {data.recentAuditLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      onClick={() => setSelectedAppId(log.applicationId)}
+                      className="pb-2.5 border-b border-slate-100 last:border-b-0 last:pb-0 text-xs cursor-pointer hover:bg-slate-50 rounded-lg p-1.5 -mx-1.5 transition-colors"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-semibold text-slate-900 truncate">
-                          {item.candidateName}
-                        </p>
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
-                          {item.interviewFormat === "OFFLINE" ? (
-                            <>
-                              <MapPin className="w-3 h-3" /> Offline
-                            </>
-                          ) : (
-                            <>
-                              <Video className="w-3 h-3" /> Online
-                            </>
-                          )}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-slate-800 truncate">
+                          {log.actorName}
+                        </span>
+                        <span className="text-[10px] text-slate-400 shrink-0">
+                          {formatDateTime(log.createdAt)}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-500 truncate mt-0.5">{item.jobTitle}</p>
-                      {item.interviewDate && (
-                        <p className="text-xs font-semibold text-brand-700 mt-1.5 flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {formatDateTime(item.interviewDate)}
-                        </p>
-                      )}
-                    </button>
+                      <p className="text-slate-600 mt-0.5 truncate">
+                        {ACTION_LABELS[log.action] || log.action} •{" "}
+                        <strong className="text-slate-800">{log.candidateName}</strong>
+                      </p>
+                    </div>
                   ))}
                 </div>
               )}
             </section>
-          )}
-
-          {/* KHUNG QUYỀN HẠN & LỐI TẮT CHO HR */}
-          {data.role === "HR" && (
-            <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-blue-600" />
-                Lối tắt tác nghiệp HR
-              </h2>
-
-              <div className="space-y-2">
-                <button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 hover:border-brand-300 hover:bg-brand-50/40 text-sm font-medium text-slate-700 transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <UserPlus className="w-4 h-4 text-brand-600" />
-                    Nạp CV nội bộ mới
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-slate-400" />
-                </button>
-                <Link
-                  href="/admin/talent-pool"
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 hover:border-brand-300 hover:bg-brand-50/40 text-sm font-medium text-slate-700 transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <Database className="w-4 h-4 text-indigo-600" />
-                    Tra cứu Kho Nhân tài
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-slate-400" />
-                </Link>
-                <a
-                  href="/api/export"
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-slate-200 hover:border-brand-300 hover:bg-brand-50/40 text-sm font-medium text-slate-700 transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                    Xuất danh sách ứng viên (CSV)
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-slate-400" />
-                </a>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 text-xs text-blue-900 space-y-1">
-                <p className="font-bold">Phạm vi thẩm quyền HR:</p>
-                <p className="text-blue-800/90 leading-relaxed">
-                  • Chỉnh sửa/chuẩn hóa 5 trường trích xuất CV nếu máy bóc sai.<br />
-                  • Luân chuyển hồ sơ tối đa đến vòng <strong>Sàng lọc tiêu chuẩn (SCREENING)</strong>.<br />
-                  • Vòng Phỏng vấn &amp; Tuyển chọn do Hiring Manager phụ trách.
-                </p>
-              </div>
-            </section>
-          )}
-
-          {/* KHUNG QUYỀN HẠN CHO HIRING MANAGER */}
-          {data.role === "HIRING_MANAGER" && (
-            <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-purple-600" />
-                Quy chuẩn phê duyệt Chuyên môn
-              </h2>
-              <div className="p-3.5 rounded-xl bg-purple-50/70 border border-purple-100 text-xs text-purple-900 space-y-1.5 leading-relaxed">
-                <p>
-                  • Duyệt chuyển hồ sơ từ <strong>SCREENING ➔ INTERVIEW</strong> và trực tiếp quản lý lịch phỏng vấn.
-                </p>
-                <p>
-                  • Bắt buộc hoàn tất <strong>Phiếu Scorecard đạt chuẩn (BRL-06)</strong> trước khi chốt <strong>HIRED</strong>.
-                </p>
-                <p>
-                  • Khi từ chối ứng viên, bắt buộc ghi rõ <strong>Lý do từ chối (BRL-11)</strong> để lưu Audit Log.
-                </p>
-              </div>
-            </section>
-          )}
-
-          {/* GIÁM SÁT QUẢN TRỊ & TUÂN THỦ (CHỈ ADMIN THẤY) */}
-          {data.role === "ADMIN" && data.adminStats && (
-            <>
-              <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3.5">
-                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  Quản trị &amp; Tuân thủ (Admin Only)
-                </h2>
-
-                <div
-                  className={`p-3.5 rounded-xl border text-xs ${
-                    data.adminStats.purgeEligibleCount > 0
-                      ? "bg-amber-50 border-amber-200 text-amber-900"
-                      : "bg-emerald-50 border-emerald-200 text-emerald-900"
-                  }`}
-                >
-                  <p className="font-bold">Lưu trữ dữ liệu 180 ngày (BRL-10 / NĐ 13)</p>
-                  <p className="mt-1">
-                    {data.adminStats.purgeEligibleCount > 0
-                      ? `Có ${data.adminStats.purgeEligibleCount} hồ sơ REJECTED đã quá 180 ngày cần rà soát xóa vĩnh viễn.`
-                      : "Không có hồ sơ REJECTED nào quá hạn lưu trữ 180 ngày."}
-                  </p>
-                  <Link
-                    href="/admin/talent-pool"
-                    className="inline-flex items-center gap-1 font-semibold underline mt-1.5"
-                  >
-                    Mở công cụ dọn dẹp BRL-10 <ArrowRight className="w-3 h-3" />
-                  </Link>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    href="/admin/users"
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700"
-                  >
-                    <Users className="w-3.5 h-3.5 text-brand-600" />
-                    Quản trị User
-                  </Link>
-                  <a
-                    href="/api/export"
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700"
-                  >
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-                    Xuất CSV
-                  </a>
-                </div>
-              </section>
-
-              {/* NHẬT KÝ KIỂM TOÁN GẦN NHẤT (CHỈ ADMIN THẤY) */}
-              <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <History className="w-4 h-4 text-slate-600" />
-                    Nhật ký kiểm toán mới nhất
-                  </h2>
-                  <span className="text-[11px] font-semibold text-slate-400">
-                    Audit Trail
-                  </span>
-                </div>
-
-                {!data.recentAuditLogs || data.recentAuditLogs.length === 0 ? (
-                  <p className="text-xs text-slate-500 text-center py-4">
-                    Chưa có nhật ký hoạt động nào.
-                  </p>
-                ) : (
-                  <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
-                    {data.recentAuditLogs.map((log) => (
-                      <div
-                        key={log.id}
-                        className="pb-3 border-b border-slate-100 last:border-b-0 last:pb-0 text-xs"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-semibold text-slate-900 truncate">
-                            {log.actorName}
-                          </span>
-                          <span className="text-[10px] text-slate-400 shrink-0">
-                            {formatDateTime(log.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-slate-600 mt-0.5">
-                          <span className="font-medium text-brand-700">
-                            {ACTION_LABELS[log.action] || log.action}
-                          </span>{" "}
-                          —{" "}
-                          <button
-                            onClick={() => setSelectedAppId(log.applicationId)}
-                            className="font-semibold text-slate-800 hover:text-brand-600 underline decoration-slate-300"
-                          >
-                            {log.candidateName}
-                          </button>
-                          {log.fromStage ? ` (${log.fromStage} → ${log.toStage})` : ` (${log.toStage})`}
-                        </p>
-                        {log.reason && (
-                          <p className="mt-1 text-[11px] text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-100 line-clamp-2">
-                            Ghi chú: {log.reason}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-            </>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* DRAWER CHI TIẾT HỒ SƠ (1-CLICK XỬ LÝ TRỰC TIẾP TỪ DASHBOARD) */}
+      {/* Drawer Chi tiết Hồ sơ (1-click từ mọi dòng trên Dashboard) */}
       {selectedAppId !== null && (
         <CandidateDrawer
           applicationId={selectedAppId}
@@ -984,16 +711,6 @@ export default function OperationalDashboard() {
           onStageChange={handleStageChange}
         />
       )}
-
-      {/* MODAL NẠP CV NHANH CHO HR & ADMIN */}
-      <AddCandidateModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSuccess={() => {
-          setIsAddModalOpen(false);
-          fetchDashboard();
-        }}
-      />
     </div>
   );
 }
@@ -1005,210 +722,153 @@ function KpiCard({
   value,
   subtext,
   icon,
-  accent,
-  href,
+  highlight = "neutral",
 }: {
   label: string;
   value: number;
   subtext: string;
   icon: React.ReactNode;
-  accent: "blue" | "indigo" | "amber" | "emerald" | "rose" | "slate";
-  href: string;
+  highlight?: "neutral" | "info" | "danger";
 }) {
-  const accentBg: Record<typeof accent, string> = {
-    blue: "bg-blue-50 border-blue-100",
-    indigo: "bg-indigo-50 border-indigo-100",
-    amber: "bg-amber-50 border-amber-100",
-    emerald: "bg-emerald-50 border-emerald-100",
-    rose: "bg-rose-50 border-rose-100",
-    slate: "bg-slate-50 border-slate-200",
-  };
+  const numClass =
+    highlight === "danger"
+      ? "text-rose-600"
+      : highlight === "info"
+      ? "text-brand-600"
+      : "text-slate-900";
 
   return (
-    <Link
-      href={href}
-      className="group bg-white border border-slate-200 hover:border-brand-300 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-          {label}
-        </span>
-        <div
-          className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${accentBg[accent]}`}
-        >
-          {icon}
-        </div>
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-slate-500">{label}</span>
+        {icon}
       </div>
-      <div className="mt-3">
-        <p className="text-3xl font-bold text-slate-900 tracking-tight group-hover:text-brand-700 transition-colors">
-          {value}
-        </p>
-        <p className="text-xs text-slate-500 mt-1 line-clamp-1">{subtext}</p>
-      </div>
-    </Link>
+      <p className={`text-2xl sm:text-3xl font-bold tracking-tight mt-2 ${numClass}`}>
+        {value}
+      </p>
+      <p className="text-[11px] text-slate-500 mt-1 truncate">{subtext}</p>
+    </div>
   );
 }
 
-function CandidateQueueList({
+function MinimalQueueList({
   items,
   emptyMessage,
-  actionLabel,
   onSelect,
 }: {
   items: QueueCandidateItem[];
   emptyMessage: string;
-  actionLabel: string;
   onSelect: (id: number) => void;
 }) {
   if (items.length === 0) {
     return (
-      <div className="p-10 text-center">
-        <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-        <p className="text-sm font-medium text-slate-700">{emptyMessage}</p>
+      <div className="p-8 text-center text-xs text-slate-500">
+        <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-1.5" />
+        <p>{emptyMessage}</p>
       </div>
     );
   }
 
   return (
     <div className="divide-y divide-slate-100">
-      {items.map((item) => (
-        <div
-          key={item.id}
-          onClick={() => onSelect(item.id)}
-          className="p-4 sm:px-5 hover:bg-slate-50/80 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-        >
-          <div className="min-w-0 space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-semibold text-sm text-slate-900 truncate">
-                {item.candidateName}
-              </span>
-              {item.isStarred && (
-                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
-              )}
-              {item.currentStage === "NEW" && !item.isViewed && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                  Mới chưa xem
+      {items.map((item) => {
+        const tier = getAiMatchTier(item.aiMatchScore);
+        return (
+          <div
+            key={item.id}
+            onClick={() => onSelect(item.id)}
+            className="px-5 py-3.5 hover:bg-slate-50/90 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
+          >
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                {item.currentStage === "NEW" && !item.isViewed && (
+                  <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+                )}
+                <span className="font-semibold text-sm text-slate-900 truncate group-hover:text-brand-600 transition-colors">
+                  {item.candidateName}
                 </span>
-              )}
-              {item.isSlaBreached && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 inline-flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  {item.slaMessage}
-                </span>
-              )}
-              {item.aiMatchScore !== null && (() => {
-                const tier = getAiMatchTier(item.aiMatchScore);
-                return (
-                  <span
-                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.badgeClass}`}
-                    title={tier.recommendation}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${tier.dotClass}`} />
-                    AI {tier.score}% • {tier.shortLabel}
+                {item.isStarred && (
+                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
+                )}
+                {item.isSlaBreached && (
+                  <span className="text-[11px] font-medium text-rose-600 shrink-0">
+                    • {item.slaMessage}
                   </span>
-                );
-              })()}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-              <span className="font-medium text-slate-700">{item.jobTitle}</span>
-              <span>•</span>
-              <span>{item.email}</span>
-              <span>•</span>
-              <span>{item.experienceYears} năm KN</span>
-            </div>
-
-            {item.skills.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-0.5">
-                {item.skills.slice(0, 4).map((skill, idx) => (
-                  <span
-                    key={idx}
-                    className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium"
-                  >
-                    {skill}
-                  </span>
-                ))}
+                )}
               </div>
-            )}
-          </div>
+              <p className="text-xs text-slate-500 truncate mt-0.5">
+                {item.jobTitle} • {item.experienceYears} năm kinh nghiệm
+              </p>
+            </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg inline-flex items-center gap-1 transition-colors">
-              {actionLabel}
-              <ArrowRight className="w-3.5 h-3.5" />
-            </span>
+            <div className="flex items-center gap-2.5 shrink-0">
+              {tier.score !== null && (
+                <span
+                  className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${tier.badgeClass}`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${tier.dotClass}`} />
+                  {tier.score}%
+                </span>
+              )}
+              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-600 transition-colors" />
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-function ActiveJobsTable({ jobs }: { jobs: JobBreakdownItem[] }) {
+function UpcomingInterviewsCard({
+  items,
+  onSelect,
+}: {
+  items: QueueCandidateItem[];
+  onSelect: (id: number) => void;
+}) {
   return (
-    <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-      <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold text-slate-900">
-            Tiến độ theo Vị trí đang tuyển dụng
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Số lượng ứng viên hiện tại theo từng vị trí đang mở
-          </p>
-        </div>
-        <Link
-          href="/admin/jobs"
-          className="text-xs font-semibold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1"
-        >
-          Quản lý tin tuyển dụng <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+    <section className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 h-fit">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-bold text-slate-900">Lịch phỏng vấn sắp tới</h2>
+        <span className="text-xs text-slate-400">{items.length}</span>
       </div>
 
-      {jobs.length === 0 ? (
-        <div className="p-8 text-center text-sm text-slate-500">
-          Chưa có vị trí tuyển dụng nào đang mở.
-        </div>
+      {items.length === 0 ? (
+        <p className="text-xs text-slate-400 text-center py-6">
+          Chưa có lịch phỏng vấn nào được xếp.
+        </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
-                <th className="py-3 px-4 font-semibold">Vị trí tuyển dụng</th>
-                <th className="py-3 px-2 font-semibold text-center">New</th>
-                <th className="py-3 px-2 font-semibold text-center">Screening</th>
-                <th className="py-3 px-2 font-semibold text-center">Interview</th>
-                <th className="py-3 px-2 font-semibold text-center">Hired</th>
-                <th className="py-3 px-3 font-semibold text-right">Tổng</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {jobs.map((job) => (
-                <tr key={job.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3 px-4">
-                    <p className="font-semibold text-slate-900 text-sm">{job.title}</p>
-                    <p className="text-[11px] text-slate-500">
-                      {job.department} • {job.location}
-                    </p>
-                  </td>
-                  <td className="py-3 px-2 text-center font-semibold text-blue-700">
-                    {job.NEW}
-                  </td>
-                  <td className="py-3 px-2 text-center font-semibold text-indigo-700">
-                    {job.SCREENING}
-                  </td>
-                  <td className="py-3 px-2 text-center font-semibold text-amber-700">
-                    {job.INTERVIEW}
-                  </td>
-                  <td className="py-3 px-2 text-center font-semibold text-emerald-700">
-                    {job.HIRED}
-                  </td>
-                  <td className="py-3 px-3 text-right font-bold text-slate-900">
-                    {job.total}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {items.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onSelect(item.id)}
+              className="w-full text-left p-3 rounded-xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-900 truncate">
+                  {item.candidateName}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 shrink-0">
+                  {item.interviewFormat === "OFFLINE" ? (
+                    <>
+                      <MapPin className="w-3 h-3" /> Offline
+                    </>
+                  ) : (
+                    <>
+                      <Video className="w-3 h-3" /> Online
+                    </>
+                  )}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 truncate mt-0.5">{item.jobTitle}</p>
+              {item.interviewDate && (
+                <p className="text-[11px] font-semibold text-brand-700 mt-1">
+                  {formatDateTime(item.interviewDate)}
+                </p>
+              )}
+            </button>
+          ))}
         </div>
       )}
     </section>

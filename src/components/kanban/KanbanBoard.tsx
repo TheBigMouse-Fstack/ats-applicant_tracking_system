@@ -414,20 +414,19 @@ export default function KanbanBoard() {
 
   return (
     <div className="flex flex-col h-full space-y-5">
-      {/* 1. Header Toolbar & Bộ lọc */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* 1. Header & Thanh công cụ tinh gọn (Single-row Toolbar) */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-              <Layers className="w-7 h-7 text-brand-600" />
-              Quy Trình Tuyển Dụng
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Pipeline Tuyển Dụng
             </h1>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-0.5">
               {currentUser?.role === "HR"
-                ? "Phạm vi HR: Tiếp nhận, chuẩn hóa hồ sơ và chuyển tối đa đến vòng Sàng lọc tiêu chuẩn."
+                ? "Phạm vi HR: Sơ loại hồ sơ mới và chuyển tối đa đến Sàng lọc tiêu chuẩn."
                 : currentUser?.role === "HIRING_MANAGER"
-                ? "Phạm vi Quản lý chuyên môn: Duyệt Phỏng vấn từ vòng Sàng lọc, đánh giá Scorecard và quyết định Tuyển chọn."
-                : "Theo dõi và quản lý hồ sơ ứng viên qua các giai đoạn tuyển dụng."}
+                ? "Phạm vi Hiring Manager: Duyệt Phỏng vấn từ vòng Sàng lọc, đánh giá và quyết định Tuyển chọn."
+                : "Theo dõi và luân chuyển hồ sơ ứng viên qua 5 giai đoạn."}
             </p>
           </div>
 
@@ -435,155 +434,92 @@ export default function KanbanBoard() {
             {currentUser?.role !== "HIRING_MANAGER" && (
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 shadow-sm transition-all cursor-pointer"
-                title="Tiếp nhận CV từ nguồn LinkedIn, Referral hoặc săn ngoài"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-white bg-brand-600 hover:bg-brand-700 transition-colors cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>+ Tiếp nhận CV mới</span>
+                <span>Tiếp nhận CV</span>
               </button>
             )}
-
-            <button
-              onClick={() => fetchPipeline()}
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all border border-slate-200 cursor-pointer"
-              title="Làm mới bảng"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 ${loading ? "animate-spin text-brand-600" : ""}`}
-              />
-              <span>Làm mới</span>
-            </button>
           </div>
         </div>
 
-        {/* Bộ lọc Job & Ô tìm kiếm */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 pt-3 border-t border-slate-100">
-          {/* Lọc theo Vị trí tuyển dụng */}
-          <div className="md:col-span-4">
-            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-              <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-              Vị trí tuyển dụng
-            </label>
-            <select
-              value={selectedJobId}
-              onChange={(e) => setSelectedJobId(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-            >
-              <option value="ALL">Tất cả vị trí tuyển dụng ({jobs.length})</option>
-              {jobs.map((job) => (
-                <option key={job.id} value={String(job.id)}>
-                  {job.title} — {job.department} ({job._count.applications} ứng viên)
-                </option>
-              ))}
-            </select>
+        {/* Thanh tìm kiếm & lọc gọn trên 1 hàng */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2.5 pt-3 border-t border-slate-100 text-xs">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm tên, email hoặc kỹ năng..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2 pl-8 pr-8 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* Ô tìm kiếm ứng viên */}
-          <div className="md:col-span-6">
-            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-              <Search className="w-3.5 h-3.5 text-slate-400" />
-              Tìm kiếm ứng viên
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Nhập tên ứng viên, email hoặc kỹ năng..."
-                className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-8 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
+          <select
+            value={selectedJobId}
+            onChange={(e) => setSelectedJobId(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all lg:w-64"
+          >
+            <option value="ALL">Tất cả vị trí ({jobs.length})</option>
+            {jobs.map((job) => (
+              <option key={job.id} value={String(job.id)}>
+                {job.title} ({job._count.applications})
+              </option>
+            ))}
+          </select>
 
-          {/* Thống kê nhanh tổng quan */}
-          <div className="md:col-span-2 flex items-end">
-            <div className="w-full bg-brand-50/70 border border-brand-100 rounded-xl px-3 py-2 text-center">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-brand-600">
-                Tổng hồ sơ
-              </div>
-              <div className="text-xl font-black text-brand-900 leading-tight">
-                {stats.total || 0}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Hàng 2: Bộ lọc nhanh & Sắp xếp thẻ Kanban */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
-          {/* Quick Filter Pills */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-slate-400 font-semibold mr-1">Bộ lọc nhanh:</span>
-            <button
-              type="button"
-              onClick={() => {
-                setShowStarredOnly(false);
-                setShowUnviewedOnly(false);
-              }}
-              className={`px-3 py-1 rounded-xl font-bold transition-all cursor-pointer ${
-                !showStarredOnly && !showUnviewedOnly
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              Tất cả ({stats.total || 0})
-            </button>
             <button
               type="button"
               onClick={() => {
                 setShowStarredOnly(!showStarredOnly);
                 setShowUnviewedOnly(false);
               }}
-              className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
+              className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl font-medium transition-colors cursor-pointer border ${
                 showStarredOnly
-                  ? "bg-amber-500 text-white border-amber-600 shadow-xs"
-                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
               }`}
             >
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <span>Chỉ xem gắn sao</span>
+              <Star className={`w-3.5 h-3.5 ${showStarredOnly ? "fill-amber-400 text-amber-400" : "text-slate-400"}`} />
+              <span>Gắn sao</span>
             </button>
+
             <button
               type="button"
               onClick={() => {
                 setShowUnviewedOnly(!showUnviewedOnly);
                 setShowStarredOnly(false);
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium transition-colors cursor-pointer border ${
                 showUnviewedOnly
-                  ? "bg-blue-600 text-white border-blue-700 shadow-xs"
-                  : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              <span>Chưa xử lý ({columns.NEW?.filter((c: any) => !c.isViewed).length || 0})</span>
+              <span>Chưa xem ({columns.NEW?.filter((c: any) => !c.isViewed).length || 0})</span>
             </button>
-          </div>
 
-          {/* Sắp xếp thẻ (Sort Dropdown) */}
-          <div className="flex items-center gap-2 shrink-0">
-            <label className="font-semibold text-slate-500 flex items-center gap-1">
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-              <span>Sắp xếp:</span>
-            </label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50/70 py-1.5 px-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all cursor-pointer text-xs"
+              className="rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all cursor-pointer"
             >
-              <option value="NEWEST">🕒 Mới nhất</option>
-              <option value="OLDEST">⏳ Cũ nhất</option>
-              <option value="UNVIEWED_FIRST">🔔 Chưa xem lên đầu</option>
-              <option value="STARRED_FIRST">⭐ Được gắn sao lên đầu</option>
-              <option value="UNEVALUATED_FIRST">📝 Chưa đánh giá lên đầu</option>
+              <option value="NEWEST">Mới nhất</option>
+              <option value="OLDEST">Cũ nhất</option>
+              <option value="UNVIEWED_FIRST">Chưa xem trước</option>
+              <option value="STARRED_FIRST">Gắn sao trước</option>
+              <option value="UNEVALUATED_FIRST">Chưa đánh giá</option>
             </select>
           </div>
         </div>

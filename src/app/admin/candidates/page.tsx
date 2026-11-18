@@ -1,28 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
-  Users,
   Search,
-  Filter,
   Download,
   RefreshCw,
-  Briefcase,
-  FileText,
-  Eye,
-  Award,
-  Image as ImageIcon,
   UserPlus,
   Star,
   CheckCircle2,
   X,
-  ExternalLink,
   ChevronRight,
-  Clock,
-  Building2,
-  Calendar,
-  ArrowUpDown,
 } from "lucide-react";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
@@ -34,47 +21,56 @@ interface JobOption {
   department: string;
 }
 
+const STAGE_STYLES: Record<string, { label: string; cls: string }> = {
+  NEW: { label: "Mới nộp", cls: "bg-blue-50 text-blue-700 border-blue-200" },
+  SCREENING: { label: "Sàng lọc", cls: "bg-indigo-50 text-indigo-700 border-indigo-200" },
+  INTERVIEW: { label: "Phỏng vấn", cls: "bg-amber-50 text-amber-800 border-amber-200" },
+  HIRED: { label: "Tuyển chọn", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  REJECTED: { label: "Từ chối", cls: "bg-rose-50 text-rose-700 border-rose-200" },
+};
+
+/**
+ * Trang Danh sách Ứng viên (Overview-Only Table):
+ * Chỉ hiển thị đúng 5 nhóm thông tin tổng quan cốt lõi:
+ * 1. Ứng viên (Tên, Email, trạng thái chưa xem/sao)
+ * 2. Vị trí & Kinh nghiệm
+ * 3. Kỹ năng chính (tối đa 3 tag)
+ * 4. Đánh giá AI (%)
+ * 5. Trạng thái vòng tuyển
+ * Toàn bộ thông tin chi tiết (SĐT, nguồn tiếp nhận, bằng cấp, CV gốc, Scorecard, lịch sử) được gộp gọn trong Drawer khi nhấp vào dòng.
+ */
 export default function CandidatesListPage() {
+  const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Bộ lọc & Sắp xếp
   const [search, setSearch] = useState("");
   const [selectedJobId, setSelectedJobId] = useState("ALL");
   const [selectedStage, setSelectedStage] = useState("ALL");
-  const [selectedSource, setSelectedSource] = useState("ALL");
   const [sortBy, setSortBy] = useState<string>("NEWEST");
-  const [quickFilter, setQuickFilter] = useState<string>("ALL"); // ALL, STARRED, UNVIEWED, UNEVALUATED
+  const [quickFilter, setQuickFilter] = useState<"ALL" | "STARRED" | "UNVIEWED">("ALL");
 
-  // Drawer & Modal State
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-  // Quick PDF Preview Modal
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
-  const [pdfPreviewTitle, setPdfPreviewTitle] = useState<string>("");
-
-  // Lightbox Preview Image
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [imagePreviewTitle, setImagePreviewTitle] = useState<string>("");
-
   const [notice, setNotice] = useState<string | null>(null);
 
-  // Tải danh sách Jobs cho bộ lọc
-  const fetchJobs = async () => {
-    try {
-      const res = await fetch("/api/jobs");
-      const data = await res.json();
-      if (data.success) {
-        setJobs(data.data || []);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((d) => {
+        if (d.success && d.user) setCurrentUser(d.user);
+      })
+      .catch(() => {});
 
-  // Tải danh sách Ứng viên
+    fetch("/api/jobs")
+      .then((res) => res.json())
+      .then((d) => {
+        if (d.success) setJobs(d.data || []);
+      })
+      .catch(() => {});
+  }, []);
+
   const fetchCandidates = useCallback(async () => {
     try {
       setLoading(true);
@@ -82,11 +78,9 @@ export default function CandidatesListPage() {
       if (search.trim()) params.append("search", search.trim());
       if (selectedJobId !== "ALL") params.append("jobId", selectedJobId);
       if (selectedStage !== "ALL") params.append("stage", selectedStage);
-      if (selectedSource !== "ALL") params.append("source", selectedSource);
       if (sortBy !== "NEWEST") params.append("sortBy", sortBy);
       if (quickFilter === "STARRED") params.append("starred", "true");
       if (quickFilter === "UNVIEWED") params.append("unviewed", "true");
-      if (quickFilter === "UNEVALUATED") params.append("unevaluated", "true");
 
       const res = await fetch(`/api/applications?${params.toString()}`);
       const data = await res.json();
@@ -98,320 +92,227 @@ export default function CandidatesListPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, selectedJobId, selectedStage, selectedSource, sortBy, quickFilter]);
+  }, [search, selectedJobId, selectedStage, sortBy, quickFilter]);
 
-  // Xử lý bật/tắt gắn sao hồ sơ (Star như Gmail)
-  const handleToggleStar = async (appId: number) => {
+  useEffect(() => {
+    fetchCandidates();
+  }, [fetchCandidates]);
+
+  const handleToggleStar = async (appId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     setCandidates((prev) =>
       prev.map((c) => (c.id === appId ? { ...c, isStarred: !c.isStarred } : c))
     );
     try {
       const res = await fetch(`/api/applications/${appId}/star`, { method: "POST" });
       const data = await res.json();
-      if (!data.success) {
-        fetchCandidates();
-      }
+      if (!data.success) fetchCandidates();
     } catch {
       fetchCandidates();
     }
   };
 
-  useEffect(() => {
-    fetchJobs();
-    fetchCandidates();
-  }, [fetchCandidates]);
-
-  const getSourceBadge = (source: string) => {
-    switch (source) {
-      case "LINKEDIN":
-        return { label: "LinkedIn Sourcing", bg: "bg-sky-50 text-sky-700 border-sky-200" };
-      case "REFERRAL":
-        return { label: "Giới thiệu nội bộ", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" };
-      case "HEADHUNTER":
-        return { label: "Đối tác săn đầu người", bg: "bg-purple-50 text-purple-700 border-purple-200" };
-      case "DIRECT_EMAIL":
-        return { label: "Email trực tiếp", bg: "bg-amber-50 text-amber-700 border-amber-200" };
-      default:
-        return { label: "Cổng tuyển dụng", bg: "bg-slate-100 text-slate-700 border-slate-200" };
+  const handleStageChange = async (
+    appId: number,
+    toStage: string,
+    rejectionReason?: string
+  ): Promise<boolean | string> => {
+    try {
+      const res = await fetch("/api/pipeline/move", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId: appId, toStage, rejectionReason }),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        return result.error || "Không thể cập nhật trạng thái";
+      }
+      await fetchCandidates();
+      return true;
+    } catch {
+      return "Lỗi kết nối máy chủ khi cập nhật trạng thái";
     }
   };
 
-  const getStageBadge = (stage: string) => {
-    switch (stage) {
-      case "NEW":
-        return { label: "Mới nộp", bg: "bg-blue-100 text-blue-800" };
-      case "SCREENING":
-        return { label: "Sàng lọc", bg: "bg-indigo-100 text-indigo-800" };
-      case "INTERVIEW":
-        return { label: "Phỏng vấn", bg: "bg-amber-100 text-amber-800" };
-      case "HIRED":
-        return { label: "Tuyển chọn", bg: "bg-emerald-100 text-emerald-800" };
-      case "REJECTED":
-        return { label: "Từ chối", bg: "bg-rose-100 text-rose-800" };
-      default:
-        return { label: stage, bg: "bg-slate-100 text-slate-800" };
-    }
-  };
+  const canUploadOrExport = currentUser?.role !== "HIRING_MANAGER";
 
   return (
-    <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* 1. Header Toolbar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold border border-brand-200 mb-1.5">
-            <Users className="w-3.5 h-3.5" />
-            Danh Sách Hồ Sơ Toàn Hệ Thống
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+      {/* 1. Header & Thanh công cụ lọc 1 hàng */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+              Danh Sách Ứng Viên
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Hiển thị {candidates.length} hồ sơ &bull; Nhấp vào từng dòng để mở hồ sơ chi tiết, CV gốc, phiếu đánh giá và nhật ký
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Quản Lý Hồ Sơ Ứng Viên & Xem Trực Quan CV
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Tra cứu toàn bộ hồ sơ, xem trực tiếp file CV PDF gốc, kiểm tra bằng cấp đính kèm và tiếp nhận CV từ các kênh bên ngoài.
-          </p>
+
+          {canUploadOrExport && (
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href="/api/export"
+                download
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-500" />
+                <span>Xuất CSV</span>
+              </a>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Tiếp nhận CV</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Nút Tiếp nhận CV mới */}
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md shadow-brand-500/20 hover:shadow-lg transition-all cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>+ Tiếp Nhận CV Mới</span>
-          </button>
-
-          {/* Xuất CSV */}
-          <a
-            href="/api/export"
-            download
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 hover:shadow-lg transition-all"
-          >
-            <Download className="w-4 h-4" />
-            <span>Xuất CSV</span>
-          </a>
-
-          {/* Làm mới */}
-          <button
-            onClick={() => fetchCandidates()}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-bold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer"
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${loading ? "animate-spin text-brand-600" : ""}`}
+        {/* Thanh tìm kiếm & lọc gọn 1 hàng */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2.5 pt-3 border-t border-slate-100 text-xs">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm tên, email hoặc kỹ năng (VD: Java, React, BA)..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2 pl-8 pr-8 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all"
             />
-            <span>Làm mới</span>
-          </button>
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <select
+            value={selectedJobId}
+            onChange={(e) => setSelectedJobId(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all lg:w-56"
+          >
+            <option value="ALL">Tất cả vị trí ({jobs.length})</option>
+            {jobs.map((job) => (
+              <option key={job.id} value={String(job.id)}>
+                {job.title}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedStage}
+            onChange={(e) => setSelectedStage(e.target.value)}
+            className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all lg:w-40"
+          >
+            <option value="ALL">Tất cả giai đoạn</option>
+            <option value="NEW">Mới nộp</option>
+            <option value="SCREENING">Sàng lọc</option>
+            <option value="INTERVIEW">Phỏng vấn</option>
+            <option value="HIRED">Tuyển chọn</option>
+            <option value="REJECTED">Từ chối</option>
+          </select>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() =>
+                setQuickFilter(quickFilter === "STARRED" ? "ALL" : "STARRED")
+              }
+              className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl font-medium transition-colors cursor-pointer border ${
+                quickFilter === "STARRED"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <Star
+                className={`w-3.5 h-3.5 ${
+                  quickFilter === "STARRED"
+                    ? "fill-amber-400 text-amber-400"
+                    : "text-slate-400"
+                }`}
+              />
+              <span>Gắn sao</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setQuickFilter(quickFilter === "UNVIEWED" ? "ALL" : "UNVIEWED")
+              }
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium transition-colors cursor-pointer border ${
+                quickFilter === "UNVIEWED"
+                  ? "bg-slate-900 text-white border-slate-900"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span>Chưa xem</span>
+            </button>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all cursor-pointer"
+            >
+              <option value="NEWEST">Mới nhất</option>
+              <option value="OLDEST">Cũ nhất</option>
+              <option value="UNVIEWED_FIRST">Chưa xem trước</option>
+              <option value="STARRED_FIRST">Gắn sao trước</option>
+              <option value="NAME_ASC">Tên (A - Z)</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Thông báo Notice */}
+      {/* Thông báo */}
       {notice && (
-        <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-4 text-emerald-900 shadow-sm flex items-start justify-between gap-3 animate-in fade-in">
-          <div className="flex items-center gap-2 text-xs font-semibold">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-emerald-900 flex items-center justify-between gap-3 text-xs font-medium">
+          <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{notice}</span>
           </div>
-          <button onClick={() => setNotice(null)} className="text-emerald-500 hover:text-emerald-800">
+          <button
+            onClick={() => setNotice(null)}
+            className="text-emerald-600 hover:text-emerald-800"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* 2. Bộ Lọc Đa Tiêu Chí & Sắp Xếp */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-        {/* Hàng 1: Tìm kiếm & Các dropdown phân loại */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3">
-          {/* Ô tìm kiếm */}
-          <div className="md:col-span-4">
-            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-              <Search className="w-3.5 h-3.5 text-slate-400" />
-              Tìm kiếm ứng viên
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Nhập tên, email hoặc kỹ năng..."
-                className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-3 pr-8 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Lọc theo Vị trí tuyển dụng */}
-          <div className="md:col-span-3">
-            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-              <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-              Vị trí tuyển dụng
-            </label>
-            <select
-              value={selectedJobId}
-              onChange={(e) => setSelectedJobId(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-            >
-              <option value="ALL">Tất cả vị trí ({jobs.length})</option>
-              {jobs.map((job) => (
-                <option key={job.id} value={String(job.id)}>
-                  {job.title} — {job.department}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Lọc theo Vòng tuyển dụng */}
-          <div className="md:col-span-3">
-            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
-              Vòng tuyển dụng
-            </label>
-            <select
-              value={selectedStage}
-              onChange={(e) => setSelectedStage(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-            >
-              <option value="ALL">Tất cả các vòng</option>
-              <option value="NEW">Mới nộp</option>
-              <option value="SCREENING">Sàng lọc</option>
-              <option value="INTERVIEW">Phỏng vấn</option>
-              <option value="HIRED">Tuyển chọn</option>
-              <option value="REJECTED">Từ chối</option>
-            </select>
-          </div>
-
-          {/* Lọc theo Nguồn ứng viên */}
-          <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              Nguồn tiếp nhận
-            </label>
-            <select
-              value={selectedSource}
-              onChange={(e) => setSelectedSource(e.target.value)}
-              className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-            >
-              <option value="ALL">Tất cả nguồn</option>
-              <option value="LINKEDIN">LinkedIn Sourcing</option>
-              <option value="REFERRAL">Giới thiệu nội bộ</option>
-              <option value="HEADHUNTER">Agency / Headhunter</option>
-              <option value="CAREER_SITE">Cổng tuyển dụng</option>
-              <option value="DIRECT_EMAIL">Email trực tiếp</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Hàng 2: Sắp Xếp (Sort) & Quick Filter Pills */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
-          {/* Quick Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-slate-400 font-semibold mr-1">Bộ lọc nhanh:</span>
-            <button
-              type="button"
-              onClick={() => setQuickFilter("ALL")}
-              className={`px-3 py-1 rounded-xl font-bold transition-all cursor-pointer ${
-                quickFilter === "ALL"
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              Tất cả ({candidates.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setQuickFilter(quickFilter === "STARRED" ? "ALL" : "STARRED")}
-              className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
-                quickFilter === "STARRED"
-                  ? "bg-amber-500 text-white border-amber-600 shadow-xs"
-                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-              }`}
-            >
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <span>Đã gắn sao ({candidates.filter((c) => c.isStarred).length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setQuickFilter(quickFilter === "UNVIEWED" ? "ALL" : "UNVIEWED")}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
-                quickFilter === "UNVIEWED"
-                  ? "bg-blue-600 text-white border-blue-700 shadow-xs"
-                  : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              <span>Chưa xem ({candidates.filter((c) => !c.isViewed).length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setQuickFilter(quickFilter === "UNEVALUATED" ? "ALL" : "UNEVALUATED")}
-              className={`inline-flex items-center gap-1 px-3 py-1 rounded-xl font-bold transition-all cursor-pointer border ${
-                quickFilter === "UNEVALUATED"
-                  ? "bg-purple-600 text-white border-purple-700 shadow-xs"
-                  : "bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100"
-              }`}
-            >
-              <span>Chưa đánh giá ({candidates.filter((c) => !c.evaluations || c.evaluations.length === 0).length})</span>
-            </button>
-          </div>
-
-          {/* Sắp xếp danh sách (Sort Dropdown) */}
-          <div className="flex items-center gap-2 shrink-0">
-            <label className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-              <span>Sắp xếp:</span>
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="text-xs rounded-xl border border-slate-200 bg-slate-50/70 py-1.5 px-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all cursor-pointer"
-            >
-              <option value="NEWEST">🕒 Mới nhất (Thời gian nộp)</option>
-              <option value="OLDEST">⏳ Cũ nhất</option>
-              <option value="UNVIEWED_FIRST">🔔 Chưa xem lên đầu</option>
-              <option value="STARRED_FIRST">⭐ Được gắn sao lên đầu</option>
-              <option value="UNEVALUATED_FIRST">📝 Chưa có đánh giá lên đầu</option>
-              <option value="NAME_ASC">🔤 Tên ứng viên (A - Z)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Bảng Danh Sách Ứng Viên */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
+      {/* 2. Bảng Tổng quan 5 cột cốt lõi (Bấm vào dòng để mở Drawer Chi tiết) */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-3 w-10 text-center">
-                  <Star className="w-3.5 h-3.5 mx-auto text-amber-500 fill-amber-500" />
-                </th>
-                <th className="py-3.5 px-4">Ứng viên & Nguồn</th>
-                <th className="py-3.5 px-4">Vị trí ứng tuyển</th>
-                <th className="py-3.5 px-4">Kỹ năng trích xuất</th>
-                <th className="py-3.5 px-4 text-center">Bằng cấp & Chứng chỉ</th>
-                <th className="py-3.5 px-4 text-center">Đánh giá phỏng vấn</th>
-                <th className="py-3.5 px-4 text-center">Giai đoạn</th>
-                <th className="py-3.5 px-4 text-right">Xem CV / Thao tác</th>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                <th className="py-3 px-3 w-10 text-center" />
+                <th className="py-3 px-4">Ứng viên</th>
+                <th className="py-3 px-4">Vị trí &amp; Kinh nghiệm</th>
+                <th className="py-3 px-4">Kỹ năng trích xuất</th>
+                <th className="py-3 px-4 text-center">AI Đánh giá</th>
+                <th className="py-3 px-4 text-center">Trạng thái</th>
+                <th className="py-3 px-3 w-8" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-brand-600" />
-                    Đang nạp danh sách hồ sơ ứng viên...
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-brand-600" />
+                    Đang tải danh sách ứng viên...
                   </td>
                 </tr>
               ) : candidates.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    Không tìm thấy ứng viên nào phù hợp với bộ lọc hiện tại.
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                    Không tìm thấy ứng viên phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
               ) : (
@@ -424,208 +325,117 @@ export default function CandidatesListPage() {
                     skills = [];
                   }
 
-                  let certs: any[] = [];
-                  try {
-                    certs = JSON.parse(candidate?.certificates || "[]");
-                  } catch {
-                    certs = [];
-                  }
-
-                  const sourceBadge = getSourceBadge(app.source || "CAREER_SITE");
-                  const stageBadge = getStageBadge(app.currentStage);
-                  const hasScorecard = app.evaluations && app.evaluations.length > 0;
-                  const isNewStage = app.currentStage === "NEW";
-                  const isUnviewedNew = isNewStage && !app.isViewed;
+                  const stageInfo = STAGE_STYLES[app.currentStage] || {
+                    label: app.currentStage,
+                    cls: "bg-slate-100 text-slate-700 border-slate-200",
+                  };
+                  const matchTier = getAiMatchTier(app.aiMatchScore);
+                  const isUnviewedNew = app.currentStage === "NEW" && !app.isViewed;
 
                   return (
                     <tr
                       key={app.id}
-                      className={`transition-colors group ${
-                        isUnviewedNew
-                          ? "bg-blue-50/50 hover:bg-blue-50/80 border-l-4 border-l-blue-600"
-                          : app.isStarred
-                          ? "bg-amber-50/25 hover:bg-amber-50/50 border-l-4 border-l-amber-400"
-                          : "hover:bg-slate-50/70"
-                      }`}
+                      onClick={() => setSelectedAppId(app.id)}
+                      className="hover:bg-slate-50/90 transition-colors cursor-pointer group"
                     >
-                      {/* Cột Gắn sao ⭐ (Gmail style) */}
+                      {/* Sao */}
                       <td className="py-3.5 px-3 text-center">
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleStar(app.id);
-                          }}
-                          title={app.isStarred ? "Bỏ gắn sao" : "Gắn sao hồ sơ đặc biệt"}
-                          className="p-1.5 rounded-lg text-slate-300 hover:text-amber-400 hover:bg-amber-50 transition-all cursor-pointer inline-flex items-center justify-center"
+                          onClick={(e) => handleToggleStar(app.id, e)}
+                          title={app.isStarred ? "Bỏ gắn sao" : "Gắn sao ưu tiên"}
+                          className="p-1 rounded text-slate-300 hover:text-amber-400 transition-colors cursor-pointer"
                         >
                           <Star
-                            className={`w-4 h-4 transition-transform ${
+                            className={`w-4 h-4 ${
                               app.isStarred
-                                ? "fill-amber-400 text-amber-400 scale-110 drop-shadow-2xs"
-                                : "text-slate-300 hover:text-amber-400 hover:scale-110"
+                                ? "fill-amber-400 text-amber-400"
+                                : "text-slate-300 hover:text-amber-400"
                             }`}
                           />
                         </button>
                       </td>
 
-                      {/* Ứng viên & Nguồn */}
+                      {/* 1. Ứng viên (Tên + Email + chấm xanh tĩnh nếu chưa xem) */}
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedAppId(app.id)}
-                            className="hover:text-brand-600 transition-colors text-left"
+                        <div className="flex items-center gap-2">
+                          {isUnviewedNew && (
+                            <span
+                              className="w-2 h-2 rounded-full bg-blue-600 shrink-0"
+                              title="Hồ sơ mới chưa xem"
+                            />
+                          )}
+                          <span
+                            className={`text-sm group-hover:text-brand-600 transition-colors ${
+                              isUnviewedNew
+                                ? "font-bold text-slate-900"
+                                : "font-semibold text-slate-800"
+                            }`}
                           >
                             {candidate?.fullName}
-                          </button>
-
-                          {/* Đánh sáng cho CV ở stage NEW chưa xem */}
-                          {isUnviewedNew ? (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-700 border border-blue-300 shadow-2xs animate-pulse">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
-                              <span>Mới • Chưa xem</span>
-                            </span>
-                          ) : isNewStage ? (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                              Đã xem
-                            </span>
-                          ) : null}
-
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${sourceBadge.bg}`}
-                          >
-                            {sourceBadge.label}
                           </span>
-
-                          {app.aiMatchScore !== null && app.aiMatchScore !== undefined && (() => {
-                            const tier = getAiMatchTier(app.aiMatchScore);
-                            return (
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${tier.badgeClass}`}
-                                title={`${tier.label}: ${tier.recommendation}`}
-                              >
-                                <span className={`w-1.5 h-1.5 rounded-full ${tier.dotClass}`} />
-                                AI {tier.score}%
-                              </span>
-                            );
-                          })()}
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          {candidate?.email} &bull; {candidate?.phone}
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          KN: {candidate?.experienceYears > 0 ? `${candidate.experienceYears} năm` : "Mới tốt nghiệp"} &bull; Nộp: {new Date(app.createdAt).toLocaleDateString("vi-VN")}
-                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5 truncate max-w-xs">
+                          {candidate?.email}
+                        </p>
                       </td>
 
-                      {/* Vị trí */}
+                      {/* 2. Vị trí & Kinh nghiệm */}
                       <td className="py-3.5 px-4">
-                        <span className="font-bold text-slate-900">
-                          {app.job?.title}
-                        </span>
-                        <div className="text-[11px] text-slate-500">
-                          {app.job?.department}
-                        </div>
+                        <p className="font-semibold text-slate-900">{app.job?.title}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          {candidate?.experienceYears > 0
+                            ? `${candidate.experienceYears} năm kinh nghiệm`
+                            : "Dưới 1 năm kinh nghiệm"}
+                        </p>
                       </td>
 
-                      {/* Kỹ năng */}
+                      {/* 3. Kỹ năng trích xuất (tối đa 3 tag gọn) */}
                       <td className="py-3.5 px-4 max-w-xs">
                         <div className="flex flex-wrap gap-1">
                           {skills.slice(0, 3).map((sk) => (
                             <span
                               key={sk}
-                              className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200"
+                              className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700"
                             >
                               {sk}
                             </span>
                           ))}
                           {skills.length > 3 && (
-                            <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-50 text-slate-400">
+                            <span className="px-1.5 py-0.5 text-[11px] font-medium text-slate-400">
                               +{skills.length - 3}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* Bằng cấp & Chứng chỉ */}
+                      {/* 4. AI Đánh giá (%) */}
                       <td className="py-3.5 px-4 text-center">
-                        {certs.length > 0 ? (
-                          <div className="inline-flex items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                              <Award className="w-3.5 h-3.5 text-purple-600" />
-                              <span>{certs.length} tệp</span>
-                            </span>
-                            {/* Nút xem nhanh ảnh đầu tiên nếu có */}
-                            {certs[0]?.fileUrl && (certs[0]?.fileType === "image" || /\.(jpg|jpeg|png|webp)$/i.test(certs[0]?.fileUrl)) && (
-                              <button
-                                onClick={() => {
-                                  setImagePreviewUrl(certs[0].fileUrl);
-                                  setImagePreviewTitle(certs[0].name || "Chứng chỉ ứng viên");
-                                }}
-                                className="p-1 rounded-lg text-purple-600 hover:bg-purple-100 transition-colors"
-                                title="Xem ảnh chứng chỉ ngay"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 text-xs">—</span>
-                        )}
-                      </td>
-
-                      {/* Scorecard */}
-                      <td className="py-3.5 px-4 text-center">
-                        {hasScorecard ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                            {app.evaluations[0]?.overallScore?.toFixed(1) || "5.0"}/5★
+                        {matchTier.score !== null ? (
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${matchTier.badgeClass}`}
+                            title={matchTier.recommendation}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${matchTier.dotClass}`} />
+                            {matchTier.score}%
                           </span>
                         ) : (
-                          <span className="text-slate-400 text-xs">Chưa đánh giá</span>
+                          <span className="text-slate-400">—</span>
                         )}
                       </td>
 
-                      {/* Giai đoạn (Stage) */}
+                      {/* 5. Trạng thái */}
                       <td className="py-3.5 px-4 text-center">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${stageBadge.bg}`}
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${stageInfo.cls}`}
                         >
-                          {stageBadge.label}
+                          {stageInfo.label}
                         </span>
                       </td>
 
-                      {/* Thao tác: Xem PDF & Mở Drawer */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Nút Xem PDF Trực Tiếp */}
-                          {candidate?.cvFileUrl ? (
-                            <button
-                              onClick={() => {
-                                setPdfPreviewUrl(candidate.cvFileUrl);
-                                setPdfPreviewTitle(`${candidate.fullName} — CV Gốc`);
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold border border-red-200 transition-all cursor-pointer"
-                              title="Xem trực tiếp bản PDF gốc ngay trên màn hình"
-                            >
-                              <FileText className="w-3.5 h-3.5 text-red-600" />
-                              <span>Xem PDF</span>
-                            </button>
-                          ) : (
-                            <span className="text-slate-300 text-xs italic">Không có PDF</span>
-                          )}
-
-                          {/* Nút Chi Tiết Hồ Sơ */}
-                          <button
-                            onClick={() => setSelectedAppId(app.id)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-700 text-xs font-bold border border-slate-200 transition-all cursor-pointer"
-                            title="Mở Drawer chi tiết hồ sơ & đối chiếu"
-                          >
-                            <span>Chi tiết</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                      {/* Mũi tên mở chi tiết */}
+                      <td className="py-3.5 px-3 text-right">
+                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-600 transition-colors inline-block" />
                       </td>
                     </tr>
                   );
@@ -636,151 +446,29 @@ export default function CandidatesListPage() {
         </div>
       </div>
 
-      {/* 4. Quick PDF Viewer Modal (Xem trực tiếp bản PDF gốc không rời trang) */}
-      {pdfPreviewUrl && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
-          onClick={() => setPdfPreviewUrl(null)}
-        >
-          <div
-            className="bg-white rounded-3xl max-w-4xl w-full h-[90vh] shadow-2xl border border-slate-200 overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header Toolbar */}
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-bold">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm truncate max-w-md">
-                    {pdfPreviewTitle}
-                  </h3>
-                  <p className="text-[11px] text-slate-400">Trình xem trước tài liệu PDF trực quan</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <a
-                  href={pdfPreviewUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-200 border border-slate-300 transition-all"
-                  title="Mở trong tab mới"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Mở tab mới</span>
-                </a>
-                <a
-                  href={pdfPreviewUrl}
-                  download
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs transition-all"
-                  title="Tải tệp PDF về máy tính"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Tải về</span>
-                </a>
-                <button
-                  onClick={() => setPdfPreviewUrl(null)}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors ml-1"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Embedded Iframe */}
-            <div className="flex-1 bg-slate-100 p-2">
-              <iframe
-                src={`${pdfPreviewUrl}#toolbar=1&navpanes=0&scrollbar=1`}
-                className="w-full h-full rounded-2xl border-none shadow-sm"
-                title={pdfPreviewTitle}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Lightbox Xem Ảnh Bằng Cấp / Chứng Chỉ */}
-      {imagePreviewUrl && (
-        <div
-          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-in fade-in"
-          onClick={() => setImagePreviewUrl(null)}
-        >
-          <div
-            className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700 flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-3.5 bg-slate-800 text-white border-b border-slate-700">
-              <span className="text-xs font-bold truncate max-w-md">{imagePreviewTitle}</span>
-              <div className="flex items-center gap-2">
-                <a
-                  href={imagePreviewUrl}
-                  download
-                  className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-                  title="Tải ảnh về máy"
-                >
-                  <Download className="w-4 h-4" />
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setImagePreviewUrl(null)}
-                  className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
-                  title="Đóng"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            <div className="p-2 flex items-center justify-center max-h-[80vh] overflow-auto">
-              <img
-                src={imagePreviewUrl}
-                alt={imagePreviewTitle}
-                className="max-h-[75vh] w-auto object-contain rounded-lg shadow-lg"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 6. Candidate Drawer (Slide-over chi tiết) */}
-      <CandidateDrawer
-        applicationId={selectedAppId}
-        onClose={() => {
-          setSelectedAppId(null);
-          fetchCandidates();
-        }}
-        onStageChange={async (appId, toStage, rejectionReason) => {
-          try {
-            const res = await fetch("/api/pipeline/move", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ applicationId: appId, toStage, rejectionReason }),
-            });
-            const data = await res.json();
-            if (!res.ok || !data.success) {
-              return data.error || "Không thể chuyển trạng thái";
-            }
+      {/* Drawer Chi tiết Hồ sơ (Tất cả thông tin chi tiết, CV gốc, Chứng chỉ, JD, Scorecard, Nhật ký nằm tại đây) */}
+      {selectedAppId !== null && (
+        <CandidateDrawer
+          applicationId={selectedAppId}
+          onClose={() => {
+            setSelectedAppId(null);
             fetchCandidates();
-            setNotice(`Đã chuyển ứng viên sang trạng thái ${toStage}!`);
-            return true;
-          } catch (e: any) {
-            return e.message || "Lỗi chuyển giai đoạn";
-          }
-        }}
-      />
+          }}
+          onStageChange={handleStageChange}
+        />
+      )}
 
-      {/* 7. Modal Tiếp Nhận CV Mới Nội Bộ */}
+      {/* Modal Tiếp nhận CV mới */}
       <AddCandidateModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={() => {
+          setIsAddModalOpen(false);
+          setNotice("Đã tiếp nhận hồ sơ ứng viên mới và phân tích dữ liệu thành công.");
           fetchCandidates();
-          setNotice("Tiếp nhận hồ sơ ứng viên mới thành công!");
+          setTimeout(() => setNotice(null), 5000);
         }}
-        defaultJobId={selectedJobId !== "ALL" ? Number(selectedJobId) : null}
       />
     </div>
   );
 }
-
