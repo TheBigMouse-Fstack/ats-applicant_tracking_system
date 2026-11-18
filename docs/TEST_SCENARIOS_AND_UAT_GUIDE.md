@@ -1,8 +1,38 @@
+---
+id: "UAT-ATS-18"
+title: "Kịch bản Kiểm thử Thực hành UAT & Đối chiếu 97 Test Tự động"
+type: "test-suite"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "uat"
+  - "test-cases"
+  - "qa"
+  - "rtm"
+upstream_deps:
+  - "UC-ATS-05"
+  - "BR-ERR-17"
+  - "API-ATS-15"
+downstream_deps:
+  []
+last_updated: "2026-11-18"
+---
+
 # BẢNG TÌNH HUỐNG KIỂM THỬ THỰC HÀNH TOÀN DIỆN (FULL UAT TEST SCENARIOS GUIDE)
 ## Dự án: ReCoverX Career — Hệ thống Quản trị Tuyển dụng ATS
 
 > **Dành cho:** Sinh viên / Chuyên viên Phân tích Nghiệp vụ (ITBA) tự kiểm tra và diễn tập thuyết trình Demo.  
 > **Mục tiêu:** Từng bước thao tác thực tế trên giao diện để kiểm chứng 100% các Use Case (UC-00 đến UC-07) và các Quy tắc Nghiệp vụ cốt lõi (**BRL-01 đến BRL-10**).
+
+---
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 

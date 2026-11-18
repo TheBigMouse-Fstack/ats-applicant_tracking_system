@@ -1,7 +1,34 @@
+---
+id: "UIUX-ATS-11"
+title: "Quy chuẩn Thiết kế UI/UX & Xử lý Lỗi Biểu mẫu"
+type: "spec"
+version: "2.0.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "ui-ux"
+  - "validation"
+  - "enterprise-design"
+upstream_deps:
+  - "FDD-ATS-04"
+downstream_deps:
+  - "GUIDE-TECH-09"
+last_updated: "2026-11-18"
+---
+
 # QUY CHUẨN THIẾT KẾ UI/UX & XỬ LÝ LỖI BIỂU MẪU (UI/UX & FORM VALIDATION GUIDELINES)
 
 > **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
 > **Mục tiêu:** Thiết lập bộ tiêu chuẩn bắt buộc cho toàn bộ giao diện Frontend, ngăn chặn triệt để các lỗi trải nghiệm người dùng như: không đánh dấu đỏ ô nhập sai, thông báo lỗi chung chung mập mờ, không rõ lý do trùng lặp dữ liệu.
+
+---
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.0.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 

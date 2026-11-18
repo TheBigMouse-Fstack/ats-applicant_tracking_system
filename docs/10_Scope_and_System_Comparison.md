@@ -1,7 +1,35 @@
+---
+id: "SCOPE-ATS-10"
+title: "Phạm vi Dự án (In/Out-of-Scope) & Đối chiếu Hệ thống Mẫu"
+type: "brd"
+version: "2.0.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "scope"
+  - "benchmark"
+  - "base-ehiring"
+  - "greenhouse"
+upstream_deps:
+  - "BRD-ATS-01"
+downstream_deps:
+  - "EXP-ATS-14"
+last_updated: "2026-11-18"
+---
+
 # TÀI LIỆU PHẠM VI DỰ ÁN & ĐỐI CHIẾU HỆ THỐNG MẪU (SCOPE & BENCHMARK COMPARISON)
 
 > **Dự án:** ReCoverX Career — Hệ thống Quản lý Tuyển dụng (ATS)  
 > **Mục tiêu tài liệu:** Làm rõ phạm vi Làm (In-Scope) / Không làm (Out-of-Scope), xác định rõ hệ thống đang clone theo, phân tích điểm khác biệt, ưu thế vượt trội (Điểm HƠN) và các giới hạn chấp nhận được (Điểm KÉM).
+
+---
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.0.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 

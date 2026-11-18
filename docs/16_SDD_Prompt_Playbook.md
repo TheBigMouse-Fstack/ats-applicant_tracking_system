@@ -1,7 +1,34 @@
+---
+id: "SDD-PLAY-16"
+title: "Sổ tay Mẫu Prompt Chuẩn Spec-Driven Development (SDD)"
+type: "guide"
+version: "1.0.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "sdd"
+  - "prompt-engineering"
+  - "ba-workflow"
+upstream_deps:
+  - "IDX-ATS-00"
+downstream_deps:
+  []
+last_updated: "2026-11-18"
+---
+
 # SỔ TAY MẪU PROMPT CHUẨN SPEC-DRIVEN DEVELOPMENT (SDD PROMPT PLAYBOOK)
 
 > **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
 > **Mục tiêu:** Cung cấp bộ mẫu Prompt chuẩn mực theo phương pháp **Spec-Driven Development (SDD)** để mỗi lần thêm tính năng, thay đổi nghiệp vụ, chỉnh sửa phân quyền hay sửa lỗi, AI luôn hiểu đúng 100%, không tự suy diễn sai lệch và giữ đồng bộ tuyệt đối giữa **Tài liệu (`docs/`) ➔ Mã nguồn (`src/`) ➔ Kiểm thử (`tests/`)**.
+
+---
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v1.0.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 

@@ -1,602 +1,246 @@
-# THI?T K? C? S? D? LI?U & S? ?? TH?C TH? (ERD)
+---
+id: "ERD-ATS-07"
+title: "Thiết kế Cơ sở Dữ liệu, Sơ đồ ERD & Từ điển Dữ liệu 10 Cột Chuẩn PII/Masking"
+type: "diagram"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA & Backend Team"
+domain: "recruitment-ats"
+tags:
+  - "erd"
+  - "data-dictionary"
+  - "prisma-schema"
+  - "pii-masking"
+upstream_deps:
+  - "BRD-ATS-01"
+  - "FDD-ATS-04"
+downstream_deps:
+  - "API-ATS-15"
+  - "BR-ERR-17"
+last_updated: "2026-11-18"
+---
 
-> **D? ?n:** ReCoverX Career - ATS
-> **H? qu?n tr? CSDL ?? xu?t:** PostgreSQL
+# THIẾT KẾ CƠ SỞ DỮ LIỆU, SƠ ĐỒ ERD & TỪ ĐIỂN DỮ LIỆU CHUẨN 10 CỘT
+
+> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
+> **ORM & DBMS:** Prisma ORM (`prisma/schema.prisma`) — SQLite (`file:./dev.db`) trên môi trường phát triển, PostgreSQL trên môi trường sản xuất.  
+> **Tiêu chuẩn biên soạn:** Universal BA Toolkit (`RULE-09` — Từ điển dữ liệu 10 cột & Data Masking Nghị định 13/2023/NĐ-CP, `RULE-18`, `RULE-19`).
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Người Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v1.0.0` | 2026-11-12 | BA Team | **Initial** | Thiết kế 6 bảng cốt lõi (`users`, `jobs`, `candidates`, `applications`, `evaluations`, `audit_logs`). | Tech Lead |
+| `v2.0.0` | 2026-11-15 | BA & Dev Team | **Added** | Bổ sung `certificates`, `isStarred`, `isViewed`, `interview*` (6 trường vòng đời phỏng vấn) và 7 trường Deep Scorecard trong `evaluations`. | Tech Lead |
+| `v2.1.0` | 2026-11-18 | BA & Dev Team | **Changed** | Bổ sung `Application.rejectionReason` (`BRL-11`) và `AuditLog.reason`; nâng cấp toàn bộ Từ điển dữ liệu lên chuẩn **10 cột (`RULE-09`)** có phân cấp bảo mật `PII`/`Restricted` và quy tắc che giấu. | Product Owner & Tech Lead |
 
 ---
 
-## 1. Quy?t ??nh ki?n tr?c d? li?u & Data Dictionary (T? ?i?n d? li?u)
+## 1. QUYẾT ĐỊNH KIẾN TRÚC DỮ LIỆU (DATA DESIGN DECISIONS)
 
-Dưới đây là toàn bộ thiết kế cho **Mục 7: Quyết định thiết kế dữ liệu** và **Mục 8: Data Dictionary (Từ điển dữ liệu)** cho hệ thống **ReCoverX Career (ATS)**:
-
----
-
-# MỤC 7: QUYẾT ĐỊNH THIẾT KẾ DỮ LIỆU (DATA DESIGN DECISIONS)
-
-### 1. Lựa chọn Hệ quản trị Cơ sở dữ liệu (DBMS)
-* **Quyết định:** Sử dụng **Hệ quản trị CSDL quan hệ PostgreSQL (RDBMS)**.
-* **Lý do kỹ thuật & nghiệp vụ:**
-  * **Tính toàn vẹn dữ liệu (ACID):** Đảm bảo an toàn tuyệt đối khi luân chuyển trạng thái Kanban và cập nhật lịch sử Audit Log.
-  * **Hỗ trợ kiểu dữ liệu `JSONB`:** Dữ liệu kỹ năng và học vấn do AI bóc tách từ CV rất đa dạng và không cố định số lượng. PostgreSQL hỗ trợ lưu trữ và truy vấn `JSONB` cực nhanh.
-  * **Full-text Search:** Tích hợp sẵn tính năng tìm kiếm văn bản toàn diện để phục vụ tính năng tìm kiếm nâng cao theo từ khóa chuyên môn (BR-04, FR-11) với thời gian phản hồi `< 3 giây`.
-
-### 2. Kiến trúc lưu trữ Tệp tin (File Storage)
-* **Quyết định:** Tách biệt hoàn toàn tệp tin CV khỏi Cơ sở dữ liệu.
-  * **Tệp CV gốc (.pdf, .doc, .docx):** Lưu trữ trên dịch vụ đám mây chuyên dụng **Object Storage (AWS S3 / MinIO / Cloudflare R2)**.
-  * **Cơ sở dữ liệu:** Chỉ lưu trữ đường dẫn tệp (`cv_file_url`) và các trường văn bản đã bóc tách.
-* **Lý do:** Tránh phình to dung lượng CSDL (Database Bloat), tăng tốc độ sao lưu/phục hồi (Backup & Recovery).
-
-### 3. Chiến lược Khử trùng lặp (Deduplication Strategy)
-* Thiết lập chỉ mục duy nhất kết hợp (**Composite Unique Index**) trên 2 trường `email` và `phone` của bảng `candidates`.
-* Tạo bảng `applications` riêng biệt liên kết với `candidates`: Một ứng viên chỉ tồn tại 1 lần trong CSDL, nhưng có thể nộp nhiều đơn ứng tuyển (`applications`) cho các vị trí khác nhau.
-
-### 4. Chiến lược Vòng đời dữ liệu (Data Retention & Purging)
-* Áp dụng **Soft Delete (Xóa mềm)** qua cờ `is_deleted` và `deleted_at` cho các thao tác hàng ngày của HR.
-* Thiết lập **Tác vụ quét ngầm (Cron Job hàng đêm)**: Tự động tìm các hồ sơ ở trạng thái `REJECTED` có thời gian lưu trữ trong Kho nhân tài `> 06 tháng` để thực hiện **Hard Delete (Xóa vĩnh viễn)** cả dữ liệu CSDL lẫn tệp CV trên S3 (tuân thủ quy tắc BRL-10).
+1. **Tính toàn vẹn giao dịch (ACID Transactions):** Mọi thao tác luân chuyển trạng thái (`POST /api/pipeline/move`), chỉnh sửa hồ sơ (`PATCH /api/applications/[id]/profile`), xếp/hủy lịch phỏng vấn đều chạy trong `prisma.$transaction([...])` để cập nhật đồng thời bảng nghiệp vụ và `audit_logs`.
+2. **Tách biệt tệp tin nhị phân (File Storage Decoupling):** Tệp CV (`.pdf`, `.docx`) và ảnh chứng chỉ lưu tại thư mục lưu trữ tệp (`/public/uploads/` trên dev, Object Storage S3/R2 trên production); CSDL chỉ lưu đường dẫn `cvFileUrl` và mảng JSON `certificates`.
+3. **Khử trùng lặp bằng Composite Unique Key (`BRL-02`):** Bảng `candidates` đặt khóa duy nhất kết hợp `@@unique([email, phone])`. Một ứng viên chỉ tồn tại 1 bản ghi `Candidate` nhưng có thể liên kết nhiều `Application` ở các vị trí khác nhau (truy vết lịch sử ứng tuyển chéo).
+4. **Bảo vệ dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP & `BRL-10`):** Phân loại rõ 4 cấp độ bảo mật (`Public`, `Internal`, `Confidential - PII`, `Restricted`); `ADMIN` thực thi Hard Delete hồ sơ `REJECTED` quá 180 ngày (`onDelete: Cascade`).
 
 ---
 
-# SƠ ĐỒ THỰC THỂ QUAN HỆ (ERD - ENTITY RELATIONSHIP DIAGRAM)
+## 2. SƠ ĐỒ THỰC THỂ QUAN HỆ (ERD — MERMAID)
 
 ```mermaid
 erDiagram
     USERS ||--o{ JOBS : "tạo_và_quản_lý"
     USERS ||--o{ EVALUATIONS : "chấm_điểm"
     USERS ||--o{ AUDIT_LOGS : "thực_hiện"
-    
+
     JOBS ||--o{ APPLICATIONS : "tiếp_nhận"
     CANDIDATES ||--o{ APPLICATIONS : "nộp_đơn"
-    
+
     APPLICATIONS ||--o{ EVALUATIONS : "được_đánh_giá"
     APPLICATIONS ||--o{ AUDIT_LOGS : "lưu_vết"
 
     USERS {
-        int user_id PK
-        string full_name
+        int id PK
+        string fullName
         string email UK
-        string password_hash
+        string passwordHash
         string role "ADMIN | HR | HIRING_MANAGER"
-        boolean is_active
+        boolean isActive
+        datetime createdAt
     }
 
     JOBS {
-        int job_id PK
-        int creator_id FK
+        int id PK
+        int creatorId FK
         string title
         string department
-        text requirements_jd
-        int min_experience_years
-        jsonb required_skills
+        string location
+        string employmentType
+        string requirementsJd
+        int minExperienceYears
+        string requiredSkills "JSON array"
         string status "ACTIVE | CLOSED"
-        timestamp created_at
+        datetime createdAt
     }
 
     CANDIDATES {
-        int candidate_id PK
-        string full_name
-        string email UK
-        string phone UK
-        int experience_years
-        jsonb parsed_skills
-        jsonb parsed_education
-        jsonb parsed_experience
-        jsonb certificates
-        string cv_file_url
-        text cv_text
-        timestamp created_at
+        int id PK
+        string fullName
+        string email UK "Composite UK (email, phone)"
+        string phone UK "Composite UK (email, phone)"
+        int experienceYears
+        string parsedSkills "JSON array"
+        string parsedEducation "JSON array"
+        string parsedExperience "JSON array"
+        string certificates "JSON array"
+        string cvFileUrl
+        string cvText
+        datetime createdAt
     }
 
     APPLICATIONS {
-        int application_id PK
-        int candidate_id FK
-        int job_id FK
-        string current_stage "NEW | SCREENING | INTERVIEW | HIRED | REJECTED"
-        boolean is_starred "Gmail-style Star"
-        boolean is_viewed "Đã xem sơ bộ"
-        timestamp viewed_at
-        float ai_match_score
-        string ai_reject_reason
-        timestamp interview_date
-        string interview_format "ONLINE | OFFLINE"
-        text interview_location
-        text interview_notes
-        text interview_interviewer_notes
-        text interview_post_notes
-        timestamp stage_updated_at
-        timestamp email_scheduled_at
-        boolean is_email_sent
+        int id PK
+        int candidateId FK
+        int jobId FK
+        string source "CAREER_SITE | LINKEDIN | REFERRAL | HEADHUNTER"
+        string currentStage "NEW | SCREENING | INTERVIEW | HIRED | REJECTED"
+        float aiMatchScore
+        string aiMatchRationale
+        string aiMatchedSkills "JSON array"
+        string aiMissingSkills "JSON array"
+        datetime stageUpdatedAt
+        datetime emailScheduledAt "BRL-05 +12h delay"
+        boolean isEmailSent
+        int repooledFromId
+        boolean isStarred
+        boolean isViewed
+        datetime viewedAt
+        datetime interviewDate
+        string interviewFormat "ONLINE | OFFLINE"
+        string interviewLocation
+        string interviewNotes
+        string interviewInterviewerNotes
+        string interviewPostNotes
+        string rejectionReason "BRL-11 Mandatory when REJECTED"
+        datetime createdAt
     }
 
     EVALUATIONS {
-        int evaluation_id PK
-        int application_id FK
-        int evaluator_id FK
-        string round "Vòng 1 | Vòng 2 | Vòng Tổng hợp"
-        string level_recommendation "TRAINEE | JUNIOR | MIDDLE | SENIOR | LEAD"
-        int technical_score "1 - 5"
-        int communication_score "1 - 5"
-        int cultural_fit_score "1 - 5"
-        float overall_score "Weighted 40% - 30% - 30%"
-        text strengths "Căn cứ tuyển dụng / Điểm mạnh"
-        text weaknesses "Điểm cần lưu ý & đào tạo"
-        text technical_notes
-        text communication_notes
-        text culture_notes
-        text hire_reason "Kết luận Giám khảo"
-        text comments
+        int id PK
+        int applicationId FK
+        int evaluatorId FK
+        string round
+        int technicalScore "1-5 (40%)"
+        int communicationScore "1-5 (30%)"
+        int culturalFitScore "1-5 (30%)"
+        float overallScore "Weighted 5.0"
         string recommendation "STRONG_HIRE | HIRE | NO_HIRE | STRONG_NO_HIRE"
-        timestamp created_at
+        string levelRecommendation "TRAINEE | JUNIOR | MIDDLE | SENIOR | LEAD"
+        string strengths
+        string weaknesses
+        string technicalNotes
+        string communicationNotes
+        string cultureNotes
+        string hireReason
+        string comments
+        datetime createdAt
     }
 
     AUDIT_LOGS {
-        int log_id PK
-        int application_id FK
-        int user_id FK
-        string from_stage
-        string to_stage
-        string action
-        timestamp created_at
+        int id PK
+        int applicationId FK
+        int userId FK
+        string fromStage
+        string toStage
+        string action "STAGE_CHANGE | PROFILE_EDITED | SCORECARD_EVALUATE | ..."
+        string reason "Lý do từ chối hoặc chi tiết chỉnh sửa"
+        datetime createdAt
     }
 ```
 
 ---
 
-# MỤC 8: DATA DICTIONARY (TỪ ĐIỂN DỮ LIỆU CHI TIẾT)
+## 3. TỪ ĐIỂN DỮ LIỆU CHUẨN 10 CỘT (DATA DICTIONARY — RULE-09)
 
-Dưới đây là từ điển chi tiết từng thuộc tính của **6 bảng cốt lõi** trong hệ thống:
+### Bảng 1: `users` (Tài khoản Nội bộ)
 
-### 1. Bảng `users` (Tài khoản người dùng nội bộ)
-> Quản lý danh tính và phân quyền của Admin, HR và Quản lý chuyên môn.
-
-| Tên trường (Column) | Kiểu dữ liệu | Khóa | Ràng buộc | Giá trị mặc định | Mô tả ý nghĩa nghiệp vụ |
-| :--- | :--- | :---: | :--- | :--- | :--- |
-| `user_id` | SERIAL | **PK** | NOT NULL | Tự tăng | Khóa chính định danh người dùng. |
-| `full_name` | VARCHAR(100) | | NOT NULL | | Họ và tên người dùng. |
-| `email` | VARCHAR(150) | | NOT NULL, UNIQUE | | Địa chỉ email đăng nhập hệ thống. |
-| `password_hash`| VARCHAR(255) | | NOT NULL | | Mật khẩu đã được mã hóa (BCrypt/Argon2). |
-| `role` | VARCHAR(20) | | NOT NULL | `'HR'` | Vai trò: `ADMIN`, `HR`, `HIRING_MANAGER`. |
-| `is_active` | BOOLEAN | | NOT NULL | `TRUE` | Trạng thái tài khoản (Đang hoạt động / Khóa). |
-| `created_at` | TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm tạo tài khoản. |
+| Tên Thuộc Tính | Cột DB (`Prisma`) | Kiểu Dữ Liệu | Nullability | Key | Mặc Định | Ràng Buộc Validation | Mức Độ Nhạy Cảm | Quy Tắc Che Giấu | Mô Tả Nghiệp Vụ |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: | :--- | :--- |
+| Mã người dùng | `id` | `INT` (Autoincrement) | NOT NULL | PK | Auto | Số nguyên dương | Internal | Không che | Khóa chính định danh nhân viên nội bộ. |
+| Họ và tên | `fullName` | `VARCHAR(150)` | NOT NULL | - | None | ≥ 2 ký tự | Internal | Không che | Tên hiển thị trên Scorecard và AuditLog. |
+| Email đăng nhập | `email` | `VARCHAR(255)` | NOT NULL | UK | None | RFC 5322, viết thường | **Confidential - PII** | Ẩn khỏi Public API | Địa chỉ email định danh đăng nhập nội bộ. |
+| Mật khẩu băm | `passwordHash` | `VARCHAR(255)` | NOT NULL | - | None | NIST `PBKDF2-SHA512` (100k iter) | **Restricted** | **Cấm trả ra mọi API/UI** | Chuỗi hash có salt 16 bytes chống Rainbow Table. |
+| Vai trò RBAC | `role` | `VARCHAR(30)` | NOT NULL | - | `'HR'` | Enum: `ADMIN \| HR \| HIRING_MANAGER` | Internal | Không che | Quyết định quyền truy cập & chuyển vòng Kanban. |
+| Trạng thái hoạt động | `isActive` | `BOOLEAN` | NOT NULL | - | `true` | `true \| false` | Internal | Không che | `false` khóa đăng nhập tức thì (`ERR-AUTH-403-01`). |
+| Ngày tạo | `createdAt` | `DATETIME` | NOT NULL | - | `now()` | ISO 8601 UTC | Public | Không che | Thời điểm tạo tài khoản nhân viên. |
 
 ---
 
-### 2. Bảng `jobs` (Vị trí tuyển dụng & Tiêu chí JD)
-> Lưu trữ thông tin công việc và các tiêu chuẩn để AI so khớp đánh giá.
+### Bảng 2: `jobs` (Vị trí Tuyển dụng & Tiêu chuẩn JD)
 
-| Tên trường (Column) | Kiểu dữ liệu | Khóa | Ràng buộc | Giá trị mặc định | Mô tả ý nghĩa nghiệp vụ |
-| :--- | :--- | :---: | :--- | :--- | :--- |
-| `job_id` | SERIAL | **PK** | NOT NULL | Tự tăng | Khóa chính định danh vị trí tuyển dụng. |
-| `creator_id` | INT | **FK** | NOT NULL, FK `users(user_id)` | | Người tạo tin tuyển dụng (HR/Admin). |
-| `title` | VARCHAR(150) | | NOT NULL | | Tên vị trí (VD: Backend Java Developer). |
-| `department` | VARCHAR(100) | | NOT NULL | | Phòng ban tuyển dụng (VD: Khối Công nghệ). |
-| `requirements_jd`| TEXT | | NOT NULL | | Toàn văn Bản mô tả công việc (JD). |
-| `min_experience_years`| INT | | NOT NULL | `0` | Số năm kinh nghiệm tối thiểu bắt buộc. |
-| `required_skills`| JSONB | | NOT NULL | `'[]'` | Danh sách kỹ năng bắt buộc (VD: `["Java", "Spring Boot"]`). |
-| `status` | VARCHAR(20) | | NOT NULL | `'ACTIVE'` | Trạng thái: `ACTIVE` (Đang tuyển), `CLOSED` (Đóng). |
-| `created_at` | TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm đăng tin tuyển dụng. |
-
----
-
-### 3. Bảng `candidates` (Thông tin Ứng viên & Dữ liệu bóc tách CV)
-> Lưu thông tin cá nhân, bằng cấp, chứng chỉ và dữ liệu bóc tách kỹ năng từ CV.
-
-| Tên trường (Column) | Kiểu dữ liệu | Khóa | Ràng buộc | Giá trị mặc định | Mô tả ý nghĩa nghiệp vụ |
-| :--- | :--- | :---: | :--- | :--- | :--- |
-| `candidate_id` | SERIAL | **PK** | NOT NULL | Tự tăng | Khóa chính định danh ứng viên. |
-| `full_name` | VARCHAR(100) | | NOT NULL | | Họ và tên ứng viên (từ Form hoặc trích xuất). |
-| `email` | VARCHAR(150) | | NOT NULL, UNIQUE | | Email liên hệ (Dùng để khử trùng lặp BRL-02). |
-| `phone` | VARCHAR(20) | | NOT NULL, UNIQUE | | Số điện thoại (Dùng để khử trùng lặp BRL-02). |
-| `experience_years`| INT | | NULL | `0` | Số năm kinh nghiệm bóc tách từ hồ sơ. |
-| `parsed_skills`| JSONB | | NULL | `'[]'` | Danh sách kỹ năng bóc tách từ CV. |
-| `parsed_education`| JSONB | | NULL | `'[]'` | Lịch sử học vấn, trường lớp, chuyên ngành. |
-| `parsed_experience`| JSONB | | NULL | `'[]'` | Quá trình công tác và dự án thực tế. |
-| `certificates` | JSONB | | NULL | `'[]'` | Danh sách tệp chứng chỉ / bằng cấp dạng ảnh. |
-| `cv_file_url` | VARCHAR(500) | | NOT NULL | | Đường dẫn tải tệp CV gốc (PDF/DOCX). |
-| `cv_text` | TEXT | | NULL | | Toàn văn bản trích xuất thô từ CV. |
-| `created_at` | TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm tiếp nhận hồ sơ lần đầu. |
+| Tên Thuộc Tính | Cột DB (`Prisma`) | Kiểu Dữ Liệu | Nullability | Key | Mặc Định | Ràng Buộc Validation | Mức Độ Nhạy Cảm | Quy Tắc Che Giấu | Mô Tả Nghiệp Vụ |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: | :--- | :--- |
+| Mã vị trí | `id` | `INT` | NOT NULL | PK | Auto | Số nguyên dương | Public | Không che | Khóa chính tin tuyển dụng. |
+| Người tạo | `creatorId` | `INT` | NOT NULL | FK (`users.id`) | None | Tồn tại trong `users` | Internal | Ẩn khỏi Public | HR/Admin tạo tin tuyển dụng. |
+| Tiêu đề vị trí | `title` | `VARCHAR(200)` | NOT NULL | - | None | ≥ 3 ký tự | Public | Không che | **Trường #3 trong 5 trường cốt lõi hiển thị hồ sơ.** |
+| Phòng ban | `department` | `VARCHAR(100)` | NOT NULL | - | None | Không rỗng | Public | Không che | Bộ phận tuyển dụng (Engineering, Product, QA...). |
+| Địa điểm & Hình thức | `location`, `employmentType` | `VARCHAR(100)` | NOT NULL | - | `'Hồ Chí Minh'`, `'Toàn thời gian'` | Chuỗi hợp lệ | Public | Không che | Nơi làm việc và loại hình hợp đồng. |
+| Mô tả JD chi tiết | `requirementsJd` | `TEXT` | NOT NULL | - | None | Văn bản mô tả công việc | Public | Không che | Làm đầu vào đối chiếu cho Hybrid AI (`BRL-04`). |
+| Số năm KN tối thiểu | `minExperienceYears` | `INT` | NOT NULL | - | `0` | `0 <= val <= 30` | Public | Không che | Mốc đối chiếu với `Candidate.experienceYears` (40% trọng số). |
+| Kỹ năng bắt buộc | `requiredSkills` | `TEXT` (JSON) | NOT NULL | - | `'[]'` | JSON Array of strings | Public | Không che | Mốc đối chiếu với `Candidate.parsedSkills` (60% trọng số). |
+| Trạng thái tin | `status` | `VARCHAR(20)` | NOT NULL | - | `'ACTIVE'` | Enum: `ACTIVE \| CLOSED` | Public | Không che | Chỉ `ACTIVE` mới mở nhận đơn công khai. |
 
 ---
 
-### 4. Bảng `applications` (Hồ sơ ứng tuyển & Quản lý Pipeline Kanban)
-> Quản lý tiến trình của một ứng viên ứng tuyển vào một vị trí cụ thể.
+### Bảng 3: `candidates` (Hồ sơ Ứng viên — 5 Trường Cốt Lõi & Chi Tiết Mở Rộng)
 
-| Tên trường (Column) | Kiểu dữ liệu | Khóa | Ràng buộc | Giá trị mặc định | Mô tả ý nghĩa nghiệp vụ |
-| :--- | :--- | :---: | :--- | :--- | :--- |
-| `application_id` | SERIAL | **PK** | NOT NULL | Tự tăng | Khóa chính hồ sơ ứng tuyển. |
-| `candidate_id` | INT | **FK** | NOT NULL, FK `candidates` | | Tham chiếu đến ứng viên nộp đơn. |
-| `job_id` | INT | **FK** | NOT NULL, FK `jobs` | | Tham chiếu đến vị trí ứng tuyển. |
-| `current_stage` | VARCHAR(30) | | NOT NULL | `'NEW'` | Cột Kanban: `NEW`, `SCREENING`, `INTERVIEW`, `HIRED`, `REJECTED`. |
-| `is_starred` | BOOLEAN | | NOT NULL | `FALSE` | Đánh dấu sao ưu tiên kiểu Gmail (⭐). |
-| `is_viewed` | BOOLEAN | | NOT NULL | `FALSE` | Đánh dấu HR đã mở xem sơ bộ hồ sơ hay chưa. |
-| `viewed_at` | TIMESTAMP | | NULL | `NULL` | Thời điểm HR mở xem hồ sơ lần đầu. |
-| `ai_match_score`| FLOAT | | NULL | `NULL` | Điểm tham khảo đối chiếu tiêu chuẩn. |
-| `ai_reject_reason`| TEXT | | NULL | `NULL` | Lý do chưa đáp ứng yêu cầu tuyển dụng. |
-| `interview_date` | TIMESTAMP | | NULL | `NULL` | Thời gian diễn ra phỏng vấn đã xếp. |
-| `interview_format`| VARCHAR(20) | | NULL | `'ONLINE'` | Hình thức: `ONLINE` (Google Meet) hoặc `OFFLINE`. |
-| `interview_location`| TEXT | | NULL | `NULL` | Link phòng họp trực tuyến hoặc địa chỉ phòng họp. |
-| `interview_notes` | TEXT | | NULL | `NULL` | Ghi chú dặn dò ứng viên trước phỏng vấn. |
-| `interview_interviewer_notes`| TEXT | | NULL | `NULL` | Lưu ý nội bộ cho hội đồng phỏng vấn. |
-| `interview_post_notes`| TEXT | | NULL | `NULL` | Biên bản / Nhận xét sau phỏng vấn. |
-| `stage_updated_at`| TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm luân chuyển cột (Dùng tính SLA BRL-07). |
-| `email_scheduled_at`| TIMESTAMP | | NULL | `NULL` | Thời điểm hẹn giờ gửi email từ chối (+12h BRL-05). |
-| `is_email_sent` | BOOLEAN | | NOT NULL | `FALSE` | Trạng thái đã gửi email từ chối hay chưa. |
-| `repooled_from_id`| INT | **FK** | NULL, FK `applications` | `NULL` | ID hồ sơ gốc nếu được luân chuyển (Repooling UC-06). |
+| Tên Thuộc Tính | Cột DB (`Prisma`) | Kiểu Dữ Liệu | Nullability | Key | Mặc Định | Ràng Buộc Validation | Mức Độ Nhạy Cảm | Quy Tắc Che Giấu | Mô Tả Nghiệp Vụ |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: | :--- | :--- |
+| Mã ứng viên | `id` | `INT` | NOT NULL | PK | Auto | Số nguyên dương | Internal | Không che | Khóa chính duy nhất của 1 cá nhân ứng viên. |
+| Họ tên ứng viên | `fullName` | `VARCHAR(150)` | NOT NULL | - | None | ≥ 2 ký tự | **Confidential - PII** | Chỉ nội bộ & chính chủ | **Trường #1/5 cốt lõi**; HR có thể sửa tay (`BRL-03`). |
+| Email liên hệ | `email` | `VARCHAR(255)` | NOT NULL | Composite UK | None | RFC 5322, lowercase | **Confidential - PII** | Mask trên log/public (`u***@domain`) | **Trường #2/5 cốt lõi** & khóa khử trùng lặp `BRL-02`. |
+| Số điện thoại | `phone` | `VARCHAR(20)` | NOT NULL | Composite UK | None | `^(0\|\+84)[0-9]{9,10}$` | **Confidential - PII** | Ẩn ở view mặc định; hiện khi mở chi tiết | Khóa khử trùng lặp `BRL-02` cùng `email`. |
+| Số năm kinh nghiệm | `experienceYears` | `INT` | NOT NULL | - | `0` | `0 <= val <= 50` | Internal | Không che | **Trường #5/5 cốt lõi**; HR có thể sửa tay. |
+| Kỹ năng trích xuất | `parsedSkills` | `TEXT` (JSON) | NULL | - | `'[]'` | JSON Array (khử trùng) | Internal | Không che | **Trường #4/5 cốt lõi**; HR thêm/xóa trực tiếp. |
+| Học vấn & Kinh nghiệm | `parsedEducation`, `parsedExperience` | `TEXT` (JSON) | NULL | - | `'[]'` | JSON Array đối tượng | Internal | Ẩn mặc định (Progressive Disclosure) | Mở rộng khi bấm *"Xem chi tiết hồ sơ"*. |
+| Chứng chỉ đính kèm | `certificates` | `TEXT` (JSON) | NULL | - | `'[]'` | JSON Array `{name, fileUrl, fileType}` | **Confidential - PII** | Chỉ người dùng nội bộ đã xác thực | Thư viện ảnh bằng cấp/IELTS/chứng chỉ. |
+| Tệp CV gốc & Văn bản | `cvFileUrl`, `cvText` | `VARCHAR` / `TEXT` | NOT NULL / NULL | - | None | PDF/DOCX ≤ 10MB, Magic Bytes hợp lệ | **Confidential - PII** | Xóa vĩnh viễn theo `BRL-10` | Đường dẫn file CV gốc và text bóc từ `pdf-parse`. |
 
 ---
 
-### 5. Bảng `evaluations` (Phiếu đánh giá phỏng vấn - Scorecard)
-> Lưu trữ điểm số, căn cứ tuyển dụng và nhận xét chuyên sâu của hội đồng phỏng vấn.
+### Bảng 4: `applications` (Đơn Ứng Tuyển, Vòng Đời Kanban, Lịch PV & Lý Do Từ Chối)
 
-| Tên trường (Column) | Kiểu dữ liệu | Khóa | Ràng buộc | Giá trị mặc định | Mô tả ý nghĩa nghiệp vụ |
-| :--- | :--- | :---: | :--- | :--- | :--- |
-| `evaluation_id` | SERIAL | **PK** | NOT NULL | Tự tăng | Khóa chính phiếu đánh giá. |
-| `application_id`| INT | **FK** | NOT NULL, FK `applications`| | Tham chiếu đến hồ sơ được đánh giá. |
-| `evaluator_id` | INT | **FK** | NOT NULL, FK `users` | | Người chấm điểm (HR / Hiring Manager / Tech Lead). |
-| `round` | VARCHAR(100) | | NULL | `'Vòng 1 — Đánh giá Chuyên môn'` | Vòng phỏng vấn (Vòng 1 Kỹ thuật, Vòng 2 Văn hóa/Quản lý). |
-| `level_recommendation`| VARCHAR(50)| | NULL | `'MIDDLE'` | Cấp bậc đề xuất: `TRAINEE`, `JUNIOR`, `MIDDLE`, `SENIOR`, `LEAD`. |
-| `technical_score`| INT | | NOT NULL, CHECK (1..5) | | Điểm chuyên môn kỹ thuật (Trọng số 40%). |
-| `communication_score`| INT | | NOT NULL, CHECK (1..5) | | Điểm giao tiếp & thuyết trình (Trọng số 30%). |
-| `cultural_fit_score`| INT | | NOT NULL, CHECK (1..5) | | Điểm phù hợp văn hóa công ty (Trọng số 30%). |
-| `overall_score` | FLOAT | | NULL | | Điểm trung bình có trọng số (BRL-08). |
-| `strengths` | TEXT | | NULL | | **Căn cứ tuyển dụng (Điểm mạnh nổi bật — Lý do đậu)**. |
-| `weaknesses` | TEXT | | NULL | | Điểm cần lưu ý / Rủi ro & Kế hoạch đào tạo khi nhận việc. |
-| `technical_notes`| TEXT | | NULL | | Nhận xét chi tiết kiến trúc, giải thuật, giải pháp. |
-| `communication_notes`| TEXT | | NULL | | Nhận xét chi tiết khả năng diễn đạt, phản biện, ngoại ngữ. |
-| `culture_notes` | TEXT | | NULL | | Nhận xét chi tiết thái độ, sự chủ động, tinh thần đội ngũ. |
-| `hire_reason` | TEXT | | NULL | | Tóm tắt kết luận của Giám khảo / Hội đồng phỏng vấn. |
-| `comments` | TEXT | | NULL | | Ghi chú nhận xét tổng hợp. |
-| `recommendation`| VARCHAR(30) | | NOT NULL | `'HIRE'` | Khuyến nghị: `STRONG_HIRE`, `HIRE`, `NO_HIRE`, `STRONG_NO_HIRE`. |
-| `created_at` | TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm hoàn tất đánh giá. |
+| Tên Thuộc Tính | Cột DB (`Prisma`) | Kiểu Dữ Liệu | Nullability | Key | Mặc Định | Ràng Buộc Validation | Mức Độ Nhạy Cảm | Quy Tắc Che Giấu | Mô Tả Nghiệp Vụ |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: | :--- | :--- |
+| Mã đơn ứng tuyển | `id` | `INT` | NOT NULL | PK | Auto | Số nguyên dương | Internal | Không che | Mã dùng cho Public Tracker (`/jobs/tracker`). |
+| Liên kết Ứng viên & Job | `candidateId`, `jobId` | `INT` | NOT NULL | FK | None | `onDelete: Cascade` | Internal | Không che | Liên kết N-1 với `candidates` và `jobs`. |
+| Nguồn ứng tuyển | `source` | `VARCHAR(30)` | NOT NULL | - | `'CAREER_SITE'` | `CAREER_SITE \| LINKEDIN \| REFERRAL \| HEADHUNTER` | Internal | Ẩn khỏi Public | Phân loại kênh tuyển dụng. |
+| Trạng thái Kanban | `currentStage` | `VARCHAR(20)` | NOT NULL | - | `'NEW'` | `NEW \| SCREENING \| INTERVIEW \| HIRED \| REJECTED` | Internal | Hiển thị mô tả thân thiện trên Tracker | Chịu sự kiểm soát chặt của `src/lib/stage-rules.ts`. |
+| Điểm & Đối chiếu AI | `aiMatchScore`, `aiMatchRationale`, `aiMatchedSkills`, `aiMissingSkills` | `FLOAT` / `TEXT` | NULL | - | `NULL` / `'[]'` | `0.0 <= score <= 100.0` | **Restricted (Internal)** | **Cấm tuyệt đối trả ra Public Tracker (`NFR-SEC-04`)** | Hỗ trợ đối chiếu tiêu chuẩn JD (Human-in-the-loop). |
+| Mốc SLA & Delay Email | `stageUpdatedAt`, `emailScheduledAt`, `isEmailSent` | `DATETIME` / `BOOLEAN` | NOT NULL / NULL | - | `now()` / `NULL` / `false` | `emailScheduledAt = now + 12h` khi `REJECTED` | Internal | Không lộ thời gian hoãn cho ứng viên | Phục vụ cảnh báo SLA (`BRL-07`) & Delay Buffer (`BRL-05`). |
+| Đánh dấu sao & Đã xem | `isStarred`, `isViewed`, `viewedAt` | `BOOLEAN` / `DATETIME` | NOT NULL / NULL | - | `false` / `false` / `NULL` | Boolean | Internal | Chỉ nội bộ | Ghim hồ sơ ưu tiên và đánh sáng thẻ `NEW` chưa xử lý. |
+| Thông tin Phỏng vấn | `interviewDate`, `interviewFormat`, `interviewLocation`, `interviewNotes`, `interviewInterviewerNotes`, `interviewPostNotes` | `DATETIME` / `TEXT` | NULL | - | `NULL` | `ONLINE \| OFFLINE`; chỉ `HM`/`ADMIN` xếp/hủy | Internal | `interviewInterviewerNotes` & `interviewPostNotes` **ẩn khỏi Public Tracker** | Quản lý vòng đời lịch hẹn & ghi chú 3 lớp (`UC-05A`). |
+| **Lý do từ chối** | `rejectionReason` | `TEXT` | NULL | - | `NULL` | **Bắt buộc ≥ 5 ký tự khi `currentStage = REJECTED` (`BRL-11`)** | **Restricted (Internal)** | **Ẩn khỏi Public Tracker** | Lưu lý do cụ thể khi từ chối; tự động xóa nếu phục hồi thẻ. |
 
 ---
 
-### 6. Bảng `audit_logs` (Nhật ký theo dõi thao tác hệ thống)
-> Lưu vết lịch sử luân chuyển thẻ Kanban và các thao tác nhạy cảm.
+### Bảng 5: `evaluations` (Phiếu Đánh Giá Scorecard Chuyên Sâu)
 
-| Tên trường (Column) | Kiểu dữ liệu | Khóa | Ràng buộc | Giá trị mặc định | Mô tả ý nghĩa nghiệp vụ |
-| :--- | :--- | :---: | :--- | :--- | :--- |
-| `log_id` | BIGSERIAL | **PK** | NOT NULL | Tự tăng | Khóa chính bản ghi nhật ký. |
-| `application_id`| INT | **FK** | NOT NULL, FK `applications`| | Hồ sơ bị tác động. |
-| `user_id` | INT | **FK** | NULL, FK `users` | `NULL` | Người thực hiện (NULL nếu do Hệ thống AI tự làm). |
-| `from_stage` | VARCHAR(30) | | NULL | | Trạng thái ban đầu trước khi chuyển. |
-| `to_stage` | VARCHAR(30) | | NOT NULL | | Trạng thái đích sau khi chuyển. |
-| `action` | VARCHAR(50) | | NOT NULL | | Hành động: `STAGE_CHANGE`, `MERGE_CV`, `REPOOL`. |
-| `created_at` | TIMESTAMP | | NOT NULL | `CURRENT_TIMESTAMP` | Thời điểm ghi nhận thao tác. |
+| Tên Thuộc Tính | Cột DB (`Prisma`) | Kiểu Dữ Liệu | Nullability | Key | Mặc Định | Ràng Buộc Validation | Mức Độ Nhạy Cảm | Quy Tắc Che Giấu | Mô Tả Nghiệp Vụ |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: | :--- | :--- |
+| Mã phiếu & Liên kết | `id`, `applicationId`, `evaluatorId` | `INT` | NOT NULL | PK, FK | Auto | `onDelete: Cascade` | Internal | Ẩn khỏi Public | Mỗi giám khảo lưu phiếu độc lập, không ghi đè. |
+| Vòng & Cấp bậc đề xuất | `round`, `levelRecommendation` | `VARCHAR(100)` | NULL | - | `'Vòng 1...'` | `TRAINEE \| JUNIOR \| MIDDLE \| SENIOR \| LEAD` | Internal | **Cấm trả ra Public Tracker** | Phân loại vòng phỏng vấn và bậc đề xuất. |
+| Điểm 3 tiêu chí & Tổng | `technicalScore`, `communicationScore`, `culturalFitScore`, `overallScore` | `INT` / `FLOAT` | NOT NULL / NULL | - | None | Mỗi tiêu chí `1..5`; `overall = T*0.4 + C*0.3 + Cu*0.3` | **Restricted (Internal)** | **Cấm trả ra Public Tracker (`NFR-SEC-04`)** | Tính điểm trọng số `BRL-08` trên thang 5.0★. |
+| Khuyến nghị & Căn cứ | `recommendation`, `strengths`, `weaknesses`, `technicalNotes`, `communicationNotes`, `cultureNotes`, `hireReason`, `comments` | `VARCHAR` / `TEXT` | NOT NULL / NULL | - | `'HIRE'` | `STRONG_HIRE \| HIRE \| NO_HIRE \| STRONG_NO_HIRE`; `strengths` bắt buộc khi đề xuất tuyển | **Restricted (Internal)** | **Cấm trả ra Public Tracker** | Căn cứ minh bạch giúp HR/Ban Giám đốc hiểu rõ lý do đậu và mở khóa `BRL-06`. |
 
 ---
 
-Toàn bộ thiết kế dữ liệu trên đã bao trùm 100% tất cả các trường dữ liệu được gọi trong **BPMN To-Be**, **State Machine** và **4 Sequence Diagrams**. Bạn có thể đưa trực tiếp phần này vào tài liệu của mình!
+### Bảng 6: `audit_logs` (Nhật Ký Kiểm Toán Bất Biến — Append-Only)
 
----
-
-## 2. M? DDL SQL v? M? import Draw.io
-
-Trong Draw.io có 2 cách cực nhanh để nhập code tự động sinh ra sơ đồ ERD mà không cần vẽ tay. Dưới đây là code cho cả 2 cách:
-
----
-
-### CÁCH 1: DÙNG MÃ SQL (KHUYÊN DÙNG - RA BẢNG CSDL ĐẸP NHẤT TRÊN DRAW.IO)
-
-Trong Draw.io:
-1. Bạn nhìn lên thanh công cụ, nhấn vào biểu tượng dấu cộng **`+`** (hoặc vào menu **Arrange** / **Chèn**).
-2. Chọn **`Advanced`** ➔ Chọn **`SQL`**.
-3. Dán toàn bộ đoạn code dưới đây vào khung rồi nhấn **`Insert`**:
-
-```sql
-CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE jobs (
-    job_id SERIAL PRIMARY KEY,
-    creator_id INT NOT NULL REFERENCES users(user_id),
-    title VARCHAR(150) NOT NULL,
-    department VARCHAR(100) NOT NULL,
-    requirements_jd TEXT NOT NULL,
-    min_experience_years INT DEFAULT 0,
-    required_skills JSONB,
-    status VARCHAR(20) DEFAULT 'ACTIVE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE candidates (
-    candidate_id SERIAL PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    phone VARCHAR(20) UNIQUE NOT NULL,
-    experience_years INT DEFAULT 0,
-    parsed_skills JSONB,
-    cv_file_url VARCHAR(500) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE applications (
-    application_id SERIAL PRIMARY KEY,
-    candidate_id INT NOT NULL REFERENCES candidates(candidate_id),
-    job_id INT NOT NULL REFERENCES jobs(job_id),
-    current_stage VARCHAR(30) DEFAULT 'SUBMITTED',
-    ai_match_score FLOAT,
-    ai_reject_reason TEXT,
-    stage_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    email_scheduled_at TIMESTAMP,
-    is_email_sent BOOLEAN DEFAULT FALSE,
-    repooled_from_id INT REFERENCES applications(application_id)
-);
-
-CREATE TABLE evaluations (
-    evaluation_id SERIAL PRIMARY KEY,
-    application_id INT NOT NULL REFERENCES applications(application_id),
-    evaluator_id INT NOT NULL REFERENCES users(user_id),
-    technical_score INT NOT NULL,
-    communication_score INT NOT NULL,
-    cultural_fit_score INT NOT NULL,
-    comments TEXT,
-    recommendation VARCHAR(20) DEFAULT 'HIRE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE audit_logs (
-    log_id BIGSERIAL PRIMARY KEY,
-    application_id INT NOT NULL REFERENCES applications(application_id),
-    user_id INT REFERENCES users(user_id),
-    from_stage VARCHAR(30),
-    to_stage VARCHAR(30) NOT NULL,
-    action VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-*(Draw.io sẽ tự động vẽ ra 6 bảng thực thể đầy đủ Khóa chính PK, Khóa ngoại FK và kiểu dữ liệu chuẩn chỉnh)*.
-
----
-
-### CÁCH 2: DÙNG MÃ MERMAID (RA SƠ ĐỒ QUAN HỆ KÈM ĐƯỜNG NỐI)
-
-Trong Draw.io:
-1. Nhấn vào dấu cộng **`+`** trên thanh menu.
-2. Chọn **`Advanced`** ➔ Chọn **`Mermaid`**.
-3. Dán đoạn mã sau vào rồi nhấn **`Insert`**:
-
-```mermaid
-erDiagram
-    USERS ||--o{ JOBS : creates
-    USERS ||--o{ EVALUATIONS : evaluates
-    USERS ||--o{ AUDIT_LOGS : performs
-    JOBS ||--o{ APPLICATIONS : receives
-    CANDIDATES ||--o{ APPLICATIONS : applies
-    APPLICATIONS ||--o{ EVALUATIONS : assessed_by
-    APPLICATIONS ||--o{ AUDIT_LOGS : tracked_in
-
-    USERS {
-        int user_id PK
-        string full_name
-        string email UK
-        string password_hash
-        string role
-        boolean is_active
-    }
-
-    JOBS {
-        int job_id PK
-        int creator_id FK
-        string title
-        string department
-        text requirements_jd
-        int min_experience_years
-        jsonb required_skills
-        string status
-        timestamp created_at
-    }
-
-    CANDIDATES {
-        int candidate_id PK
-        string full_name
-        string email UK
-        string phone UK
-        int experience_years
-        jsonb parsed_skills
-        string cv_file_url
-        timestamp created_at
-    }
-
-    APPLICATIONS {
-        int application_id PK
-        int candidate_id FK
-        int job_id FK
-        string current_stage
-        float ai_match_score
-        string ai_reject_reason
-        timestamp stage_updated_at
-        timestamp email_scheduled_at
-        boolean is_email_sent
-    }
-
-    EVALUATIONS {
-        int evaluation_id PK
-        int application_id FK
-        int evaluator_id FK
-        int technical_score
-        int communication_score
-        int cultural_fit_score
-        text comments
-        string recommendation
-        timestamp created_at
-    }
-
-    AUDIT_LOGS {
-        int log_id PK
-        int application_id FK
-        int user_id FK
-        string from_stage
-        string to_stage
-        string action
-        timestamp created_at
-    }
-```
-
-Bạn dán thử vào Draw.io sẽ thấy sơ đồ hiện ra ngay lập tức mà không cần mất công kéo từng ô nhé!
-
----
-
-## 3. M? Mermaid ERD thu?n (Text Copy)
-
-Do giao diện chat tự động chuyển code Mermaid thành hình vẽ nên bạn khó sao chép. Dưới đây là **toàn bộ mã Mermaid dạng văn bản thuần (Text)** có nút copy, bạn chỉ cần bấm nút sao chép (hoặc bôi đen):
-
-```text
-erDiagram
-    USERS ||--o{ JOBS : creates
-    USERS ||--o{ EVALUATIONS : evaluates
-    USERS ||--o{ AUDIT_LOGS : performs
-    JOBS ||--o{ APPLICATIONS : receives
-    CANDIDATES ||--o{ APPLICATIONS : applies
-    APPLICATIONS ||--o{ EVALUATIONS : assessed_by
-    APPLICATIONS ||--o{ AUDIT_LOGS : tracked_in
-
-    USERS {
-        int user_id PK
-        string full_name
-        string email UK
-        string password_hash
-        string role
-        boolean is_active
-    }
-
-    JOBS {
-        int job_id PK
-        int creator_id FK
-        string title
-        string department
-        text requirements_jd
-        int min_experience_years
-        jsonb required_skills
-        string status
-        timestamp created_at
-    }
-
-    CANDIDATES {
-        int candidate_id PK
-        string full_name
-        string email UK
-        string phone UK
-        int experience_years
-        jsonb parsed_skills
-        string cv_file_url
-        timestamp created_at
-    }
-
-    APPLICATIONS {
-        int application_id PK
-        int candidate_id FK
-        int job_id FK
-        string current_stage
-        float ai_match_score
-        string ai_reject_reason
-        timestamp stage_updated_at
-        timestamp email_scheduled_at
-        boolean is_email_sent
-    }
-
-    EVALUATIONS {
-        int evaluation_id PK
-        int application_id FK
-        int evaluator_id FK
-        int technical_score
-        int communication_score
-        int cultural_fit_score
-        text comments
-        string recommendation
-        timestamp created_at
-    }
-
-    AUDIT_LOGS {
-        int log_id PK
-        int application_id FK
-        int user_id FK
-        string from_stage
-        string to_stage
-        string action
-        timestamp created_at
-    }
-```
-
----
-
-### Mẹo thêm:
-Nếu muốn bảng hiện ra các cột ô ngăn nắp theo đúng kiểu Database, bạn thử tính năng **`+` (Insert) ➔ `Advanced` ➔ `SQL`** trên Draw.io và dán đoạn SQL này:
-
-```text
-CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE jobs (
-    job_id SERIAL PRIMARY KEY,
-    creator_id INT NOT NULL REFERENCES users(user_id),
-    title VARCHAR(150) NOT NULL,
-    department VARCHAR(100) NOT NULL,
-    requirements_jd TEXT NOT NULL,
-    min_experience_years INT DEFAULT 0,
-    required_skills JSONB,
-    status VARCHAR(20) DEFAULT 'ACTIVE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE candidates (
-    candidate_id SERIAL PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
-    phone VARCHAR(20) UNIQUE NOT NULL,
-    experience_years INT DEFAULT 0,
-    parsed_skills JSONB,
-    cv_file_url VARCHAR(500) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE applications (
-    application_id SERIAL PRIMARY KEY,
-    candidate_id INT NOT NULL REFERENCES candidates(candidate_id),
-    job_id INT NOT NULL REFERENCES jobs(job_id),
-    current_stage VARCHAR(30) DEFAULT 'SUBMITTED',
-    ai_match_score FLOAT,
-    ai_reject_reason TEXT,
-    stage_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    email_scheduled_at TIMESTAMP,
-    is_email_sent BOOLEAN DEFAULT FALSE,
-    repooled_from_id INT REFERENCES applications(application_id)
-);
-
-CREATE TABLE evaluations (
-    evaluation_id SERIAL PRIMARY KEY,
-    application_id INT NOT NULL REFERENCES applications(application_id),
-    evaluator_id INT NOT NULL REFERENCES users(user_id),
-    technical_score INT NOT NULL,
-    communication_score INT NOT NULL,
-    cultural_fit_score INT NOT NULL,
-    comments TEXT,
-    recommendation VARCHAR(20) DEFAULT 'HIRE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE audit_logs (
-    log_id BIGSERIAL PRIMARY KEY,
-    application_id INT NOT NULL REFERENCES applications(application_id),
-    user_id INT REFERENCES users(user_id),
-    from_stage VARCHAR(30),
-    to_stage VARCHAR(30) NOT NULL,
-    action VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
+| Tên Thuộc Tính | Cột DB (`Prisma`) | Kiểu Dữ Liệu | Nullability | Key | Mặc Định | Ràng Buộc Validation | Mức Độ Nhạy Cảm | Quy Tắc Che Giấu | Mô Tả Nghiệp Vụ |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: | :--- | :--- |
+| Mã log & Liên kết | `id`, `applicationId`, `userId` | `INT` | NOT NULL / NULL | PK, FK | Auto | Append-only (cấm sửa/xóa) | Internal | Chỉ nội bộ | Lưu vết bất biến mọi tác động lên hồ sơ (`NFR-SEC-05`). |
+| Trạng thái trước / sau | `fromStage`, `toStage` | `VARCHAR(20)` | NULL / NOT NULL | - | None | Enum 5 trạng thái Kanban | Internal | Chỉ nội bộ | Truy vết đường đi của thẻ trên Kanban. |
+| Loại hành động | `action` | `VARCHAR(40)` | NOT NULL | - | None | `STAGE_CHANGE`, `PROFILE_EDITED`, `SCORECARD_EVALUATE`, `INTERVIEW_SCHEDULED`, `INTERVIEW_CANCELLED`, `STARRED`, `RETENTION_PURGE` | Internal | Chỉ nội bộ | Phân loại sự kiện kiểm toán. |
+| **Lý do / Ghi chú chi tiết** | `reason` | `TEXT` | NULL | - | `NULL` | Ghi nhận lý do từ chối `BRL-11` hoặc danh sách trường HR đã sửa | Internal | Chỉ nội bộ | Tăng minh bạch đối soát quy trình. |
+| Thời điểm thực hiện | `createdAt` | `DATETIME` | NOT NULL | - | `now()` | ISO 8601 UTC | Internal | Chỉ nội bộ | Dấu thời gian chính xác của sự kiện. |

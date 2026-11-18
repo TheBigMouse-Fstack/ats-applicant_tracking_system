@@ -1,10 +1,40 @@
-# C?C M? H?NH ??NG: STATE MACHINE, ACTIVITY & SEQUENCE DIAGRAMS
+---
+id: "FSM-ATS-06"
+title: "Các Mô hình Động: Finite State Machine, Activity & Sequence Diagrams"
+type: "diagram"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "state-machine"
+  - "sequence-diagram"
+  - "activity-diagram"
+  - "stage-rules"
+upstream_deps:
+  - "FDD-ATS-04"
+  - "UC-ATS-05"
+downstream_deps:
+  - "API-ATS-15"
+  - "BR-ERR-17"
+last_updated: "2026-11-18"
+---
 
-> **D? ?n:** ReCoverX Career - ATS
+# CÁC MÔ HÌNH ĐỘNG: STATE MACHINE, ACTIVITY & SEQUENCE DIAGRAMS
+
+> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)
 
 ---
 
-## 1. S? ?? m?y tr?ng th?i ?ng vi?n (State Machine Diagram)
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+
+---
+
+## 1. Sơ đồ Máy trạng thái Ứng viên (Finite State Machine — RULE-12)
 
 ![State Machine Diagram](../media/media_1794143664055_378c39ac.png)
 
@@ -105,7 +135,7 @@ Bạn có muốn bắt đầu triển khai **4 Sequence Diagram** này luôn kh�
 
 ---
 
-## 2. S? ?? ho?t ??ng (Activity Diagrams - Swimlane)
+## 2. Sơ đồ Hoạt động Phân làn (Activity Diagrams — Swimlane)
 
 Rất hợp lý! Trong kỹ thuật phân tích thiết kế phần mềm, **Activity Diagram (Sơ đồ hoạt động UML)** là bước đệm tuyệt vời nhất: nó mô tả trực quan các luồng hành động tương tác giữa các bên theo thời gian thực trước khi đào sâu vào các hàm gọi chi tiết của Sequence Diagram.
 

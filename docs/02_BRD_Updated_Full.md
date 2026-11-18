@@ -1,177 +1,126 @@
-# T?I LI?U Y?U C?U NGHI?P V? C?P NH?T (BRD - RECOVERX CAREER ATS)
+---
+id: "BRD-ATS-01"
+title: "Tài liệu Yêu cầu Nghiệp vụ Doanh nghiệp (BRD) — ReCoverX Career ATS"
+type: "brd"
+version: "2.1.0"
+status: "approved"
+owner: "Nguyễn Quốc Khánh (Lead BA & PO)"
+domain: "recruitment-ats"
+tags:
+  - "brd"
+  - "business-requirements"
+  - "ats"
+  - "human-in-the-loop"
+upstream_deps: []
+downstream_deps:
+  - "BPMN-ATS-03"
+  - "FDD-ATS-04"
+  - "UC-ATS-05"
+  - "FSM-ATS-06"
+  - "RBAC-NFR-08"
+  - "BR-ERR-17"
+last_updated: "2026-11-18"
+---
 
-> **Ngu?n:** Tr?ch xu?t t? phi?n l?m vi?c `8a254095-a9f4-4286-9307-fe701b5b5a78` (B??c 15).
-> **Tr?ng th?i:** ?? c?p nh?t v? h?p nh?t to?n b? thay ??i (C?ng n?p CV tr?c tuy?n, S?ng l?c t? ??ng AI, Email t? ch?i t? ??ng c? delay, Quy tr?nh As-Is SOP).
+# BUSINESS REQUIREMENTS DOCUMENT (BRD)
+## Hệ Thống Quản Lý Tuyển Dụng Thông Minh — ReCoverX Career ATS
+
+> **Địa điểm:** TP. Hồ Chí Minh  
+> **Tiêu chuẩn biên soạn:** Universal BA Toolkit (`/brd`, `RULE-02`, `RULE-16`, `RULE-18`, `RULE-19`)
 
 ---
 
-Dưới đây là toàn văn **Tài liệu Yêu cầu Nghiệp vụ (BRD - Business Requirements Document)** đã được **cập nhật, hợp nhất toàn bộ các điểm sửa đổi** (Quy trình As-Is chuẩn SOP, Cổng nộp CV cho Ứng viên, Tính năng Sàng lọc tự động AI và Tự động gửi Email từ chối).
+## I. LỊCH SỬ PHIÊN BẢN (REVISION HISTORY)
 
-Bạn có thể sao chép trực tiếp bản hoàn chỉnh này vào tài liệu dự án của mình:
-
----
-
-# **BUSINESS REQUIREMENTS DOCUMENT (BRD)**
-## **Hệ thống Quản lý Hồ sơ Ứng viên (ReCoverX Career - ATS)**
-
-*Ho Chi Minh City, November 2026*  
-*Phiên bản: 1.1 (Cập nhật Cổng ứng viên & Tự động hóa Sàng lọc/Email)*
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Chi Tiết Thay Đổi | Người Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v1.0.0` | 2026-11-11 | Nguyễn Quốc Khánh | **Initial** | Khởi tạo bản thảo BRD ban đầu (từng lưu tại `01_BRD_Original.md`, nay đã hợp nhất). | Project Sponsor |
+| `v1.1.0` | 2026-11-12 | Nguyễn Quốc Khánh | **Added** | Chuẩn hóa quy trình AS-IS theo SOP; bổ sung Cổng nộp hồ sơ công khai (Candidate Portal) và Hybrid AI Parsing. | Product Owner |
+| `v2.0.0` | 2026-11-15 | Nguyễn Quốc Khánh | **Changed** | Mở rộng phạm vi: Module Lên lịch Phỏng vấn, Cổng Tra cứu Ứng viên (`/jobs/tracker`), Scorecard chuyên sâu, Dọn dẹp 6 tháng (`BRL-10`), loại bỏ AI tự động từ chối (chuyển sang *Human-in-the-loop*). | Tech Lead & PO |
+| `v2.1.0` | 2026-11-18 | Nguyễn Quốc Khánh | **Changed** | Chuẩn hóa 5 trường trích xuất cốt lõi theo JD + quyền HR chỉnh sửa thủ công; phân tách quyền chuyển vòng (`HR` tối đa `SCREENING`, `Hiring Manager` phụ trách `INTERVIEW`/`HIRED`); bắt buộc Lý do từ chối (`BRL-11`) và State Machine guards. | Hội đồng Nghiệm thu |
 
 ---
 
-### **Table of Contents**
-1. [I. Record of Changes](#i-record-of-changes)
-2. [II. Introduction & Business Overview](#ii-introduction--business-overview)
-3. [III. Scope of Work](#iii-scope-of-work)
-4. [IV. As-Is & To-Be Processes](#iv-as-is--to-be-processes)
-5. [V. Business Requirements](#v-business-requirements)
-6. [VI. Non-Functional Requirements](#vi-non-functional-requirements)
-7. [VII. Assumptions, Dependencies & Constraints](#vii-assumptions-dependencies--constraints)
-8. [VIII. Risks & Mitigation](#viii-risks--mitigation)
+## II. BỐI CẢNH & ĐỘNG LỰC KINH DOANH (BUSINESS DRIVERS)
+
+### 1. Bài Toán & Điểm Nghẽn Hiện Tại (Problem Statement)
+Doanh nghiệp đang tiếp nhận trung bình **500 – 1.000 CV/tháng** qua nhiều kênh rời rạc (Email, TopCV, LinkedIn, giới thiệu nội bộ). Toàn bộ quy trình quản lý hiện phụ thuộc vào bảng tính Excel và thư mục cục bộ trên máy tính cá nhân của chuyên viên HR, gây ra 4 điểm nghẽn định lượng rõ ràng:
+
+1. **Quá tải nhập liệu thủ công:** Mỗi hồ sơ tốn trung bình **3 – 5 phút** để mở file PDF, đọc và gõ lại thông tin vào Excel, tiêu tốn **30 – 40%** tổng quỹ thời gian làm việc của đội ngũ tuyển dụng.
+2. **Tỷ lệ phản hồi chậm (Ghosting):** Tỷ lệ ứng viên không nhận được phản hồi sau khi nộp đơn lên tới **80%**, gây tổn hại trực tiếp đến thương hiệu tuyển dụng (Employer Branding).
+3. **Thiếu minh bạch đánh giá & phân quyền:** Nhận xét phỏng vấn rời rạc qua tin nhắn nội bộ; không phân định rạch ròi giữa vòng sơ loại của HR và vòng duyệt chuyên môn của Hiring Manager; không lưu rõ căn cứ tuyển dụng hay lý do từ chối.
+4. **Rủi ro trùng lặp & pháp lý dữ liệu:** Không có cơ chế phát hiện đơn nộp trùng trong 30 ngày và không có cơ chế dọn dẹp hồ sơ cá nhân quá hạn theo Nghị định 13/2023/NĐ-CP.
+
+### 2. Mục Tiêu Kinh Doanh Định Lượng (SMART Business Objectives)
+
+| Mã Mục Tiêu | Mục Tiêu Nghiệp Vụ | Chỉ Số Đo Lường (KPI / Target) | Thời Hạn Đạt Được |
+| :--- | :--- | :--- | :---: |
+| **`BRD-GOAL-01`** | Số hóa 100% tiếp nhận hồ sơ & xóa bỏ tình trạng Ghosting | **100%** ứng viên nộp qua cổng trực tuyến hoặc HR nạp nội bộ được cấp mã tra cứu tiến độ (`/jobs/tracker`) và nhận phản hồi (kèm đệm trễ 12 giờ khi từ chối). | Sau 01 tháng Go-live |
+| **`BRD-GOAL-02`** | Tối ưu thời gian bóc tách và sơ loại CV bằng Hybrid AI | Giảm thời gian đọc/nhập liệu từ 5 phút xuống **≤ 5.0 giây/CV**; hiển thị gọn đúng **5 trường cốt lõi theo JD** (độ chính xác bóc tách ≥ 85%) và cho phép HR hiệu chỉnh thủ công. | Ngay khi Go-live |
+| **`BRD-GOAL-03`** | Chuẩn hóa quy trình Kanban, phân quyền HR vs Hiring Manager & Scorecard | Giảm Time-to-Hire thêm **3 – 5 ngày làm việc**; **100%** quyết định tuyển (`HIRED`) có tối thiểu 01 Scorecard đạt chuẩn (`BRL-06`) và **100%** hồ sơ bị loại có lý do rõ ràng (`BRL-11`). | Sau 02 tháng Go-live |
+| **`BRD-GOAL-04`** | Quản trị Kho nhân tài & tuân thủ bảo vệ dữ liệu cá nhân | **100%** hồ sơ `REJECTED` được đồng bộ vào Talent Pool phục vụ luân chuyển vị trí (Repooling) và được Admin xóa vĩnh viễn sau 180 ngày (`BRL-10`) tuân thủ Nghị định 13/2023/NĐ-CP. | Duy trì liên tục |
+
+### 3. Phân Tích Chi Phí & Lợi Ích (Cost-Benefit & ROI Analysis)
+* **Chi phí triển khai & vận hành (CAPEX / OPEX):** Xây dựng mã nguồn tự chủ trên Next.js 14 Fullstack + Prisma ORM + Hybrid AI (Lớp 1 `pdf-parse` miễn phí 100%, Lớp 2 Google Gemini 2.5 Flash chi phí ước tính < 500.000 VNĐ/tháng cho 1.000 CV), không tốn phí thuê bao SaaS theo đầu người (tiết kiệm 15 – 30 triệu VNĐ/tháng so với thuê bản quyền ATS thương mại cho quy mô 20–50 user nội bộ).
+* **Lợi ích vận hành dự kiến:** Tiết kiệm tối thiểu **80 – 120 giờ công HR/tháng**, giảm thiểu 100% rủi ro mất hồ sơ do nghỉ việc nhân sự HR và nâng cao tỷ lệ chuyển đổi ứng viên chất lượng.
 
 ---
 
-### **I. Record of Changes**
+## III. PHẠM VI DỰ ÁN (SCOPE OF WORK)
 
-| Phiên bản | Ngày | Người thực hiện | Loại (A/M/D)* | Mô tả thay đổi |
-| :---: | :---: | :---: | :---: | :--- |
-| **1.0** | 11/11/2026 | Nguyễn Quốc Khánh | A | Khởi tạo dự thảo BRD lần đầu. |
-| **1.1** | 12/11/2026 | Nguyễn Quốc Khánh | M | • Chuẩn hóa quy trình As-Is thành quy trình vận hành tiêu chuẩn (SOP).<br>• Bổ sung Cổng nộp hồ sơ công khai cho Ứng viên (Candidate Portal).<br>• Đưa tính năng Sàng lọc tự động AI và Tự động gửi Email từ chối vào In-Scope. |
+### 1. Trong Phạm Vi (In-Scope)
+1. **Xác thực & Quản trị Người dùng Nội bộ (`UC-00`):** Đăng nhập mật khẩu băm NIST PBKDF2-SHA512, phiên HMAC-SHA256, Edge Middleware chống truy cập trái phép, quản trị tài khoản phân quyền 3 vai trò (`ADMIN`, `HR`, `HIRING_MANAGER`).
+2. **Cổng Tuyển Dụng Công Khai & Tra Cứu Tiến Độ (`UC-01`, `UC-01A`):** Xem JD, nộp CV (`.pdf`, `.docx` ≤ 10MB, kiểm tra Magic Bytes, Rate Limit 5 lần/10 phút/IP), đính kèm bằng cấp/chứng chỉ và tra cứu tiến độ bảo mật (`/jobs/tracker`, ẩn điểm AI và nhận xét nội bộ).
+3. **Tiếp Nhận Nội Bộ, Trích Xuất 5 Trường Cốt Lõi & Chỉnh Sửa Thủ Công (`UC-02`):** HR nạp CV theo nguồn (`LINKEDIN`, `REFERRAL`, `HEADHUNTER`), khử trùng lặp 30 ngày (`BRL-02`), bóc tách 5 trường cốt lõi theo JD (Họ tên, Email, Vị trí, Kỹ năng, Số năm kinh nghiệm), Progressive Disclosure ("Xem chi tiết") và quyền HR sửa/thêm thủ công + tự động tính lại độ khớp JD.
+4. **Đối Chiếu Hybrid AI & Human-in-the-loop (`UC-03`):** Đối chiếu kỹ năng & kinh nghiệm với JD (`temperature: 0`), tạo thẻ tại cột `NEW` để con người kiểm duyệt (không tự ý loại ứng viên); tự động hoãn gửi email từ chối 12 giờ (`BRL-05`) khi có quyết định từ chối hợp lệ.
+5. **Quản Trị Kanban 5 Cột, State Machine & Phân Quyền Chuyển Vòng (`UC-04`):** Bảng Kanban 5 cột (`NEW`, `SCREENING`, `INTERVIEW`, `HIRED`, `REJECTED`), cảnh báo SLA (`NEW > 48h`, `SCREENING > 72h`), đánh sáng hồ sơ `NEW` chưa xem, gắn sao ưu tiên, cấm nhảy cóc giai đoạn (`BRL-STAGE-ORDER`), khóa trạng thái `HIRED` (`BRL-STAGE-TERMINAL`), bắt buộc lý do từ chối (`BRL-11`). Phân tách quyền rõ ràng: **`HR` chuyển tối đa đến `SCREENING`**, **`HIRING_MANAGER` phụ trách `INTERVIEW` & `HIRED`**.
+6. **Quản Lý Vòng Đời Lịch Phỏng Vấn & Scorecard Chuyên Sâu (`UC-05`, `UC-05A`):** Xếp lịch, đổi lịch, hủy lịch phỏng vấn, ghi chú 3 lớp (ứng viên / trước PV / sau PV); chấm điểm Scorecard có trọng số (40% Chuyên môn, 30% Giao tiếp, 30% Văn hóa — `BRL-08`), ghi rõ căn cứ trúng tuyển & kế hoạch đào tạo; chốt chặn bắt buộc Scorecard trước khi `HIRED` (`BRL-06`).
+7. **Kho Nhân Tài, Repooling, Dọn Dẹp 6 Tháng & Xuất CSV (`UC-06`, `UC-07`):** Lưu trữ tập trung, luân chuyển vị trí, Admin xóa vĩnh viễn hồ sơ `REJECTED` quá 180 ngày (`BRL-10`), xuất file CSV mã hóa UTF-8 BOM.
 
-*\*A - Added, M - Modified, D - Deleted*
-
----
-
-### **II. INTRODUCTION & BUSINESS OVERVIEW**
-
-#### **1. Bối cảnh kinh doanh (Business Context)**
-Hiện tại, công ty tiếp nhận hồ sơ ứng viên thông qua nhiều kênh ngoại tuyến và bán tự động (Email tuyển dụng, Facebook, TopCV). Chuyên viên tuyển dụng (HR) phải tải tệp CV về máy tính cá nhân, đọc thông tin thủ công và ghi nhận lại vào bảng tính (Excel/Google Sheets) để quản lý tiến độ phỏng vấn.
-
-**Vấn đề gặp phải (Pain-points):**
-* **Quá tải nhập liệu thủ công:** Mất trung bình 3–5 phút cho mỗi CV chỉ để đọc và nhập liệu vào Excel. Với lưu lượng 500 – 1.000 CV/tháng, HR tiêu tốn 30–40% tổng quỹ thời gian chỉ cho tác vụ hành chính này.
-* **Thời gian phản hồi chậm:** Do khối lượng CV lớn, các ứng viên không đạt tiêu chuẩn thường không nhận được phản hồi (tỷ lệ "im lặng" lên đến 80%), ảnh hưởng tiêu cực đến thương hiệu tuyển dụng (Employer Branding).
-* **Phân tán dữ liệu & Rủi ro trùng lặp:** Hồ sơ lưu rải rác trên máy tính cá nhân của HR, không có cơ chế phát hiện ứng viên nộp nhiều lần hoặc ứng tuyển lại, gây lãng phí nguồn lực đánh giá.
-
-#### **2. Mục tiêu kinh doanh & Tỷ suất hoàn vốn (Business Objectives & ROI)**
-* **Rút ngắn thời gian sàng lọc:** Giảm 50% thời gian xử lý và phân loại hồ sơ ban đầu thông qua Cổng ứng tuyển trực tuyến và AI Parsing/Screening.
-* **Tối ưu hóa phản hồi ứng viên:** 100% ứng viên nộp hồ sơ đều nhận được thông báo phản hồi trạng thái (bao gồm cả thư từ chối tự động và lịch sự).
-* **Rút ngắn thời gian tuyển dụng (Time-to-Hire):** Giảm từ 3–5 ngày làm việc trên mỗi quy trình tuyển dụng.
-* **Độ chính xác trích xuất:** Tính năng bóc tách CV (AI Parsing) đạt độ chính xác trên 85%.
-
-#### **3. Thuật ngữ (Glossary)**
-* **ATS (Applicant Tracking System):** Hệ thống quản lý và theo dõi quy trình tuyển dụng từ khi tiếp nhận hồ sơ đến khi tuyển dụng thành công.
-* **Candidate Portal:** Cổng thông tin/biểu mẫu công khai cho phép ứng viên nộp hồ sơ trực tuyến.
-* **AI Parsing:** Kỹ thuật tự động đọc tệp văn bản phi cấu trúc (PDF, Word) và trích xuất thành dữ liệu cấu trúc (Họ tên, Email, Kỹ năng...).
-* **AI Screening & Matching:** Tính năng sử dụng AI để đối chiếu hồ sơ ứng viên với Bản mô tả công việc (JD) để chấm điểm và phân loại đạt/không đạt.
-* **Kanban Pipeline:** Giao diện quản lý quy trình dạng bảng cột trực quan hỗ trợ kéo-thả (Drag & Drop).
+### 2. Ngoài Phạm Vi (Out-of-Scope)
+* Kết nối API đồng bộ tin tuyển dụng/CV hai chiều trực tiếp với sàn tuyển dụng thứ ba (TopCV, VietnamWorks, LinkedIn Enterprise API).
+* OCR chuyên sâu cho ảnh chụp CV mờ/nghiêng; bài thi trắc nghiệm/coding trực tuyến; gọi Video Call WebRTC nhúng nội bộ; ký hợp đồng điện tử pháp lý (CA/DocuSign); gửi SMS Brandname/Zalo ZNS; module HRM/Payroll/Chấm công sau khi `HIRED`. *(Chi tiết đối chiếu xem tại `[[SCOPE-ATS-10]]`)*.
 
 ---
 
-### **III. SCOPE OF WORK (Phạm vi công việc)**
+## IV. QUY TRÌNH CHUYỂN ĐỔI (AS-IS vs TO-BE)
 
-#### **1. Trong phạm vi (In-Scope)**
-* **Cổng nộp hồ sơ trực tuyến (Candidate Portal):** Biểu mẫu web công khai cho phép ứng viên tự nộp CV trực tiếp mà không cần đăng nhập.
-* **Tính năng Tải lên nội bộ (HR Upload):** Hỗ trợ HR tải lên hàng loạt (Bulk Upload) hoặc từng hồ sơ CV (.pdf, .doc, .docx) cho các nguồn nội bộ hoặc săn ứng viên chủ động.
-* **Khử trùng lặp tự động (Deduplication):** Kiểm tra đối chiếu Email và Số điện thoại ngay khi nhận hồ sơ.
-* **Trích xuất dữ liệu bằng AI (AI Parsing):** Tự động bóc tách Họ tên, SĐT, Email, Kỹ năng, Số năm kinh nghiệm.
-* **Sàng lọc tự động bằng AI (AI Screening):** Đối chiếu tiêu chuẩn JD, chấm điểm độ phù hợp và tự động chuyển trạng thái hồ sơ.
-* **Tự động gửi Email từ chối (Automated Rejection Email):** Gửi email thông báo từ chối lịch sự theo mẫu cho ứng viên không qua bước sàng lọc AI (kèm cơ chế thiết lập độ trễ gửi thư).
-* **Giao diện Kanban Pipeline:** Quản lý quy trình tuyển dụng qua 5 cột trạng thái chuẩn: *New, Screening, Interview, Hired, Rejected*.
-* **Công cụ Tìm kiếm & Lọc nâng cao:** Tra cứu ứng viên theo từ khóa và kỹ năng chuyên môn.
-* **Biểu mẫu đánh giá (Scorecard):** Hỗ trợ hội đồng phỏng vấn chấm điểm và nhận xét trực tiếp trên hồ sơ.
-* **Xuất dữ liệu (Data Export):** Xuất danh sách ứng viên ra file định dạng chuẩn (.csv, .xlsx).
+* **AS-IS (Thủ công):** Tải CV về máy ➔ Mở từng PDF gõ tay vào Excel ➔ Dùng `Ctrl+F` dò lọc ➔ Gửi mail/gọi điện thủ công không lưu lịch sử ➔ Đánh giá rời rạc qua chat ➔ Không gửi thư từ chối cho 80% ứng viên.
+* **TO-BE (ReCoverX Career ATS):**
+  1. Ứng viên tự nộp online (`1A`) hoặc HR nạp CV nội bộ (`1B`) ➔ Khử trùng lặp 30 ngày (`BRL-02`) & kiểm tra hạn mức 3 Job/90 ngày (`BRL-09`).
+  2. Máy chủ tách văn bản bằng `pdf-parse` ➔ Hybrid AI bóc 5 trường cốt lõi & đối chiếu JD ➔ Tạo thẻ ở cột **`NEW`** (*Human-in-the-loop*).
+  3. **Chuyên viên HR** kiểm tra 5 trường (có thể sửa tay nếu AI bóc sai), duyệt sơ bộ và chuyển tối đa đến **`SCREENING`** (hoặc `REJECTED` kèm lý do `BRL-11`).
+  4. **Quản lý Chuyên môn (Hiring Manager)** thẩm định hồ sơ tại `SCREENING`, chuyển sang **`INTERVIEW`**, thiết lập lịch phỏng vấn & đánh giá bằng **Scorecard chuyên sâu** (`BRL-08`).
+  5. **Hiring Manager** ra quyết định cuối cùng: chuyển **`HIRED`** (khi đã có Scorecard đạt chuẩn `BRL-06`) hoặc **`REJECTED`** (kèm lý do `BRL-11`).
+  6. Hồ sơ `REJECTED` tự động kích hoạt đệm hoãn gửi email 12 giờ (`BRL-05`), đồng bộ **Talent Pool** và tự động thuộc diện Admin xóa vĩnh viễn sau 180 ngày (`BRL-10`).
 
-#### **2. Ngoài phạm vi (Out-of-Scope)**
-* Tính năng kết nối API để tự động đồng bộ CV trực tiếp từ các nền tảng thứ ba (TopCV, LinkedIn, Facebook Jobs).
-* Tính năng tự động đồng bộ lịch phỏng vấn hai chiều với Google Calendar/Outlook (Interview Scheduling Automation).
-* Bảng điều khiển phân tích nâng cao (Advanced Talent Analytics).
+*(Chi tiết sơ đồ phân làn BPMN 2.0 xem tại `[[BPMN-ATS-03]]`, Máy trạng thái xem tại `[[FSM-ATS-06]]`)*.
 
 ---
 
-### **IV. AS-IS & TO-BE PROCESSES (Quy trình Hiện tại và Tương lai)**
+## V. DANH MỤC YÊU CẦU NGHIỆP VỤ CẤP CAO (BUSINESS REQUIREMENTS)
 
-#### **1. Quy trình hiện tại (As-Is Process - Chuẩn SOP)**
-* **Bước 1: Tiếp nhận & Phân loại hồ sơ:** HR kiểm tra định kỳ các hòm thư email và kênh tuyển dụng, tải các tệp CV về máy tính cá nhân và sắp xếp vào các thư mục theo tên vị trí tuyển dụng.
-* **Bước 2: Ghi nhận dữ liệu ứng viên:** HR mở từng file CV, đọc thông tin và nhập thủ công các trường: Họ tên, SĐT, Email, Kỹ năng, Vị trí vào bảng tính *File Excel Tuyển dụng*.
-* **Bước 3: Sàng lọc hồ sơ:** HR đối chiếu thông tin ứng viên với tiêu chuẩn công việc (JD), dùng lệnh `Ctrl + F` trên Excel để dò tìm ứng viên có từ khóa phù hợp; chuyển tiếp CV tiềm năng cho Quản lý chuyên môn (Hiring Manager) xem xét duyệt phỏng vấn.
-* **Bước 4: Tổ chức phỏng vấn & Đánh giá:** HR liên hệ ứng viên qua Email/Điện thoại để sắp xếp lịch phỏng vấn. Buổi phỏng vấn diễn ra; ý kiến đánh giá được ghi nhận trên giấy hoặc trao đổi qua tin nhắn nội bộ.
-* **Bước 5: Cập nhật kết quả & Đóng hồ sơ:** HR tìm đến dòng của ứng viên trên Excel để gõ cập nhật trạng thái "Đậu" hoặc "Rớt". Gửi Thư mời nhận việc (Offer Letter) cho ứng viên trúng tuyển, hoặc gửi thư cảm ơn/từ chối thủ công cho ứng viên không đạt.
-
-#### **2. Quy trình tương lai (To-Be Process)**
-* **Bước 1: Tiếp nhận hồ sơ đa luồng & Khử trùng lặp (Intake & Deduplication):**
-  * *Luồng 1 (Chính):* Ứng viên truy cập Cổng ứng tuyển trực tuyến, tải tệp CV và gửi hồ sơ trực tiếp vào hệ thống.
-  * *Luồng 2 (Bổ trợ):* HR tải tệp CV từ các nguồn ngoại tuyến lên hệ thống (hỗ trợ kéo-thả hàng loạt).
-  * *Hệ thống:* Tự động quét kiểm tra Email và SĐT. Nếu phát hiện trùng lặp, hệ thống cảnh báo và hỗ trợ gộp dữ liệu vào hồ sơ hiện có.
-* **Bước 2: Trích xuất & Sàng lọc tự động bằng AI (AI Parsing & Screening):**
-  * Hệ thống tự động bóc tách dữ liệu có cấu trúc từ CV.
-  * AI đối chiếu thông tin với tiêu chí của JD và phân nhánh:
-    * **Đạt tiêu chuẩn:** Khởi tạo thẻ ứng viên tại trạng thái *"New"* hoặc *"Screening"* trên Kanban.
-    * **Không đạt tiêu chuẩn:** Tự động chuyển thẻ ứng viên sang cột *"Rejected"* kèm ghi chú lý do không đạt.
-* **Bước 3: Tự động gửi phản hồi từ chối (Automated Feedback):**
-  * Đối với các thẻ ở trạng thái *"Rejected"* do AI sàng lọc, hệ thống tự động kích hoạt gửi Email từ chối lịch sự theo mẫu định sẵn sau một khoảng thời gian trễ cấu hình trước (ví dụ: sau 12–24 giờ).
-* **Bước 4: Phỏng vấn & Đánh giá tập trung (Interview & Scorecard):**
-  * HR kéo thẻ ứng viên sang cột *"Interview"*, liên hệ hẹn lịch với ứng viên.
-  * Trong buổi phỏng vấn, HR và Hiring Manager truy cập Biểu mẫu đánh giá (Scorecard) tích hợp sẵn trên thẻ ứng viên để chấm điểm (1–5 sao) và ghi nhận xét trực tiếp.
-* **Bước 5: Đóng quy trình & Lưu trữ (Closure & Retention):**
-  * Dựa trên kết quả phỏng vấn, HR kéo thẻ sang *"Hired"* hoặc *"Rejected"*.
-  * Toàn bộ hồ sơ được lưu trữ tập trung vào Kho nhân tài (Talent Pool), tuân thủ thiết lập vòng đời dữ liệu (tự động dọn dẹp sau 06 tháng đối với hồ sơ bị loại).
-* **Bước 6: Luân chuyển vị trí (Repooling/Transfer):**
-  * HR có thể luân chuyển một hồ sơ tiềm năng nhưng chưa phù hợp ở vị trí hiện tại sang một vị trí tuyển dụng khác đang mở mà không cần ứng viên phải nộp lại CV.
-
----
-
-### **V. BUSINESS REQUIREMENTS (Bảng yêu cầu nghiệp vụ)**
-
-| Mã YC | Tên nghiệp vụ | Tác nhân | Mô tả & Tiêu chí chấp nhận (Acceptance Criteria) | Độ ưu tiên (MoSCoW) |
+| Mã BR | Tên Yêu Cầu Nghiệp Vụ | Tác Nhân | Tiêu Chí Nghiệm Thu Định Lượng (Acceptance Criteria) | Ưu Tiên |
 | :---: | :--- | :---: | :--- | :---: |
-| **BR-01** | **Cổng nộp hồ sơ trực tuyến (Candidate Portal)** | Ứng viên | Cung cấp biểu mẫu web công khai, thân thiện trên cả PC và Mobile (không yêu cầu đăng nhập). Cho phép ứng viên nhập Họ tên, Email, SĐT và đính kèm CV (.pdf, .doc, .docx dung lượng ≤ 10MB). Hiển thị thông báo xác nhận nộp thành công ngay sau khi gửi. | **Must Have** |
-| **BR-02** | **Tải lên và Xem trước CV nội bộ** | HR | Cho phép HR tải lên từng tệp hoặc hàng loạt (tối đa 50 CV/lần). Cung cấp trình xem trước (Preview) nội dung CV trực tiếp trên trình duyệt mà không cần tải tệp về máy tính cá nhân. | **Must Have** |
-| **BR-03** | **Khử trùng lặp dữ liệu (Deduplication)** | Hệ thống | Tự động đối chiếu Email và Số điện thoại của hồ sơ mới với cơ sở dữ liệu. Nếu phát hiện trùng khớp, hệ thống hiển thị cảnh báo, ngăn chặn tạo thẻ rác và cung cấp tùy chọn gộp hồ sơ. | **Must Have** |
-| **BR-04** | **Trích xuất dữ liệu tự động (AI Parsing)** | Hệ thống | Phân tích tệp CV để tự động bóc tách các trường: Họ tên, Email, SĐT, Kỹ năng, Số năm kinh nghiệm và tự động điền vào Form thông tin ứng viên với độ chính xác ≥ 85%. | **Must Have** |
-| **BR-05** | **Sàng lọc tự động bằng AI (AI Screening)** | Hệ thống | Tự động so sánh hồ sơ ứng viên với yêu cầu của JD theo các tiêu chí bắt buộc (Hard Criteria) và thang điểm phù hợp (Match Score). Tự động gắn thẻ "Rejected" nếu không đáp ứng ngưỡng quy định. | **Must Have** |
-| **BR-06** | **Tự động gửi Email từ chối** | Hệ thống | Tự động gửi email từ chối theo mẫu cho các ứng viên bị loại ở bước AI Screening. Hỗ trợ chèn các biến động (`{Candidate_Name}`, `{Job_Title}`) và cấu hình thời gian trễ (Delay: Gửi ngay, sau 12h, sau 24h). | **Must Have** |
-| **BR-07** | **Tìm kiếm và Lọc nâng cao** | HR | Cung cấp thanh công cụ tìm kiếm theo từ khóa chuyên môn (hỗ trợ logic AND/OR). Trả về danh sách ứng viên phù hợp trong thời gian ≤ 3 giây. | **Must Have** |
-| **BR-08** | **Quản lý Pipeline Kanban & SLA** | HR | Giao diện Kanban trực quan với 5 cột chuẩn (*New, Screening, Interview, Hired, Rejected*). Hỗ trợ kéo-thả để chuyển trạng thái. Tự động đổi màu cảnh báo nếu hồ sơ lưu lại một cột vượt quá SLA quy định. | **Must Have** |
-| **BR-09** | **Phiếu đánh giá chuyên sâu (Scorecard & Decision Rationale)** | HR/Manager/Tech Lead | Tích hợp biểu mẫu đánh giá đa tiêu chí có trọng số (Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30%), phân vòng phỏng vấn, cấp bậc đề xuất (Trainee/Junior/Mid/Senior/Lead), căn cứ trúng tuyển (điểm mạnh nổi bật — lý do đậu) và điểm cần lưu ý/kế hoạch đào tạo khi nhận việc. | **Must Have** |
-| **BR-10** | **Quản trị vòng đời dữ liệu (Retention)** | Hệ thống | Hồ sơ ở trạng thái "Rejected" trong Kho nhân tài được lưu trữ tối đa 06 tháng. Sau thời hạn này, hệ thống tự động chạy tác vụ dọn dẹp và xóa vĩnh viễn (Hard Delete) theo định kỳ. | **Must Have** |
-| **BR-11** | **Ghi nhận lịch sử thao tác (Audit Log)** | Hệ thống | Tự động lưu vết toàn bộ hoạt động (người thực hiện, hành động, thời gian) khi có thay đổi trên hồ sơ ứng viên (chuyển cột, chỉnh sửa thông tin, xóa). | **Must Have** |
-| **BR-12** | **Xuất dữ liệu (Data Export)** | HR | Cho phép trích xuất danh sách ứng viên theo bộ lọc ra tệp định dạng chuẩn (.xlsx, .csv). | **Could Have** |
+| **BR-01** | Cổng nộp hồ sơ & Tra cứu công khai | Ứng viên | Nộp CV `.pdf`/`.docx` ≤ 10MB không cần đăng nhập; tra cứu tiến độ tại `/jobs/tracker` ẩn 100% điểm AI và nhận xét nội bộ. | **P0 (Must)** |
+| **BR-02** | Nạp CV nội bộ & Chứng chỉ đính kèm | HR, Admin | Hỗ trợ nạp CV phân nguồn (`LINKEDIN`, `REFERRAL`, `HEADHUNTER`), đính kèm bằng cấp/chứng chỉ và xem trước trực tiếp trên web. | **P0 (Must)** |
+| **BR-03** | Khử trùng lặp & Hạn ngạch nộp | Hệ thống | Chặn nộp trùng `(Email, SĐT)` cùng Job trong 30 ngày (`BRL-02`) và chặn nộp quá 3 Job trong 90 ngày (`BRL-09`). | **P0 (Must)** |
+| **BR-04** | Bóc tách 5 trường cốt lõi & HR sửa tay | Hệ thống, HR | Hiển thị ban đầu đúng 5 trường (Họ tên, Email, Vị trí, Kỹ năng, Kinh nghiệm), ẩn chi tiết dưới nút "Xem chi tiết"; HR/Admin được sửa thủ công và tự tính lại độ khớp JD. | **P0 (Must)** |
+| **BR-05** | Đối chiếu Hybrid AI (Human-in-the-loop) | Hệ thống | Xử lý ≤ 5.0 giây/CV với `temperature: 0`, fallback NLP cục bộ khi lỗi mạng; 100% hồ sơ vào cột `NEW` để con người duyệt. | **P0 (Must)** |
+| **BR-06** | Tự động hoãn Email từ chối & Lý do bắt buộc | Hệ thống, HR, HM | Mọi thao tác sang `REJECTED` bắt buộc lý do ≥ 5 ký tự (`BRL-11`); hoãn gửi email 12 giờ (`BRL-05`) và hủy tự động nếu phục hồi thẻ. | **P0 (Must)** |
+| **BR-07** | Tìm kiếm, Lọc, Gắn sao & Đánh sáng CV | HR, HM | Phản hồi ≤ 1.5–3.0s; hỗ trợ lọc Chưa xem (đánh sáng viền xanh), Đánh sao ưu tiên và Chưa đánh giá. | **P0 (Must)** |
+| **BR-08** | Kanban 5 cột, SLA & Phân tách quyền vòng | HR, HM, Admin | Áp dụng nghiêm State Machine (`BRL-STAGE-ORDER`), khóa `HIRED`; HR tối đa `SCREENING`, HM phụ trách `INTERVIEW`/`HIRED` & lịch phỏng vấn; cảnh báo SLA (`NEW > 48h`, `SCREENING > 72h`). | **P0 (Must)** |
+| **BR-09** | Scorecard Chuyên sâu & Stage-Gate Hired | HR, HM | Chấm 3 tiêu chí trọng số (40/30/30 — `BRL-08`), ghi rõ căn cứ đậu; bắt buộc ≥ 01 Scorecard đạt trước khi chuyển `HIRED` (`BRL-06`). | **P0 (Must)** |
+| **BR-10** | Kho nhân tài, Repooling & Dọn dẹp 180 ngày | HR, Admin | Lưu trữ tập trung hồ sơ `REJECTED`, cho phép Repooling sang Job mới; chỉ `ADMIN` được Hard Delete hồ sơ quá 180 ngày (`BRL-10`). | **P0 (Must)** |
+| **BR-11** | Nhật ký Kiểm toán bất biến (Audit Trail) | Hệ thống | Ghi nhận 100% hành động chuyển cột, lý do từ chối, sửa hồ sơ, chấm Scorecard vào `AuditLog` (append-only). | **P0 (Must)** |
+| **BR-12** | Xuất dữ liệu báo cáo chuẩn Excel | HR, Admin | Trích xuất danh sách ứng viên ra tệp `.csv` có UTF-8 BOM (`\uFEFF`) hiển thị đúng tiếng Việt trên Excel. | **P1 (Should)** |
 
 ---
 
-### **VI. NON-FUNCTIONAL REQUIREMENTS (Yêu cầu phi chức năng)**
+## VI. YÊU CẦU TUÂN THỦ, RÀNG BUỘC & QUẢN TRỊ RỦI RO (COMPLIANCE & RISKS)
 
-* **Hiệu năng hệ thống (Performance):** 
-  * Tốc độ phản hồi giao diện dưới 3 giây đối với các thao tác tìm kiếm, lọc và kéo-thả Kanban.
-  * Hỗ trợ hàng đợi xử lý ngầm (Task Queue) khi upload hàng loạt từ 50–100 CV mà không làm đơ giao diện người dùng.
-* **Kiến trúc dữ liệu (Data Architecture):** Sử dụng hệ quản trị cơ sở dữ liệu quan hệ (RDBMS) để đảm bảo tính toàn vẹn cấu trúc và ràng buộc dữ liệu ứng viên.
-* **Bảo mật & Phòng chống Spam (Security & Anti-Spam):**
-  * Tích hợp cơ chế bảo vệ biểu mẫu công khai (Google reCAPTCHA hoặc Rate Limiting giới hạn số lượt gửi/IP) nhằm ngăn chặn bot spam và tấn công từ chối dịch vụ.
-* **Phân quyền truy cập (Access Control - Row Level Security):**
-  * **Ứng viên (Public / Candidate):** Chỉ có quyền truy cập vào liên kết biểu mẫu nộp CV công khai; tuyệt đối không thể xem bất kỳ dữ liệu nội bộ nào của hệ thống.
-  * **Admin (Quản trị viên):** Toàn quyền cấu hình hệ thống, tạo tài khoản, chỉnh sửa mẫu email, xem và xóa dữ liệu vĩnh viễn.
-  * **HR (Chuyên viên tuyển dụng):** Quản lý toàn bộ vị trí tuyển dụng, upload CV, luân chuyển trạng thái Kanban, chỉnh sửa hồ sơ. Chỉ có quyền Ẩn/Xóa mềm (Soft Delete).
-  * **Hiring Manager (Quản lý chuyên môn):** Quyền chỉ đọc (Read-only) với các hồ sơ được phân công; có quyền chấm điểm trên Scorecard. Không được xem thông tin bảo mật (như mức lương kỳ vọng của ứng viên).
-
----
-
-### **VII. ASSUMPTIONS, DEPENDENCIES & CONSTRAINTS**
-
-* **Giả định (Assumptions):** Đội ngũ HR cung cấp tối thiểu 50–100 CV mẫu thực tế kèm JD tương ứng để phục vụ quá trình kiểm thử độ chính xác của AI Parsing và AI Screening.
-* **Phụ thuộc (Dependencies):**
-  * Phụ thuộc vào dịch vụ API của bên thứ ba (LLM Provider như OpenAI/Gemini/Anthropic) cho module bóc tách và sàng lọc tự động.
-  * Phụ thuộc vào dịch vụ gửi Email đám mây (SMTP / SendGrid / Amazon SES) để thực thi tính năng tự động gửi email từ chối.
-* **Ràng buộc (Constraints):**
-  * **Thời gian hoàn thành:** Giới hạn triển khai toàn bộ dự án trong vòng 05 tuần.
-  * **Kỹ thuật:** Chỉ hỗ trợ tệp văn bản (.pdf, .doc, .docx). Không hỗ trợ bóc tách tệp PDF dạng ảnh scan thuần túy (Image-only PDF).
-
----
-
-### **VIII. RISKS & MITIGATION (Rủi ro & Kế hoạch giảm thiểu)**
-
-* **Rủi ro 1: AI Screening loại nhầm ứng viên tiềm năng (False Negative) do tiêu chí quá cứng nhắc.**
-  * *Giảm thiểu:* Thiết lập ngưỡng điểm linh hoạt; cung cấp màn hình danh sách riêng cho các hồ sơ bị AI loại để HR có thể xem xét nhanh và khôi phục (Restore) lại nếu cần; kích hoạt chế độ gửi email trễ (sau 12–24h) để HR có thời gian can thiệp trước khi thư từ chối được gửi đi.
-* **Rủi ro 2: Email tự động gửi đi bị rơi vào hòm thư rác (Spam/Junk) của ứng viên.**
-  * *Giảm thiểu:* Cấu hình đầy đủ các bản ghi xác thực tên miền gửi thư (SPF, DKIM, DMARC) cho hệ thống mail server.
-* **Rủi ro 3: Ứng viên gửi file dung lượng quá lớn hoặc tệp tin độc hại qua Cổng ứng viên.**
-  * *Giảm thiểu:* Giới hạn kích thước tệp tải lên tối đa 10MB; kiểm tra phần mở rộng tệp (File Extension) và quét mã độc trước khi lưu vào máy chủ.
+* **Tuân thủ pháp lý dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP & GDPR):** Phân loại dữ liệu nhạy cảm (`PII` / `Restricted`) trong Từ điển dữ liệu 10 cột (`[[ERD-ATS-07]]`), che giấu điểm AI/nhận xét khỏi ứng viên (`NFR-SEC-04`) và xóa vĩnh viễn hồ sơ `REJECTED` quá 180 ngày (`BRL-10`).
+* **Quản trị rủi ro kỹ thuật:**
+  1. *Rủi ro dịch vụ AI bên thứ ba gián đoạn:* Giảm thiểu bằng Kiến trúc Lai 2 lớp (Fallback sang Heuristic NLP cục bộ máy chủ — 0% mất hồ sơ).
+  2. *Rủi ro tệp mã độc giả mạo CV:* Giảm thiểu bằng kiểm tra chữ ký nhị phân Magic Bytes (`%PDF-` và `PK`), giới hạn ≤ 10MB và Rate Limit 5 lượt/10 phút/IP.
+  3. *Rủi ro lộ quyền quản trị:* Giảm thiểu bằng Zero-Trust Edge Middleware (`src/middleware.ts`), băm mật khẩu PBKDF2-SHA512 (100,000 vòng lặp) và chữ ký phiên HMAC-SHA256.

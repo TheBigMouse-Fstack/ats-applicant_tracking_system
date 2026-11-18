@@ -1,6 +1,34 @@
-# CHI?N L??C K? THU?T, FRONTEND V? SETUP ANTIGRAVITY CI
+---
+id: "GUIDE-TECH-09"
+title: "Danh sách Màn hình (SCR-xx) & Hướng dẫn Thiết lập Kỹ thuật"
+type: "guide"
+version: "2.0.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "screens"
+  - "technical-setup"
+  - "nextjs"
+upstream_deps:
+  - "FDD-ATS-04"
+  - "UC-ATS-05"
+downstream_deps:
+  - "SYS-ARCH-13"
+last_updated: "2026-11-18"
+---
 
-> **D? ?n:** ReCoverX Career - ATS
+# DANH SÁCH MÀN HÌNH (SCR-XX) & CHIẾN LƯỢC KỸ THUẬT
+
+> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)
+
+---
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.0.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 

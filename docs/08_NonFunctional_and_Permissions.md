@@ -1,14 +1,50 @@
-# MA TR?N PH?N QUY?N (RBAC) & Y?U C?U PHI CH?C N?NG (NFR)
+---
+id: "RBAC-NFR-08"
+title: "Phân loại Tác nhân, Ma trận Phân quyền RBAC & Yêu cầu Phi chức năng (ISO/IEC 25010)"
+type: "srs"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA & Security Team"
+domain: "recruitment-ats"
+tags:
+  - "rbac"
+  - "nfr-iso-25010"
+  - "actor-taxonomy"
+  - "security"
+upstream_deps:
+  - "BRD-ATS-01"
+  - "FDD-ATS-04"
+downstream_deps:
+  - "API-ATS-15"
+  - "BR-ERR-17"
+last_updated: "2026-11-18"
+---
 
-> **D? ?n:** ReCoverX Career - ATS
+# PHÂN LOẠI TÁC NHÂN, MA TRẬN PHÂN QUYỀN (RBAC) & YÊU CẦU PHI CHỨC NĂNG (NFR)
+
+> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
+> **Tiêu chuẩn áp dụng:** Universal BA Toolkit (`RULE-04` ISO/IEC 25010, `RULE-17` Actor Taxonomy & Least Privilege, `RULE-18`, `RULE-19`).
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Người Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v1.0.0` | 2026-11-12 | BA Team | **Initial** | Khởi tạo Ma trận phân quyền RBAC và NFR ban đầu. | Product Owner |
+| `v2.0.0` | 2026-11-15 | BA & Security Team | **Security** | Đồng bộ chuẩn băm mật khẩu NIST PBKDF2-SHA512, chữ ký phiên HMAC-SHA256, Magic Bytes và Edge Middleware. | Tech Lead |
+| `v2.1.0` | 2026-11-18 | BA & Security Team | **Changed** | Bổ sung Phân loại 4 nhóm Tác nhân (`RULE-17`); phân tách thẩm quyền vòng tuyển: `HR` max `SCREENING` + sửa 5 trường CV; `HIRING_MANAGER` phụ trách `INTERVIEW`/`HIRED` & lịch phỏng vấn. | Product Owner & Tech Lead |
 
 ---
 
-Dưới đây là tài liệu chi tiết cho **Nhóm Phân quyền (Mục 13)** và **Yêu cầu Phi chức năng (Mục 14)** của hệ thống **ReCoverX Career (ATS)** theo chuẩn kỹ thuật phần mềm:
+# MỤC 13: PHÂN LOẠI TÁC NHÂN & MA TRẬN PHÂN QUYỀN (RBAC)
 
----
+### 0. Phân Loại 4 Nhóm Tác Nhân Hệ Thống (Actor Taxonomy — RULE-17)
 
-# MỤC 13: MA TRẬN PHÂN QUYỀN (RBAC - ROLE-BASED ACCESS CONTROL)
+| Nhóm Tác Nhân | Tác Nhân Cụ Thể Trong ReCoverX Career ATS | Vai Trò Tương Tác |
+| :--- | :--- | :--- |
+| **1. Primary Actor** *(Tác nhân chính)* | Ứng viên (`Public`), Chuyên viên HR (`HR`), Quản lý Chuyên môn (`HIRING_MANAGER`), Quản trị viên (`ADMIN`) | Trực tiếp khởi xướng thao tác nghiệp vụ trên hệ thống. |
+| **2. Secondary Actor** *(Tác nhân phụ)* | Google Gemini API (`@google/genai`), Dịch vụ gửi Email (SMTP/Resend) | Tiếp nhận yêu cầu từ hệ thống chính để phân tích ngữ nghĩa CV và gửi thư mời/từ chối. |
+| **3. System / Daemon Actor** *(Tác nhân ngầm)* | Edge Middleware (`src/middleware.ts`), Hybrid AI Fallback (`pdf-parse` + Heuristic NLP), SLA Checker, Rejection Delay Queue (12h) | Thực thi tự động bảo vệ biên, kiểm tra SLA, đệm trễ email và dự phòng offline. |
+| **4. Off-stage Stakeholder** *(Bên liên quan thụ hưởng)* | Ban Giám đốc (C-Level), Pháp chế / Kiểm toán (Nghị định 13/2023/NĐ-CP) | Thụ hưởng báo cáo CSV, Audit Trail bất biến và đảm bảo tuân thủ bảo mật dữ liệu cá nhân. |
 
 ### 1. Định nghĩa các Vai trò người dùng (User Roles)
 1. **Ứng viên (Candidate / Public):** Người dùng bên ngoài, truy cập công khai vào Cổng tuyển dụng để xem tin, nộp hồ sơ, đính kèm chứng chỉ và tra cứu tiến độ ứng tuyển trực tuyến (Public Tracker), không cần tài khoản đăng nhập.
@@ -113,15 +149,5 @@ Tài liệu được phân loại theo tiêu chuẩn quốc tế **ISO/IEC 25010
 | **NFR-USA-01** | **Tính tương thích đa thiết bị** | Cổng ứng tuyển công khai và bảng Kanban hiển thị tối ưu trên cả máy tính, máy tính bảng và điện thoại. | **Responsive 100%** với Tailwind CSS, hỗ trợ Chrome, Safari, Edge, Firefox và trình duyệt di động. |
 | **NFR-USA-02** | **Độ dễ sử dụng & Cảnh báo trực quan** | Trải nghiệm kéo-thả Kanban mượt mà qua `@hello-pangea/dnd`; cảnh báo đổi màu viền đỏ khi vi phạm SLA (BRL-07); đánh sáng viền thẻ chưa xem chống bỏ sót. | Toast thông báo rõ ràng cho mọi tác vụ thành công hoặc thất bại; nhân viên sử dụng thành thạo sau **dưới 01 giờ**. |
 | **NFR-MNT-01** | **Kiến trúc mô hình hóa AI (Agnostic)** | Tách biệt tầng logic gọi AI qua interface mô hình hóa (`src/lib/ai-parser.ts`), cấu hình `temperature: 0` và strict JSON Schema. | Có thể nâng cấp hoặc chuyển đổi giữa **Gemini 1.5 Flash, GPT-4o, Claude 3.5** mà không cần sửa đổi giao diện người dùng. |
-| **NFR-MNT-02** | **Kiểm thử tự động & Độ tin cậy mã nguồn** | Mã nguồn viết hoàn toàn bằng TypeScript Strict Mode, phân tách rõ ràng giữa API Routes, Server Actions và Client Components. | Tích hợp bộ **81 kiểm thử tự động (Unit & Integration Tests)** đạt tỷ lệ thành công **100% (81/81 Passed)**, bảo vệ toàn bộ BRL và RBAC. |
-
----
-
-🎉 **Tuyệt vời!** Đến đây, bạn đã hoàn tất **12/16 mục** trong checklist của mình.
-
-👉 **BƯỚC TIẾP THEO CẦN LÀM:**  
-Chúng ta sẽ chuyển sang nhóm Giao diện:  
-**Mục 11: Danh sách màn hình (SCR-xx)** + map Use Case và Vai trò sử dụng.
-
-Bạn có muốn mình lên luôn **Danh sách các màn hình (SCR-01 đến SCR-xx)** cho hệ thống không?
+| **NFR-MNT-02** | **Kiểm thử tự động & Độ tin cậy mã nguồn** | Mã nguồn viết hoàn toàn bằng TypeScript Strict Mode, phân tách rõ ràng giữa API Routes, Server Actions và Client Components. | Tích hợp bộ **97 kiểm thử tự động (Unit & Integration Tests)** đạt tỷ lệ thành công **100% (97/97 Passed)**, bảo vệ toàn bộ BRL, State Machine và RBAC. |
 

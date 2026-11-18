@@ -1,8 +1,38 @@
+---
+id: "EXP-ATS-14"
+title: "Đặc tả Mở rộng Phạm vi & Tính năng Nâng cao (Change Request Log)"
+type: "cr"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "scope-expansion"
+  - "change-request"
+  - "interview-lifecycle"
+  - "tracker"
+upstream_deps:
+  - "BRD-ATS-01"
+  - "SCOPE-ATS-10"
+downstream_deps:
+  - "UC-ATS-05"
+  - "API-ATS-15"
+last_updated: "2026-11-18"
+---
+
 # ĐẶC TẢ MỞ RỘNG PHẠM VI & TÍNH NĂNG NÂNG CAO (SCOPE EXPANSION & ADVANCED FEATURES)
 
 > **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
 > **Tài liệu tham chiếu:** `docs/10_Scope_and_System_Comparison.md`, `docs/02_BRD_Updated_Full.md`  
 > **Mục tiêu:** Chuyển hóa các tính năng từng nằm ngoài phạm vi (Out-of-Scope) hoặc bị thiếu sót trong vận hành thành các module thực tế có giá trị cao, nâng tầm trải nghiệm của Ứng viên (Candidate Experience - CX) và hiệu quả của Nhà tuyển dụng (Recruiter Efficiency).
+
+---
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 

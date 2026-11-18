@@ -1,3 +1,24 @@
+---
+id: "SYS-ARCH-13"
+title: "Kiến trúc Hệ thống & Chi tiết Công nghệ (Next.js 14 Fullstack)"
+type: "spec"
+version: "2.0.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "architecture"
+  - "nextjs"
+  - "prisma"
+  - "edge-middleware"
+upstream_deps:
+  - "BRD-ATS-01"
+  - "ERD-ATS-07"
+downstream_deps:
+  - "API-ATS-15"
+last_updated: "2026-11-18"
+---
+
 # TÀI LIỆU KIẾN TRÚC HỆ THỐNG & CHI TIẾT CÔNG NGHỆ (SYSTEM ARCHITECTURE & TECH STACK)
 ## Dự án: ReCoverX Career — Applicant Tracking System (ATS)
 
@@ -5,6 +26,14 @@
 > 1. Mô tả chi tiết Kiến trúc Tổng thể Hệ thống (**System Architecture**) theo mô hình phân tầng chuẩn công nghiệp (5-Tier Layered Architecture).  
 > 2. Phân tích chi tiết từng công nghệ, thư viện, framework được sử dụng trong toàn bộ hệ thống, lý do lựa chọn và vai trò kỹ thuật.  
 > 3. Cung cấp sơ đồ luồng dữ liệu đầu-cuối (End-to-End Data Flows) và **Ma trận Truy vết Toàn diện (Traceability Matrix)** đồng bộ 100% giữa Tài liệu Đặc tả và Mã nguồn thực tế.
+
+---
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.0.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 

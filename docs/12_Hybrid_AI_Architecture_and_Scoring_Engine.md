@@ -1,3 +1,25 @@
+---
+id: "AI-ARCH-12"
+title: "Kiến trúc Hybrid AI, Thuật toán Chấm điểm & Rule 5 Trường Cốt Lõi CV"
+type: "spec"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "hybrid-ai"
+  - "gemini-api"
+  - "5-core-fields"
+  - "nlp-fallback"
+upstream_deps:
+  - "BRD-ATS-01"
+  - "UC-ATS-05"
+downstream_deps:
+  - "API-ATS-15"
+  - "BR-ERR-17"
+last_updated: "2026-11-18"
+---
+
 # TÀI LIỆU CHUYÊN SÂU: KIẾN TRÚC HYBRID AI & CƠ CHẾ CHẤM ĐIỂM TỰ ĐỘNG
 ## Dự án: ReCoverX Career — Hệ thống Tuyển dụng ATS Thông minh
 
@@ -5,6 +27,14 @@
 > 1. Giải thích chi tiết kiến trúc **Mô hình Lai (Hybrid AI Model)**: Sự kết hợp giữa Lớp 1 (NLP/Regex tất định cục bộ) và Lớp 2 (Google Gemini LLM API).  
 > 2. Phân tích chi tiết quy trình gọi AI (`@google/genai`), cấu trúc Prompt kỹ thuật, tham số nhiệt độ `temperature: 0` và chuẩn hóa cấu trúc đầu ra `JSON Schema`.  
 > 3. Chứng minh và thẩm định tính đúng đắn của **Thuật toán tính điểm phù hợp (Match Scoring Engine)** theo quy tắc nghiệp vụ chuẩn **BRL-04**.
+
+---
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 

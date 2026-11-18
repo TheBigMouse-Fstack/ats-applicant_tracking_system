@@ -1,11 +1,40 @@
-# QUY TR?NH NGHI?P V? AS-IS & TO-BE (BPMN 2.0)
+---
+id: "BPMN-ATS-03"
+title: "Quy trình Nghiệp vụ AS-IS & TO-BE (BPMN 2.0 — Human-in-the-loop)"
+type: "diagram"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "bpmn-2.0"
+  - "as-is"
+  - "to-be"
+  - "human-in-the-loop"
+upstream_deps:
+  - "BRD-ATS-01"
+downstream_deps:
+  - "FDD-ATS-04"
+  - "FSM-ATS-06"
+last_updated: "2026-11-18"
+---
 
-> **D? ?n:** ReCoverX Career - ATS
-> **T?i li?u t?ng h?p c?c phi?n b?n s? ?? BPMN 2.0, ??nh gi? chu?n ho? v? di?n gi?i nghi?p v?.**
+# QUY TRÌNH NGHIỆP VỤ AS-IS & TO-BE (BPMN 2.0)
+
+> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)
+> **Tiêu chuẩn biên soạn:** Universal BA Toolkit (`RULE-18`, `RULE-19`, BPMN 2.0 Swimlane)
 
 ---
 
-## 1. QUY TR?NH AS-IS (HI?N TR?NG CH?A C? ATS)
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+
+---
+
+## 1. QUY TRÌNH AS-IS (HIỆN TRẠNG THỦ CÔNG CHƯA CÓ ATS)
 
 ### S? ?? ban ??u v? nh?n x?t BPMN 2.0
 
@@ -359,7 +388,7 @@ Quy trình vận hành theo trình tự các bước như sau:
 
 ---
 
-## 2. QUY TR?NH TO-BE (T??NG LAI C? H? TH?NG ATS)
+## 2. QUY TRÌNH TO-BE (TƯƠNG LAI VỚI RECOVERX CAREER ATS)
 
 ### H??ng d?n thi?t k? quy tr?nh To-Be chu?n BPMN 2.0:
 

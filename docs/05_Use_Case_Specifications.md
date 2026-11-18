@@ -1,476 +1,167 @@
-# B?N ??C T? CHI TI?T USE CASE (USE CASE SPECIFICATIONS)
+---
+id: "UC-ATS-05"
+title: "Đặc tả Chi tiết Use Case Chuẩn Alistair Cockburn (UC-00 đến UC-07)"
+type: "srs"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA Team"
+domain: "recruitment-ats"
+tags:
+  - "use-case"
+  - "cockburn-12-parts"
+  - "srs"
+upstream_deps:
+  - "BRD-ATS-01"
+  - "FDD-ATS-04"
+downstream_deps:
+  - "FSM-ATS-06"
+  - "API-ATS-15"
+  - "UAT-ATS-18"
+last_updated: "2026-11-18"
+---
 
-> **D? ?n:** ReCoverX Career - ATS
-> **Quy chu?n c?u tr?c b?ng ??c t? chi ti?t theo chu?n BA chuy?n nghi?p.**
+# ĐẶC TẢ CHI TIẾT USE CASE CHUẨN ALISTAIR COCKBURN
+
+> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
+> **Tiêu chuẩn biên soạn:** Universal BA Toolkit (`RULE-06` — Khung 12 thành phần Alistair Cockburn, `RULE-16` — Chống mơ hồ, `RULE-18`, `RULE-19`)
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Người Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v1.0.0` | 2026-11-12 | BA Team | **Initial** | Đặc tả sơ bộ 5 Use Case ban đầu (`UC-01` đến `UC-05`). | Product Owner |
+| `v2.0.0` | 2026-11-15 | BA Team | **Added** | Bổ sung `UC-00`, `UC-01A` (Public Tracker), `UC-05A` (Interview Lifecycle), `UC-06`, `UC-07` và Deep Scorecard. | Tech Lead |
+| `v2.1.0` | 2026-11-18 | BA Team | **Changed** | Tái cấu trúc toàn bộ theo chuẩn 12 thành phần Cockburn; loại bỏ văn phong hội thoại chat & logic cũ "AI tự loại"; bổ sung luồng 5 trường cốt lõi + HR sửa tay, phân quyền HR (max `SCREENING`) vs Hiring Manager (`INTERVIEW`/`HIRED`) và bắt buộc lý do `REJECTED` (`BRL-11`). | Product Owner & Tech Lead |
 
 ---
 
-## 1. Ki?m tra r? so?t v? Template ??c t? chu?n
+## UC-00: ĐĂNG NHẬP & QUẢN TRỊ NGƯỜI DÙNG NỘI BỘ
 
-Dưới đây là phần **Kiểm tra rà soát tính hợp lý** toàn diện, kèm theo **Hướng dẫn chi tiết (có sẵn text để bạn copy vào draw.io tự vẽ)** và **Bản Đặc tả Use Case chi tiết chuẩn mực** cho **5 Use Case cốt lõi (UC-01 đến UC-05)** theo đúng checklist.
-
----
-
-### PHẦN 1: KẾT QUẢ RÀ SOÁT TÍNH HỢP LÝ (SANITY CHECK)
-
-Sau khi đối chiếu chéo giữa **BRD**, **Quy trình BPMN To-Be** và **Các Use Case**, mình phát hiện **3 điểm bất hợp lý tiềm ẩn** và đã chuẩn hóa lại như sau:
-
-1. **Phân quyền của Quản lý chuyên môn (Hiring Manager) ở UC-04:**
-   * *Điểm bất hợp lý:* Nếu để Manager cũng có quyền kéo-thả trên Kanban thì sẽ vi phạm Ma trận phân quyền ở Mục VI của BRD (*"Hiring Manager chỉ có quyền Read-only đối với các hồ sơ được phân công"*).
-   * *Đã chuẩn hóa:* Trong UC-04, **chỉ có Chuyên viên HR mới được kéo-thả chuyển trạng thái**; Hiring Manager chỉ có quyền **Xem hồ sơ & Đọc thẻ ứng viên**.
-2. **Quy tắc chiều mũi tên trong UML (Rất dễ bị trừ điểm):**
-   * Chuẩn UML quy định:
-     * **`<<include>>`**: Mũi tên nét đứt đi từ **Use Case Gốc ➔ Use Case Con** (Bắt buộc phải có).
-     * **`<<extend>>`**: Mũi tên nét đứt đi từ **Use Case Mở rộng ➔ Use Case Gốc** (Chỉ kích hoạt khi thỏa mãn điều kiện).
-   * *Đã chuẩn hóa:* Dưới mỗi Use Case bên dưới đều ghi rõ chữ `Từ [A] ➔ trỏ sang [B]` để bạn kéo mũi tên không bao giờ bị ngược.
-3. **Mối nối dữ liệu giữa UC-01, UC-02 và UC-03:**
-   * Sau khi Ứng viên nộp (UC-01) hoặc HR upload (UC-02), tệp CV phải ở trạng thái sẵn sàng để kích hoạt tiến trình bóc tách và sàng lọc tự động (UC-03).
-
----
-
-### PHẦN 2: CHI TIẾT 5 ĐẶC TẢ USE CASE CỐT LÕI (KÈM TEXT ĐỂ COPY TỰ VẼ)
-
----
-
-### 🟢 USE CASE 01: NỘP HỒ SƠ ỨNG TUYỂN TRỰC TUYẾN (CANDIDATE PORTAL)
-
-#### A. TEXT ĐỂ BẠN COPY VẼ TRÊN DRAW.IO:
-* **Tác nhân (Actor):**
-  * `Ứng viên (Candidate)` (Bên trái)
-  * `Hệ thống ATS` (Bên phải)
-* **Khung ranh giới (Boundary):** `Phân hệ Cổng ứng tuyển trực tuyến`
-* **Hình Ovan chính (Base Use Case):** `Nộp hồ sơ ứng tuyển trực tuyến`
-* **Các hình Ovan con & Mũi tên kết nối:**
-  1. Nối nét liền giữa `Ứng viên` và `Nộp hồ sơ ứng tuyển trực tuyến`.
-  2. Vẽ Ovan: `Xem chi tiết JD` ➔ Mũi tên nét đứt `<<include>>` từ `Nộp hồ sơ...` trỏ sang `Xem chi tiết JD`.
-  3. Vẽ Ovan: `Tải lên tệp CV` ➔ Mũi tên nét đứt `<<include>>` từ `Nộp hồ sơ...` trỏ sang `Tải lên tệp CV`.
-  4. Vẽ Ovan: `Xác thực reCAPTCHA` ➔ Mũi tên nét đứt `<<include>>` từ `Nộp hồ sơ...` trỏ sang `Xác thực reCAPTCHA`. Nối nét liền từ `Xác thực reCAPTCHA` sang `Hệ thống ATS`.
-  5. Vẽ Ovan: `Báo lỗi tệp không hợp lệ` ➔ Mũi tên nét đứt `<<extend>>` từ `Báo lỗi tệp không hợp lệ` trỏ ngược về `Tải lên tệp CV`.
-
-#### B. BẢN ĐẶC TẢ CHI TIẾT (USE CASE SPECIFICATION):
-* **Mã Use Case:** UC-01
-* **Tên Use Case:** Nộp hồ sơ ứng tuyển trực tuyến
-* **Tác nhân:** Ứng viên (Chính), Hệ thống ATS (Hỗ trợ)
-* **Mô tả:** Cho phép ứng viên truy cập vào cổng nghề nghiệp của công ty, xem thông tin JD, điền thông tin liên hệ và tải file CV để ứng tuyển mà không cần tạo tài khoản.
-* **Tiền điều kiện:** Vị trí tuyển dụng đang ở trạng thái mở (Active) trên Cổng thông tin.
-* **Hậu điều kiện:** Hồ sơ được ghi nhận vào hệ thống; hiển thị thông báo ứng tuyển thành công; kích hoạt tiến trình xử lý ngầm (UC-02 / UC-03).
-* **Luồng sự kiện chính (Basic Flow):**
-  1. Ứng viên truy cập liên kết tuyển dụng của công ty và chọn vị trí tuyển dụng mong muốn.
-  2. Hệ thống hiển thị Bản mô tả công việc (JD) chi tiết kèm biểu mẫu nộp hồ sơ.
-  3. Ứng viên nhấn nút "Ứng tuyển ngay".
-  4. Ứng viên điền thông tin bắt buộc: Họ và tên, Email, Số điện thoại.
-  5. Ứng viên đính kèm tệp CV từ máy tính cá nhân.
-  6. Ứng viên tích chọn xác thực reCAPTCHA.
-  7. Ứng viên nhấn nút "Gửi hồ sơ".
-  8. Hệ thống kiểm tra tính hợp lệ của dữ liệu và tệp đính kèm.
-  9. Hệ thống lưu tệp CV, ghi nhận dữ liệu ứng tuyển vào cơ sở dữ liệu.
-  10. Hệ thống hiển thị thông báo "Nộp hồ sơ thành công! Chúng tôi sẽ phản hồi qua email của bạn." và kết thúc Use Case.
-* **Luồng thay thế (Alternative Flows):**
-  * *4a. Ứng viên bỏ trống trường bắt buộc:* Hệ thống hiển thị thông báo lỗi màu đỏ ngay dưới trường tương ứng (ví dụ: "Vui lòng nhập Email hợp lệ") và giữ nguyên dữ liệu đã nhập.
-* **Luồng ngoại lệ (Exception Flows):**
-  * *5a. Tệp đính kèm sai định dạng hoặc quá dung lượng:* Hệ thống chặn gửi, hiển thị thông báo: "Chỉ hỗ trợ file .pdf, .doc, .docx và dung lượng tối đa 10MB".
-  * *6a. Xác thực reCAPTCHA thất bại:* Hệ thống yêu cầu ứng viên xác thực lại mã captcha trước khi cho phép bấm nút gửi.
-
----
-
-### 🟢 USE CASE 02: TẢI LÊN & XỬ LÝ BÓC TÁCH CV NỘI BỘ (INTAKE & AI PARSING)
-
-#### A. TEXT ĐỂ BẠN COPY VẼ TRÊN DRAW.IO:
-* **Tác nhân (Actor):**
-  * `Chuyên viên HR` (Bên trái)
-  * `Hệ thống ATS & AI` (Bên phải)
-* **Khung ranh giới (Boundary):** `Phân hệ Tiếp nhận & AI Engine`
-* **Hình Ovan chính (Base Use Case):** `Tải lên & Xử lý bóc tách CV`
-* **Các hình Ovan con & Mũi tên kết nối:**
-  1. Nối nét liền giữa `Chuyên viên HR` và `Tải lên & Xử lý bóc tách CV`.
-  2. Vẽ Ovan: `Khử trùng lặp qua Email/SĐT` ➔ Mũi tên `<<include>>` từ Ovan chính trỏ sang Ovan này. Nối nét liền sang `Hệ thống ATS & AI`.
-  3. Vẽ Ovan: `Bóc tách thông tin bằng AI (Parsing)` ➔ Mũi tên `<<include>>` từ Ovan chính trỏ sang Ovan này. Nối nét liền sang `Hệ thống ATS & AI`.
-  4. Vẽ Ovan: `Cảnh báo & Gộp hồ sơ trùng` ➔ Mũi tên `<<extend>>` từ Ovan này trỏ ngược về `Khử trùng lặp qua Email/SĐT`.
-  5. Vẽ Ovan: `Xem trước tệp CV (Preview)` ➔ Mũi tên `<<extend>>` từ Ovan này trỏ về Ovan chính.
-
-#### B. BẢN ĐẶC TẢ CHI TIẾT (USE CASE SPECIFICATION):
-* **Mã Use Case:** UC-02
-* **Tên Use Case:** Tải lên & Xử lý bóc tách CV nội bộ
-* **Tác nhân:** Chuyên viên HR (Chính), Hệ thống ATS & AI (Thực thi ngầm)
-* **Mô tả:** HR tải lên các CV thu thập từ nguồn ngoại tuyến (tải lẻ hoặc tải cả thư mục từ 50–100 CV). Hệ thống tự động khử trùng lặp và dùng AI bóc tách thông tin điền vào hồ sơ.
-* **Tiền điều kiện:** HR đã đăng nhập hệ thống và có quyền quản lý vị trí tuyển dụng tương ứng.
-* **Hậu điều kiện:** Dữ liệu ứng viên được trích xuất thành công; tạo thẻ hồ sơ mới hoặc cập nhật hồ sơ cũ.
-* **Luồng sự kiện chính (Basic Flow):**
-  1. HR truy cập màn hình vị trí tuyển dụng, chọn nút "Tải lên CV".
-  2. HR chọn tải 1 tệp hoặc kéo-thả nhiều tệp (.pdf, .doc, .docx) vào vùng tải lên.
-  3. Hệ thống đưa các tệp vào Hàng đợi xử lý (Task Queue) và hiển thị thanh tiến trình.
-  4. Với mỗi tệp, Hệ thống trích xuất sơ bộ Email và Số điện thoại để đối chiếu CSDL.
-  5. Hệ thống xác nhận không trùng lặp.
-  6. Hệ thống gửi nội dung văn bản sang dịch vụ AI Parsing để bóc tách: Họ tên, SĐT, Email, Kỹ năng, Số năm kinh nghiệm.
-  7. Hệ thống tự động điền các thông tin bóc tách được vào Form hồ sơ ứng viên.
-  8. Hệ thống lưu tệp CV vào kho lưu trữ tập trung và hiển thị danh sách CV xử lý thành công kèm nút "Xem trước (Preview)".
-* **Luồng thay thế (Alternative Flows):**
-  * *5a. Phát hiện trùng lặp hồ sơ:* Hệ thống hiển thị biểu tượng cảnh báo "Trùng lặp với ứng viên [Tên] nộp ngày [DD/MM/YYYY]". Cung cấp 2 lựa chọn: "Gộp thông tin mới vào hồ sơ cũ" hoặc "Bỏ qua tệp tải lên".
-* **Luồng ngoại lệ (Exception Flows):**
-  * *6a. Tệp CV là dạng ảnh scan (Image-only PDF) không bóc tách được văn bản:* Hệ thống gắn cờ "Parsing lỗi / Cần nhập tay", tạo thẻ với thông tin rỗng để HR tự điền thủ công.
-
----
-
-### 🟢 USE CASE 03: SÀNG LỌC HỒ SƠ & PHẢN HỒI TỰ ĐỘNG BẰNG AI
-
-#### A. TEXT ĐỂ BẠN COPY VẼ TRÊN DRAW.IO:
-* **Tác nhân (Actor):**
-  * `Hệ thống ATS & AI` (Tác nhân chính - Bên trái)
-  * `Ứng viên` (Tác nhân nhận thông báo - Bên phải)
-* **Khung ranh giới (Boundary):** `Phân hệ Sàng lọc tự động`
-* **Hình Ovan chính (Base Use Case):** `Sàng lọc & Phản hồi tự động bằng AI`
-* **Các hình Ovan con & Mũi tên kết nối:**
-  1. Nối nét liền giữa `Hệ thống ATS & AI` và Ovan chính.
-  2. Vẽ Ovan: `Đối chiếu JD & Chấm điểm (Match Score)` ➔ Mũi tên `<<include>>` từ Ovan chính trỏ sang Ovan này.
-  3. Vẽ Ovan: `Khởi tạo thẻ trên Kanban (Cột Screening)` ➔ Mũi tên `<<extend>>` từ Ovan này trỏ về Ovan chính (Điều kiện: Điểm ≥ Ngưỡng).
-  4. Vẽ Ovan: `Chuyển thẻ sang cột Rejected` ➔ Mũi tên `<<extend>>` từ Ovan này trỏ về Ovan chính (Điều kiện: Điểm < Ngưỡng).
-  5. Vẽ Ovan: `Tự động gửi Email từ chối (sau delay)` ➔ Mũi tên `<<include>>` từ `Chuyển thẻ sang cột Rejected` trỏ sang Ovan này. Nối nét liền sang `Ứng viên`.
-
-#### B. BẢN ĐẶC TẢ CHI TIẾT (USE CASE SPECIFICATION):
-* **Mã Use Case:** UC-03
-* **Tên Use Case:** Sàng lọc hồ sơ & Phản hồi tự động bằng AI
-* **Tác nhân:** Hệ thống ATS & AI Engine (Tác nhân tự động), Ứng viên (Người nhận thông báo)
-* **Mô tả:** Sau khi CV được bóc tách dữ liệu, hệ thống tự động so khớp năng lực ứng viên với tiêu chuẩn JD để phân loại và gửi email từ chối tự động nếu không đạt.
-* **Tiền điều kiện:** CV đã hoàn tất bước AI Parsing (UC-02) và vị trí tuyển dụng đã có tiêu chí JD thiết lập sẵn.
-* **Hậu điều kiện:** Thẻ ứng viên được xếp vào đúng cột trên Kanban (*Screening* hoặc *Rejected*); lên lịch gửi email từ chối nếu bị loại.
-* **Luồng sự kiện chính (Basic Flow):**
-  1. Hệ thống lấy dữ liệu ứng viên (kỹ năng, số năm kinh nghiệm) đối chiếu với tiêu chí JD của vị trí ứng tuyển.
-  2. Hệ thống tính toán điểm tương đồng (Match Score, thang điểm 0–100%) và kiểm tra các tiêu chí tiên quyết (Hard Criteria).
-  3. Điểm đánh giá đạt từ ngưỡng quy định trở lên (ví dụ: Match Score ≥ 50% và đủ kinh nghiệm bắt buộc).
-  4. Hệ thống tự động tạo/chuyển thẻ ứng viên vào cột **"Screening"** trên bảng Kanban.
-  5. Hệ thống hiển thị điểm Match Score và tóm tắt lý do phù hợp trên thẻ để HR tiện theo dõi. Kết thúc Use Case.
-* **Luồng thay thế (Alternative Flows):**
-  * *3a. Điểm đánh giá dưới ngưỡng hoặc không đạt tiêu chí tiên quyết:*
-    * 3a.1. Hệ thống tự động chuyển thẻ ứng viên vào cột **"Rejected"** trên Kanban.
-    * 3a.2. Hệ thống ghi chú lý do loại (ví dụ: "Kinh nghiệm < 1 năm", "Thiếu kỹ năng chuyên môn bắt buộc").
-    * 3a.3. Hệ thống tạo một tác vụ hẹn giờ gửi thư (Delayed Job: 12h hoặc 24h sau).
-    * 3a.4. Khi đến thời hạn hẹn giờ, hệ thống tự động gửi Email từ chối lịch sự theo mẫu (Rejection Email Template) đến hòm thư của ứng viên.
-    * 3a.5. Hồ sơ được lưu vào Kho nhân tài (Talent Pool) và kích hoạt đếm ngược thời gian lưu trữ 06 tháng.
-* **Luồng ngoại lệ (Exception Flows):**
-  * *3b. HR can thiệp hủy gửi email:* Trong thời gian chờ (Delay), nếu HR phát hiện ứng viên bị AI đánh giá nhầm, HR có thể kéo thẻ quay lại cột Screening. Hệ thống sẽ tự động hủy lệnh gửi email từ chối.
-
----
-
-### 🟢 USE CASE 04: QUẢN LÝ QUY TRÌNH ỨNG VIÊN TRÊN KANBAN PIPELINE
-
-#### A. TEXT ĐỂ BẠN COPY VẼ TRÊN DRAW.IO:
-* **Tác nhân (Actor):**
-  * `Chuyên viên HR` (Chính - Toàn quyền)
-  * `Quản lý Chuyên môn` (Phụ - Chỉ đọc)
-* **Khung ranh giới (Boundary):** `Phân hệ Quản lý Kanban Pipeline`
-* **Hình Ovan chính (Base Use Case):** `Quản lý Kanban Pipeline`
-* **Các hình Ovan con & Mũi tên kết nối:**
-  1. Nối nét liền từ `Chuyên viên HR` và `Quản lý Chuyên môn` vào Ovan chính.
-  2. Vẽ Ovan: `Kéo - thả chuyển trạng thái ứng viên` ➔ Mũi tên `<<include>>` từ Ovan chính trỏ sang. *(Ghi chú: Chỉ HR được nối quyền này)*.
-  3. Vẽ Ovan: `Tìm kiếm & Lọc hồ sơ nâng cao` ➔ Mũi tên `<<include>>` từ Ovan chính trỏ sang.
-  4. Vẽ Ovan: `Cảnh báo quá hạn lưu thẻ (SLA Alert)` ➔ Mũi tên `<<extend>>` từ Ovan này trỏ về `Kéo - thả chuyển trạng thái ứng viên`.
-  5. Vẽ Ovan: `Luân chuyển vị trí (Repooling)` ➔ Mũi tên `<<extend>>` từ Ovan này trỏ về Ovan chính.
-
-#### B. BẢN ĐẶC TẢ CHI TIẾT (USE CASE SPECIFICATION):
-* **Mã Use Case:** UC-04
-* **Tên Use Case:** Quản lý quy trình ứng viên trên Kanban Pipeline
-* **Tác nhân:** Chuyên viên HR (Thực thi chính), Quản lý chuyên môn (Xem hồ sơ)
-* **Mô tả:** Cung cấp giao diện trực quan dạng bảng với 5 cột chuẩn (*New, Screening, Interview, Hired, Rejected*) để theo dõi tiến độ, tìm kiếm ứng viên và luân chuyển vị trí.
-* **Tiền điều kiện:** Người dùng đã đăng nhập hệ thống với vai trò HR hoặc Hiring Manager được cấp quyền.
-* **Hậu điều kiện:** Trạng thái ứng viên được cập nhật theo thời gian thực; hệ thống lưu vết Audit Log.
-* **Luồng sự kiện chính (Basic Flow):**
-  1. HR truy cập vào mục "Pipeline Tuyển dụng" của vị trí cần quản lý.
-  2. Hệ thống hiển thị bảng Kanban 5 cột cùng danh sách các thẻ ứng viên tương ứng.
-  3. HR sử dụng thanh tìm kiếm hoặc bộ lọc nâng cao (lọc theo kỹ năng, số năm kinh nghiệm, điểm AI Match Score).
-  4. Hệ thống lọc và hiển thị danh sách thẻ thỏa mãn điều kiện lọc trong thời gian ≤ 3 giây.
-  5. HR nhấn giữ và kéo thẻ ứng viên từ cột này thả sang cột khác (ví dụ: kéo từ *Screening* sang *Interview*).
-  6. Hệ thống cập nhật trạng thái mới của ứng viên, ghi nhận thời gian luân chuyển (Timestamp) và lưu vết người thực hiện vào Audit Log.
-* **Luồng thay thế (Alternative Flows):**
-  * *5a. Thẻ bị quá hạn SLA:* Hệ thống kiểm tra thời gian lưu của thẻ ở cột hiện tại; nếu vượt quá cấu hình SLA (ví dụ: nằm ở cột Screening quá 3 ngày), hệ thống tự động đổi viền thẻ sang màu đỏ cảnh báo.
-  * *5b. Luân chuyển vị trí (Repooling):* Tại thẻ ứng viên ở cột Rejected, HR nhấn biểu tượng "Chuyển vị trí" ➔ Chọn vị trí tuyển dụng mới ➔ Hệ thống tự nhân bản thẻ ứng viên sang cột *New* của vị trí đích, giữ nguyên lịch sử đánh giá cũ.
-* **Luồng ngoại lệ (Exception Flows):**
-  * *2a. Quản lý chuyên môn (Hiring Manager) đăng nhập:* Hệ thống chỉ cho phép xem thông tin thẻ, tìm kiếm và xem điểm; hệ thống khóa tính năng kéo-thả và ẩn các thông tin nhạy cảm (như mức lương hiện tại/kỳ vọng).
-
----
-
-### 🟢 USE CASE 05: ĐÁNH GIÁ ỨNG VIÊN BẰNG SCORECARD
-
-#### A. TEXT ĐỂ BẠN COPY VẼ TRÊN DRAW.IO:
-* **Tác nhân (Actor):**
-  * `Chuyên viên HR` (Bên trái)
-  * `Quản lý Chuyên môn (Hiring Manager)` (Bên trái)
-  * `Hệ thống ATS` (Bên phải)
-* **Khung ranh giới (Boundary):** `Phân hệ Đánh giá & Phỏng vấn`
-* **Hình Ovan chính (Base Use Case):** `Đánh giá ứng viên bằng Scorecard`
-* **Các hình Ovan con & Mũi tên kết nối:**
-  1. Nối nét liền từ `Chuyên viên HR` và `Quản lý Chuyên môn` vào Ovan chính.
-  2. Vẽ Ovan: `Chấm điểm năng lực theo tiêu chí (1 - 5 sao)` ➔ Mũi tên `<<include>>` từ Ovan chính trỏ sang.
-  3. Vẽ Ovan: `Ghi nhận xét & đề xuất kết quả` ➔ Mũi tên `<<include>>` từ Ovan chính trỏ sang.
-  4. Vẽ Ovan: `Tổng hợp điểm số hội đồng phỏng vấn` ➔ Mũi tên `<<include>>` từ Ovan chính trỏ sang. Nối nét liền sang `Hệ thống ATS`.
-
-#### B. BẢN ĐẶC TẢ CHI TIẾT (USE CASE SPECIFICATION):
-* **Mã Use Case:** UC-05
-* **Tên Use Case:** Đánh giá Ứng viên Bằng Scorecard Chuyên Sâu & Lưu Vết Lịch Sử
-* **Tác nhân:** Chuyên viên HR, Quản lý chuyên môn / Tech Lead (Hội đồng phỏng vấn), Hệ thống ATS
-* **Mô tả:** Cho phép hội đồng phỏng vấn chọn vòng phỏng vấn, cấp bậc đề xuất, chấm điểm có trọng số các tiêu chí năng lực (Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30%), ghi nhận căn cứ trúng tuyển (điểm mạnh then chốt) và điểm cần lưu ý/đào tạo để làm cơ sở minh bạch cho quyết định tuyển dụng.
-* **Tiền điều kiện:** Ứng viên đang ở trạng thái/cột "Interview" trên bảng Kanban hoặc có lịch phỏng vấn đã được xác lập.
-* **Hậu điều kiện:** Điểm số, cấp bậc, căn cứ tuyển dụng và nhận xét của từng giám khảo được lưu thành phiếu đánh giá độc lập; hệ thống tự động tính điểm trung bình tổng hợp và cập nhật lịch sử ứng viên.
-* **Luồng sự kiện chính (Basic Flow):**
-  1. Người phỏng vấn (HR hoặc Quản lý chuyên môn/Tech Lead) mở ngăn chi tiết ứng viên (`CandidateDrawer`) và nhấn "+ Đánh Giá Phỏng Vấn".
-  2. Hệ thống hiển thị biểu mẫu `ScorecardModal` với thông tin ứng viên, vị trí tuyển dụng, và các trường đánh giá chuyên sâu.
-  3. Người phỏng vấn chọn Vòng phỏng vấn (*Vòng 1 Kỹ thuật, Vòng 2 Văn hóa/Quản lý, hoặc Vòng Tổng hợp*) và Cấp bậc đề xuất (*Trainee, Junior, Middle, Senior, Tech Lead*).
-  4. Người phỏng vấn chấm điểm sao từ 1 đến 5 sao và nhập nhận xét chi tiết cho 3 tiêu chí có trọng số:
-     * *Kỹ năng chuyên môn kỹ thuật (Trọng số 40%)*
-     * *Kỹ năng giao tiếp, thuyết trình & ngoại ngữ (Trọng số 30%)*
-     * *Độ phù hợp văn hóa & tinh thần làm việc nhóm (Trọng số 30%)*
-  5. Hệ thống hiển thị điểm đánh giá tổng hợp có trọng số theo công thức `= (Chuyên môn × 0.4) + (Giao tiếp × 0.3) + (Văn hóa × 0.3)` trên thang 5.0★.
-  6. Người phỏng vấn chọn Khuyến nghị tuyển dụng: *Xuất sắc (Strong Hire)*, *Đạt chuẩn (Hire)*, *Chưa đạt (No Hire)*, *Không phù hợp (Strong No Hire)*.
-  7. Người phỏng vấn nhập **Căn cứ đề xuất tuyển dụng (Điểm mạnh nổi bật — Lý do đậu)** (bắt buộc đối với Hire/Strong Hire) và **Điểm cần lưu ý / Kế hoạch đào tạo khi nhận việc**.
-  8. Người phỏng vấn nhập Tóm tắt kết luận của Giám khảo và nhấn "Lưu Phiếu Đánh Giá".
-  9. Hệ thống xác thực dữ liệu, lưu phiếu đánh giá gắn với tài khoản của người chấm, đồng thời ghi nhận nhật ký kiểm toán `SCORECARD_EVALUATE`.
-  10. Hệ thống cập nhật danh sách phiếu đánh giá trong hồ sơ và hiển thị thông báo lưu thành công. Kết thúc Use Case.
-* **Luồng thay thế (Alternative Flows):**
-  * *4a. Đã có giám khảo khác chấm điểm trước đó:* Hệ thống lưu từng phiếu đánh giá độc lập theo từng tài khoản giám khảo và vòng phỏng vấn, hiển thị đầy đủ lịch sử đánh giá đa chiều mà không ghi đè dữ liệu của nhau.
-* **Luồng ngoại lệ (Exception Flows):**
-  * *7a. Bỏ trống tiêu chí bắt buộc hoặc bỏ trống căn cứ trúng tuyển khi đề xuất Hire:* Hệ thống hiển thị cảnh báo đỏ tại trường tương ứng và yêu cầu hoàn thiện trước khi lưu.
-
----
-
-## 2. S? ?? v? ??c t? chi ti?t UC-01 & UC-02
-
-![UC-01 & UC-02](../media/media_1794141059009_c909493d.png)
-
-### Nh?n x?t & ??nh gi? s? ??:
-
-### PHẦN 1: NHẬN XÉT HÌNH BẠN VẼ (ĐÃ ĐÚNG CHƯA?)
-
-**Đánh giá:** Sơ đồ này của bạn vẽ **rất xuất sắc về mặt tư duy logic UML (đạt 98%)**! 
-* ✅ **Tư duy `<<extend>>` của bạn cực kỳ thông minh:** Việc bạn cho `UC-01-03: Cảnh báo & Gộp hồ sơ trùng` trỏ mũi tên `<<extend>>` vào `UC-01-01: Khử trùng lặp qua Email/SĐT` là hoàn toàn chính xác (vì hành động gộp hồ sơ chỉ xuất hiện khi bước kiểm tra trùng lặp phát hiện ra lỗi trùng).
-* ✅ Chiều mũi tên của tất cả các nhánh `<<include>>` và `<<extend>>` đều chuẩn 100%.
-
-👉 **CHỈ CÓ 1 LỖI COPY-PASTE CẦN SỬA DUY NHẤT:**
-* **Lỗi mã số Use Case con:** Sơ đồ này là của **`USE CASE 02`**, nhưng cả 4 hình ovan con bên trong bạn đều đang ghi nhầm là `UC-01-...`:
-  * `UC-01-01` ➔ Sửa thành **`UC-02-01: Khử trùng lặp qua Email/SĐT`**
-  * `UC-01-02` ➔ Sửa thành **`UC-02-02: Bóc tách thông tin bằng AI (Parsing)`**
-  * `UC-01-03` ➔ Sửa thành **`UC-02-03: Cảnh báo & Gộp hồ sơ trùng`**
-  * `UC-01-04` ➔ Sửa thành **`UC-02-04: Xem trước tệp CV (Preview)`**
-
-*(Góp ý thêm: Đường nối từ Actor `Hệ thống` bạn có thể nối thẳng vào Use Case chính `UC-02` thay vì chỉ nối vào `UC-02-02`, vì Hệ thống thực hiện cả 2 việc ngầm: Khử trùng lặp và AI Parsing).*
-
----
-
-### PHẦN 2: BẢN ĐẶC TẢ CHI TIẾT UC-02 (CHUẨN DẠNG BẢNG 100%)
-
-#### 1. BẢNG THÔNG TIN TỔNG QUAN (METADATA)
-
-| Thuộc tính | Chi tiết đặc tả |
+| Thành Phần Cockburn | Nội Dung Đặc Tả |
 | :--- | :--- |
-| **Mã Use Case** | **UC-02** |
-| **Tên Use Case** | **Tải lên & Xử lý bóc tách CV nội bộ (Internal CV Upload & Parsing)** |
-| **Phân hệ (Module)** | Tiếp nhận & Xử lý AI Engine (Intake & AI Processing) |
-| **Tác nhân chính (Primary Actor)** | Chuyên viên Tuyển dụng (HR) |
-| **Tác nhân hỗ trợ (Secondary Actor)**| Hệ thống ATS, Dịch vụ AI Parsing (LLM API) |
-| **Mô tả ngắn gọn** | Cho phép HR tải các tệp CV thu thập ngoại tuyến lên hệ thống (tải lẻ hoặc tải hàng loạt tối đa 50 CV/lần). Hệ thống tự động kiểm tra trùng lặp qua Email/SĐT và dùng AI bóc tách thông tin ứng viên vào Form. |
-| **Sự kiện kích hoạt (Trigger)** | HR nhấn nút "Tải lên CV" tại màn hình quản lý vị trí tuyển dụng. |
-| **Tiền điều kiện (Pre-conditions)** | HR đã đăng nhập hệ thống thành công và có quyền thao tác trên vị trí tuyển dụng đang mở. |
-| **Hậu điều kiện (Post-conditions)** | • Thông tin ứng viên (Họ tên, SĐT, Email, Kỹ năng, Kinh nghiệm) được trích xuất và điền vào Form.<br>• Tệp CV gốc được lưu trữ tập trung vào hệ thống.<br>• Kích hoạt sẵn sàng cho bước Sàng lọc AI (UC-03). |
+| **1. Mã & Tên Use Case** | `UC-AUTH-00`: Đăng nhập hệ thống nội bộ & Quản trị tài khoản nhân viên |
+| **2. Cấp độ (Goal Level)** | `User-Goal Level` (Mục tiêu người dùng) |
+| **3. Tác nhân chính** | Quản trị viên (`ADMIN`), Chuyên viên HR (`HR`), Quản lý chuyên môn (`HIRING_MANAGER`) |
+| **4. Các bên liên quan & Quyền lợi** | • Nhân viên nội bộ: Đăng nhập an toàn, truy cập đúng chức năng theo vai trò.<br>• Admin: Quản lý vòng đời tài khoản nhân viên, ngăn truy cập trái phép. |
+| **5. Tiền điều kiện** | Tài khoản nội bộ đã tồn tại và có trạng thái `isActive = true`. |
+| **6. Hậu điều kiện tối thiểu** | Không cấp phiên cookie nếu xác thực thất bại; chặn truy cập `/admin/*` ở tầng Edge Middleware (HTTP 307). |
+| **7. Hậu điều kiện thành công** | Cấp cookie `ats_user_session` ký số HMAC-SHA256 (`HttpOnly`, hạn 7 ngày); chuyển hướng vào `/admin/pipeline`. |
+| **8. Sự kiện kích hoạt** | Người dùng nhập Email/Mật khẩu tại `/admin/login` hoặc Admin mở `/admin/users`. |
+| **9. Kịch bản chính (Main Success Scenario)** | 1. Người dùng truy cập `/admin/login`, nhập Email & Mật khẩu và nhấn "Đăng nhập".<br>2. Hệ thống (`POST /api/auth/login`) tìm tài khoản và đối soát mật khẩu qua thuật toán NIST PBKDF2-SHA512 (100,000 vòng lặp).<br>3. Hệ thống phát hành cookie `ats_user_session` có chữ ký số HMAC-SHA256 và chuyển hướng vào `/admin/pipeline`.<br>4. Nếu là `ADMIN`, truy cập `/admin/users` để tạo tài khoản mới (`HR` / `HIRING_MANAGER`) với mật khẩu ≥ 8 ký tự. |
+| **10. Luồng ngoại lệ & Mở rộng** | • `2a.` Sai mật khẩu / Email không tồn tại ➔ Trả `401 Unauthorized` (`ERR-AUTH-401-01`).<br>• `2b.` Tài khoản bị khóa (`isActive = false`) ➔ Trả `403 Forbidden` (`ERR-AUTH-403-01`).<br>• `4a.` Tài khoản `HR` hoặc `HIRING_MANAGER` truy cập `/admin/users` ➔ `middleware.ts` chuyển hướng HTTP 307 về `/admin/pipeline?error=forbidden`. |
+| **11. Yêu cầu đặc biệt** | Phòng thủ biên Server (Zero-Trust Edge Middleware) ngăn hoàn toàn hiện tượng Flash of Unauthenticated Content (FOUC). |
+| **12. Quy tắc nghiệp vụ liên quan** | `BRL-Auth`, `NFR-SEC-02`. |
 
 ---
 
-#### 2. BẢNG LUỒNG SỰ KIỆN CHÍNH (MAIN FLOW / BASIC FLOW)
+## UC-01: NỘP HỒ SƠ ỨNG TUYỂN TRỰC TUYẾN & TRA CỨU TIẾN ĐỘ (UC-01 / UC-01A)
 
-| Bước | Hành động của HR (Actor Action) | Phản hồi của Hệ thống (System Response) | Use Case con tương ứng |
-| :---: | :--- | :--- | :---: |
-| **1** | Truy cập màn hình quản lý vị trí tuyển dụng, nhấn nút **"Tải lên CV"**. | Hiển thị cửa sổ (Modal) tải tệp với vùng kéo-thả hỗ trợ định dạng .pdf, .doc, .docx. | - |
-| **2** | Chọn 1 hoặc nhiều tệp CV từ máy tính cá nhân (tối đa 50 tệp) và nhấn **"Bắt đầu tải lên"**. | Tiếp nhận tệp, đưa vào Hàng đợi xử lý ngầm (Task Queue) và hiển thị thanh tiến trình (Progress Bar). | - |
-| **3** | *(Chờ hệ thống xử lý)* | Với mỗi tệp tải lên, hệ thống tự động quét trích xuất nhanh Email và Số điện thoại để đối chiếu CSDL. | **UC-02-01** (Khử trùng lặp qua Email/SĐT) |
-| **4** | *(Chờ hệ thống xử lý)* | Xác nhận không có trùng lặp; gửi nội dung văn bản CV sang module AI Engine để phân tích cú pháp. | - |
-| **5** | *(Chờ hệ thống xử lý)* | AI bóc tách dữ liệu cấu trúc: Họ tên, Email, SĐT, Danh sách kỹ năng, Số năm kinh nghiệm làm việc. | **UC-02-02** (Bóc tách thông tin bằng AI) |
-| **6** | *(Chờ hệ thống xử lý)* | • Tự động điền dữ liệu bóc tách vào Form hồ sơ ứng viên.<br>• Lưu tệp CV gốc vào kho lưu trữ tập trung. | - |
-| **7** | Xem danh sách kết quả bóc tách hiển thị trên màn hình. | Hiển thị bảng danh sách các CV đã xử lý thành công, bao gồm: Họ tên, SĐT, Email, Kỹ năng chính kèm biểu tượng trạng thái *"Đã bóc tách 100%"*. | - |
-| **8** | Nhấn nút **"Hoàn tất"** để đóng cửa sổ tải lên. | Cập nhật danh sách ứng viên mới lên giao diện quản lý tuyển dụng. Kết thúc Use Case. | - |
-
----
-
-#### 3. BẢNG LUỒNG THAY THẾ VÀ LUỒNG NGOẠI LỆ (ALTERNATIVE & EXCEPTION FLOWS)
-
-| Mã luồng | Bước phát sinh | Điều kiện kích hoạt | Xử lý của Hệ thống |
-| :---: | :---: | :--- | :--- |
-| **AF-01** | Bước 4 | Phát hiện Email hoặc Số điện thoại của CV tải lên đã tồn tại trong CSDL. | **(Kích hoạt UC-02-03: Cảnh báo & Gộp hồ sơ trùng)**<br>• Tạm dừng tạo thẻ mới cho tệp đó.<br>• Đánh dấu biểu tượng màu vàng: *"Trùng lặp với ứng viên [Họ tên] nộp ngày [DD/MM/YYYY]"*.<br>• Cung cấp tùy chọn cho HR: *"Gộp tệp mới vào hồ sơ cũ"* hoặc *"Bỏ qua tệp này"*. |
-| **AF-02** | Bước 7 | HR muốn kiểm tra độ chính xác của thông tin AI bóc tách so với file gốc. | **(Kích hoạt UC-02-04: Xem trước tệp CV - Preview)**<br>• HR nhấn nút "Xem trước (Preview)" bên cạnh dòng ứng viên.<br>• Hệ thống mở khung xem trước nội dung file PDF/Word trực tiếp trên trình duyệt mà không cần tải file về máy. |
-| **EX-01** | Bước 2 | HR tải lên vượt quá số lượng 50 tệp hoặc có tệp vượt quá 10MB. | • Chặn tải lên.<br>• Hiển thị thông báo lỗi: *"Mỗi lượt tải tối đa 50 CV và dung lượng mỗi tệp không quá 10MB"*. |
-| **EX-02** | Bước 5 | Tệp CV là file scan thuần hình ảnh (Image-only PDF), AI không đọc được text. | • Hệ thống không thể bóc tách tự động.<br>• Gắn cờ cảnh báo: *"CV dạng ảnh - Cần nhập tay"*.<br>• Vẫn lưu tệp CV và tạo thẻ ứng viên với thông tin rỗng để HR tự điền thủ công. |
-| **EX-03** | Bước 5 | Mất kết nối API AI hoặc dịch vụ AI bên thứ ba bị quá tải. | • Tạm thời lưu tệp CV ở trạng thái *"Chờ xử lý (Pending)"*.<br>• Đưa vào cơ chế thử lại tự động (Auto-retry sau 5 phút) mà không làm gián đoạn các thao tác khác của HR. |
-
----
-
-#### 4. BẢNG QUY TẮC NGHIỆP VỤ LIÊN QUAN (BUSINESS RULES)
-
-| Mã quy tắc | Tên quy tắc | Nội dung quy tắc nghiệp vụ |
-| :---: | :--- | :--- |
-| **BR-RULE-04** | Giới hạn Bulk Upload | Hệ thống hỗ trợ xử lý tải lên hàng loạt tối đa **50 CV/lần** thông qua hàng đợi (Task Queue) ngầm để đảm bảo không bị đơ giao diện. |
-| **BR-RULE-05** | Logic Khử trùng lặp | Một hồ sơ bị coi là trùng lặp khi thỏa mãn 1 trong 2 điều kiện: **Trùng địa chỉ Email** HOẶC **Trùng Số điện thoại** với một hồ sơ đã có trong hệ thống. |
-| **BR-RULE-06** | Ngưỡng tin cậy Parsing | Độ chính xác bóc tách kỳ vọng đạt **≥ 85%**. Đối với các trường thông tin không rõ ràng (ví dụ: không tìm thấy số năm kinh nghiệm), hệ thống để trống (null) chứ không được tự suy đoán sai lệch. |
-
-### B?ng ??c t? chi ti?t UC-01 & UC-02:
-
-Dưới đây là bản đặc tả chi tiết của **UC-01** và **UC-02** được viết **chính xác 100% theo đúng cấu trúc bảng (Table Template)** từ hình mẫu của bạn:
-
----
-
-### BẢNG ĐẶC TẢ USE CASE 01: NỘP HỒ SƠ ỨNG TUYỂN TRỰC TUYẾN
-
-| Tên use case | NỘP HỒ SƠ ỨNG TUYỂN TRỰC TUYẾN (UC-01) |
+| Thành Phần Cockburn | Nội Dung Đặc Tả |
 | :--- | :--- |
-| **Tác nhân chính** | Ứng viên (Candidate), Hệ thống ATS |
-| **Mục đích** | Cho phép ứng viên xem chi tiết JD, điền thông tin liên hệ và tải tệp CV lên hệ thống để ứng tuyển mà không cần đăng nhập tài khoản. |
-| **Mức độ ưu tiên (priority)** | Bắt buộc phải có (Must Have) |
-| **Điều kiện kích hoạt (trigger)** | Khi ứng viên nhấn nút "Ứng tuyển ngay" tại trang chi tiết công việc. |
-| **Điều kiện tiên quyết (pre-condition)** | Vị trí tuyển dụng đang ở trạng thái mở tiếp nhận hồ sơ (Active / Published). |
-| **Điều kiện thành công (Post-condition)** | Tệp CV và thông tin ứng viên được lưu trữ thành công vào hệ thống; hiển thị thông báo nộp thành công cho ứng viên. |
-| **Điều kiện thất bại** | Hồ sơ không được lưu vào hệ thống; hiển thị thông báo lỗi tương ứng cho ứng viên. |
-| **Luồng sự kiện chính (Basic Flow)** | 1. Ứng viên truy cập cổng tuyển dụng và chọn vị trí ứng tuyển.<br>2. Hệ thống hiển thị chi tiết JD và biểu mẫu nộp hồ sơ.<br>3. Ứng viên điền thông tin bắt buộc: Họ và tên, Email, Số điện thoại.<br>4. Ứng viên tải lên tệp CV (.pdf, .doc, .docx).<br>5. Ứng viên tích chọn xác thực reCAPTCHA.<br>6. Ứng viên nhấn nút "Gửi hồ sơ".<br>7. Hệ thống kiểm tra dữ liệu, lưu tệp CV và ghi nhận thông tin ứng viên vào cơ sở dữ liệu.<br>8. Hệ thống hiển thị thông báo: "Nộp hồ sơ thành công! Chúng tôi đã tiếp nhận CV của bạn". |
-| **Luồng sự kiện thay thế (Alternative Flow)** | **4a. Ứng viên kéo - thả tệp CV thay vì nhấn nút duyệt file:**<br>4a1. Hệ thống tiếp nhận tệp và hiển thị tên tệp cùng dung lượng lên màn hình.<br>4a2. Ứng viên tiếp tục bước 5 của luồng chính.<br><br>**4b. Ứng viên muốn thay đổi tệp CV vừa chọn:**<br>4b1. Ứng viên nhấn biểu tượng xóa (thùng rác) bên cạnh tệp.<br>4b2. Hệ thống xóa tệp tạm thời và cho phép ứng viên chọn lại tệp mới. |
-| **Luồng sự kiện ngoại lệ (Exception Flow)** | **3a. Ứng viên bỏ trống trường bắt buộc hoặc nhập sai định dạng Email/SĐT:**<br>3a1. Hệ thống hiển thị viền đỏ và thông báo lỗi tại trường nhập sai, yêu cầu ứng viên nhập lại.<br><br>**4a. Tệp đính kèm sai định dạng hoặc dung lượng vượt quá 10MB:**<br>4a1. Hệ thống từ chối nhận tệp và hiển thị thông báo: "Chỉ chấp nhận file .pdf, .doc, .docx và dung lượng tối đa 10MB".<br><br>**5a. Xác thực reCAPTCHA thất bại hoặc hết hạn:**<br>5a1. Hệ thống hiển thị thông báo: "Xác thực không thành công, vui lòng thử lại mã captcha".<br><br>**7a. Lỗi mất kết nối mạng hoặc máy chủ không phản hồi khi đang lưu:**<br>7a1. Hệ thống hiển thị thông báo lỗi mạng và giữ nguyên các thông tin đã điền để ứng viên nhấn gửi lại. |
+| **1. Mã & Tên Use Case** | `UC-PORT-01`: Nộp hồ sơ ứng tuyển trực tuyến & Tra cứu tiến độ hồ sơ |
+| **2. Cấp độ (Goal Level)** | `User-Goal Level` |
+| **3. Tác nhân chính** | Ứng viên (Candidate / Public) |
+| **4. Các bên liên quan & Quyền lợi** | • Ứng viên: Nộp CV dễ dàng không cần tài khoản và chủ động theo dõi tiến độ tránh Ghosting.<br>• HR: Nhận hồ sơ sạch, đúng định dạng, không spam/trùng lặp. |
+| **5. Tiền điều kiện** | Vị trí tuyển dụng có `status = "ACTIVE"` trên Cổng nghề nghiệp `/jobs`. |
+| **6. Hậu điều kiện tối thiểu** | Không lưu tệp rác/tệp giả mạo; giữ nguyên dữ liệu đã điền khi có lỗi validation. |
+| **7. Hậu điều kiện thành công** | Lưu tệp CV & chứng chỉ; tạo/gộp bản ghi `Candidate`; khởi tạo `Application` ở trạng thái `NEW` kèm điểm đối chiếu JD; cấp mã hồ sơ để tra cứu tại `/jobs/tracker`. |
+| **8. Sự kiện kích hoạt** | Ứng viên chọn vị trí tại `/jobs/[id]` và nhấn "Gửi Hồ Sơ Ứng Tuyển". |
+| **9. Kịch bản chính (Main Success Scenario)** | 1. Ứng viên xem chi tiết JD tại `/jobs/[id]`, điền Họ tên, Email, SĐT, tải tệp CV (`.pdf`/`.docx` ≤ 10MB) và tùy chọn đính kèm ảnh/PDF bằng cấp chứng chỉ.<br>2. Ứng viên nhấn "Gửi Hồ Sơ Ứng Tuyển" (`POST /api/applications`).<br>3. Hệ thống kiểm tra Rate Limit (`≤ 5 lượt/10 phút/IP`), định dạng/dung lượng (`BRL-01`) và chữ ký nhị phân Magic Bytes (`%PDF-` hoặc `PK`).<br>4. Hệ thống kiểm tra khử trùng lặp 30 ngày cùng Job (`BRL-02`) và hạn ngạch ≤ 3 Job/90 ngày (`BRL-09`).<br>5. Hệ thống trích xuất text thô bằng `pdf-parse`, gọi Hybrid AI đối chiếu JD (`BRL-03`, `BRL-04`) và khởi tạo thẻ tại cột `NEW`.<br>6. Hệ thống trả về mã hồ sơ thành công; ứng viên có thể nhập mã này tại `/jobs/tracker` (`UC-01A`) để xem lộ trình 4 bước (ẩn hoàn toàn điểm AI & nhận xét nội bộ theo `NFR-SEC-04`). |
+| **10. Luồng ngoại lệ & Mở rộng** | • `3a.` Vượt Rate Limit ➔ Trả `429 Too Many Requests` (`ERR-SYS-429-01`).<br>• `3b.` Sai định dạng, > 10MB hoặc file giả mạo Magic Bytes ➔ Trả `400 Bad Request` (`ERR-APP-400-01` / `ERR-APP-400-02`).<br>• `4a.` Nộp trùng cùng Job trong 30 ngày ➔ Trả `400` (`ERR-APP-409-01`).<br>• `4b.` Nộp vị trí thứ 4 trong 90 ngày ➔ Trả `400` (`ERR-APP-422-01`).<br>• `5a.` Gemini API lỗi/timeout ➔ Tự động fallback sang Heuristic NLP nội bộ, không mất hồ sơ. |
+| **11. Yêu cầu đặc biệt** | Thời gian xử lý & bóc tách ≤ 5.0 giây/CV; Responsive 100% trên Desktop & Mobile. |
+| **12. Quy tắc nghiệp vụ liên quan** | `BRL-01`, `BRL-02`, `BRL-03`, `BRL-04`, `BRL-09`, `NFR-SEC-03`, `NFR-SEC-04`. |
 
 ---
 
-### BẢNG ĐẶC TẢ USE CASE 02: TẢI LÊN & XỬ LÝ BÓC TÁCH CV NỘI BỘ
+## UC-02: NẠP CV NỘI BỘ, HIỂN THỊ 5 TRƯỜNG CỐT LÕI & CHỈNH SỬA THỦ CÔNG
 
-| Tên use case | TẢI LÊN & XỬ LÝ BÓC TÁCH CV NỘI BỘ (UC-02) |
+| Thành Phần Cockburn | Nội Dung Đặc Tả |
 | :--- | :--- |
-| **Tác nhân chính** | Chuyên viên HR, Hệ thống ATS & AI |
-| **Mục đích** | Cho phép HR tải các tệp CV thu thập ngoại tuyến lên hệ thống; hệ thống tự động khử trùng lặp và dùng AI bóc tách thông tin ứng viên vào hồ sơ. |
-| **Mức độ ưu tiên (priority)** | Bắt buộc phải có (Must Have) |
-| **Điều kiện kích hoạt (trigger)** | Khi HR nhấn nút "Tải lên CV" tại màn hình quản lý vị trí tuyển dụng. |
-| **Điều kiện tiên quyết (pre-condition)** | HR đã đăng nhập tài khoản thành công và có quyền thao tác trên vị trí tuyển dụng đang mở. |
-| **Điều kiện thành công (Post-condition)** | Thông tin ứng viên (Họ tên, SĐT, Email, Kỹ năng, Kinh nghiệm) được trích xuất và lưu vào Form hồ sơ; tệp CV được lưu trữ tập trung. |
-| **Điều kiện thất bại** | Hồ sơ không được lưu hoặc tệp tải lên bị từ chối; hệ thống hiển thị thông báo lỗi cho HR. |
-| **Luồng sự kiện chính (Basic Flow)** | 1. HR truy cập màn hình vị trí tuyển dụng và nhấn nút "Tải lên CV".<br>2. Hệ thống hiển thị cửa sổ tải tệp CV.<br>3. HR chọn tệp CV (.pdf, .doc, .docx) từ máy tính và nhấn "Bắt đầu tải lên".<br>4. Hệ thống tiếp nhận tệp, quét kiểm tra Email và SĐT để đối soát trùng lặp.<br>5. Hệ thống xác nhận không trùng lặp và gửi nội dung CV sang mô hình AI Parsing.<br>6. AI bóc tách các trường: Họ tên, Email, SĐT, Kỹ năng, Số năm kinh nghiệm.<br>7. Hệ thống tự động điền dữ liệu bóc tách vào Form hồ sơ và lưu tệp CV vào kho lưu trữ tập trung.<br>8. Hệ thống hiển thị danh sách hồ sơ vừa xử lý thành công kèm trạng thái "Đã bóc tách" và nút "Hoàn tất".<br>9. HR xem kết quả và đóng cửa sổ tải lên. |
-| **Luồng sự kiện thay thế (Alternative Flow)** | **3a. HR tải lên hàng loạt nhiều tệp CV cùng lúc (Bulk Upload):**<br>3a1. Hệ thống đưa các tệp vào Hàng đợi xử lý ngầm (Task Queue) và hiển thị thanh tiến trình.<br>3a2. Hệ thống xử lý tuần tự từng tệp theo các bước 4 đến 7.<br><br>**4a. Phát hiện Email hoặc SĐT của ứng viên đã tồn tại trong CSDL:**<br>4a1. Hệ thống hiển thị biểu tượng cảnh báo trùng lặp kèm thông tin hồ sơ cũ.<br>4a2. HR chọn "Gộp vào hồ sơ cũ" hoặc "Bỏ qua tệp này".<br><br>**8a. HR muốn kiểm tra độ chính xác của thông tin bóc tách so với file gốc:**<br>8a1. HR nhấn nút "Xem trước (Preview)" bên cạnh hồ sơ.<br>8a2. Hệ thống mở khung xem trước nội dung file PDF/Word trực tiếp trên trình duyệt. |
-| **Luồng sự kiện ngoại lệ (Exception Flow)** | **3b. HR tải lên vượt quá số lượng 50 tệp hoặc có tệp > 10MB:**<br>3b1. Hệ thống chặn tải lên và thông báo: "Mỗi lượt tải tối đa 50 CV và dung lượng mỗi tệp không vượt quá 10MB".<br><br>**5a. Tệp CV là PDF dạng ảnh scan (Image-only), AI không bóc tách được chữ:**<br>5a1. Hệ thống gắn cờ cảnh báo: "CV dạng ảnh - Cần nhập tay", vẫn lưu file và tạo hồ sơ với thông tin rỗng để HR tự điền thủ công.<br><br>**5b. Mất kết nối API AI hoặc dịch vụ AI bị quá tải:**<br>5b1. Hệ thống lưu tệp ở trạng thái "Chờ xử lý" và tự động đưa vào cơ chế thử lại (Auto-retry) sau 5 phút. |
+| **1. Mã & Tên Use Case** | `UC-INTK-02`: Tải lên CV nội bộ, trích xuất 5 trường cốt lõi & HR chỉnh sửa dữ liệu |
+| **2. Cấp độ (Goal Level)** | `User-Goal Level` |
+| **3. Tác nhân chính** | Chuyên viên HR (`HR`), Quản trị viên (`ADMIN`) |
+| **4. Các bên liên quan & Quyền lợi** | • HR: Nạp nhanh CV từ nguồn săn chủ động và sửa ngay nếu công cụ bóc text sai tên, sai số năm kinh nghiệm hoặc sót kỹ năng.<br>• Hiring Manager: Đọc dữ liệu đã được HR chuẩn hóa sạch đẹp, đúng 5 trường theo JD. |
+| **5. Tiền điều kiện** | Người dùng đã đăng nhập với vai trò `HR` hoặc `ADMIN`. |
+| **6. Hậu điều kiện tối thiểu** | Không ghi đè dữ liệu nếu validation thất bại hoặc vi phạm trùng lặp `(email, phone)` với ứng viên khác. |
+| **7. Hậu điều kiện thành công** | Lưu hồ sơ ở cột `NEW`; mở Drawer hiển thị gọn đúng 5 trường (Họ tên, Email, Vị trí, Kỹ năng, Số năm kinh nghiệm); mọi chỉnh sửa thủ công tự động tính lại độ khớp JD và ghi `AuditLog` (`PROFILE_EDITED`). |
+| **8. Sự kiện kích hoạt** | HR nhấn "+ Tiếp nhận CV mới" (`AddCandidateModal`) hoặc nhấn "Chỉnh sửa" trong `CandidateDrawer`. |
+| **9. Kịch bản chính (Main Success Scenario)** | 1. HR mở `AddCandidateModal`, chọn Job, chọn nguồn (`LINKEDIN`, `REFERRAL`, `HEADHUNTER`), nhập thông tin cơ bản, tải tệp CV và chứng chỉ đính kèm.<br>2. Hệ thống thực thi pipeline validation, khử trùng lặp, bóc tách `pdf-parse` + Hybrid AI và tạo thẻ tại cột `NEW`.<br>3. Khi mở `CandidateDrawer`, hệ thống hiển thị mặc định **đúng 5 trường cốt lõi theo JD** (Họ tên, Email, Vị trí ứng tuyển, Kỹ năng, Số năm kinh nghiệm).<br>4. Nếu cần xem thêm Học vấn, Lịch sử công tác chi tiết, SĐT hoặc Chứng chỉ, HR/Manager nhấn nút **"Xem chi tiết hồ sơ"**.<br>5. Nếu phát hiện máy bóc sai tên, sai kinh nghiệm hoặc thiếu kỹ năng, HR nhấn **"Chỉnh sửa"**, cập nhật giá trị hoặc thêm/xóa tag kỹ năng và nhấn **"Lưu thay đổi"** (`PATCH /api/applications/[id]/profile`).<br>6. Hệ thống cập nhật `Candidate`, tự động tính lại `aiMatchedSkills`, `aiMissingSkills`, `aiMatchScore` và ghi `AuditLog` (`PROFILE_EDITED`). |
+| **10. Luồng ngoại lệ & Mở rộng** | • `5a.` `HIRING_MANAGER` cố gọi API sửa hồ sơ ➔ Trả `403 Forbidden` (`ERR-PROF-403-01`).<br>• `5b.` Email sửa mới không hợp lệ hoặc cặp `(email, phone)` trùng với ứng viên khác ➔ Trả `400 Bad Request`. |
+| **11. Yêu cầu đặc biệt** | Tự động làm mới điểm khớp JD ngay sau khi HR lưu chỉnh sửa (≤ 1.0 giây). |
+| **12. Quy tắc nghiệp vụ liên quan** | `BRL-01`, `BRL-02`, `BRL-03`, `RBAC-PROFILE-EDIT`. |
 
 ---
 
-## 3. S? ?? v? ??c t? chi ti?t UC-03: S?ng l?c t? ??ng b?ng AI
+## UC-03: ĐỐI CHIẾU HYBRID AI & PHẢN HỒI TỪ CHỐI CÓ BỘ ĐỆM 12 GIỜ
 
-![UC-03 S? ??](../media/media_1794141906077_59b44b76.png)
-
-### B?ng ??c t? chi ti?t UC-03:
-
-### PHẦN 1: NHẬN XÉT HÌNH BẠN VẼ (ĐÃ ĐÚNG CHƯA?)
-
-Hình vẽ của bạn đã nắm rất đúng tinh thần của UC-03. Tuy nhiên, có **2 lỗi logic quan trọng** và **1 lỗi chính tả/mã hiệu** cần chỉnh lại ngay:
-
-#### 🔴 1. Lỗi logic mũi tên `<<extend>>` (Quan trọng nhất):
-* **Hiện tại trên hình:** Ô `UC-03-03: Chuyển thẻ sang cột Rejected` đang trỏ mũi tên `<<extend>>` lên ô `Khởi tạo thẻ trên Kanban (Cột Screening)`!
-* **Sai logic ở chỗ:** Việc *Bị loại (Reject)* không thể là nhánh mở rộng của việc *Được vào vòng Screening* (đây là 2 kết quả hoàn toàn trái ngược nhau).
-* 👉 **Cách sửa:** Bạn hãy **kéo mũi tên `<<extend>>` từ ô `UC-03-03: Chuyển thẻ sang cột Rejected` trỏ thẳng về ô Use Case chính (`UC-03: Sàng lọc & Phản hồi tự động bằng AI`)**.  
-*(Nghĩa là: Từ Use Case chính UC-03, nếu Đạt ➔ extend sang Tạo thẻ Screening; nếu Không đạt ➔ extend sang Chuyển thẻ Rejected).*
-
-#### 🔴 2. Lỗi mã hiệu Use Case (Typo ID):
-* Ô góc trên bên phải đang ghi là: `UC- -03: Khởi tạo thẻ trên Kanban...`
-* 👉 **Cách sửa:** Sửa lại đúng mã số thứ tự là: **`UC-03-02: Khởi tạo thẻ trên Kanban (Cột Screening)`**.
-
-#### 💡 3. Góp ý về đường nối Tác nhân (Actor):
-* Trong Use Case này, **Hệ thống** là bên thực thi sàng lọc AI chính ➔ Bạn nên kéo nét liền từ `Hệ thống` vào `UC-03`.
-* **Ứng viên** là người nhận email từ chối ➔ Bạn kéo nét liền từ `Ứng viên` vào ô `UC-03-04: Tự động gửi Email từ chối` (thay vì nối vào UC-03).
-
----
-
-### PHẦN 2: BẢN ĐẶC TẢ CHI TIẾT UC-03 (CHUẨN DẠNG BẢNG TEMPLATE 100%)
-
-Dưới đây là bản đặc tả trình bày đúng theo form bảng mẫu của bạn:
-
-| Tên use case | SÀNG LỌC HỒ SƠ & PHẢN HỒI TỰ ĐỘNG BẰNG AI (UC-03) |
+| Thành Phần Cockburn | Nội Dung Đặc Tả |
 | :--- | :--- |
-| **Tác nhân chính** | Hệ thống ATS & AI Engine (Chính), Ứng viên (Người nhận thông báo) |
-| **Mục đích** | Tự động so sánh dữ liệu CV với tiêu chuẩn của JD để chấm điểm phù hợp (Match Score), tự động phân loại ứng viên vào cột tương ứng trên Kanban và tự động gửi email từ chối nếu không đạt tiêu chuẩn. |
-| **Mức độ ưu tiên (priority)** | Bắt buộc phải có (Must Have) |
-| **Điều kiện kích hoạt (trigger)** | Tự động kích hoạt ngay sau khi hồ sơ hoàn tất bước bóc tách dữ liệu AI (từ UC-01 hoặc UC-02). |
-| **Điều kiện tiên quyết (pre-condition)** | Dữ liệu CV đã được bóc tách thành công (Họ tên, SĐT, Email, Kỹ năng, Kinh nghiệm) và vị trí tuyển dụng đã có tiêu chuẩn JD cấu hình sẵn. |
-| **Điều kiện thành công (Post-condition)** | Điểm Match Score được tính toán; thẻ ứng viên được xếp đúng vào cột trên Kanban (*Screening* hoặc *Rejected*); lên lịch gửi email từ chối nếu bị loại. |
-| **Điều kiện thất bại** | Hệ thống không thể chấm điểm hoặc lỗi kết nối AI; gắn cờ cảnh báo để HR xử lý thủ công. |
-| **Luồng sự kiện chính (Basic Flow)** | 1. Hệ thống lấy dữ liệu ứng viên vừa bóc tách và tiêu chí yêu cầu trong JD của vị trí tuyển dụng.<br>2. Hệ thống chạy thuật toán AI đối chiếu và tính toán điểm phù hợp (Match Score, thang điểm 0–100%).<br>3. Hệ thống kiểm tra các tiêu chí bắt buộc (Hard Criteria: số năm kinh nghiệm tối thiểu, kỹ năng chuyên môn cốt lõi).<br>4. Hệ thống xác nhận hồ sơ đạt tiêu chuẩn (Match Score ≥ ngưỡng quy định và thỏa mãn tiêu chí bắt buộc).<br>5. Hệ thống tự động khởi tạo thẻ ứng viên tại cột **"Screening"** trên bảng Kanban.<br>6. Hệ thống hiển thị điểm Match Score và tóm tắt lý do phù hợp trên thẻ để HR tiếp tục xử lý. Kết thúc Use Case. |
-| **Luồng sự kiện thay thế (Alternative Flow)** | **4a. Hồ sơ không đạt tiêu chuẩn (Match Score < ngưỡng hoặc thiếu tiêu chí bắt buộc):**<br>4a1. Hệ thống tự động chuyển thẻ ứng viên sang cột **"Rejected"** trên bảng Kanban.<br>4a2. Hệ thống tự động gắn nhãn lý do không đạt (ví dụ: *"Kinh nghiệm < 2 năm"*, *"Thiếu kỹ năng bắt buộc"*).<br>4a3. Hệ thống tạo lệnh hẹn giờ gửi email từ chối tự động (sau khoảng thời gian delay: 12h hoặc 24h).<br>4a4. Khi đến giờ hẹn, hệ thống tự động gửi Email từ chối lịch sự theo mẫu định sẵn đến email của ứng viên.<br>4a5. Hệ thống cập nhật trạng thái *"Đã gửi email từ chối"* và lưu hồ sơ vào Kho nhân tài (Talent Pool). |
-| **Luồng sự kiện ngoại lệ (Exception Flow)** | **2a. Vị trí tuyển dụng chưa được cấu hình tiêu chuẩn JD (thiếu từ khóa/kinh nghiệm yêu cầu):**<br>2a1. Hệ thống không thể chấm điểm tự động, tạo thẻ ứng viên ở cột "New" và gửi thông báo cho HR: *"Chưa cấu hình tiêu chuẩn JD để AI chấm điểm"**.<br><br>**2b. Lỗi kết nối dịch vụ AI hoặc API quá tải khi đang chấm điểm:**<br>2b1. Hệ thống lưu hồ sơ ở trạng thái chờ và tự động thử lại sau 5 phút; nếu thử lại 3 lần thất bại thì chuyển thẻ sang cho HR tự sàng lọc thủ công.<br><br>**4a3-alt. HR can thiệp thủ công trong thời gian chờ (Delay time):**<br>4a3-alt1. Nếu HR phát hiện ứng viên tiềm năng bị AI chấm nhầm và kéo thẻ từ "Rejected" về lại "Screening", hệ thống sẽ tự động hủy lệnh gửi email từ chối. |
+| **1. Mã & Tên Use Case** | `UC-AI-03`: Đối chiếu tiêu chuẩn JD bằng Hybrid AI & Tự động hoãn gửi thư từ chối |
+| **2. Cấp độ (Goal Level)** | `Subfunction Level` (Hỗ trợ tự động) |
+| **3. Tác nhân chính** | Hệ thống ATS & Hybrid AI Engine (Primary System Actor), Chuyên viên HR / Hiring Manager (Kiểm duyệt), Ứng viên (Secondary Recipient) |
+| **4. Các bên liên quan & Quyền lợi** | • Doanh nghiệp: Không bỏ sót nhân tài nhờ nguyên tắc *Human-in-the-loop*.<br>• Ứng viên: Không bị từ chối tức thì kiểu máy móc, nhận thư lịch sự sau 12 giờ. |
+| **5. Tiền điều kiện** | Tệp CV đã trích xuất được văn bản thô (`cvRawText`) và `Job` có cấu hình `requiredSkills` / `minExperienceYears`. |
+| **6. Hậu điều kiện tối thiểu** | Tuyệt đối **không tự động chuyển thẻ sang `REJECTED`** sau lưng con người; fallback cục bộ khi AI cloud lỗi. |
+| **7. Hậu điều kiện thành công** | Lưu điểm đối chiếu, kỹ năng khớp/thiếu và tóm tắt giải trình; thẻ nằm tại `NEW`; nếu người có thẩm quyền chuyển sang `REJECTED` (có lý do), tự động hẹn `emailScheduledAt = now() + 12h`. |
+| **8. Sự kiện kích hoạt** | Hoàn tất tải CV (`UC-01`/`UC-02`) hoặc kích hoạt `POST /api/applications/[id]/re-parse`. |
+| **9. Kịch bản chính (Main Success Scenario)** | 1. Máy chủ gọi `parseAndScoreCv` với văn bản thô `cvRawText` và tiêu chuẩn JD.<br>2. Hệ thống gửi Prompt chuẩn hóa lên Google Gemini (`gemini-2.5-flash`, `temperature: 0`, JSON mode).<br>3. Hệ thống chuẩn hóa kết quả `ParsedCvResult` (lọc sạch các chuỗi hiển thị % thừa) và lưu vào DB với `currentStage = "NEW"`.<br>4. Khi HR hoặc Hiring Manager chuyển thẻ sang `REJECTED` kèm lý do (`BRL-11`), hệ thống tự động đặt lịch gửi email từ chối sau 12 giờ (`BRL-05`) và đồng bộ hồ sơ vào Talent Pool. |
+| **10. Luồng ngoại lệ & Mở rộng** | • `2a.` Mất mạng / thiếu `GEMINI_API_KEY` / hết quota ➔ Tự động kích hoạt `heuristicParseAndMatch` (60% Kỹ năng + 40% Kinh nghiệm).<br>• `4a.` HR hoặc Hiring Manager kéo thẻ rời khỏi `REJECTED` trong vòng 12 giờ ➔ Hệ thống tự động hủy lịch gửi email (`emailScheduledAt = null`) và xóa `rejectionReason`. |
+| **11. Yêu cầu đặc biệt** | `temperature: 0` đảm bảo cùng 1 CV + 1 JD luôn ra kết quả tất định. |
+| **12. Quy tắc nghiệp vụ liên quan** | `BRL-04`, `BRL-05`, `BRL-11`. |
 
 ---
 
-## 4. S? ?? v? ??c t? chi ti?t UC-04: Ph?ng v?n & ??nh gi? Scorecard
+## UC-04: QUẢN LÝ QUY TRÌNH ỨNG VIÊN TRÊN KANBAN PIPELINE (PHÂN QUYỀN HR vs HIRING MANAGER)
 
-![UC-04 S? ??](../media/media_1794142185408_d39d1cdf.png)
-
-### B?ng ??c t? chi ti?t UC-04:
-
-### PHẦN 1: NHẬN XÉT HÌNH BẠN VẼ (ĐÃ ĐÚNG CHƯA?)
-
-Sơ đồ **UC-04** của bạn bố cục rất đẹp và rõ ràng! Các mối quan hệ `<<include>>` và `<<extend>>` đều đã vẽ đúng chuẩn. 
-
-Tuy nhiên, bạn có **2 điểm cần sửa để đạt chuẩn 100%**:
-
-#### 🔴 1. Lỗi copy-paste mã hiệu Use Case:
-* Ô `Cảnh báo quá hạn lưu thẻ`: Bạn đang ghi là **`UC-03-03`** ➔ Sửa thành **`UC-04-03: Cảnh báo quá hạn lưu thẻ (SLA Alert)`**.
-* Ô `Luân chuyển vị trí`: Bạn đang ghi là **`UC-03-04`** ➔ Sửa thành **`UC-04-04: Luân chuyển vị trí (Repooling)`**.  
-*(Vì đây là Use Case 04 nên các ô con phải có đầu số là `UC-04-xx`)*.
-
-#### 💡 2. Góp ý về đường nối của "Quản lý Chuyên môn" (Hiring Manager):
-* **Hiện tại trên hình:** Bạn đang kéo nét liền từ `Quản lý Chuyên môn` nối thẳng vào riêng ô con `UC-04-02: Tìm kiếm & Lọc hồ sơ nâng cao`.
-* **Quy tắc chuẩn UML:** Trong UML, **không nên nối Actor trực tiếp vào một Use Case con dạng `<<include>>`** (vì Use Case con không hoạt động độc lập được).
-* 👉 **Cách sửa chuẩn nhất:** Bạn hãy **kéo nét liền từ `Quản lý Chuyên môn` nối thẳng vào Use Case chính (`UC-04: Quản lý Kanban Pipeline`)** giống hệt như HR.  
-*(Cả HR và Manager đều truy cập vào Kanban Pipeline, chỉ khác nhau ở chỗ: HR có toàn quyền kéo-thả, còn Manager chỉ có quyền xem và lọc hồ sơ — điều này sẽ được giải thích rõ trong bảng đặc tả bên dưới).*
-
----
-
-### PHẦN 2: BẢN ĐẶC TẢ CHI TIẾT UC-04 (CHUẨN DẠNG BẢNG TEMPLATE 100%)
-
-Dưới đây là bảng đặc tả chi tiết của **UC-04** theo đúng form mẫu của bạn:
-
-| Tên use case | QUẢN LÝ QUY TRÌNH ỨNG VIÊN TRÊN KANBAN PIPELINE (UC-04) |
+| Thành Phần Cockburn | Nội Dung Đặc Tả |
 | :--- | :--- |
-| **Tác nhân chính** | Chuyên viên HR (Toàn quyền), Quản lý Chuyên môn (Chỉ đọc / Xem hồ sơ) |
-| **Mục đích** | Cung cấp giao diện bảng Kanban trực quan với 5 cột chuẩn để theo dõi tiến độ, tìm kiếm lọc ứng viên, kéo-thả chuyển trạng thái và luân chuyển ứng viên sang vị trí khác. |
-| **Mức độ ưu tiên (priority)** | Bắt buộc phải có (Must Have) |
-| **Điều kiện kích hoạt (trigger)** | Khi HR hoặc Quản lý chuyên môn truy cập vào mục "Pipeline Tuyển dụng" của vị trí tương ứng. |
-| **Điều kiện tiên quyết (pre-condition)** | Người dùng đã đăng nhập tài khoản thành công và được phân quyền truy cập vào vị trí tuyển dụng đó. |
-| **Điều kiện thành công (Post-condition)** | Trạng thái ứng viên được cập nhật theo thời gian thực; hệ thống lưu vết lịch sử (Audit Log); danh sách ứng viên sau lọc hiển thị chính xác. |
-| **Điều kiện thất bại** | Thao tác kéo-thả thất bại hoặc lỗi hệ thống; thẻ ứng viên tự động hoàn về vị trí cũ và hiển thị thông báo lỗi. |
-| **Luồng sự kiện chính (Basic Flow)** | 1. Người dùng (HR) truy cập vào màn hình "Pipeline Tuyển dụng" của vị trí cần quản lý.<br>2. Hệ thống hiển thị bảng Kanban gồm 5 cột chuẩn: *New, Screening, Interview, Hired, Rejected* cùng danh sách các thẻ ứng viên tương ứng.<br>3. HR sử dụng thanh tìm kiếm hoặc bộ lọc nâng cao (lọc theo kỹ năng, số năm kinh nghiệm, điểm AI Match Score).<br>4. Hệ thống lọc và hiển thị danh sách các thẻ ứng viên thỏa mãn điều kiện lọc trong thời gian ≤ 3 giây.<br>5. HR nhấn giữ và kéo thẻ ứng viên từ cột hiện tại thả sang cột tiếp theo (ví dụ: kéo từ *Screening* sang *Interview*).<br>6. Hệ thống xác thực thao tác hợp lệ, cập nhật trạng thái mới của ứng viên trong cơ sở dữ liệu.<br>7. Hệ thống ghi nhận thời gian luân chuyển (Timestamp) và lưu vết người thực hiện vào Audit Log. Kết thúc Use Case. |
-| **Luồng sự kiện thay thế (Alternative Flow)** | **5a. Thẻ ứng viên bị quá hạn thời gian lưu tại một cột (SLA Alert):**<br>5a1. Hệ thống kiểm tra thời gian lưu thẻ so với giới hạn SLA cấu hình trước (ví dụ: lưu ở cột Screening quá 3 ngày).<br>5a2. Hệ thống tự động đổi viền thẻ sang màu đỏ cảnh báo để nhắc nhở HR xử lý gấp.<br><br>**5b. HR thực hiện luân chuyển ứng viên sang vị trí khác (Repooling):**<br>5b1. Tại thẻ ứng viên ở cột Rejected, HR nhấn chọn biểu tượng "Chuyển vị trí (Repooling)".<br>5b2. Hệ thống hiển thị danh sách các vị trí tuyển dụng đang mở khác.<br>5b3. HR chọn vị trí đích và nhấn "Xác nhận chuyển".<br>5b4. Hệ thống tự động tạo một thẻ mới tại cột *New* của vị trí đích, đồng thời liên kết bảo toàn thông tin gốc và lịch sử đánh giá cũ.<br><br>**2a. Người dùng là Quản lý Chuyên môn (Hiring Manager) truy cập:**<br>2a1. Hệ thống hiển thị bảng Kanban ở chế độ chỉ đọc (Read-only).<br>2a2. Manager được phép sử dụng bộ lọc nâng cao (bước 3, 4) và xem chi tiết hồ sơ; hệ thống khóa tính năng kéo-thả và ẩn các thông tin nhạy cảm (như mức lương kỳ vọng). |
-| **Luồng sự kiện ngoại lệ (Exception Flow)** | **5c. Lỗi mất kết nối mạng hoặc lỗi máy chủ khi đang kéo - thả thẻ:**<br>5c1. Hệ thống hiển thị thông báo lỗi: "Không thể cập nhật trạng thái ứng viên do lỗi kết nối".<br>5c2. Hệ thống tự động hoàn tác (Rollback), đưa thẻ ứng viên trở lại cột ban đầu.<br><br>**5d. Quản lý Chuyên môn cố ý thao tác kéo - thả thẻ ứng viên:**<br>5d1. Hệ thống không cho phép di chuyển thẻ và hiển thị cảnh báo: "Bạn chỉ có quyền xem, không có quyền thay đổi trạng thái ứng viên". |
+| **1. Mã & Tên Use Case** | `UC-PIPE-04`: Luân chuyển hồ sơ ứng viên trên Kanban 5 cột theo State Machine & RBAC |
+| **2. Cấp độ (Goal Level)** | `User-Goal Level` |
+| **3. Tác nhân chính** | Chuyên viên HR (`HR`), Quản lý Chuyên môn (`HIRING_MANAGER`), Quản trị viên (`ADMIN`) |
+| **4. Các bên liên quan & Quyền lợi** | • HR: Sơ loại, làm sạch hồ sơ và đẩy ứng viên đạt vòng sơ loại lên `SCREENING`.<br>• Hiring Manager: Kiểm soát toàn diện chất lượng chuyên môn tại vòng `INTERVIEW` và quyết định `HIRED`. |
+| **5. Tiền điều kiện** | Người dùng đã đăng nhập và mở `/admin/pipeline`. |
+| **6. Hậu điều kiện tối thiểu** | Rollback vị trí thẻ về cột cũ nếu vi phạm RBAC, State Order, thiếu lý do từ chối hoặc thiếu Scorecard. |
+| **7. Hậu điều kiện thành công** | Cập nhật `currentStage`, `stageUpdatedAt`, `rejectionReason` (nếu có) và ghi vết `AuditLog` (`STAGE_CHANGE`) trong 1 Prisma Transaction. |
+| **8. Sự kiện kích hoạt** | Người dùng kéo-thả thẻ trên Kanban hoặc nhấn nút chuyển vòng trong Footer của `CandidateDrawer`. |
+| **9. Kịch bản chính (Main Success Scenario)** | 1. Hệ thống hiển thị Kanban 5 cột (`NEW`, `SCREENING`, `INTERVIEW`, `HIRED`, `REJECTED`) kèm bộ lọc (Chưa xem — viền xanh nhấp nháy, Đánh sao, Tìm kiếm, Vị trí) và cảnh báo SLA đỏ (`NEW > 48h`, `SCREENING > 72h`).<br>2. **Vòng HR:** `HR` kiểm tra thẻ tại `NEW`, kéo sang `SCREENING` (hoặc `REJECTED` kèm lý do qua `RejectReasonModal`).<br>3. **Vòng Hiring Manager:** `HIRING_MANAGER` thẩm định thẻ tại `SCREENING`, kéo sang `INTERVIEW` (hoặc `REJECTED` kèm lý do).<br>4. Sau phỏng vấn và hoàn tất Scorecard đạt chuẩn (`BRL-06`), `HIRING_MANAGER` kéo thẻ từ `INTERVIEW` sang `HIRED`.<br>5. Backend (`POST /api/pipeline/move`) chạy `validateStageTransition` (`src/lib/stage-rules.ts`), cập nhật DB và ghi `AuditLog`. |
+| **10. Luồng ngoại lệ & Mở rộng** | • `2a.` `HR` cố kéo sang `INTERVIEW`/`HIRED` hoặc tác động thẻ ở `INTERVIEW` ➔ Chặn HTTP 403 (`ERR-PIPE-403-01`).<br>• `3a.` `HIRING_MANAGER` cố kéo thẻ từ `NEW` ➔ Chặn HTTP 403 (`ERR-PIPE-403-01`).<br>• `3b.` Kéo nhảy cóc (`NEW ➔ INTERVIEW`, `SCREENING ➔ HIRED`) ➔ Chặn HTTP 400 (`ERR-PIPE-422-01`).<br>• `3c.` Hồ sơ thiếu tiêu chuẩn JD (< 60%) khi kéo sang `SCREENING`/`INTERVIEW` ➔ Bật `StageMismatchConfirmModal` xác nhận tránh bấm nhầm.<br>• `4a.` Chưa có Scorecard đạt chuẩn khi kéo sang `HIRED` ➔ Chặn HTTP 400 (`ERR-PIPE-422-02`).<br>• `4b.` Kéo thẻ sang `REJECTED` thiếu lý do (< 5 ký tự) ➔ Bật `RejectReasonModal` / Chặn HTTP 400 (`ERR-PIPE-422-03`).<br>• `4c.` Cố kéo thẻ đã `HIRED` ra ngoài ➔ Chặn HTTP 400 (`ERR-PIPE-409-01`). |
+| **11. Yêu cầu đặc biệt** | Phản hồi thao tác lọc và kéo-thả ≤ 1.5 – 3.0 giây (`NFR-PER-01`). |
+| **12. Quy tắc nghiệp vụ liên quan** | `BRL-05`, `BRL-06`, `BRL-07`, `BRL-11`, `BRL-STAGE-ORDER`, `BRL-STAGE-TERMINAL`, `RBAC-STAGE-LIMIT`. |
 
 ---
 
-## 5. S? ?? v? ??c t? chi ti?t UC-05: Tuy?n ch?n, Ra Offer & Onboarding
+## UC-05: LÊN LỊCH PHỎNG VẤN & ĐÁNH GIÁ SCORECARD CHUYÊN SÂU (UC-05 / UC-05A)
 
-![UC-05 S? ??](../media/media_1794142468418_01d2dd7c.png)
-
-### B?ng ??c t? chi ti?t UC-05:
-
-### PHẦN 1: NHẬN XÉT HÌNH BẠN VẼ (ĐÃ ĐÚNG CHƯA?)
-
-**Đánh giá:** Sơ đồ **UC-05** của bạn vẽ **gần như hoàn hảo 100%**!
-* ✅ Cách kết nối Tác nhân cực kỳ chuẩn: Cả `Chuyên viên HR` và `Quản lý Chuyên môn` đều nối vào Use Case chính `UC-05`, còn `Hệ thống ATS` nối vào Use Case con `Tổng hợp điểm số` (đúng bản chất Hệ thống tự động tính điểm ngầm).
-* ✅ Chiều mũi tên của tất cả các nhánh `<<include>>` đều đúng chuẩn UML.
-
-👉 **Chỉ có 1 lỗi copy-paste mã hiệu duy nhất cần sửa:**
-* Ô dưới cùng bên phải: Bạn đang ghi là **`UC-04-03: Tổng hợp điểm số...`** ➔ Bạn hãy sửa lại thành **`UC-05-03: Tổng hợp điểm số hội đồng phỏng vấn`** *(sửa số `04` thành `05` là chuẩn 10/10)*.
-
----
-
-### PHẦN 2: BẢN ĐẶC TẢ CHI TIẾT UC-05 (CHUẨN DẠNG BẢNG TEMPLATE 100%)
-
-Dưới đây là bảng đặc tả chi tiết của **UC-05** theo đúng form mẫu của bạn:
-
-| Tên use case | ĐÁNH GIÁ ỨNG VIÊN BẰNG SCORECARD (UC-05) |
+| Thành Phần Cockburn | Nội Dung Đặc Tả |
 | :--- | :--- |
-| **Tác nhân chính** | Chuyên viên HR, Quản lý Chuyên môn (Hiring Manager), Hệ thống ATS |
-| **Mục đích** | Cho phép các thành viên trong hội đồng phỏng vấn chấm điểm năng lực theo tiêu chí (1–5 sao), ghi nhận xét đánh giá; hệ thống tự động tổng hợp điểm trung bình để hỗ trợ ra quyết định tuyển dụng. |
-| **Mức độ ưu tiên (priority)** | Nên có (Should Have) |
-| **Điều kiện kích hoạt (trigger)** | Khi HR hoặc Quản lý chuyên môn nhấn vào tab "Đánh giá (Scorecard)" trên thẻ ứng viên tại vòng phỏng vấn. |
-| **Điều kiện tiên quyết (pre-condition)** | Ứng viên đang ở trạng thái/cột "Interview" trên bảng Kanban và người dùng đã đăng nhập có quyền đánh giá hồ sơ này. |
-| **Điều kiện thành công (Post-condition)** | Điểm số và nhận xét của từng người chấm được lưu trữ; hệ thống tính toán và hiển thị điểm số trung bình tổng hợp của toàn bộ hội đồng phỏng vấn. |
-| **Điều kiện thất bại** | Không lưu được đánh giá do bỏ trống tiêu chí bắt buộc hoặc lỗi hệ thống; hiển thị cảnh báo lỗi tương ứng. |
-| **Luồng sự kiện chính (Basic Flow)** | 1. Người dùng (HR hoặc Quản lý chuyên môn) nhấp chuột vào thẻ ứng viên tại cột "Interview" và chọn tab "Đánh giá (Scorecard)".<br>2. Hệ thống hiển thị biểu mẫu đánh giá gồm danh sách các tiêu chí năng lực (ví dụ: Chuyên môn kỹ thuật, Kỹ năng giao tiếp, Độ phù hợp văn hóa).<br>3. Người dùng chọn số sao chấm điểm cho từng tiêu chí theo thang điểm từ 1 đến 5 sao.<br>4. Người dùng nhập nhận xét chi tiết vào ô phản hồi của từng tiêu chí hoặc nhận xét chung.<br>5. Người dùng chọn Đề xuất kết quả tuyển dụng: "Nên tuyển (Hire)" hoặc "Không nên tuyển (No Hire)".<br>6. Người dùng nhấn nút "Lưu đánh giá".<br>7. Hệ thống kiểm tra tính đầy đủ của dữ liệu và lưu phiếu đánh giá gắn với tài khoản của người chấm.<br>8. Hệ thống tự động tính toán lại Điểm số trung bình cộng của tất cả thành viên trong hội đồng phỏng vấn.<br>9. Hệ thống cập nhật điểm tổng hợp lên hồ sơ ứng viên và hiển thị thông báo "Đã lưu kết quả đánh giá thành công". Kết thúc Use Case. |
-| **Luồng sự kiện thay thế (Alternative Flow)** | **3a. Hồ sơ đã có thành viên khác trong hội đồng chấm điểm trước đó:**<br>3a1. Hệ thống hiển thị riêng biệt phần chấm điểm của người dùng hiện tại (cho phép nhập/sửa) và phần điểm của người khác (chế độ chỉ xem, không cho sửa).<br>3a2. Người dùng tiếp tục thực hiện chấm điểm phần của mình theo bước 3 đến 6.<br><br>**6a. Người dùng muốn chỉnh sửa lại phiếu đánh giá của chính mình:**<br>6a1. Người dùng mở lại tab Scorecard và điều chỉnh lại số sao hoặc nhận xét của mình.<br>6a2. Người dùng nhấn nút "Cập nhật đánh giá".<br>6a3. Hệ thống ghi đè thông tin mới, tính toán lại điểm trung bình cộng và lưu vết lịch sử chỉnh sửa. |
-| **Luồng sự kiện ngoại lệ (Exception Flow)** | **6b. Người dùng bỏ trống tiêu chí chấm điểm bắt buộc:**<br>6b1. Hệ thống đánh dấu đỏ tại tiêu chí chưa chấm và hiển thị thông báo: "Vui lòng chấm điểm đầy đủ tất cả các tiêu chí bắt buộc trước khi lưu".<br><br>**7a. Lỗi mất kết nối mạng hoặc lỗi máy chủ khi nhấn lưu đánh giá:**<br>7a1. Hệ thống hiển thị thông báo lỗi mạng và tạm thời lưu dữ liệu vào bộ nhớ đệm trình duyệt (Local Cache) để người dùng không bị mất nội dung nhận xét đã gõ. |
+| **1. Mã & Tên Use Case** | `UC-EVAL-05`: Quản lý vòng đời lịch phỏng vấn & Đánh giá ứng viên bằng Scorecard chuyên sâu |
+| **2. Cấp độ (Goal Level)** | `User-Goal Level` |
+| **3. Tác nhân chính** | Quản lý Chuyên môn (`HIRING_MANAGER`), Chuyên viên HR (`HR` — chấm Scorecard & ghi chú), Quản trị viên (`ADMIN`) |
+| **4. Các bên liên quan & Quyền lợi** | • Hiring Manager: Chủ động xếp/sửa/hủy lịch hẹn phỏng vấn và ghi nhận căn cứ đậu/rớt rõ ràng.<br>• Ban Giám Đốc / HR: Xem lại lịch sử đánh giá đa vòng, hiểu rõ lý do tuyển chọn từng nhân sự. |
+| **5. Tiền điều kiện** | Hồ sơ đang ở cột `SCREENING` hoặc `INTERVIEW` (đối với xếp lịch PV). |
+| **6. Hậu điều kiện tối thiểu** | Không cho phép chỉnh sửa phiếu đánh giá của giám khảo khác; không cho phép `HR` tự ý xếp/hủy lịch phỏng vấn. |
+| **7. Hậu điều kiện thành công** | Lưu lịch hẹn (ngày giờ, link họp, ghi chú 3 lớp), sinh thư mời tự động; lưu phiếu Scorecard độc lập có điểm trọng số 5.0★ và mở khóa chốt chặn `BRL-06`. |
+| **8. Sự kiện kích hoạt** | Hiring Manager nhấn "+ Lên Lịch Phỏng Vấn" / "Sửa Lịch Hẹn" / "Hủy Lịch" hoặc Giám khảo nhấn "+ Đánh Giá Phỏng Vấn". |
+| **9. Kịch bản chính (Main Success Scenario)** | 1. **Xếp lịch (`UC-05A`):** Tại cột `SCREENING` hoặc `INTERVIEW`, `HIRING_MANAGER`/`ADMIN` mở modal lịch hẹn, nhập ngày giờ, hình thức (`ONLINE`/`OFFLINE`), link Google Meet/phòng họp và ghi chú 3 lớp (`POST /api/interviews/schedule`). Hệ thống lưu lịch, chuyển sang `INTERVIEW` và sinh mẫu Thư mời phỏng vấn.<br>2. **Đánh giá (`UC-05`):** Sau phỏng vấn, giám khảo mở `ScorecardModal`, chọn vòng phỏng vấn, cấp bậc đề xuất (`Trainee..Lead`), chấm 3 tiêu chí (Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30%), chọn khuyến nghị và nhập **Căn cứ tuyển dụng (Điểm mạnh nổi bật)** cùng điểm cần đào tạo hội nhập.<br>3. Hệ thống (`POST /api/scorecards`) tính điểm trọng số `BRL-08`, lưu phiếu độc lập theo giám khảo và ghi `AuditLog` (`SCORECARD_EVALUATE`). |
+| **10. Luồng ngoại lệ & Mở rộng** | • `1a.` Đổi lịch (Reschedule) hoặc Hủy lịch (`DELETE /api/interviews/schedule`) ➔ Cập nhật/xóa lịch và ghi `AuditLog` (`INTERVIEW_RESCHEDULED` / `INTERVIEW_CANCELLED`).<br>• `1b.` `HR` cố xếp/sửa/hủy lịch ➔ Trả `403 Forbidden` (`ERR-INTV-403-01`).<br>• `2a.` Đề xuất `HIRE`/`STRONG_HIRE` nhưng bỏ trống Điểm mạnh nổi bật ➔ Báo lỗi validation tại form. |
+| **11. Yêu cầu đặc biệt** | Giao diện Scorecard tối giản chuẩn nội bộ: không hiển thị công thức toán thô hay icon AI phô trương. |
+| **12. Quy tắc nghiệp vụ liên quan** | `BRL-06`, `BRL-08`, `RBAC-STAGE-LIMIT`, `BRL-STAGE-ORDER`. |
 
 ---
 
-🎉 **Chúc mừng bạn!** Đến đây bạn đã hoàn thành trọn vẹn **toàn bộ 5 Use Case cốt lõi nhất (UC-01 đến UC-05)** cả về **Hình vẽ sơ đồ riêng** lẫn **Bản đặc tả chi tiết dạng bảng chuẩn**, đáp ứng trọn vẹn yêu cầu `≥ 5 UC` trong checklist của bạn!
+## UC-06 & UC-07: KHO NHÂN TÀI, REPOOLING, DỌN DẸP 180 NGÀY & XUẤT CSV
 
+| Thành Phần Cockburn | Nội Dung Đặc Tả |
+| :--- | :--- |
+| **1. Mã & Tên Use Case** | `UC-POOL-06` & `UC-RPT-07`: Quản trị Kho nhân tài, Luân chuyển vị trí, Dọn dẹp 6 tháng & Xuất báo cáo CSV |
+| **2. Cấp độ (Goal Level)** | `User-Goal Level` |
+| **3. Tác nhân chính** | Chuyên viên HR (`HR` — Tra cứu, Repooling, Xuất CSV), Quản trị viên (`ADMIN` — Toàn quyền + Purge 180 ngày) |
+| **4. Các bên liên quan & Quyền lợi** | • HR: Tái khai thác ứng viên dự phòng nhanh, xuất Excel báo cáo lãnh đạo.<br>• Pháp chế / Admin: Tuân thủ Nghị định 13/2023/NĐ-CP bằng cách xóa vĩnh viễn hồ sơ `REJECTED` quá 6 tháng. |
+| **5. Tiền điều kiện** | Người dùng đăng nhập vai trò `HR` hoặc `ADMIN`, truy cập `/admin/talent-pool`. |
+| **6. Hậu điều kiện tối thiểu** | Không bao giờ xóa hồ sơ `HIRED`, `INTERVIEW`, `SCREENING`, `NEW` hoặc `REJECTED` dưới 180 ngày. |
+| **7. Hậu điều kiện thành công** | Repooling tạo `Application` mới bảo lưu lịch sử cũ; Purge xóa vĩnh viễn bản ghi quá 180 ngày; Export tải về tệp `.csv` có UTF-8 BOM. |
+| **8. Sự kiện kích hoạt** | HR nhấn "Chuyển vị trí (Repooling)" / "Xuất CSV" hoặc Admin nhấn "Quét & Dọn dẹp 6 tháng (BRL-10)". |
+| **9. Kịch bản chính (Main Success Scenario)** | 1. **Tra cứu & Repooling (`UC-06`):** HR lọc ứng viên tại `/admin/talent-pool`, chọn vị trí mới đang mở và xác nhận (`POST /api/talent-pool`). Hệ thống tạo đợt ứng tuyển mới mà ứng viên không cần nộp lại CV.<br>2. **Dọn dẹp vòng đời (`UC-06A`):** `ADMIN` gọi `POST /api/talent-pool/cleanup` quét toàn bộ hồ sơ `REJECTED` có `stageUpdatedAt <= now() - 180 ngày` và thực thi Hard Delete.<br>3. **Xuất CSV (`UC-07`):** HR/Admin gọi `GET /api/export`; hệ thống sinh tệp `.csv` gắn tiền tố `\uFEFF` (UTF-8 BOM) mở chuẩn tiếng Việt trên Microsoft Excel. |
+| **10. Luồng ngoại lệ & Mở rộng** | • `2a.` `HR` hoặc `HIRING_MANAGER` cố gọi `POST /api/talent-pool/cleanup` ➔ Chặn HTTP 403 (`ERR-POOL-403-01`).<br>• `3a.` `HIRING_MANAGER` cố gọi `GET /api/export` ➔ Chặn HTTP 403. |
+| **11. Yêu cầu đặc biệt** | Tệp CSV phải chứa ký tự Byte Order Mark (`0xFEFF`) ở byte đầu tiên. |
+| **12. Quy tắc nghiệp vụ liên quan** | `BRL-10`, `NFR-SEC-05`. |

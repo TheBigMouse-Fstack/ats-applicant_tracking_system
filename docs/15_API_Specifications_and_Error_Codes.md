@@ -1,8 +1,38 @@
+---
+id: "API-ATS-15"
+title: "Đặc tả Hợp đồng API Chính & Hệ thống Mã lỗi Chuẩn"
+type: "api-spec"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "api-contract"
+  - "rest-api"
+  - "error-codes"
+upstream_deps:
+  - "FDD-ATS-04"
+  - "FSM-ATS-06"
+  - "ERD-ATS-07"
+  - "BR-ERR-17"
+downstream_deps:
+  - "UAT-ATS-18"
+last_updated: "2026-11-18"
+---
+
 # ĐẶC TẢ API CHÍNH & DANH MỤC MÃ LỖI (API SPECIFICATIONS & ERROR CODES)
 
 > **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
 > **Phiên bản tài liệu:** v1.0  
 > **Kiến trúc:** Next.js 14 App Router Route Handlers (`src/app/api/`) + TypeScript + Prisma ORM  
+
+---
+
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
 
 ---
 

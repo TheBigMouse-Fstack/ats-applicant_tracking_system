@@ -1,10 +1,40 @@
-# S? ?? PH?N R? CH?C N?NG (FDD) & DANH S?CH USE CASE
+---
+id: "FDD-ATS-04"
+title: "Sơ đồ Phân rã Chức năng (FDD), Bảng Yêu cầu Chức năng (FR) & Use Case Diagram"
+type: "srs"
+version: "2.1.0"
+status: "approved"
+owner: "ReCoverX BA & Engineering Team"
+domain: "recruitment-ats"
+tags:
+  - "fdd"
+  - "functional-requirements"
+  - "use-case-diagram"
+upstream_deps:
+  - "BRD-ATS-01"
+  - "BPMN-ATS-03"
+downstream_deps:
+  - "UC-ATS-05"
+  - "API-ATS-15"
+  - "BR-ERR-17"
+last_updated: "2026-11-18"
+---
 
-> **D? ?n:** ReCoverX Career - ATS
+# SƠ ĐỒ PHÂN RÃ CHỨC NĂNG (FDD), BẢNG FR & USE CASE DIAGRAM
+
+> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)
 
 ---
 
-## 1. S? ?? ph?n r? ch?c n?ng (FDD) & Chuy?n giao sang Use Case
+## Lịch Sử Phiên Bản (Revision History)
+
+| Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
+| :---: | :---: | :--- | :---: | :--- | :--- |
+| `v2.1.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+
+---
+
+## 1. Sơ đồ Phân rã Chức năng (FDD)
 
 Sau khi đã hoàn thiện xong **BRD** và **Quy trình To-Be**, theo đúng phương pháp luận Phân tích & Thiết kế phần mềm (Software Analysis & Design), **bước tiếp theo chuẩn nhất bạn NÊN LÀM NGAY** là:
 
@@ -98,7 +128,7 @@ Chúng ta có thể triển khai ngay một trong các việc sau:
 
 ---
 
-## 2. B?ng ??i chi?u Y?u c?u ch?c n?ng (FR) v? Danh s?ch Use Case
+## 2. Bảng Danh sách Yêu cầu Chức năng (FR — Chuẩn RULE-01)
 
 Đã có FDD rồi, bước tiếp theo bắt buộc trong checklist là:  
 👉 **Lập Bảng danh sách yêu cầu chức năng (FR-xx)** gắn với **BR-xx**, **UC-xx** và **Độ ưu tiên (MoSCoW)**.
@@ -117,29 +147,30 @@ Dưới đây là **Bảng FR-xx hoàn chỉnh** được thiết kế chuẩn x
 | **FR-00a** | Đăng nhập hệ thống nội bộ | Xác thực người dùng bằng Email & Mật khẩu; hỗ trợ tiện ích chuyển vai trò demo (Admin, HR, Hiring Manager) phục vụ thuyết trình. | Admin, HR, Manager | BRL-Auth | **UC-00** | Must Have |
 | **FR-00b** | Quản lý người dùng & Phân quyền | Cho phép Admin tạo tài khoản nhân viên mới, gán vai trò (`HR`, `HIRING_MANAGER`) và khóa/mở khóa tài khoản. | Admin | BRL-Auth | **UC-00** | Must Have |
 | **Phân hệ 1: Cổng ứng tuyển trực tuyến (Candidate Portal)** | | | | | | |
-| **FR-01** | Xem tin tuyển dụng & JD | Cho phép ứng viên xem danh sách các vị trí đang tuyển và chi tiết yêu cầu công việc (JD) công khai. | Ứng viên | BR-01 | **UC-01** | Must Have |
-| **FR-02** | Nộp hồ sơ trực tuyến | Cho phép ứng viên nhập Họ tên, SĐT, Email và tải lên tệp CV (.pdf, .doc, .docx ≤ 10MB) không cần đăng nhập tài khoản. | Ứng viên | BR-01 | **UC-01** | Must Have |
-| **FR-03** | Chống nộp spam/bot | Tích hợp reCAPTCHA / giới hạn tần suất gửi (Rate Limiting) để chặn gửi hồ sơ rác. | Hệ thống | NFR | **UC-01** | Must Have |
-| **Phân hệ 2: Tiếp nhận & Xử lý hồ sơ bằng AI (Intake & AI Engine)** | | | | | | |
-| **FR-04** | Upload CV nội bộ | Cho phép HR tải lên từng tệp hoặc nhiều tệp CV (Bulk Upload) kèm trình xem trước (Preview) nội dung CV trực tiếp trên web. | HR | BR-02 | **UC-02** | Must Have |
-| **FR-05** | Khử trùng lặp tự động (Deduplication) | Tự động quét đối chiếu Email và SĐT; nếu phát hiện trùng lặp, hệ thống cảnh báo và hỗ trợ gộp hồ sơ vào lịch sử cũ. | Hệ thống | BR-03 | **UC-02** | Must Have |
-| **FR-06** | Bóc tách dữ liệu CV (AI Parsing) | Tự động trích xuất các trường: Họ tên, Email, SĐT, Kỹ năng, Số năm kinh nghiệm từ tệp CV với độ chính xác ≥ 85%. | Hệ thống | BR-04 | **UC-02** | Must Have |
-| **FR-07** | Sàng lọc tự động (AI Screening) | Tự động so sánh dữ liệu CV với yêu cầu JD, chấm điểm phù hợp (Match Score); nếu không đạt tiêu chuẩn tối thiểu, tự chuyển sang cột *Rejected*. | Hệ thống | BR-05 | **UC-03** | Must Have |
-| **FR-08** | Tự động gửi Email từ chối | Tự động gửi email từ chối lịch sự theo mẫu định sẵn cho ứng viên bị loại ở bước AI Screening (kèm thiết lập delay 12–24h). | Hệ thống | BR-06 | **UC-03** | Must Have |
+| **FR-01**<br>`FR-PORT-JOB-001` | Xem tin tuyển dụng & JD | Cho phép ứng viên xem danh sách vị trí đang mở (`ACTIVE`) và chi tiết JD công khai. | Ứng viên | BR-01 | **UC-01** | P0 (Must Have) |
+| **FR-01A**<br>`FR-PORT-TRK-002` | Tra cứu tiến độ hồ sơ công khai | Ứng viên tra cứu tiến độ đơn nộp tại `/jobs/tracker`; ẩn hoàn toàn điểm AI và nhận xét nội bộ (`NFR-SEC-04`). | Ứng viên | BR-01 | **UC-01A** | P0 (Must Have) |
+| **FR-02**<br>`FR-PORT-APL-003` | Nộp hồ sơ trực tuyến & Chứng chỉ | Cho phép ứng viên nhập Họ tên, SĐT, Email, tải CV (`.pdf`, `.docx` ≤ 10MB) và đính kèm chứng chỉ không cần đăng nhập. | Ứng viên | BRL-01, BRL-09 | **UC-01** | P0 (Must Have) |
+| **FR-03**<br>`FR-PORT-SEC-004` | Chống nộp spam & Tệp giả mạo | Áp dụng Rate Limiting (≤ 5 lượt/10 phút/IP) và kiểm tra chữ ký nhị phân Magic Bytes (`%PDF-`, `PK`). | Hệ thống | NFR-SEC-03 | **UC-01** | P0 (Must Have) |
+| **Phân hệ 2: Tiếp nhận & Xử lý hồ sơ bằng Hybrid AI (Intake & AI Engine)** | | | | | | |
+| **FR-04**<br>`FR-INTK-UPL-001` | Upload CV nội bộ & Phân nguồn | Cho phép HR/Admin tải lên CV phân nguồn (`LINKEDIN`, `REFERRAL`, `HEADHUNTER`), đính kèm chứng chỉ và xem trước trực tiếp. | HR, Admin | BRL-01 | **UC-02** | P0 (Must Have) |
+| **FR-05**<br>`FR-INTK-DDP-002` | Khử trùng lặp tự động (Deduplication) | Quét đối chiếu `(Email, SĐT)` trong 30 ngày cùng Job (`BRL-02`); nếu nộp Job khác tự gộp vào `Candidate` hiện có. | Hệ thống | BRL-02 | **UC-02** | P0 (Must Have) |
+| **FR-06**<br>`FR-INTK-PRS-003` | Bóc tách 5 trường cốt lõi & HR sửa tay | Hiển thị gọn đúng 5 trường cốt lõi theo JD (Họ tên, Email, Vị trí, Kỹ năng, Số năm KN); ẩn chi tiết dưới nút "Xem chi tiết"; cho phép `HR`/`ADMIN` sửa thủ công và tự tính lại khớp JD. | Hệ thống, HR | BRL-03 | **UC-02** | P0 (Must Have) |
+| **FR-07**<br>`FR-AI-SCR-001` | Đối chiếu tiêu chuẩn JD (Human-in-the-loop) | Hybrid AI (Gemini `temperature: 0` + fallback Heuristic NLP) đối chiếu JD, khởi tạo thẻ tại cột **`NEW`** cho con người kiểm duyệt (không tự động từ chối). | Hệ thống | BRL-04 | **UC-03** | P0 (Must Have) |
+| **FR-08**<br>`FR-AI-MAIL-002` | Tự động hoãn gửi Email từ chối 12h | Khi người có thẩm quyền chuyển thẻ sang `REJECTED` (kèm lý do `BRL-11`), hẹn hoãn gửi thư từ chối 12 giờ (`BRL-05`); tự hủy nếu phục hồi thẻ. | Hệ thống | BRL-05, BRL-11 | **UC-03** | P0 (Must Have) |
 | **Phân hệ 3: Quản lý Quy trình Tuyển dụng (Kanban Pipeline)** | | | | | | |
-| **FR-09** | Quản lý Pipeline Kanban 5 cột | Hiển thị bảng Kanban gồm 5 cột chuẩn: *New, Screening, Interview, Hired, Rejected*. | HR | BR-08 | **UC-04** | Must Have |
-| **FR-10** | Kéo - thả chuyển trạng thái | Cho phép HR kéo-thả thẻ ứng viên giữa các cột để thay đổi trạng thái tuyển dụng. | HR | BR-08 | **UC-04** | Must Have |
-| **FR-11** | Tìm kiếm & Lọc nâng cao | Cung cấp thanh tìm kiếm theo từ khóa chuyên môn (Boolean AND/OR), lọc theo kỹ năng và số năm kinh nghiệm (phản hồi ≤ 3s). | HR | BR-07 | **UC-04** | Must Have |
-| **FR-12** | Cảnh báo thời gian lưu thẻ (SLA) | Tự động đổi màu thẻ ứng viên khi thời gian lưu lại tại một cột vượt quá giới hạn SLA cấu hình trước. | Hệ thống | BR-08 | **UC-04** | Should Have |
-| **FR-13** | Luân chuyển vị trí (Repooling) | Cho phép HR chuyển một thẻ ứng viên từ vị trí này sang vị trí khác đang mở mà không cần ứng viên nộp lại CV. | HR | BR-10 | **UC-04** | Should Have |
+| **FR-09**<br>`FR-PIPE-BRD-001` | Quản lý Pipeline Kanban 5 cột | Hiển thị bảng Kanban 5 cột chuẩn: `NEW`, `SCREENING`, `INTERVIEW`, `HIRED`, `REJECTED` với State Machine guards (`BRL-STAGE-ORDER`, khóa `HIRED`). | HR, Manager, Admin | BRL-STAGE-ORDER | **UC-04** | P0 (Must Have) |
+| **FR-10**<br>`FR-PIPE-MOV-002` | Kéo-thả phân quyền HR vs Manager & Lý do Reject | **`HR`** chỉ chuyển tối đa đến `SCREENING`; **`HIRING_MANAGER`** phụ trách `SCREENING ➔ INTERVIEW` và `INTERVIEW ➔ HIRED`; mọi chuyển sang `REJECTED` bắt buộc nhập lý do ≥ 5 ký tự (`BRL-11`). | HR, Manager, Admin | RBAC-STAGE-LIMIT, BRL-11 | **UC-04** | P0 (Must Have) |
+| **FR-11**<br>`FR-PIPE-FLT-003` | Tìm kiếm, Lọc, Đánh sáng CV & Gắn sao | Phản hồi ≤ 3s; lọc Chưa xem (đánh sáng viền xanh hồ sơ `NEW`), Đánh sao ưu tiên kiểu Gmail, Chưa đánh giá. | HR, Manager | BR-07 | **UC-04** | P0 (Must Have) |
+| **FR-12**<br>`FR-PIPE-SLA-004` | Cảnh báo thời gian lưu thẻ (SLA) | Tự động đổi viền đỏ cảnh báo khi thẻ lưu ở `NEW` > 48 giờ hoặc `SCREENING` > 72 giờ (`BRL-07`). | Hệ thống | BRL-07 | **UC-04** | P1 (Should Have) |
+| **FR-13**<br>`FR-PIPE-RPL-005` | Luân chuyển vị trí (Repooling) | Cho phép HR/Admin chuyển thẻ ứng viên sang vị trí đang mở khác mà không cần nộp lại CV. | HR, Admin | BRL-02 | **UC-04** | P1 (Should Have) |
 | **Phân hệ 4: Đánh giá & Phỏng vấn (Evaluation & Scorecard)** | | | | | | |
-| **FR-14** | Đánh giá Scorecard chuyên sâu | Biểu mẫu đánh giá đa tiêu chí có trọng số (Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30%), phân vòng phỏng vấn, cấp bậc đề xuất, căn cứ trúng tuyển (điểm mạnh then chốt) và điểm cần đào tạo bổ trợ. | HR, Manager, Tech Lead | BR-09 | **UC-05** | Must Have |
-| **FR-15** | Tổng hợp kết quả & Lịch sử đánh giá | Tự động tính điểm trung bình có trọng số, lưu trữ độc lập từng phiếu đánh giá của từng giám khảo và truy vết lịch sử ứng tuyển đa chiều của ứng viên. | Hệ thống | BR-09 | **UC-05** | Must Have |
-| **FR-15A**| Quản lý Vòng đời Lịch phỏng vấn | Đặt lịch, chỉnh sửa đổi lịch (Reschedule), hủy lịch (Cancel), đính kèm ghi chú trước/sau phỏng vấn và tạo thư mời tự động. | HR, Admin | BR-08 | **UC-05A**| Must Have |
+| **FR-14**<br>`FR-EVAL-SCR-001` | Đánh giá Scorecard chuyên sâu | Chấm điểm 3 tiêu chí trọng số (Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30% — `BRL-08`), phân vòng, cấp bậc đề xuất, căn cứ trúng tuyển và điểm cần đào tạo. | HR, Manager, Admin | BRL-08 | **UC-05** | P0 (Must Have) |
+| **FR-15**<br>`FR-EVAL-AGG-002` | Tổng hợp kết quả & Stage-Gate Hired | Lưu độc lập từng phiếu đánh giá của từng giám khảo; chặn chuyển sang `HIRED` nếu chưa có ≥ 01 Scorecard đạt chuẩn (`BRL-06`). | Hệ thống | BRL-06, BRL-08 | **UC-05** | P0 (Must Have) |
+| **FR-15A**<br>`FR-INTV-SCH-001` | Quản lý Vòng đời Lịch phỏng vấn | Đặt lịch, đổi lịch (Reschedule), hủy lịch (Cancel), ghi chú 3 lớp và tạo thư mời tự động; thuộc thẩm quyền `HIRING_MANAGER` và `ADMIN` (chặn `HR`). | Manager, Admin | RBAC-STAGE-LIMIT | **UC-05A** | P0 (Must Have) |
 | **Phân hệ 5: Quản trị Hệ thống & Dữ liệu (System & Data Management)** | | | | | | |
-| **FR-16** | Quản trị vòng đời Kho nhân tài (Talent Pool) | Lưu trữ tập trung hồ sơ và tự động chạy tiến trình xóa vĩnh viễn (Hard Delete) đối với hồ sơ bị loại sau 06 tháng. | Hệ thống | BR-10 | **UC-06** | Must Have |
-| **FR-17** | Ghi nhận lịch sử thao tác (Audit Log) | Tự động ghi lại lịch sử thao tác (người thực hiện, hành động, thời gian) khi có thay đổi trên thẻ ứng viên. | Hệ thống | BR-11 | System | Must Have |
-| **FR-18** | Xuất danh sách ứng viên (Data Export) | Cho phép HR trích xuất danh sách ứng viên theo bộ lọc ra file .xlsx hoặc .csv. | HR | BR-12 | **UC-07** | Could Have |
+| **FR-16**<br>`FR-POOL-RET-001` | Quản trị Kho nhân tài & Purge 180 ngày | Lưu trữ tập trung hồ sơ `REJECTED`; chỉ `ADMIN` được thực thi Hard Delete hồ sơ quá hạn 180 ngày (`BRL-10`). | Admin, Hệ thống | BRL-10 | **UC-06** | P0 (Must Have) |
+| **FR-17**<br>`FR-SYS-AUD-001` | Ghi nhận nhật ký kiểm toán bất biến | Tự động ghi nhận lịch sử chuyển cột, lý do từ chối, sửa 5 trường CV và chấm Scorecard vào `audit_logs` (append-only). | Hệ thống | NFR-SEC-05 | System | P0 (Must Have) |
+| **FR-18**<br>`FR-RPT-EXP-001` | Xuất danh sách ứng viên (CSV UTF-8 BOM) | Cho phép HR/Admin trích xuất danh sách ứng viên ra file `.csv` gắn UTF-8 BOM mở chuẩn tiếng Việt trên Excel. | HR, Admin | BR-12 | **UC-07** | P2 (Could Have) |
 
 ---
 
@@ -163,7 +194,7 @@ Bạn có muốn mình **vẽ Sơ đồ Use Case Diagram** và **bắt đầu vi
 
 ---
 
-## 3. S? ?? Use Case t?ng th? (Use Case Diagram)
+## 3. Sơ đồ Use Case Tổng thể (Use Case Diagram)
 
 Dưới đây là thiết kế hoàn chỉnh của **Sơ đồ Use Case Diagram Tổng thể** cho hệ thống **ReCoverX Career - ATS**, kết nối đầy đủ **4 Tác nhân (Actors)** với **7 Use Case cốt lõi** và các mối quan hệ nghiệp vụ chuẩn UML (`<<include>>`, `<<extend>>`).
 
