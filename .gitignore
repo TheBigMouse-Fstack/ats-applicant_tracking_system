@@ -43,3 +43,7 @@ public/uploads/cv_*
 public/uploads/certificates/*
 !public/uploads/.gitkeep
 
+
+# Microsoft Word temp/lock files
+~$*.docx
+*.tmp

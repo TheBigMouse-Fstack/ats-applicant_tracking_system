@@ -45,9 +45,20 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
   const job = await prisma.job.findUnique({
     where: { id: jobId },
+    include: {
+      applications: {
+        where: { currentStage: "HIRED" },
+        select: { id: true },
+      },
+    },
   });
 
   if (!job) notFound();
+
+  const hiredCount = job.applications.length;
+  const targetHeadcount = job.targetHeadcount || 1;
+  const remainingSlots = Math.max(0, targetHeadcount - hiredCount);
+  const isJobOpen = job.status === "ACTIVE" && remainingSlots > 0;
 
   let requiredSkills: string[] = [];
   try {
@@ -108,8 +119,14 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                   <span className="px-2.5 py-0.5 rounded-md text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200">
                     {job.department}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Đang nhận hồ sơ
+                  <span
+                    className={`px-2.5 py-0.5 rounded-md text-xs font-semibold border ${
+                      isJobOpen
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-slate-100 text-slate-600 border-slate-200"
+                    }`}
+                  >
+                    {isJobOpen ? `Đang tuyển (${remainingSlots} vị trí)` : "Đã tuyển đủ nhân sự"}
                   </span>
                 </div>
 
@@ -194,9 +211,32 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             </div>
           </div>
 
-          {/* CỘT PHẢI (5 Cột): Form ứng tuyển với AI Engine (SCR-02) */}
+          {/* CỘT PHẢI (5 Cột): Form ứng tuyển */}
           <div className="lg:col-span-5 sticky top-24">
-            <JobApplicationForm jobId={job.id} jobTitle={job.title} />
+            {isJobOpen ? (
+              <JobApplicationForm jobId={job.id} jobTitle={job.title} />
+            ) : (
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 text-center space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-bold text-slate-900">
+                    Vị trí này đã tạm đóng nhận hồ sơ
+                  </h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Hiện vị trí <strong>{job.title}</strong> đã hoàn tất chỉ tiêu tuyển dụng. Bạn có thể tham khảo các vị trí khác đang mở tại RecoverX.
+                  </p>
+                </div>
+                <Link
+                  href="/jobs"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Xem các vị trí đang tuyển</span>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </main>

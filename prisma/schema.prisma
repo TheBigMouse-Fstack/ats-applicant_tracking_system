@@ -33,11 +33,13 @@ model Job {
   department         String
   location           String        @default("Hồ Chí Minh")
   employmentType     String        @default("Toàn thời gian")
-  requirementsJd     String
-  minExperienceYears Int           @default(0)
-  requiredSkills     String        @default("[]") // JSON string: ["React", "TypeScript"]
-  status             String        @default("ACTIVE") // ACTIVE, CLOSED
-  createdAt          DateTime      @default(now())
+  requirementsJd      String
+  minExperienceYears  Int           @default(0)
+  requiredSkills      String        @default("[]") // JSON string: ["React", "TypeScript"]
+  targetHeadcount     Int           @default(1) // Số lượng nhân sự cần tuyển (BRL-13)
+  maxActiveInterviews Int           @default(3) // Trần số ứng viên phỏng vấn cùng lúc (mặc định 3x chỉ tiêu)
+  status              String        @default("ACTIVE") // ACTIVE, CLOSED
+  createdAt           DateTime      @default(now())
 
   applications       Application[]
 
@@ -47,10 +49,14 @@ model Job {
 // 3. Candidates table (Ứng viên & Khử trùng lặp)
 model Candidate {
   id              Int           @id @default(autoincrement())
-  fullName        String
-  email           String
-  phone           String
-  experienceYears Int           @default(0)
+  fullName         String
+  email            String
+  phone            String
+  cvExtractedName  String?       // Tên trích xuất từ CV (Secondary snapshot — không ghi đè Form)
+  cvExtractedEmail String?       // Email trích xuất từ CV (Secondary snapshot)
+  cvExtractedPhone String?       // SĐT trích xuất từ CV (Secondary snapshot)
+  cvFileHash       String?       // SHA-256 hash của tệp CV gốc phục vụ phát hiện trùng lặp lớp 2
+  experienceYears  Int           @default(0)
   parsedSkills    String?       @default("[]") // JSON string
   parsedEducation String?       @default("[]") // JSON string
   parsedExperience String?      @default("[]") // JSON string
@@ -92,7 +98,11 @@ model Application {
   interviewInterviewerNotes String?      // Ghi chú nội bộ cho chuyên gia / giám khảo (Trước PV)
   interviewPostNotes        String?      // Biên bản & ghi chú tổng kết sau phỏng vấn (Sau PV)
   rejectionReason           String?      // BRL-11: Lý do từ chối bắt buộc khi chuyển sang REJECTED
-  createdAt          DateTime     @default(now())
+  contactMismatchLevel      String       @default("NONE") // NONE, MINOR, CRITICAL, UNREADABLE (BRL-12)
+  contactMismatchNote       String?      // Ghi chú lệch thông tin giữa Form đăng ký và tệp CV
+  duplicateWarningAppId     Int?         // ID hồ sơ nghi ngờ trùng lặp (Lớp 2 Soft Flag - BRL-12)
+  duplicateWarningNote      String?      // Ghi chú chi tiết nguyên nhân nghi ngờ trùng lặp
+  createdAt                 DateTime     @default(now())
 
   evaluations        Evaluation[]
   auditLogs          AuditLog[]

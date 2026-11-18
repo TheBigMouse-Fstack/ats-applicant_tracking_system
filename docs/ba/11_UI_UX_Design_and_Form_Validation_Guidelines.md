@@ -84,11 +84,15 @@ Thay vì mô tả bằng cú pháp lập trình, các quy tắc kiểm tra dữ 
 | **Tệp CV giả mạo định dạng** | *"Magic Bytes không khớp"* | *"Tệp tin tải lên không đúng định dạng PDF/DOCX hợp lệ. Vui lòng kiểm tra lại tệp CV của bạn."* |
 | **Chuyển sang Tuyển chọn thiếu phiếu đánh giá** | *"Vi phạm chốt chặn BRL-06"* | *"Chưa thể tuyển chọn: Cần có ít nhất 01 phiếu đánh giá phỏng vấn đạt chuẩn trước khi xác nhận Tuyển chọn."* |
 | **Vượt quá quyền vai trò** | *"Vi phạm ma trận RBAC"* | *"Chuyên viên HR chỉ có quyền chuyển hồ sơ tối đa đến vòng Sàng lọc tiêu chuẩn. Vòng Phỏng vấn và Tuyển chọn do Quản lý chuyên môn phụ trách."* |
+| **CV khác thông tin đăng ký (nghi nộp nhầm tệp)** | *"Conflict 409 BRL-12"* | *"Thông tin trên tệp CV không trùng khớp với thông tin bạn đăng ký. Vui lòng kiểm tra lại đúng tệp CV của mình trước khi tiếp tục nộp."* |
+| **Chạm trần phỏng vấn cùng lúc** | *"Vượt WIP Cap BRL-13"* | *"Vị trí này hiện đã đủ hạn mức phỏng vấn cùng lúc cho số chỉ tiêu còn trống. Nên đánh giá xong đợt hiện tại trước khi mời thêm để tránh phỏng vấn dư."* |
+| **Vị trí đã tuyển đủ chỉ tiêu** | *"Job headcount full"* | *"Vị trí này đã tuyển đủ chỉ tiêu nhân sự. Vui lòng tăng số lượng cần tuyển ở trang Tin tuyển dụng nếu có nhu cầu bổ sung."* |
 
 ---
 
-## IV. TRẠNG THÁI TƯƠNG TÁC & PHẢN HỒI NGƯỜI DÙNG
+## IV. TRẠNG THÁI TƯƠNG TÁC, TỰ ĐIỀN CV & PHẢN HỒI NGƯỜI DÙNG
 
-1. **Khi đang xử lý (Loading):** Nút bấm tự động khóa tránh bấm đúp và hiển thị dòng chữ rõ ràng (*"Đang xác thực..."*, *"Đang tải lên và phân tích hồ sơ..."*, *"Đang lưu..."*).
-2. **Khi danh sách trống (Empty State):** Không để màn hình trắng trơn; luôn hiển thị thông điệp rõ ràng giải thích tình trạng hiện tại (*"Bạn đã xem toàn bộ CV mới tiếp nhận"*, *"Chưa có phiếu đánh giá nào"*).
-3. **Tách biệt hoàn toàn khu vực Công khai & Nội bộ:** Trang đăng nhập và Cổng tuyển dụng công khai tuyệt đối không hiển thị thanh menu hay thông tin quản trị nội bộ khi người dùng chưa đăng nhập.
+1. **Luồng nộp hồ sơ "Tải CV trước — Kiểm tra sau":** Trên trang ứng tuyển công khai, khu vực tải tệp CV được đặt lên đầu biểu mẫu; ngay khi ứng viên chọn tệp, hệ thống tự điền sẵn 3 ô *Họ tên, Email, Số điện thoại* để ứng viên rà lại nhanh (giảm sai lệch thông tin và giúp phát hiện ngay nếu chọn nhầm tệp CV của người khác).
+2. **Khi đang xử lý (Loading):** Nút bấm tự động khóa tránh bấm đúp và hiển thị dòng chữ rõ ràng (*"Đang xác thực..."*, *"Đang đọc thông tin liên hệ từ CV..."*, *"Đang gửi hồ sơ ứng tuyển..."*, *"Đang lưu..."*).
+3. **Khi danh sách trống (Empty State):** Không để màn hình trắng trơn; luôn hiển thị thông điệp rõ ràng giải thích tình trạng hiện tại (*"Bạn đã xem toàn bộ CV mới tiếp nhận"*, *"Chưa có phiếu đánh giá nào"*).
+4. **Tách biệt hoàn toàn khu vực Công khai & Nội bộ:** Trang đăng nhập và Cổng tuyển dụng công khai tuyệt đối không hiển thị thanh menu hay thông tin quản trị nội bộ khi người dùng chưa đăng nhập.

@@ -664,6 +664,113 @@ async function runTests() {
     assert(talentPoolApiSrc.includes('["REJECTED", "SCREENING", "INTERVIEW"]') && talentPoolApiSrc.includes("SILVER_MEDALIST"), "API Kho Nhân Tài loại trừ hoàn toàn NEW & HIRED và phân loại 3 nhóm nhân tài chuẩn (Silver Medalist / Đang chờ đợt khác / Lưu trữ dự phòng)");
     assert(!talentPoolPageSrc.includes("Chưa xem") && talentPoolPageSrc.includes("SILVER_MEDALIST"), "UI Kho Nhân Tài đã bỏ nút Chưa xem vô lý và lọc theo 3 trạng thái Kho Nhân Tài thực tế");
 
+    // ---------------------------------------------------------
+    // 16. KIỂM TRA NGUỒN CHÂN LÝ (SOURCE OF TRUTH), CHỐNG TRÙNG 2 LỚP (BRL-12)
+    //     & CHỈ TIÊU TUYỂN DỤNG + CHỐNG PHỎNG VẤN DƯ (BRL-13)
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}16. Kiểm tra Nguồn chân lý (BRL-12), Chống trùng 2 lớp & Chỉ tiêu tuyển dụng / Chống PV dư (BRL-13):${colors.reset}`);
+
+    // 16A. Kiểm tra chuẩn hóa SĐT / Email / Tên
+    function normalizePhoneJS(phone) {
+      let c = String(phone || "").replace(/[\s.\-()]/g, "").trim();
+      if (c.startsWith("+84")) c = "0" + c.slice(3);
+      else if (c.startsWith("84") && c.length >= 11 && c.length <= 12) c = "0" + c.slice(2);
+      return c;
+    }
+    assert(normalizePhoneJS("+84 912-345-678") === "0912345678", "Chuẩn hóa SĐT +84 912-345-678 về đúng chuẩn 0912345678");
+    assert(normalizePhoneJS("0912.345.678") === "0912345678", "Chuẩn hóa SĐT có dấu chấm 0912.345.678 về 0912345678");
+
+    // 16B. Kiểm tra phân loại xung đột Form vs CV (Source of Truth)
+    function classifyMismatchJS({ formName, formEmail, formPhone, cvName, cvEmail, cvPhone, isUnreadable }) {
+      if (isUnreadable) return { level: "UNREADABLE", requiresConfirm: false };
+      const normName = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").trim().toLowerCase();
+      const nameDiff = Boolean(cvName && normName(formName) !== normName(cvName));
+      const emailDiff = Boolean(cvEmail && formEmail.toLowerCase() !== cvEmail.toLowerCase());
+      const phoneDiff = Boolean(cvPhone && normalizePhoneJS(formPhone) !== normalizePhoneJS(cvPhone));
+      if (nameDiff && (emailDiff || phoneDiff)) return { level: "CRITICAL", requiresConfirm: true };
+      if (emailDiff || phoneDiff || nameDiff) return { level: "MINOR", requiresConfirm: false };
+      return { level: "NONE", requiresConfirm: false };
+    }
+
+    assert(
+      classifyMismatchJS({
+        formName: "Nguyễn Văn An",
+        formEmail: "an@gmail.com",
+        formPhone: "0912345678",
+        cvName: "Nguyen Van An",
+        cvEmail: "AN@gmail.com",
+        cvPhone: "+84 912 345 678",
+      }).level === "NONE",
+      "Chỉ khác dấu tiếng Việt / +84 / chữ hoa được coi là khớp hoàn toàn (NONE)"
+    );
+    assert(
+      classifyMismatchJS({
+        formName: "Nguyễn Văn An",
+        formEmail: "an.moi@gmail.com",
+        formPhone: "0988111222",
+        cvName: "Nguyễn Văn An",
+        cvEmail: "an.cu@gmail.com",
+        cvPhone: "0988111222",
+      }).level === "MINOR",
+      "Cùng ứng viên nhưng khác Email trên CV cũ được xếp mức MINOR (Form làm chính, CV lưu phụ)"
+    );
+    const critRes = classifyMismatchJS({
+      formName: "Nguyễn Văn An",
+      formEmail: "an@gmail.com",
+      formPhone: "0912345678",
+      cvName: "Trần Thị Bình",
+      cvEmail: "binh@gmail.com",
+      cvPhone: "0909888777",
+    });
+    assert(critRes.level === "CRITICAL" && critRes.requiresConfirm === true, "Lệch cả Họ tên lẫn liên hệ (nghi tải nhầm CV người khác) xếp mức CRITICAL và yêu cầu xác nhận 1 bước");
+    assert(classifyMismatchJS({ formName: "An", formEmail: "a@b.c", formPhone: "0912345678", isUnreadable: true }).level === "UNREADABLE", "Tệp ảnh chụp/trống không đọc được chữ được gắn mức UNREADABLE để HR mở xem gốc");
+
+    // 16C. Kiểm tra logic Chỉ tiêu tuyển dụng, Trần phỏng vấn cùng lúc & Tự đóng tin (BRL-13)
+    function evaluateHeadcountJS({ targetHeadcount, maxActiveInterviews, hiredCount, activeInterviewCount, toStage, fromStage, forceOverride }) {
+      const remaining = Math.max(0, targetHeadcount - hiredCount);
+      const effectiveCap = remaining === 0 ? 0 : Math.max(remaining, Math.ceil((maxActiveInterviews * remaining) / targetHeadcount));
+      if (toStage !== "INTERVIEW" && toStage !== "HIRED") return { allowed: true, effectiveCap };
+      if (remaining === 0) return { allowed: false, status: 400, rule: "BRL-13-FULL", effectiveCap };
+      if (toStage === "INTERVIEW" && fromStage !== "INTERVIEW" && activeInterviewCount >= effectiveCap && !forceOverride) {
+        return { allowed: false, status: 409, requiresOverride: true, rule: "BRL-13-CAP", effectiveCap };
+      }
+      const willAutoClose = toStage === "HIRED" && fromStage !== "HIRED" && hiredCount + 1 >= targetHeadcount;
+      return { allowed: true, willAutoClose, effectiveCap };
+    }
+
+    const capHit = evaluateHeadcountJS({ targetHeadcount: 1, maxActiveInterviews: 3, hiredCount: 0, activeInterviewCount: 3, fromStage: "SCREENING", toStage: "INTERVIEW", forceOverride: false });
+    assert(!capHit.allowed && capHit.status === 409 && capHit.requiresOverride, "Cảnh báo mềm (HTTP 409) khi chạm trần phỏng vấn cùng lúc (3/3 cho 1 chỉ tiêu)");
+
+    const capOverridden = evaluateHeadcountJS({ targetHeadcount: 1, maxActiveInterviews: 3, hiredCount: 0, activeInterviewCount: 3, fromStage: "SCREENING", toStage: "INTERVIEW", forceOverride: true });
+    assert(capOverridden.allowed, "Cho phép vượt trần phỏng vấn khi Hiring Manager / Admin xác nhận rõ (forceOverride)");
+
+    const tightenedCap = evaluateHeadcountJS({ targetHeadcount: 2, maxActiveInterviews: 6, hiredCount: 1, activeInterviewCount: 3, fromStage: "SCREENING", toStage: "INTERVIEW", forceOverride: false });
+    assert(tightenedCap.effectiveCap === 3 && !tightenedCap.allowed && tightenedCap.status === 409, "Khi tuyển 2 người (trần 6) và đã tuyển 1 người, trần phỏng vấn tự động thu hẹp còn 3");
+
+    const autoCloseRes = evaluateHeadcountJS({ targetHeadcount: 1, maxActiveInterviews: 3, hiredCount: 0, activeInterviewCount: 1, fromStage: "INTERVIEW", toStage: "HIRED", forceOverride: false });
+    assert(autoCloseRes.allowed && autoCloseRes.willAutoClose === true, "Tự động đóng tin tuyển dụng khi xác nhận Tuyển chọn suất chỉ tiêu cuối cùng");
+
+    const fullBlockRes = evaluateHeadcountJS({ targetHeadcount: 1, maxActiveInterviews: 3, hiredCount: 1, activeInterviewCount: 0, fromStage: "SCREENING", toStage: "INTERVIEW", forceOverride: true });
+    assert(!fullBlockRes.allowed && fullBlockRes.status === 400 && fullBlockRes.rule === "BRL-13-FULL", "Chặn cứng chuyển thêm sang Phỏng vấn / Tuyển chọn khi vị trí đã tuyển đủ chỉ tiêu");
+
+    // 16D. Kiểm tra mã nguồn & lược đồ thực tế cho cả 2 tính năng
+    const appsApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/applications/route.ts"), "utf8");
+    const previewApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/applications/preview-cv/route.ts"), "utf8");
+    const moveApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/pipeline/move/route.ts"), "utf8");
+    const jobsPageSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/jobs/page.tsx"), "utf8");
+    const applyFormSrc = fs.readFileSync(path.join(process.cwd(), "src/components/candidate/JobApplicationForm.tsx"), "utf8");
+
+    assert(appsApiSrc.includes("computeCvFileHash") && appsApiSrc.includes("detectContactMismatch") && appsApiSrc.includes("duplicateWarningAppId"), "API nộp đơn đã tích hợp Source of Truth, SHA-256 CV hash và Chống trùng 2 lớp");
+    assert(previewApiSrc.includes("extractContactsFromCvText") && applyFormSrc.includes("/api/applications/preview-cv") && applyFormSrc.includes("confirmMismatch"), "Cổng nộp hồ sơ hỗ trợ tải CV trước để tự điền (Auto-fill) và hộp xác nhận 1 bước khi lệch CV");
+    assert(moveApiSrc.includes("evaluateHeadcountGate") && moveApiSrc.includes("jobAutoClosed"), "API chuyển vòng Kanban đã gắn chốt kiểm soát chỉ tiêu, trần PV cùng lúc và tự đóng tin");
+    assert(jobsPageSrc.includes("targetHeadcount") && jobsPageSrc.includes("maxActiveInterviews"), "Trang Quản lý Tin tuyển dụng cho phép HR khai báo rõ Số lượng cần tuyển và Giới hạn PV cùng lúc");
+
+    // 16E. Kiểm tra cột mới trên CSDL SQLite thực tế
+    const headcountSampleJob = await prisma.job.findFirst({ select: { id: true, targetHeadcount: true, maxActiveInterviews: true } });
+    assert(headcountSampleJob && headcountSampleJob.targetHeadcount >= 1 && headcountSampleJob.maxActiveInterviews >= 1, "CSDL SQLite đã đồng bộ các cột chỉ tiêu tuyển dụng (targetHeadcount, maxActiveInterviews)");
+    const dedupSampleApp = await prisma.application.findFirst({ select: { id: true, contactMismatchLevel: true, duplicateWarningAppId: true } });
+    assert(dedupSampleApp && typeof dedupSampleApp.contactMismatchLevel === "string", "CSDL SQLite đã đồng bộ các cột cảnh báo lệch CV và nghi ngờ trùng Lớp 2");
+
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
   } finally {

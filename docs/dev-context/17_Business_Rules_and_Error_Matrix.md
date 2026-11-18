@@ -49,6 +49,8 @@ Mọi quy tắc nghiệp vụ của hệ thống đều tuân thủ cấu trúc 
 | **`BRL-09`**<br>`BR-QUOTA-001` | Hạn ngạch nộp tối đa 3 vị trí trong 90 ngày | `POST /api/applications` | **WHEN** một ứng viên (nhận diện qua Email hoặc SĐT) nộp đơn vào vị trí thứ 4 trong vòng 90 ngày gần nhất **THEN** hệ thống chặn tiếp nhận đơn mới và thông báo vượt hạn ngạch **UNLESS** đã qua 90 ngày kể từ các đơn trước đó. | `ERR-APP-422-01` |
 | **`BRL-10`**<br>`BR-RET-001` | Dọn dẹp vòng đời dữ liệu 180 ngày (Hard Delete) | `POST /api/talent-pool/cleanup` | **WHEN** Quản trị viên (`ADMIN`) kích hoạt tác vụ dọn dẹp dữ liệu **THEN** hệ thống xóa vĩnh viễn (Hard Delete) tất cả hồ sơ ở trạng thái `REJECTED` có thời gian lưu trữ `stageUpdatedAt` quá 180 ngày (6 tháng) **UNLESS** hồ sơ chưa quá 180 ngày hoặc đang ở trạng thái `HIRED` / `INTERVIEW` / `SCREENING` / `NEW`. | `ERR-POOL-403-01` |
 | **`BRL-11`**<br>`BR-REJ-001` | Bắt buộc Lý do khi Từ chối hồ sơ | `POST /api/pipeline/move` | **WHEN** bất kỳ người dùng có thẩm quyền nào chuyển hồ sơ sang trạng thái `REJECTED` **THEN** bắt buộc cung cấp `rejectionReason` có độ dài tối thiểu 5 ký tự (lưu vào `Application.rejectionReason` và `AuditLog.reason`) **UNLESS** Không có ngoại lệ. | `ERR-PIPE-422-03` |
+| **`BRL-12`**<br>`BR-SOT-001` | Nguồn chân lý (Source of Truth) & Chống trùng lặp 2 lớp | `dedup-and-contact.ts`, `applications/route.ts`, `preview-cv/route.ts` | **WHEN** ứng viên nộp hồ sơ có cả thông tin Form và tệp CV **THEN** hệ thống chuẩn hóa Email/SĐT (`+84` ➔ `0`), ưu tiên Form làm liên hệ chính và lưu liên hệ từ CV làm bản phụ (`cvExtracted*`); nếu lệch hoàn toàn cả Tên lẫn liên hệ (`CRITICAL`) thì yêu cầu xác nhận 1 bước (`409`); đồng thời áp dụng Chống trùng Lớp 1 (chặn cứng Email/SĐT Form trùng 30 ngày) và Lớp 2 (gắn cờ mềm nghi ngờ trùng nếu trùng Email/SĐT trong CV hoặc trùng SHA-256 `cvFileHash`) **UNLESS** nộp từ nội bộ HR (bỏ qua hộp xác nhận 1 bước nhưng vẫn lưu cảnh báo sai khác và cờ trùng Lớp 2). | `ERR-APP-409-01`<br>`ERR-APP-409-02` |
+| **`BRL-13`**<br>`BR-HEAD-001` | Chỉ tiêu tuyển dụng, Trần phỏng vấn cùng lúc & Tự đóng tin | `headcount-rules.ts`, `jobs/route.ts`, `pipeline/move/route.ts`, `interviews/schedule/route.ts` | **WHEN** HR đăng tin tuyển dụng có `targetHeadcount` (`≥ 1`) và `maxActiveInterviews` (mặc định `3 × targetHeadcount`, tự co tỷ lệ theo số suất còn trống) **THEN** (1) khi `activeInterviewCount >= effectiveInterviewCap`, hệ thống cảnh báo mềm (`409 requiresOverride`) chống phỏng vấn dư; (2) khi tuyển đủ suất cuối (`hiredCount + 1 >= targetHeadcount`), hệ thống tự đóng tin (`Job.status = "CLOSED"`); (3) khi đã đủ chỉ tiêu (`remainingSlots == 0`), chặn chuyển thêm sang `INTERVIEW`/`HIRED` và khóa form nộp công khai **UNLESS** `HIRING_MANAGER`/`ADMIN` xác nhận vượt trần phỏng vấn (`forceInterviewCapOverride = true`, ghi vết `AuditLog`) hoặc `HR`/`ADMIN` tăng `targetHeadcount` qua `PATCH /api/jobs/[id]`. | `ERR-PIPE-409-02`<br>`ERR-PIPE-400-04` |
 | **`BRL-STAGE-ORDER`**<br>`BR-FSM-001` | Tuân thủ trình tự tuyến tính State Machine | `src/lib/stage-rules.ts` | **WHEN** người dùng thao tác chuyển trạng thái hồ sơ **THEN** chỉ chấp nhận các đường chuyển hợp lệ kế tiếp (`NEW ➔ SCREENING ➔ INTERVIEW ➔ HIRED`) và nghiêm cấm nhảy cóc (`NEW ➔ INTERVIEW`, `NEW ➔ HIRED`, `SCREENING ➔ HIRED`, `REJECTED ➔ HIRED`) **UNLESS** Không có ngoại lệ (áp dụng cho cả `ADMIN`). | `ERR-PIPE-422-01` |
 | **`BRL-STAGE-TERMINAL`**<br>`BR-FSM-002` | Khóa trạng thái kết thúc (`HIRED`) | `src/lib/stage-rules.ts` | **WHEN** hồ sơ đã đạt trạng thái `HIRED` **THEN** hệ thống khóa hoàn toàn thao tác chuyển sang bất kỳ trạng thái nào khác nhằm bảo vệ toàn vẹn dữ liệu tuyển chọn **UNLESS** Không có ngoại lệ trên luồng Kanban tiêu chuẩn. | `ERR-PIPE-409-01` |
 | **`RBAC-STAGE-LIMIT`**<br>`BR-RBAC-001` | Phân tách thẩm quyền vòng tuyển HR vs Hiring Manager | `src/lib/stage-rules.ts`, `schedule/route.ts` | **WHEN** người dùng luân chuyển cột Kanban hoặc xếp/hủy lịch phỏng vấn **THEN** `HR` chỉ được chuyển tối đa đến `SCREENING` (`NEW ➔ SCREENING`, `NEW/SCREENING ➔ REJECTED`, phục hồi về `NEW/SCREENING`); `HIRING_MANAGER` phụ trách từ `SCREENING` trở đi (`SCREENING ➔ INTERVIEW`, xếp/sửa/hủy lịch PV, `INTERVIEW ➔ HIRED`, `SCREENING/INTERVIEW ➔ REJECTED`) và không tác động vòng `NEW` **UNLESS** người dùng có vai trò `ADMIN`. | `ERR-PIPE-403-01`<br>`ERR-INTV-403-01` |
@@ -75,6 +77,9 @@ Mọi quy tắc nghiệp vụ của hệ thống đều tuân thủ cấu trúc 
 | **`ERR-PIPE-422-03`** | Chuyển sang `REJECTED` nhưng bỏ trống hoặc nhập lý do < 5 ký tự | `400 Bad Request`<br>`BRL-11` | Kiểm tra `rejectionReason.trim().length >= 5`; chặn lưu DB. | Tự động mở `RejectReasonModal` yêu cầu chọn/nhập lý do từ chối cụ thể. | Chọn lý do chuẩn hoặc nhập mô tả chi tiết ≥ 5 ký tự rồi xác nhận. | **High** |
 | **`ERR-INTV-403-01`** | `HR` cố xếp lịch, sửa lịch hoặc hủy lịch phỏng vấn | `403 Forbidden`<br>`RBAC-STAGE-LIMIT` | Chặn tại `POST/DELETE /api/interviews/schedule` khi `role === "HR"`. | Ẩn nút Lên lịch/Sửa/Hủy đối với HR, hiện nhãn *"Do Hiring Manager phụ trách"*. | Chuyển hồ sơ sang `SCREENING` để Hiring Manager trực tiếp duyệt và xếp lịch. | **Medium** |
 | **`ERR-POOL-403-01`** | `HR` hoặc `HIRING_MANAGER` cố gọi tác vụ xóa vĩnh viễn `BRL-10` | `403 Forbidden`<br>`RBAC-PURGE-BLOCK` | Chặn tuyệt đối tại `POST /api/talent-pool/cleanup` nếu `role !== "ADMIN"`. | Ẩn nút dọn dẹp 6 tháng với HR/HM; API trả lỗi 403. | Yêu cầu tài khoản `ADMIN` thực thi tác vụ định kỳ. | **Critical** |
+| **`ERR-APP-409-02`** | Tên và Email/SĐT trên CV khác hoàn toàn thông tin ứng viên nhập ở Form công khai (`CRITICAL`) | `409 Conflict`<br>`BRL-12-CONFIRM` | Tạm dừng lưu hồ sơ, trả về `requiresMismatchConfirm: true` kèm thông tin đọc được từ CV. | Hiện hộp xác nhận 1 bước cho ứng viên chọn lại tệp CV hoặc bấm *"Tôi xác nhận đúng, tiếp tục nộp"*. | Đổi đúng tệp CV của mình hoặc xác nhận nộp kèm `confirmMismatch=true`. | **Medium** |
+| **`ERR-PIPE-409-02`** | Đưa thêm ứng viên sang `INTERVIEW` khi vị trí đã chạm trần phỏng vấn cùng lúc | `409 Conflict`<br>`BRL-13-CAP` | Tạm dừng chuyển vòng / xếp lịch, trả về `requiresOverride: true` và `headcountMetrics`. | Mở hộp xác nhận khuyên đánh giá xong đợt hiện tại, cho phép chọn *"Giữ lại ở Sàng lọc"* hoặc *"Vẫn mời phỏng vấn"*. | Hoàn tất đánh giá ứng viên đang PV hoặc xác nhận vượt hạn mức có ghi vết AuditLog. | **Medium** |
+| **`ERR-PIPE-400-04`** | Chuyển thêm sang `INTERVIEW`/`HIRED` hoặc nộp đơn công khai khi vị trí đã đủ chỉ tiêu | `400 Bad Request`<br>`BRL-13-FULL` | Chặn chuyển vòng và khóa form nộp công khai vì `hiredCount >= targetHeadcount`. | Báo vị trí đã tuyển đủ chỉ tiêu và hướng dẫn tăng chỉ tiêu tại trang Tin tuyển dụng nếu cần tuyển bổ sung. | HR/Admin cập nhật tăng `targetHeadcount` qua `PATCH /api/jobs/[id]`. | **High** |
 
 ---
 
@@ -156,4 +161,52 @@ Feature: Bắt buộc ghi nhận Lý do Từ chối và cơ chế hoãn Email 12
     Then hệ thống lưu trạng thái "REJECTED", lưu rejectionReason, hẹn emailScheduledAt = now() + 12 giờ và ghi AuditLog.reason
     When HR kéo thẻ đó phục hồi từ "REJECTED" về "SCREENING" trong vòng 12 giờ
     Then hệ thống đặt emailScheduledAt = null và xóa rejectionReason để hủy gửi thư từ chối
+```
+
+---
+
+### Feature 4: Nguồn Chân Lý (Source of Truth) & Chống Trùng Lặp 2 Lớp (`BRL-12`, `BRL-02`)
+
+```gherkin
+Feature: Xử lý xung đột thông tin Form vs CV và Chống trùng lặp 2 lớp
+
+  Scenario: Happy Path — Tự động điền sẵn (Auto-fill) khi tải CV lên ở Bước 1
+    Given ứng viên mở trang chi tiết tin tuyển dụng đang còn chỉ tiêu
+    When ứng viên tải lên tệp CV PDF hợp lệ có chứa Họ tên, Email và SĐT
+    Then hệ thống gọi POST /api/applications/preview-cv và tự điền sẵn vào 3 ô Họ tên, Email, SĐT
+    And ứng viên có thể sửa lại SĐT mới trước khi nộp mà không bị dữ liệu trong CV ghi đè
+
+  Scenario: Business Negative Path — Chuẩn hóa +84 về 0 và chặn trùng Lớp 1 trong 30 ngày
+    Given ứng viên đã nộp đơn cho vị trí #1 bằng SĐT "0912345678" cách đây 5 ngày
+    When ứng viên nộp lại cho cùng vị trí #1 với SĐT "+84 912-345-678"
+    Then hệ thống chuẩn hóa thành "0912345678" và từ chối nộp trùng với mã HTTP 400 (BRL-02) kèm ngày đã nộp
+
+  Scenario: Boundary Path — Hộp xác nhận 1 bước khi CV khác hoàn toàn người đăng ký và Cờ trùng Lớp 2
+    Given ứng viên nhập tên "Nguyễn Văn A" và email mới nhưng tải lên tệp CV của "Trần Thị B"
+    When ứng viên bấm Nộp lần đầu
+    Then hệ thống trả về HTTP 409 với requiresMismatchConfirm = true để tránh tải nhầm tệp CV
+    When ứng viên xác nhận tiếp tục nộp (confirmMismatch = true)
+    Then hệ thống vẫn lưu Form làm liên hệ chính, lưu thông tin CV làm bản phụ và gắn cảnh báo cho HR
+    And nếu tệp CV hoặc email/SĐT trong CV trùng với hồ sơ #12 đã nộp trong 30 ngày thì gắn cờ duplicateWarningAppId = 12
+```
+
+---
+
+### Feature 5: Chỉ Tiêu Tuyển Dụng, Trần Phỏng Vấn Cùng Lúc & Tự Đóng Tin (`BRL-13`)
+
+```gherkin
+Feature: Quản trị chỉ tiêu tuyển dụng và chống phỏng vấn dư
+
+  Scenario: Business Negative Path — Cảnh báo mềm khi chạm trần phỏng vấn cùng lúc
+    Given vị trí "Backend Engineer" có targetHeadcount = 1, maxActiveInterviews = 3 và đang có 3 ứng viên ở cột "INTERVIEW"
+    When Hiring Manager kéo ứng viên thứ 4 từ "SCREENING" sang "INTERVIEW"
+    Then hệ thống trả về HTTP 409 với requiresOverride = true khuyến nghị đánh giá xong đợt hiện tại
+    When Hiring Manager xác nhận vượt hạn mức (forceInterviewCapOverride = true)
+    Then hệ thống cho phép chuyển sang "INTERVIEW" và ghi vết lý do vượt hạn mức vào AuditLog
+
+  Scenario: Happy Path — Tự động đóng tin tuyển dụng khi tuyển đủ chỉ tiêu cuối cùng
+    Given vị trí "Backend Engineer" có targetHeadcount = 1 và hiredCount = 0
+    When Hiring Manager chuyển ứng viên đạt Scorecard từ "INTERVIEW" sang "HIRED"
+    Then hệ thống chuyển hồ sơ sang "HIRED", tự động cập nhật Job.status = "CLOSED" và trả về jobAutoClosed = true
+    And trang nộp hồ sơ công khai tự động khóa nhận đơn mới cho vị trí này
 ```

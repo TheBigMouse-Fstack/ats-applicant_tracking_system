@@ -79,15 +79,21 @@ erDiagram
         string requirementsJd
         int minExperienceYears
         string requiredSkills "JSON array"
+        int targetHeadcount "BRL-13 Headcount (default 1)"
+        int maxActiveInterviews "BRL-13 Interview WIP Cap (default 3x)"
         string status "ACTIVE | CLOSED"
         datetime createdAt
     }
 
     CANDIDATES {
         int id PK
-        string fullName
-        string email UK "Composite UK (email, phone)"
-        string phone UK "Composite UK (email, phone)"
+        string fullName "Primary from Form (Source of Truth)"
+        string email UK "Primary normalized email"
+        string phone UK "Primary normalized phone (0xxx)"
+        string cvExtractedName "Secondary snapshot from CV"
+        string cvExtractedEmail "Secondary snapshot from CV"
+        string cvExtractedPhone "Secondary snapshot from CV"
+        string cvFileHash "SHA-256 hash for Layer-2 dedup"
         int experienceYears
         string parsedSkills "JSON array"
         string parsedEducation "JSON array"
@@ -122,6 +128,10 @@ erDiagram
         string interviewInterviewerNotes
         string interviewPostNotes
         string rejectionReason "BRL-11 Mandatory when REJECTED"
+        string contactMismatchLevel "NONE | MINOR | CRITICAL | UNREADABLE (BRL-12)"
+        string contactMismatchNote "Note explaining Form vs CV contact diff"
+        int duplicateWarningAppId "Layer-2 Soft Flag suspected duplicate App ID"
+        string duplicateWarningNote "Explanation for HR review"
         datetime createdAt
     }
 
@@ -188,7 +198,9 @@ erDiagram
 | Mô tả JD chi tiết | `requirementsJd` | `TEXT` | NOT NULL | - | None | Văn bản mô tả công việc | Public | Không che | Làm đầu vào đối chiếu cho Hybrid AI (`BRL-04`). |
 | Số năm KN tối thiểu | `minExperienceYears` | `INT` | NOT NULL | - | `0` | `0 <= val <= 30` | Public | Không che | Mốc đối chiếu với `Candidate.experienceYears` (40% trọng số). |
 | Kỹ năng bắt buộc | `requiredSkills` | `TEXT` (JSON) | NOT NULL | - | `'[]'` | JSON Array of strings | Public | Không che | Mốc đối chiếu với `Candidate.parsedSkills` (60% trọng số). |
-| Trạng thái tin | `status` | `VARCHAR(20)` | NOT NULL | - | `'ACTIVE'` | Enum: `ACTIVE \| CLOSED` | Public | Không che | Chỉ `ACTIVE` mới mở nhận đơn công khai. |
+| Số lượng cần tuyển | `targetHeadcount` | `INT` | NOT NULL | - | `1` | `1 <= val <= 100` | Public | Không che | Chỉ tiêu nhân sự cần tuyển cho vị trí (`BRL-13`). Khi `hiredCount >= targetHeadcount` hệ thống tự đóng tin (`CLOSED`). |
+| Trần phỏng vấn cùng lúc | `maxActiveInterviews` | `INT` | NOT NULL | - | `3` | `targetHeadcount <= val <= 300` | Internal | Ẩn khỏi Public | Hạn mức ứng viên tối đa ở cột `INTERVIEW` cùng thời điểm (mặc định `3 × targetHeadcount`, tự co theo suất còn trống). |
+| Trạng thái tin | `status` | `VARCHAR(20)` | NOT NULL | - | `'ACTIVE'` | Enum: `ACTIVE \| CLOSED` | Public | Không che | Chỉ `ACTIVE` và còn chỉ tiêu mới mở nhận đơn công khai. |
 
 ---
 
@@ -205,6 +217,8 @@ erDiagram
 | Học vấn & Kinh nghiệm | `parsedEducation`, `parsedExperience` | `TEXT` (JSON) | NULL | - | `'[]'` | JSON Array đối tượng | Internal | Ẩn mặc định (Progressive Disclosure) | Mở rộng khi bấm *"Xem chi tiết hồ sơ"*. |
 | Chứng chỉ đính kèm | `certificates` | `TEXT` (JSON) | NULL | - | `'[]'` | JSON Array `{name, fileUrl, fileType}` | **Confidential - PII** | Chỉ người dùng nội bộ đã xác thực | Thư viện ảnh bằng cấp/IELTS/chứng chỉ. |
 | Tệp CV gốc & Văn bản | `cvFileUrl`, `cvText` | `VARCHAR` / `TEXT` | NOT NULL / NULL | - | None | PDF/DOCX ≤ 10MB, Magic Bytes hợp lệ | **Confidential - PII** | Xóa vĩnh viễn theo `BRL-10` | Đường dẫn file CV gốc và text bóc từ `pdf-parse`. |
+| Liên hệ phụ từ CV | `cvExtractedName`, `cvExtractedEmail`, `cvExtractedPhone` | `VARCHAR` | NULL | - | `NULL` | Chuẩn hóa trước khi lưu | **Confidential - PII** | Chỉ nội bộ xem trong Drawer | Bản chụp phụ đọc từ CV theo nguyên tắc Nguồn chân lý (`BRL-12`) — tuyệt đối không ghi đè liên hệ chính ở Form. |
+| Mã băm tệp CV gốc | `cvFileHash` | `VARCHAR(64)` | NULL | - | `NULL` | SHA-256 hex | Internal | Ẩn khỏi UI | Phục vụ phát hiện trùng lặp Lớp 2 khi đổi email/SĐT nhưng nộp cùng 1 tệp CV (`BRL-12`). |
 
 ---
 

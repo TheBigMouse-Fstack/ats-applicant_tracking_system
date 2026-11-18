@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { extractTextFromCv, parseAndScoreCv } from "@/lib/ai-parser";
 import { getSessionUser } from "@/lib/auth";
+import {
+  normalizeEmail,
+  normalizePhone,
+  computeCvFileHash,
+  extractContactsFromCvText,
+  detectContactMismatch,
+} from "@/lib/dedup-and-contact";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -126,9 +133,12 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const jobIdStr = formData.get("jobId") as string;
     const fullName = (formData.get("fullName") as string)?.trim() || "";
-    const email = (formData.get("email") as string)?.trim().toLowerCase() || "";
-    const phone = (formData.get("phone") as string)?.trim() || "";
+    const email = normalizeEmail(formData.get("email") as string);
+    const rawPhone = (formData.get("phone") as string)?.trim() || "";
+    const phone = normalizePhone(rawPhone);
     const file = formData.get("cvFile") as File | null;
+    const source = (formData.get("source") as string)?.trim() || "CAREER_SITE";
+    const confirmMismatch = formData.get("confirmMismatch") === "true";
 
     const fieldErrors: Record<string, string> = {};
 
@@ -143,8 +153,8 @@ export async function POST(req: Request) {
     if (!email || !emailRegex.test(email)) {
       fieldErrors.email = "Địa chỉ email không hợp lệ (VD: ungvien@gmail.com)";
     }
-    const phoneRegex = /^(0|\+84)[0-9]{9,10}$/;
-    if (!phone || !phoneRegex.test(phone.replace(/\s+/g, ""))) {
+    const phoneRegex = /^0[0-9]{9,10}$/;
+    if (!phone || !phoneRegex.test(phone)) {
       fieldErrors.phone = "Số điện thoại không hợp lệ (Phải từ 10 chữ số, bắt đầu bằng 0 hoặc +84)";
     }
     if (!file) {
@@ -164,7 +174,7 @@ export async function POST(req: Request) {
 
     const jobId = Number(jobIdStr);
 
-    // 2. Kiểm tra Vị trí tuyển dụng (Job) có tồn tại và đang mở không
+    // 2. Kiểm tra Vị trí tuyển dụng (Job) có tồn tại, đang mở và còn chỉ tiêu không
     const job = await prisma.job.findUnique({
       where: { id: jobId },
     });
@@ -176,11 +186,15 @@ export async function POST(req: Request) {
       );
     }
 
-    if (job.status !== "ACTIVE") {
+    const hiredForJob = await prisma.application.count({
+      where: { jobId, currentStage: "HIRED" },
+    });
+
+    if (job.status !== "ACTIVE" || hiredForJob >= (job.targetHeadcount || 1)) {
       return NextResponse.json(
         {
           success: false,
-          error: "Vị trí tuyển dụng này hiện đã đóng hoặc tạm dừng nhận hồ sơ",
+          error: "Vị trí tuyển dụng này đã tuyển đủ nhân sự hoặc hiện đã đóng nhận hồ sơ mới.",
         },
         { status: 400 }
       );
@@ -220,31 +234,41 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. KIỂM TRA BRL-02: Khử trùng lặp trong 30 ngày (Deduplication)
+    // 4. KIỂM TRA LỚP 1 (Hard Block — BRL-02): Khử trùng lặp Email HOẶC SĐT (đã chuẩn hóa) trong 30 ngày
+    const phoneVariants = Array.from(
+      new Set([phone, rawPhone.replace(/\s+/g, ""), `+84${phone.slice(1)}`].filter(Boolean))
+    );
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const existingDuplicate = await prisma.application.findFirst({
       where: {
         jobId,
         candidate: {
-          OR: [{ email }, { phone }],
+          OR: [{ email }, { phone: { in: phoneVariants } }],
         },
         createdAt: {
           gte: thirtyDaysAgo,
         },
       },
       include: { candidate: true },
+      orderBy: { createdAt: "desc" },
     });
 
     if (existingDuplicate) {
+      const prevDateStr = new Date(existingDuplicate.createdAt).toLocaleDateString("vi-VN");
+      const matchedEmail = normalizeEmail(existingDuplicate.candidate.email) === email;
+      const matchedPhone = normalizePhone(existingDuplicate.candidate.phone) === phone;
+      const dupFieldErrors: Record<string, string> = {};
+      if (matchedEmail) {
+        dupFieldErrors.email = `Email này đã ứng tuyển vị trí này vào ngày ${prevDateStr}`;
+      }
+      if (matchedPhone) {
+        dupFieldErrors.phone = `Số điện thoại này đã ứng tuyển vị trí này vào ngày ${prevDateStr}`;
+      }
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Ứng viên đã nộp hồ sơ cho vị trí này trong vòng 30 ngày qua. Vui lòng không nộp lặp lại.",
-          fieldErrors: {
-            email: "Email này đã ứng tuyển vị trí này trong 30 ngày qua",
-            phone: "Số điện thoại này đã ứng tuyển vị trí này trong 30 ngày qua",
-          },
+          error: `Hồ sơ này đã ứng tuyển vị trí "${job.title}" vào ngày ${prevDateStr} (mã hồ sơ #${existingDuplicate.id}). Vui lòng chờ phản hồi trong vòng 30 ngày thay vì nộp lặp lại.`,
+          fieldErrors: dupFieldErrors,
           rule: "BRL-02",
         },
         { status: 400 }
@@ -256,7 +280,7 @@ export async function POST(req: Request) {
     const candidatePastAppsCount = await prisma.application.count({
       where: {
         candidate: {
-          OR: [{ email }, { phone }],
+          OR: [{ email }, { phone: { in: phoneVariants } }],
         },
         createdAt: {
           gte: ninetyDaysAgo,
@@ -319,6 +343,38 @@ export async function POST(req: Request) {
       }
     }
 
+    // 6.2. Bóc tách văn bản & đối chiếu Nguồn chân lý (Source of Truth — BRL-12) trước khi lưu đĩa
+    const cvFileHash = computeCvFileHash(buffer);
+    const cvRawText = await extractTextFromCv(buffer, fileName);
+    const cvContacts = extractContactsFromCvText(cvRawText);
+    const mismatch = detectContactMismatch({
+      formName: fullName,
+      formEmail: email,
+      formPhone: phone,
+      cvName: cvContacts.fullName,
+      cvEmail: cvContacts.email,
+      cvPhone: cvContacts.phone,
+      isUnreadable: cvContacts.isUnreadable,
+    });
+
+    // Chốt chặn xác nhận 1 bước khi ứng viên ngoài cổng có khả năng tải nhầm CV người khác
+    if (mismatch.requiresApplicantConfirm && source === "CAREER_SITE" && !confirmMismatch) {
+      return NextResponse.json(
+        {
+          success: false,
+          requiresMismatchConfirm: true,
+          error: mismatch.note,
+          cvExtracted: {
+            fullName: cvContacts.fullName,
+            email: cvContacts.email,
+            phone: cvContacts.phone,
+          },
+          rule: "BRL-12-CONFIRM",
+        },
+        { status: 409 }
+      );
+    }
+
     // Ghi nhận IP đã nộp hồ sơ hợp lệ vào Rate Limiter
     history.push(nowMs);
     ipSubmissionTimestamps.set(clientIp, history);
@@ -334,7 +390,6 @@ export async function POST(req: Request) {
 
     // 6.5. Xử lý các tệp Bằng cấp / Chứng chỉ đính kèm (Certificates & Attachments)
     const certFiles = formData.getAll("certificates") as File[];
-    const source = (formData.get("source") as string)?.trim() || "CAREER_SITE";
     const newCertificates: any[] = [];
 
     if (certFiles && certFiles.length > 0) {
@@ -366,10 +421,57 @@ export async function POST(req: Request) {
       }
     }
 
-    // 7. Bóc tách nội dung CV (Layer 1 Text Extraction)
-    const cvRawText = await extractTextFromCv(buffer, fileName);
+    // 7. KIỂM TRA LỚP 2 (Soft Flag — BRL-12): Phát hiện nghi ngờ trùng lặp qua Email/SĐT trong CV hoặc trùng tệp CV gốc
+    let duplicateWarningAppId: number | null = null;
+    let duplicateWarningNote: string | null = null;
 
-    // 8. Chạy AI Phân tích & So khớp CV (Layer 2 Hybrid AI Matching)
+    const layer2OrClauses: any[] = [{ cvFileHash }];
+    if (cvContacts.email) {
+      layer2OrClauses.push({ email: cvContacts.email });
+      layer2OrClauses.push({ cvExtractedEmail: cvContacts.email });
+    }
+    if (cvContacts.phone) {
+      layer2OrClauses.push({ phone: cvContacts.phone });
+      layer2OrClauses.push({ cvExtractedPhone: cvContacts.phone });
+    }
+
+    const suspectedDupApp = await prisma.application.findFirst({
+      where: {
+        jobId,
+        createdAt: { gte: thirtyDaysAgo },
+        candidate: {
+          OR: layer2OrClauses,
+        },
+      },
+      include: { candidate: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (suspectedDupApp) {
+      duplicateWarningAppId = suspectedDupApp.id;
+      const reasons: string[] = [];
+      if (suspectedDupApp.candidate.cvFileHash && suspectedDupApp.candidate.cvFileHash === cvFileHash) {
+        reasons.push("cùng tệp CV gốc");
+      }
+      if (
+        cvContacts.email &&
+        (normalizeEmail(suspectedDupApp.candidate.email) === cvContacts.email ||
+          normalizeEmail(suspectedDupApp.candidate.cvExtractedEmail) === cvContacts.email)
+      ) {
+        reasons.push(`trùng email trong CV (${cvContacts.email})`);
+      }
+      if (
+        cvContacts.phone &&
+        (normalizePhone(suspectedDupApp.candidate.phone) === cvContacts.phone ||
+          normalizePhone(suspectedDupApp.candidate.cvExtractedPhone) === cvContacts.phone)
+      ) {
+        reasons.push(`trùng SĐT trong CV (${cvContacts.phone})`);
+      }
+      const prevDate = new Date(suspectedDupApp.createdAt).toLocaleDateString("vi-VN");
+      duplicateWarningNote = `Nghi ngờ trùng với hồ sơ #${suspectedDupApp.id} (${suspectedDupApp.candidate.fullName}, nộp ngày ${prevDate}) do ${reasons.join(", ") || "dữ liệu tệp CV tương đồng"}. Vui lòng đối chiếu trước khi duyệt.`;
+    }
+
+    // 8. Chạy Phân tích & So khớp CV với tiêu chuẩn JD
     let requiredSkillsArray: string[] = [];
     try {
       requiredSkillsArray = JSON.parse(job.requiredSkills || "[]");
@@ -385,9 +487,12 @@ export async function POST(req: Request) {
     });
 
     // 9. Tìm hoặc cập nhật Hồ sơ Candidate trong CSDL
+    // NGUYÊN TẮC NGUỒN CHÂN LÝ (Source of Truth):
+    // - Thông tin liên hệ từ Form (fullName, email, phone) luôn là CHÍNH (không để CV ghi đè).
+    // - Thông tin đọc từ CV được lưu riêng làm bản phụ (cvExtractedName, cvExtractedEmail, cvExtractedPhone).
     let candidate = await prisma.candidate.findFirst({
       where: {
-        OR: [{ email }, { phone }],
+        OR: [{ email }, { phone: { in: phoneVariants } }],
       },
     });
 
@@ -400,13 +505,16 @@ export async function POST(req: Request) {
       }
       const combinedCerts = [...existingCerts, ...newCertificates];
 
-      // Cập nhật thông tin mới nhất
       candidate = await prisma.candidate.update({
         where: { id: candidate.id },
         data: {
           fullName,
           email,
           phone,
+          cvExtractedName: cvContacts.fullName,
+          cvExtractedEmail: cvContacts.email,
+          cvExtractedPhone: cvContacts.phone,
+          cvFileHash,
           experienceYears: aiResult.experienceYears,
           parsedSkills: JSON.stringify(aiResult.skills),
           parsedEducation: JSON.stringify(aiResult.education),
@@ -417,12 +525,15 @@ export async function POST(req: Request) {
         },
       });
     } else {
-      // Tạo mới ứng viên
       candidate = await prisma.candidate.create({
         data: {
           fullName,
           email,
           phone,
+          cvExtractedName: cvContacts.fullName,
+          cvExtractedEmail: cvContacts.email,
+          cvExtractedPhone: cvContacts.phone,
+          cvFileHash,
           experienceYears: aiResult.experienceYears,
           parsedSkills: JSON.stringify(aiResult.skills),
           parsedEducation: JSON.stringify(aiResult.education),
@@ -445,16 +556,25 @@ export async function POST(req: Request) {
         aiMatchRationale: aiResult.rationale,
         aiMatchedSkills: JSON.stringify(aiResult.matchedSkills),
         aiMissingSkills: JSON.stringify(aiResult.missingSkills),
+        contactMismatchLevel: mismatch.level,
+        contactMismatchNote: mismatch.note,
+        duplicateWarningAppId,
+        duplicateWarningNote,
       },
     });
 
     // 11. Ghi nhận AuditLog hành động nộp CV
+    const uploadNotes: string[] = [];
+    if (mismatch.level !== "NONE" && mismatch.note) uploadNotes.push(mismatch.note);
+    if (duplicateWarningNote) uploadNotes.push(duplicateWarningNote);
+
     await prisma.auditLog.create({
       data: {
         applicationId: application.id,
         fromStage: null,
         toStage: "NEW",
         action: "CV_UPLOAD",
+        reason: uploadNotes.length > 0 ? uploadNotes.join(" | ") : null,
       },
     });
 

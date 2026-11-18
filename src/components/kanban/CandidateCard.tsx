@@ -115,6 +115,19 @@ export default function CandidateCard({
             </div>
           )}
 
+          {/* Cảnh báo nghi trùng hồ sơ hoặc lệch thông tin CV nghiêm trọng (tối đa 1 dòng tĩnh, không gây rối) */}
+          {(application.duplicateWarningAppId ||
+            application.contactMismatchLevel === "CRITICAL") && (
+            <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-amber-700">
+              <AlertTriangle className="w-3 h-3 shrink-0 text-amber-600" />
+              <span className="truncate">
+                {application.duplicateWarningAppId
+                  ? `Nghi trùng hồ sơ #${application.duplicateWarningAppId}`
+                  : "Thông tin CV không khớp"}
+              </span>
+            </div>
+          )}
+
           {/* Hàng 3: Tín hiệu cốt lõi (AI %, Kinh nghiệm, Điểm PV nếu có) */}
           <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-slate-100 text-[11px]">
             <div className="flex items-center gap-1.5">

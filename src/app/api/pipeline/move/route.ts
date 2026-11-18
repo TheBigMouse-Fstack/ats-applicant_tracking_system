@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { validateStageTransition } from "@/lib/stage-rules";
+import { evaluateHeadcountGate } from "@/lib/headcount-rules";
 
 export async function POST(req: Request) {
   try {
@@ -17,7 +18,13 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { applicationId, toStage, rejectionReason, note } = body;
+    const {
+      applicationId,
+      toStage,
+      rejectionReason,
+      note,
+      forceInterviewCapOverride,
+    } = body;
 
     if (!applicationId || !toStage) {
       return NextResponse.json(
@@ -75,6 +82,40 @@ export async function POST(req: Request) {
       );
     }
 
+    // 2.5. KIỂM TRA CHỈ TIÊU TUYỂN DỤNG & TRẦN PHỎNG VẤN CÙNG LÚC (BRL-13: Chống phỏng vấn dư & Tự đóng tin)
+    const [hiredCount, activeInterviewCount] = await Promise.all([
+      prisma.application.count({
+        where: { jobId: app.jobId, currentStage: "HIRED" },
+      }),
+      prisma.application.count({
+        where: { jobId: app.jobId, currentStage: "INTERVIEW" },
+      }),
+    ]);
+
+    const headcountCheck = evaluateHeadcountGate({
+      jobTitle: app.job.title,
+      fromStage,
+      toStage,
+      targetHeadcount: app.job.targetHeadcount,
+      maxActiveInterviews: app.job.maxActiveInterviews,
+      hiredCount,
+      activeInterviewCount,
+      forceOverride: Boolean(forceInterviewCapOverride),
+    });
+
+    if (!headcountCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: headcountCheck.error,
+          rule: headcountCheck.rule,
+          requiresOverride: Boolean(headcountCheck.requiresOverride),
+          headcountMetrics: headcountCheck.metrics,
+        },
+        { status: headcountCheck.statusCode || 400 }
+      );
+    }
+
     // 3. KIỂM TRA BRL-05: DELAY BUFFER CHO EMAIL TỪ CHỐI & LÝ DO TỪ CHỐI (BRL-11)
     let emailScheduledAt: Date | null = app.emailScheduledAt;
     let isEmailSent = app.isEmailSent;
@@ -93,10 +134,18 @@ export async function POST(req: Request) {
       isEmailSent = false;
       savedRejectionReason = null;
       auditReason = auditReason || "Phục hồi hồ sơ từ cột Từ chối (tự động hủy lịch gửi email từ chối)";
+    } else if (toStage === "INTERVIEW" && forceInterviewCapOverride && headcountCheck.metrics.isInterviewAtCap) {
+      auditReason =
+        auditReason ||
+        `Xác nhận vượt hạn mức phỏng vấn cùng lúc (${activeInterviewCount + 1}/${headcountCheck.metrics.effectiveInterviewCap})`;
+    } else if (headcountCheck.willAutoCloseJob) {
+      auditReason =
+        auditReason ||
+        `Hoàn thành chỉ tiêu tuyển dụng (${hiredCount + 1}/${headcountCheck.metrics.targetHeadcount}) — tự động đóng tin nhận hồ sơ`;
     }
 
-    // 4. Cập nhật Application và tạo AuditLog trong 1 Transaction
-    const [updatedApp] = await prisma.$transaction([
+    // 4. Cập nhật Application, AuditLog và tự đóng Job nếu tuyển đủ suất cuối trong 1 Transaction
+    const txOps: any[] = [
       prisma.application.update({
         where: { id: app.id },
         data: {
@@ -119,11 +168,26 @@ export async function POST(req: Request) {
           reason: auditReason,
         },
       }),
-    ]);
+    ];
+
+    if (headcountCheck.willAutoCloseJob) {
+      txOps.push(
+        prisma.job.update({
+          where: { id: app.jobId },
+          data: { status: "CLOSED" },
+        })
+      );
+    }
+
+    const [updatedApp] = await prisma.$transaction(txOps);
 
     return NextResponse.json({
       success: true,
-      message: `Đã chuyển hồ sơ sang cột ${toStage}`,
+      message: headcountCheck.willAutoCloseJob
+        ? `Đã xác nhận Tuyển chọn (${hiredCount + 1}/${headcountCheck.metrics.targetHeadcount}). Tin tuyển dụng "${app.job.title}" đã tự động đóng nhận hồ sơ mới.`
+        : `Đã chuyển hồ sơ sang cột ${toStage}`,
+      jobAutoClosed: Boolean(headcountCheck.willAutoCloseJob),
+      headcountMetrics: headcountCheck.metrics,
       data: updatedApp,
     });
   } catch (error) {

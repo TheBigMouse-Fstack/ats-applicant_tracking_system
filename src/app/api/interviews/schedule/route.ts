@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { evaluateHeadcountGate } from "@/lib/headcount-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
       interviewPostNotes,
       moveToInterviewStage,
       isQuickNotesUpdate,
+      forceInterviewCapOverride,
     } = body;
 
     // RBAC mới: Chỉ Quản lý Chuyên môn (Hiring Manager) và Admin được xếp/sửa lịch phỏng vấn & chuyển sang INTERVIEW
@@ -172,6 +174,36 @@ export async function POST(req: Request) {
       moveToInterviewStage && app.currentStage !== "INTERVIEW"
         ? "INTERVIEW"
         : app.currentStage;
+
+    // Kiểm tra chỉ tiêu tuyển dụng & trần phỏng vấn cùng lúc khi đẩy thêm người vào INTERVIEW (BRL-13)
+    if (targetStage === "INTERVIEW" && app.currentStage !== "INTERVIEW") {
+      const [hiredCount, activeInterviewCount] = await Promise.all([
+        prisma.application.count({ where: { jobId: app.jobId, currentStage: "HIRED" } }),
+        prisma.application.count({ where: { jobId: app.jobId, currentStage: "INTERVIEW" } }),
+      ]);
+      const headcountCheck = evaluateHeadcountGate({
+        jobTitle: app.job.title,
+        fromStage: app.currentStage,
+        toStage: "INTERVIEW",
+        targetHeadcount: app.job.targetHeadcount,
+        maxActiveInterviews: app.job.maxActiveInterviews,
+        hiredCount,
+        activeInterviewCount,
+        forceOverride: Boolean(forceInterviewCapOverride),
+      });
+      if (!headcountCheck.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: headcountCheck.error,
+            rule: headcountCheck.rule,
+            requiresOverride: Boolean(headcountCheck.requiresOverride),
+            headcountMetrics: headcountCheck.metrics,
+          },
+          { status: headcountCheck.statusCode || 400 }
+        );
+      }
+    }
 
     // Cập nhật Application và ghi nhận AuditLog trong Transaction
     const [updatedApp] = await prisma.$transaction([

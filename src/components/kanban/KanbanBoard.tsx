@@ -34,6 +34,17 @@ interface JobOption {
   title: string;
   department: string;
   status: string;
+  targetHeadcount?: number;
+  maxActiveInterviews?: number;
+  headcountMetrics?: {
+    targetHeadcount: number;
+    hiredCount: number;
+    activeInterviewCount: number;
+    remainingSlots: number;
+    effectiveInterviewCap: number;
+    isHeadcountFull: boolean;
+    isInterviewAtCap: boolean;
+  };
   _count: {
     applications: number;
   };
@@ -134,12 +145,19 @@ export default function KanbanBoard() {
     rationale: string;
   } | null>(null);
 
-  // Modal bắt buộc nhập Lý do từ chối khi chuyển sang REJECTED (BRL-11)
+  // Modal bắt buộc nhập Lý do từ chối khi chuyển sang REJECTED
   const [pendingRejectMove, setPendingRejectMove] = useState<{
     applicationId: number;
     fromStage: string;
     candidateName: string;
     jobTitle: string;
+  } | null>(null);
+
+  // Modal xác nhận khi vượt trần phỏng vấn cùng lúc (chống phỏng vấn dư)
+  const [pendingCapOverride, setPendingCapOverride] = useState<{
+    applicationId: number;
+    toStage: string;
+    message: string;
   } | null>(null);
 
   // Error / Notification alert banner
@@ -233,24 +251,45 @@ export default function KanbanBoard() {
   const handleMoveStage = async (
     applicationId: number,
     toStage: string,
-    rejectionReason?: string
+    rejectionReason?: string,
+    forceInterviewCapOverride = false
   ): Promise<boolean | string> => {
     try {
       const res = await fetch("/api/pipeline/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ applicationId, toStage, rejectionReason }),
+        body: JSON.stringify({
+          applicationId,
+          toStage,
+          rejectionReason,
+          forceInterviewCapOverride,
+        }),
       });
 
       const result = await res.json();
+
+      // Chạm trần phỏng vấn cùng lúc -> mở hộp xác nhận mềm
+      if (res.status === 409 && result.requiresOverride) {
+        setPendingCapOverride({
+          applicationId,
+          toStage,
+          message:
+            result.error ||
+            "Vị trí này đã đủ số lượng ứng viên phỏng vấn cùng lúc. Bạn có muốn vượt hạn mức không?",
+        });
+        return result.error || "Đã chạm giới hạn phỏng vấn cùng lúc.";
+      }
+
       if (!res.ok || !result.success) {
         const errorMsg = result.error || "Không thể chuyển giai đoạn hồ sơ.";
         setAlertError(errorMsg);
         return errorMsg;
       }
 
-      // Thông báo thành công nếu có hẹn giờ email
-      if (toStage === "REJECTED") {
+      // Thông báo thành công (bao gồm tự động đóng tin khi tuyển đủ chỉ tiêu)
+      if (result.jobAutoClosed) {
+        setAlertSuccess(result.message);
+      } else if (toStage === "REJECTED") {
         setAlertSuccess(
           "Đã chuyển sang Từ chối kèm lý do lưu vết. Email phản hồi đã được lên lịch tự động sau 12 giờ."
         );
@@ -263,7 +302,7 @@ export default function KanbanBoard() {
         setAlertSuccess(null);
       }, 6000);
 
-      // Re-fetch để đồng bộ lại toàn bộ thống kê và SLA
+      // Re-fetch để đồng bộ lại toàn bộ thống kê, chỉ tiêu và SLA
       await fetchPipeline();
       return true;
     } catch (err: any) {
@@ -523,6 +562,46 @@ export default function KanbanBoard() {
             </select>
           </div>
         </div>
+
+        {/* Thanh tiến độ chỉ tiêu & trần phỏng vấn (chỉ hiện gọn khi đang lọc theo 1 vị trí cụ thể) */}
+        {selectedJobId !== "ALL" && (() => {
+          const activeJob = jobs.find((j) => String(j.id) === selectedJobId);
+          const hm = activeJob?.headcountMetrics;
+          if (!activeJob || !hm) return null;
+          return (
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`px-2.5 py-1 rounded-lg font-semibold border ${
+                    hm.isHeadcountFull
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-slate-50 text-slate-700 border-slate-200"
+                  }`}
+                >
+                  Chỉ tiêu: {hm.hiredCount}/{hm.targetHeadcount} đã tuyển
+                </span>
+                <span
+                  className={`px-2.5 py-1 rounded-lg font-semibold border ${
+                    hm.isInterviewAtCap
+                      ? "bg-amber-50 text-amber-800 border-amber-200"
+                      : "bg-slate-50 text-slate-600 border-slate-200"
+                  }`}
+                >
+                  Đang phỏng vấn: {hm.activeInterviewCount}/{hm.effectiveInterviewCap}
+                </span>
+              </div>
+              {hm.isHeadcountFull ? (
+                <span className="text-[11px] font-medium text-emerald-700">
+                  Đã tuyển đủ chỉ tiêu — tin tuyển dụng đã tự đóng nhận hồ sơ mới
+                </span>
+              ) : hm.isInterviewAtCap ? (
+                <span className="text-[11px] font-medium text-amber-700">
+                  Đã đủ hạn mức phỏng vấn cùng lúc — nên đánh giá xong đợt hiện tại trước khi mời thêm
+                </span>
+              ) : null}
+            </div>
+          );
+        })()}
       </div>
 
       {/* 2. Banner Thông báo Vi phạm Business Rules (Nếu có lỗi từ chối chuyển trạng thái) */}
@@ -711,7 +790,7 @@ export default function KanbanBoard() {
         />
       )}
 
-      {/* 7. Modal Bắt buộc nhập Lý do Từ chối (BRL-11) */}
+      {/* 7. Modal Bắt buộc nhập Lý do Từ chối */}
       {pendingRejectMove && (
         <RejectReasonModal
           isOpen={true}
@@ -725,6 +804,47 @@ export default function KanbanBoard() {
           jobTitle={pendingRejectMove.jobTitle}
           currentStage={pendingRejectMove.fromStage}
         />
+      )}
+
+      {/* 8. Modal Xác nhận khi vượt giới hạn phỏng vấn cùng lúc */}
+      {pendingCapOverride && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 shadow-xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900">
+                  Đã chạm giới hạn phỏng vấn cùng lúc
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {pendingCapOverride.message}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setPendingCapOverride(null)}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                Giữ lại ở Sàng lọc
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const { applicationId, toStage } = pendingCapOverride;
+                  setPendingCapOverride(null);
+                  await handleMoveStage(applicationId, toStage, undefined, true);
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 cursor-pointer"
+              >
+                Vẫn mời phỏng vấn
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

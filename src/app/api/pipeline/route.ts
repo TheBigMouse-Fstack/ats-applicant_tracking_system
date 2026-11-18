@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { computeJobHeadcountMetrics } from "@/lib/headcount-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -22,18 +23,38 @@ export async function GET(req: Request) {
     const starredOnly = searchParams.get("starred") === "true";
     const unviewedOnly = searchParams.get("unviewed") === "true";
 
-    // 1. Lấy danh sách Jobs đang hoạt động để làm bộ lọc
-    const jobs = await prisma.job.findMany({
+    // 1. Lấy danh sách Jobs kèm chỉ tiêu tuyển dụng & số lượng đang phỏng vấn / đã tuyển
+    const rawJobs = await prisma.job.findMany({
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
         title: true,
         department: true,
         status: true,
+        targetHeadcount: true,
+        maxActiveInterviews: true,
+        applications: {
+          select: { currentStage: true },
+        },
         _count: {
           select: { applications: true },
         },
       },
+    });
+
+    const jobs = rawJobs.map(({ applications: jobApps, ...j }) => {
+      const hiredCount = jobApps.filter((a) => a.currentStage === "HIRED").length;
+      const activeInterviewCount = jobApps.filter((a) => a.currentStage === "INTERVIEW").length;
+      return {
+        ...j,
+        headcountMetrics: computeJobHeadcountMetrics({
+          targetHeadcount: j.targetHeadcount,
+          maxActiveInterviews: j.maxActiveInterviews,
+          hiredCount,
+          activeInterviewCount,
+          status: j.status,
+        }),
+      };
     });
 
     // 2. Điều kiện lọc Application

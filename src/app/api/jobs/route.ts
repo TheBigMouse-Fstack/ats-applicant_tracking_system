@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import { computeJobHeadcountMetrics } from "@/lib/headcount-rules";
 
 export const dynamic = "force-dynamic";
 
-// GET: Lấy toàn bộ danh sách tin tuyển dụng nội bộ
+// GET: Lấy toàn bộ danh sách tin tuyển dụng nội bộ kèm tiến độ chỉ tiêu & trần phỏng vấn
 export async function GET(req: Request) {
   try {
     const jobs = await prisma.job.findMany({
       include: {
         creator: {
           select: { id: true, fullName: true, role: true },
+        },
+        applications: {
+          select: { currentStage: true },
         },
         _count: {
           select: { applications: true },
@@ -19,7 +23,26 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ success: true, data: jobs });
+    const enrichedJobs = jobs.map(({ applications, ...job }) => {
+      const hiredCount = applications.filter((a) => a.currentStage === "HIRED").length;
+      const activeInterviewCount = applications.filter(
+        (a) => a.currentStage === "INTERVIEW"
+      ).length;
+      const headcountMetrics = computeJobHeadcountMetrics({
+        targetHeadcount: job.targetHeadcount,
+        maxActiveInterviews: job.maxActiveInterviews,
+        hiredCount,
+        activeInterviewCount,
+        status: job.status,
+      });
+
+      return {
+        ...job,
+        headcountMetrics,
+      };
+    });
+
+    return NextResponse.json({ success: true, data: enrichedJobs });
   } catch (error: any) {
     console.error("GET /api/jobs error:", error);
     return NextResponse.json(
@@ -52,6 +75,8 @@ export async function POST(req: Request) {
       minExperienceYears,
       requiredSkills,
       requirementsJd,
+      targetHeadcount,
+      maxActiveInterviews,
     } = body;
 
     const fieldErrors: Record<string, string> = {};
@@ -64,6 +89,27 @@ export async function POST(req: Request) {
     }
     if (!requirementsJd || !requirementsJd.trim()) {
       fieldErrors.requirementsJd = "Mô tả chi tiết và yêu cầu JD bắt buộc phải có";
+    }
+
+    const parsedHeadcount =
+      targetHeadcount === undefined || targetHeadcount === "" || targetHeadcount === null
+        ? 1
+        : Number(targetHeadcount);
+    if (!Number.isInteger(parsedHeadcount) || parsedHeadcount < 1 || parsedHeadcount > 100) {
+      fieldErrors.targetHeadcount = "Số lượng cần tuyển phải là số nguyên từ 1 đến 100";
+    }
+
+    const defaultCap = Math.max(1, Number.isInteger(parsedHeadcount) ? parsedHeadcount * 3 : 3);
+    const parsedMaxInterviews =
+      maxActiveInterviews === undefined || maxActiveInterviews === "" || maxActiveInterviews === null
+        ? defaultCap
+        : Number(maxActiveInterviews);
+    if (
+      !Number.isInteger(parsedMaxInterviews) ||
+      parsedMaxInterviews < Math.max(1, parsedHeadcount || 1) ||
+      parsedMaxInterviews > 300
+    ) {
+      fieldErrors.maxActiveInterviews = `Giới hạn phỏng vấn cùng lúc phải lớn hơn hoặc bằng số lượng cần tuyển (${Math.max(1, parsedHeadcount || 1)})`;
     }
 
     if (Object.keys(fieldErrors).length > 0) {
@@ -108,6 +154,8 @@ export async function POST(req: Request) {
         minExperienceYears: Number(minExperienceYears) || 0,
         requiredSkills: formattedSkills,
         requirementsJd: requirementsJd.trim(),
+        targetHeadcount: parsedHeadcount,
+        maxActiveInterviews: parsedMaxInterviews,
         status: "ACTIVE",
       },
     });

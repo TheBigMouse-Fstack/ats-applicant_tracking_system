@@ -108,6 +108,7 @@ export default function CandidateDrawer({
   const [isCancellingInterview, setIsCancellingInterview] = useState(false);
   const [interviewSuccessEmail, setInterviewSuccessEmail] = useState<string | null>(null);
   const [interviewError, setInterviewError] = useState<string | null>(null);
+  const [interviewCapOverridePrompt, setInterviewCapOverridePrompt] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   // Lightbox xem ảnh Bằng cấp / Chứng chỉ phóng to
@@ -345,8 +346,9 @@ export default function CandidateDrawer({
   };
 
   // Lên lịch / Cập nhật Phỏng vấn & Tạo thư mời (UC-05A)
-  const executeScheduleInterview = async () => {
+  const executeScheduleInterview = async (forceInterviewCapOverride = false) => {
     setInterviewError(null);
+    setInterviewCapOverridePrompt(null);
     setInterviewLoading(true);
 
     try {
@@ -362,10 +364,18 @@ export default function CandidateDrawer({
           interviewInterviewerNotes,
           interviewPostNotes,
           moveToInterviewStage: data?.currentStage !== "INTERVIEW",
+          forceInterviewCapOverride,
         }),
       });
 
       const resData = await res.json();
+      if (res.status === 409 && resData.requiresOverride) {
+        setInterviewCapOverridePrompt(
+          resData.error ||
+            "Vị trí này đã đủ hạn mức phỏng vấn cùng lúc. Bạn có muốn vượt hạn mức để xếp lịch thêm không?"
+        );
+        return;
+      }
       if (!res.ok || !resData.success) {
         setInterviewError(resData.error || "Không thể lưu lịch phỏng vấn");
       } else {
@@ -642,6 +652,52 @@ export default function CandidateDrawer({
                         </div>
                       </div>
                     )}
+
+                    {/* CẢNH BÁO NGHI NGỜ TRÙNG HỒ SƠ (Lớp 2 Soft Flag) */}
+                    {data?.duplicateWarningNote && (
+                      <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-amber-900">
+                            Cảnh báo nghi ngờ trùng hồ sơ
+                          </p>
+                          <p className="text-amber-800 leading-relaxed">
+                            {data.duplicateWarningNote}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* LƯU Ý SAI KHÁC THÔNG TIN GIỮA ĐĂNG KÝ (CHÍNH) VÀ TỆP CV (PHỤ) */}
+                    {data?.contactMismatchLevel &&
+                      data.contactMismatchLevel !== "NONE" &&
+                      data?.contactMismatchNote && (
+                        <div
+                          className={`p-3.5 rounded-2xl border text-xs flex items-start gap-2.5 ${
+                            data.contactMismatchLevel === "CRITICAL"
+                              ? "bg-amber-50 border-amber-300 text-amber-950"
+                              : "bg-slate-50 border-slate-200 text-slate-700"
+                          }`}
+                        >
+                          <AlertTriangle
+                            className={`w-4 h-4 shrink-0 mt-0.5 ${
+                              data.contactMismatchLevel === "CRITICAL"
+                                ? "text-amber-600"
+                                : "text-slate-500"
+                            }`}
+                          />
+                          <div className="space-y-1">
+                            <p className="font-bold text-slate-900">
+                              {data.contactMismatchLevel === "CRITICAL"
+                                ? "Thông tin trên CV khác với người đăng ký"
+                                : data.contactMismatchLevel === "UNREADABLE"
+                                ? "Tệp CV chưa đọc được văn bản"
+                                : "Thông tin phụ trên tệp CV có khác biệt"}
+                            </p>
+                            <p className="leading-relaxed">{data.contactMismatchNote}</p>
+                          </div>
+                        </div>
+                      )}
 
                     {/* KHỐI HỒ SƠ CỐT LÕI */}
                     <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
@@ -1837,6 +1893,32 @@ export default function CandidateDrawer({
                   className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
+
+              {interviewCapOverridePrompt && (
+                <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-xs text-amber-950 space-y-2.5">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed font-medium">{interviewCapOverridePrompt}</p>
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setInterviewCapOverridePrompt(null)}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-900 font-semibold hover:bg-amber-100 cursor-pointer"
+                    >
+                      Để sau
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => executeScheduleInterview(true)}
+                      disabled={interviewLoading}
+                      className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold cursor-pointer"
+                    >
+                      Vẫn xếp lịch phỏng vấn
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {interviewError && (
                 <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">

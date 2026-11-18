@@ -35,6 +35,13 @@ export default function JobApplicationForm({
   const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
 
   const [loading, setLoading] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [autoFillNotice, setAutoFillNotice] = useState<string | null>(null);
+  const [cvUnreadableWarning, setCvUnreadableWarning] = useState<string | null>(null);
+  const [mismatchConfirmPrompt, setMismatchConfirmPrompt] = useState<{
+    message: string;
+    cvExtracted?: { fullName?: string | null; email?: string | null; phone?: string | null };
+  } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [successResult, setSuccessResult] = useState<any | null>(null);
@@ -75,17 +82,20 @@ export default function JobApplicationForm({
     if (formError) setFormError(null);
   };
 
-  // Xử lý chọn file
-  const handleFileSelect = (file: File | null) => {
+  // Xử lý chọn file & tự động điền sẵn (Auto-fill) 3 ô liên hệ từ CV
+  const handleFileSelect = async (file: File | null) => {
     if (!file) return;
 
-    // Reset lỗi tệp cũ
+    // Reset lỗi tệp cũ & xác nhận lệch cũ
     const nextErrors = { ...fieldErrors };
     delete nextErrors.cvFile;
     setFieldErrors(nextErrors);
     setFormError(null);
+    setAutoFillNotice(null);
+    setCvUnreadableWarning(null);
+    setMismatchConfirmPrompt(null);
 
-    // BRL-01: Định dạng và dung lượng
+    // Kiểm tra định dạng và dung lượng
     const validExtensions = [".pdf", ".docx"];
     const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
     const maxSizeBytes = 10 * 1024 * 1024;
@@ -107,6 +117,53 @@ export default function JobApplicationForm({
     }
 
     setCvFile(file);
+
+    // Gọi preview-cv để tự điền sẵn Họ tên, Email, SĐT (ứng viên luôn kiểm tra & sửa lại trước khi nộp)
+    try {
+      setPreviewLoading(true);
+      const previewFd = new FormData();
+      previewFd.append("cvFile", file);
+      const res = await fetch("/api/applications/preview-cv", {
+        method: "POST",
+        body: previewFd,
+      });
+      const preview = await res.json();
+      if (!res.ok || !preview.success) {
+        if (preview.error) {
+          setFieldErrors((prev) => ({ ...prev, cvFile: preview.error }));
+          setCvFile(null);
+        }
+        return;
+      }
+
+      const info = preview.data || {};
+      if (info.isUnreadable && info.warning) {
+        setCvUnreadableWarning(info.warning);
+      } else {
+        const filledFields: string[] = [];
+        if (info.fullName && !fullName.trim()) {
+          setFullName(info.fullName);
+          filledFields.push("Họ tên");
+        }
+        if (info.email && !email.trim()) {
+          setEmail(info.email);
+          filledFields.push("Email");
+        }
+        if (info.phone && !phone.trim()) {
+          setPhone(info.phone);
+          filledFields.push("Số điện thoại");
+        }
+        if (filledFields.length > 0) {
+          setAutoFillNotice(
+            `Đã tự điền sẵn ${filledFields.join(", ")} từ tệp CV. Vui lòng kiểm tra và chỉnh sửa nếu thông tin liên hệ hiện tại có thay đổi.`
+          );
+        }
+      }
+    } catch {
+      // Nếu lỗi mạng khi preview vẫn cho ứng viên tự điền tay bình thường
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -116,8 +173,7 @@ export default function JobApplicationForm({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitApplication = async (confirmMismatch = false) => {
     setFormError(null);
 
     // Validation sơ bộ client-side
@@ -129,7 +185,7 @@ export default function JobApplicationForm({
     if (!email.trim() || !emailRegex.test(email.trim())) {
       errors.email = "Vui lòng nhập địa chỉ email hợp lệ (VD: ungvien@gmail.com)";
     }
-    const cleanPhone = phone.replace(/\s+/g, "");
+    const cleanPhone = phone.replace(/[\s.\-()]/g, "");
     const phoneRegex = /^(0|\+84)[0-9]{9,10}$/;
     if (!cleanPhone || !phoneRegex.test(cleanPhone)) {
       errors.phone = "Số điện thoại hợp lệ phải từ 10 số, bắt đầu bằng 0 hoặc +84";
@@ -145,6 +201,7 @@ export default function JobApplicationForm({
     }
 
     setLoading(true);
+    setMismatchConfirmPrompt(null);
 
     try {
       const formData = new FormData();
@@ -153,6 +210,9 @@ export default function JobApplicationForm({
       formData.append("email", email.trim().toLowerCase());
       formData.append("phone", cleanPhone);
       formData.append("cvFile", cvFile!);
+      if (confirmMismatch) {
+        formData.append("confirmMismatch", "true");
+      }
 
       // Đính kèm các tệp Bằng cấp / Chứng chỉ dạng ảnh hoặc PDF
       certificateFiles.forEach((file) => {
@@ -165,6 +225,16 @@ export default function JobApplicationForm({
       });
 
       const data = await res.json();
+
+      if (res.status === 409 && data.requiresMismatchConfirm) {
+        setMismatchConfirmPrompt({
+          message:
+            data.error ||
+            "Thông tin trên tệp CV khác với thông tin bạn nhập. Vui lòng kiểm tra xem bạn đã chọn đúng tệp CV của mình chưa.",
+          cvExtracted: data.cvExtracted,
+        });
+        return;
+      }
 
       if (!res.ok || !data.success) {
         if (data.fieldErrors) {
@@ -180,6 +250,11 @@ export default function JobApplicationForm({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitApplication(false);
   };
 
   // MÀN HÌNH THÀNH CÔNG (Sau khi nộp và hệ thống tiếp nhận an toàn)
@@ -284,7 +359,7 @@ export default function JobApplicationForm({
           Ứng tuyển vị trí này
         </h3>
         <p className="text-xs text-slate-500 mt-1">
-          Điền thông tin và tải lên CV của bạn để hoàn tất hồ sơ ứng tuyển vị trí này.
+          Tải CV lên trước để hệ thống tự điền thông tin liên hệ, sau đó bạn kiểm tra lại trước khi nộp.
         </p>
       </div>
 
@@ -296,89 +371,54 @@ export default function JobApplicationForm({
         </div>
       )}
 
-      {/* 1. Họ và tên */}
-      <div>
-        <label className="block text-xs font-bold text-slate-700 mb-1">
-          Họ và tên của bạn <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={fullName}
-          onChange={(e) => handleInputChange("fullName", e.target.value, setFullName)}
-          placeholder="Ví dụ: Nguyễn Văn An"
-          disabled={loading}
-          className={`w-full text-xs rounded-xl border py-2.5 px-3.5 font-medium transition-all focus:outline-none focus:ring-2 ${fieldErrors.fullName
-              ? "border-red-500 bg-red-50/20 focus:ring-red-500/20 text-red-900"
-              : "border-slate-200 bg-slate-50/50 focus:ring-brand-500 focus:bg-white text-slate-900"
-            }`}
-        />
-        {fieldErrors.fullName && (
-          <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3 shrink-0" />
-            <span>{fieldErrors.fullName}</span>
-          </p>
-        )}
-      </div>
+      {/* Hộp xác nhận 1 bước khi phát hiện lệch hoàn toàn thông tin Form vs CV (tránh tải nhầm tệp CV người khác) */}
+      {mismatchConfirmPrompt && (
+        <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 text-amber-950 space-y-3 animate-in fade-in">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-bold text-amber-900">
+                Kiểm tra lại tệp CV trước khi nộp
+              </p>
+              <p className="leading-relaxed text-amber-800">
+                {mismatchConfirmPrompt.message}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMismatchConfirmPrompt(null);
+                fileInputRef.current?.click();
+              }}
+              className="px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-900 text-xs font-semibold hover:bg-amber-100 cursor-pointer"
+            >
+              Chọn lại tệp CV
+            </button>
+            <button
+              type="button"
+              onClick={() => submitApplication(true)}
+              disabled={loading}
+              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold cursor-pointer"
+            >
+              Tôi xác nhận đúng, tiếp tục nộp
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* 2. Địa chỉ Email */}
+      {/* BƯỚC 1: Tải lên tệp CV trước để tự điền thông tin (PDF/DOCX <= 10MB) */}
       <div>
         <label className="block text-xs font-bold text-slate-700 mb-1">
-          Địa chỉ Email liên hệ <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => handleInputChange("email", e.target.value, setEmail)}
-          placeholder="Ví dụ: an.nguyen@example.com"
-          disabled={loading}
-          className={`w-full text-xs rounded-xl border py-2.5 px-3.5 font-medium transition-all focus:outline-none focus:ring-2 ${fieldErrors.email
-              ? "border-red-500 bg-red-50/20 focus:ring-red-500/20 text-red-900"
-              : "border-slate-200 bg-slate-50/50 focus:ring-brand-500 focus:bg-white text-slate-900"
-            }`}
-        />
-        {fieldErrors.email && (
-          <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3 shrink-0" />
-            <span>{fieldErrors.email}</span>
-          </p>
-        )}
-      </div>
-
-      {/* 3. Số điện thoại */}
-      <div>
-        <label className="block text-xs font-bold text-slate-700 mb-1">
-          Số điện thoại di động <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => handleInputChange("phone", e.target.value, setPhone)}
-          placeholder="Ví dụ: 0912345678 hoặc +84912345678"
-          disabled={loading}
-          className={`w-full text-xs rounded-xl border py-2.5 px-3.5 font-medium transition-all focus:outline-none focus:ring-2 ${fieldErrors.phone
-              ? "border-red-500 bg-red-50/20 focus:ring-red-500/20 text-red-900"
-              : "border-slate-200 bg-slate-50/50 focus:ring-brand-500 focus:bg-white text-slate-900"
-            }`}
-        />
-        {fieldErrors.phone && (
-          <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1">
-            <AlertCircle className="w-3 h-3 shrink-0" />
-            <span>{fieldErrors.phone}</span>
-          </p>
-        )}
-      </div>
-
-      {/* 4. Tải lên tệp CV (BRL-01: PDF/DOCX <= 10MB) */}
-      <div>
-        <label className="block text-xs font-bold text-slate-700 mb-1">
-          Hồ sơ CV cá nhân (PDF hoặc DOCX, tối đa 10MB) <span className="text-red-500">*</span>
+          1. Tải lên hồ sơ CV (PDF hoặc DOCX, tối đa 10MB) <span className="text-red-500">*</span>
         </label>
 
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${fieldErrors.cvFile
+          className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all ${fieldErrors.cvFile
               ? "border-red-400 bg-red-50/30 hover:bg-red-50/50"
               : cvFile
                 ? "border-emerald-400 bg-emerald-50/30 hover:bg-emerald-50/50"
@@ -401,14 +441,20 @@ export default function JobApplicationForm({
             <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-emerald-200">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5" />
+                  {previewLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <FileText className="w-5 h-5" />
+                  )}
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-bold text-slate-900 truncate max-w-[200px] sm:max-w-[280px]">
+                  <p className="text-xs font-bold text-slate-900 truncate max-w-[200px] sm:max-w-[260px]">
                     {cvFile.name}
                   </p>
                   <p className="text-[11px] text-slate-500">
-                    {(cvFile.size / (1024 * 1024)).toFixed(2)} MB • Tệp hợp lệ
+                    {previewLoading
+                      ? "Đang đọc thông tin liên hệ từ CV..."
+                      : `${(cvFile.size / (1024 * 1024)).toFixed(2)} MB • Tệp hợp lệ`}
                   </p>
                 </div>
               </div>
@@ -417,6 +463,9 @@ export default function JobApplicationForm({
                 onClick={(e) => {
                   e.stopPropagation();
                   setCvFile(null);
+                  setAutoFillNotice(null);
+                  setCvUnreadableWarning(null);
+                  setMismatchConfirmPrompt(null);
                 }}
                 className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-red-600 transition-colors"
                 title="Gỡ bỏ tệp"
@@ -426,20 +475,34 @@ export default function JobApplicationForm({
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
-              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
-                <UploadCloud className="w-6 h-6" />
+              <div className="w-11 h-11 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                <UploadCloud className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-xs font-bold text-slate-800">
-                  Nhấp để tải lên hoặc kéo thả tệp CV vào đây
+                  Nhấp để chọn hoặc kéo thả tệp CV vào đây
                 </p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Định dạng hỗ trợ: PDF, DOCX (Tối đa 10MB)
+                  Hỗ trợ PDF, DOCX (tối đa 10MB) • Tự điền Họ tên, Email, SĐT
                 </p>
               </div>
             </div>
           )}
         </div>
+
+        {autoFillNotice && (
+          <p className="text-[11px] text-emerald-700 font-medium mt-1.5 flex items-start gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <span>{autoFillNotice}</span>
+          </p>
+        )}
+
+        {cvUnreadableWarning && (
+          <p className="text-[11px] text-amber-700 font-medium mt-1.5 flex items-start gap-1">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <span>{cvUnreadableWarning}</span>
+          </p>
+        )}
 
         {fieldErrors.cvFile && (
           <p className="text-[11px] text-red-600 font-medium mt-1.5 flex items-center gap-1">
@@ -447,6 +510,85 @@ export default function JobApplicationForm({
             <span>{fieldErrors.cvFile}</span>
           </p>
         )}
+      </div>
+
+      {/* BƯỚC 2: Xác nhận thông tin liên hệ chính thức */}
+      <div className="space-y-4 pt-1 border-t border-slate-100">
+        <p className="text-xs font-bold text-slate-700">
+          2. Thông tin liên hệ chính thức
+        </p>
+
+        {/* Họ và tên */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Họ và tên <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={fullName}
+            onChange={(e) => handleInputChange("fullName", e.target.value, setFullName)}
+            placeholder="Ví dụ: Nguyễn Văn An"
+            disabled={loading}
+            className={`w-full text-xs rounded-xl border py-2.5 px-3.5 font-medium transition-all focus:outline-none focus:ring-2 ${fieldErrors.fullName
+                ? "border-red-500 bg-red-50/20 focus:ring-red-500/20 text-red-900"
+                : "border-slate-200 bg-slate-50/50 focus:ring-brand-500 focus:bg-white text-slate-900"
+              }`}
+          />
+          {fieldErrors.fullName && (
+            <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3 shrink-0" />
+              <span>{fieldErrors.fullName}</span>
+            </p>
+          )}
+        </div>
+
+        {/* Địa chỉ Email */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Địa chỉ Email nhận phản hồi <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => handleInputChange("email", e.target.value, setEmail)}
+            placeholder="Ví dụ: an.nguyen@example.com"
+            disabled={loading}
+            className={`w-full text-xs rounded-xl border py-2.5 px-3.5 font-medium transition-all focus:outline-none focus:ring-2 ${fieldErrors.email
+                ? "border-red-500 bg-red-50/20 focus:ring-red-500/20 text-red-900"
+                : "border-slate-200 bg-slate-50/50 focus:ring-brand-500 focus:bg-white text-slate-900"
+              }`}
+          />
+          {fieldErrors.email && (
+            <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3 shrink-0" />
+              <span>{fieldErrors.email}</span>
+            </p>
+          )}
+        </div>
+
+        {/* Số điện thoại */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Số điện thoại di động <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => handleInputChange("phone", e.target.value, setPhone)}
+            placeholder="Ví dụ: 0912345678 hoặc +84912345678"
+            disabled={loading}
+            className={`w-full text-xs rounded-xl border py-2.5 px-3.5 font-medium transition-all focus:outline-none focus:ring-2 ${fieldErrors.phone
+                ? "border-red-500 bg-red-50/20 focus:ring-red-500/20 text-red-900"
+                : "border-slate-200 bg-slate-50/50 focus:ring-brand-500 focus:bg-white text-slate-900"
+              }`}
+          />
+          {fieldErrors.phone && (
+            <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3 shrink-0" />
+              <span>{fieldErrors.phone}</span>
+            </p>
+          )}
+        </div>
       </div>
 
       {/* 5. Đính kèm Bằng cấp & Chứng chỉ (IELTS, Bằng ĐH, AWS...) - Tùy chọn */}

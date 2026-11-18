@@ -198,21 +198,47 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 * **Mục đích:** Tiếp nhận hồ sơ từ Ứng viên (Cổng Careers) hoặc HR nạp nội bộ (Add Candidate Modal).
 * **Content-Type:** `multipart/form-data`
 * **Form Data Fields:**
-  * `jobId` *(number, bắt buộc)*: ID của vị trí tuyển dụng đang mở.
-  * `fullName` *(string, bắt buộc)*: Họ và tên ứng viên (≥ 2 ký tự).
-  * `email` *(string, bắt buộc)*: Email hợp lệ.
-  * `phone` *(string, bắt buộc)*: Số điện thoại (≥ 10 chữ số, định dạng VN).
+  * `jobId` *(number, bắt buộc)*: ID của vị trí tuyển dụng đang mở và còn chỉ tiêu tuyển dụng (`hiredCount < targetHeadcount`).
+  * `fullName` *(string, bắt buộc)*: Họ và tên ứng viên (≥ 2 ký tự) — **Nguồn chân lý chính (Source of Truth)**.
+  * `email` *(string, bắt buộc)*: Email hợp lệ (tự động chuẩn hóa viết thường, bỏ khoảng trắng).
+  * `phone` *(string, bắt buộc)*: Số điện thoại VN (tự động chuẩn hóa `+84` ➔ `0`, bỏ ký tự phân cách).
   * `cvFile` *(File, bắt buộc)*: Tệp CV (.pdf hoặc .docx, tối đa 10MB).
+  * `confirmMismatch` *(string `"true"`, tùy chọn)*: Cờ xác nhận 1 bước khi ứng viên xác nhận vẫn nộp dù CV lệch hoàn toàn thông tin đăng ký.
   * `certificates` *(File[], tùy chọn)*: Các tệp bằng cấp, chứng chỉ (.jpg, .png, .pdf ≤ 10MB).
   * `source` *(string, tùy chọn)*: Nguồn tuyển dụng (`CAREER_SITE`, `LINKEDIN`, `REFERRAL`, `HEADHUNTER`).
 * **Tiến trình xử lý ngầm tại Backend:**
-  1. Rate Limiting (5 requests/10 phút/IP).
-  2. Kiểm tra phần mở rộng file và Magic Bytes nhị phân (%PDF- hoặc PK).
-  3. Khử trùng lặp 30 ngày cùng Job (BRL-02) và Quota 3 Jobs/90 ngày (BRL-09).
-  4. Bóc tách text thô bằng `pdf-parse`.
-  5. Gọi Gemini API (`temperature: 0`) đối chiếu tiêu chí JD tính Match Score (BRL-04).
-  6. Gộp thông tin vào Candidate (nếu đã tồn tại) hoặc tạo Candidate mới.
+  1. Rate Limiting (5 requests/10 phút/IP) & kiểm tra trạng thái tin còn mở và còn chỉ tiêu (`targetHeadcount`).
+  2. Kiểm tra phần mở rộng file và Magic Bytes nhị phân (`%PDF-` hoặc `PK`).
+  3. **Lớp 1 Deduplication (Hard Block — `BRL-02`):** Kiểm tra trùng `email` HOẶC `phone` (đã chuẩn hóa) trong 30 ngày cho cùng `jobId` (kèm ngày nộp trước đó) và Quota 3 Jobs/90 ngày (`BRL-09`).
+  4. Bóc tách text thô bằng `pdf-parse`, tính `cvFileHash` (SHA-256) và đối chiếu **Source of Truth (`BRL-12`)**: nếu lệch mức `CRITICAL` ở cổng công khai và chưa có `confirmMismatch=true` ➔ trả `HTTP 409 { requiresMismatchConfirm: true }`.
+  5. **Lớp 2 Deduplication (Soft Flag — `BRL-12`):** So khớp chéo `cvExtractedEmail`, `cvExtractedPhone` và `cvFileHash` với hồ sơ 30 ngày gần nhất ➔ gắn cờ `duplicateWarningAppId` + `duplicateWarningNote` cho HR (không chặn oan ứng viên).
+  6. Chấm điểm đối chiếu JD bằng Hybrid AI (`BRL-04`) và lưu Form làm thông tin chính, CV contacts làm thông tin phụ.
   7. Tạo Application ở trạng thái ban đầu là `NEW` trên Kanban.
+
+---
+
+#### 4A. `POST /api/applications/preview-cv` — Đọc nhanh CV để Tự điền (Auto-fill) Form Công khai
+* **Mục đích:** Ngay khi ứng viên chọn/kéo thả tệp CV ở Bước 1 của form ứng tuyển, đọc nhanh `fullName`, `email`, `phone` (đã chuẩn hóa) để tự điền sẵn cho ứng viên kiểm tra lại và cảnh báo sớm nếu tệp không đọc được chữ (`isUnreadable: true`).
+* **Form Data:** `cvFile` (`.pdf` hoặc `.docx`, ≤ 10MB, kiểm tra Magic Bytes).
+* **Success Response (HTTP 200):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "fullName": "Nguyễn Văn An",
+      "email": "an.nguyen@gmail.com",
+      "phone": "0912345678",
+      "isUnreadable": false,
+      "warning": null
+    }
+  }
+  ```
+
+---
+
+#### 4B. `PATCH /api/jobs/[id]` — Điều chỉnh Chỉ tiêu Tuyển dụng & Trần Phỏng Vấn
+* **Mục đích:** Cho phép `HR` và `ADMIN` cập nhật `targetHeadcount` (không thấp hơn số đã tuyển `hiredCount`), `maxActiveInterviews` và trạng thái `ACTIVE` / `CLOSED` (tự động mở lại nếu tăng chỉ tiêu vượt `hiredCount`).
+* **Yêu cầu phân quyền:** `HR` và `ADMIN` (**Chặn `HIRING_MANAGER` với HTTP 403**).
 * **Success Response (HTTP 200):**
   ```json
   {
@@ -314,10 +340,15 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
   ```json
   {
     "applicationId": 42,
-    "toStage": "REJECTED",
-    "rejectionReason": "Thiếu kinh nghiệm thực chiến về Node.js và thiết kế CSDL theo yêu cầu JD"
+    "toStage": "INTERVIEW",
+    "rejectionReason": "(bắt buộc nếu toStage=REJECTED)",
+    "forceInterviewCapOverride": false
   }
   ```
+* **Kiểm soát chỉ tiêu & Chống phỏng vấn dư (`BRL-13`):**
+  * Khi `toStage = "INTERVIEW"` và vị trí đã chạm trần phỏng vấn hiệu lực (`activeInterviewCount >= effectiveInterviewCap`) với `forceInterviewCapOverride != true` ➔ trả về **`HTTP 409 Conflict`** kèm `{ requiresOverride: true, headcountMetrics }` để UI hiển thị hộp xác nhận mềm.
+  * Khi vị trí đã tuyển đủ chỉ tiêu (`hiredCount >= targetHeadcount`) ➔ chặn chuyển thêm sang `INTERVIEW` hoặc `HIRED` (`HTTP 400`, `BRL-13-FULL`).
+  * Khi `toStage = "HIRED"` lấp đầy suất cuối cùng (`hiredCount + 1 >= targetHeadcount`) ➔ tự động cập nhật `Job.status = "CLOSED"` trong cùng Transaction và trả về `jobAutoClosed: true`.
 * **Ràng buộc nghiệp vụ tích hợp (`src/lib/stage-rules.ts`):**
   1. **Cấm nhảy cóc giai đoạn (`BRL-STAGE-ORDER`):** Bắt buộc tuân thủ tuần tự `NEW ➔ SCREENING ➔ INTERVIEW ➔ HIRED`.
   2. **Khóa trạng thái kết thúc (`BRL-STAGE-TERMINAL`):** Không cho phép kéo ngược hồ sơ đã `HIRED`.

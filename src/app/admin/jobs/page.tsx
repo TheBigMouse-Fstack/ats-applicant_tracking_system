@@ -29,8 +29,18 @@ export default function AdminJobsPage() {
   const [location, setLocation] = useState("Hồ Chí Minh");
   const [employmentType, setEmploymentType] = useState("Toàn thời gian");
   const [minExp, setMinExp] = useState("1");
+  const [targetHeadcount, setTargetHeadcount] = useState("1");
+  const [maxActiveInterviews, setMaxActiveInterviews] = useState("3");
   const [skillsText, setSkillsText] = useState("React, TypeScript, Tailwind");
   const [requirementsJd, setRequirementsJd] = useState("");
+
+  // Modal quick-edit headcount & status
+  const [editingJob, setEditingJob] = useState<any | null>(null);
+  const [editHeadcount, setEditHeadcount] = useState("1");
+  const [editMaxInterviews, setEditMaxInterviews] = useState("3");
+  const [editStatus, setEditStatus] = useState<"ACTIVE" | "CLOSED">("ACTIVE");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -71,6 +81,14 @@ export default function AdminJobsPage() {
     if (!title.trim()) errors.title = "Tiêu đề vị trí tuyển dụng bắt buộc";
     if (!department.trim()) errors.department = "Vui lòng chọn hoặc nhập phòng ban";
     if (!requirementsJd.trim()) errors.requirementsJd = "Mô tả công việc & JD chi tiết bắt buộc";
+    const parsedHeadcount = Number(targetHeadcount);
+    if (!Number.isInteger(parsedHeadcount) || parsedHeadcount < 1 || parsedHeadcount > 100) {
+      errors.targetHeadcount = "Nhập số nguyên từ 1 đến 100";
+    }
+    const parsedCap = Number(maxActiveInterviews);
+    if (!Number.isInteger(parsedCap) || parsedCap < Math.max(1, parsedHeadcount || 1)) {
+      errors.maxActiveInterviews = `Tối thiểu bằng số lượng cần tuyển (${Math.max(1, parsedHeadcount || 1)})`;
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -89,6 +107,8 @@ export default function AdminJobsPage() {
           location,
           employmentType,
           minExperienceYears: Number(minExp) || 0,
+          targetHeadcount: parsedHeadcount,
+          maxActiveInterviews: parsedCap,
           requiredSkills: skillsText,
           requirementsJd,
         }),
@@ -99,9 +119,11 @@ export default function AdminJobsPage() {
         if (data.fieldErrors) setFieldErrors(data.fieldErrors);
         setFormError(data.error || "Không thể tạo tin tuyển dụng");
       } else {
-        setNotice(`Đã tạo tin tuyển dụng "${title}" thành công!`);
+        setNotice(`Đã tạo tin tuyển dụng "${title}" (chỉ tiêu ${parsedHeadcount} người, giới hạn ${parsedCap} PV cùng lúc)!`);
         setIsModalOpen(false);
         setTitle("");
+        setTargetHeadcount("1");
+        setMaxActiveInterviews("3");
         setRequirementsJd("");
         fetchJobs();
       }
@@ -109,6 +131,44 @@ export default function AdminJobsPage() {
       setFormError("Lỗi kết nối máy chủ khi tạo tin.");
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const handleOpenEditJob = (job: any) => {
+    setEditingJob(job);
+    setEditHeadcount(String(job.targetHeadcount || 1));
+    setEditMaxInterviews(String(job.maxActiveInterviews || (job.targetHeadcount || 1) * 3));
+    setEditStatus(job.status === "CLOSED" ? "CLOSED" : "ACTIVE");
+    setEditError(null);
+  };
+
+  const handleSaveEditJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingJob) return;
+    setEditError(null);
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/jobs/${editingJob.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetHeadcount: Number(editHeadcount),
+          maxActiveInterviews: Number(editMaxInterviews),
+          status: editStatus,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setEditError(data.error || "Không thể cập nhật chỉ tiêu vị trí này.");
+      } else {
+        setNotice(data.message || "Đã cập nhật chỉ tiêu tuyển dụng.");
+        setEditingJob(null);
+        fetchJobs();
+      }
+    } catch {
+      setEditError("Lỗi kết nối khi cập nhật chỉ tiêu.");
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -200,8 +260,16 @@ export default function AdminJobsPage() {
                     <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-brand-50 text-brand-700 border border-brand-200">
                       {job.department}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {job.status}
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        job.status === "ACTIVE" && !job.headcountMetrics?.isHeadcountFull
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-slate-100 text-slate-600 border-slate-200"
+                      }`}
+                    >
+                      {job.status === "ACTIVE" && !job.headcountMetrics?.isHeadcountFull
+                        ? "Đang tuyển"
+                        : "Đã đủ chỉ tiêu"}
                     </span>
                   </div>
 
@@ -217,6 +285,30 @@ export default function AdminJobsPage() {
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
                       {job.minExperienceYears} năm KN
+                    </span>
+                  </div>
+
+                  {/* Tiến độ chỉ tiêu tuyển dụng & giới hạn phỏng vấn cùng lúc */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                    <span
+                      className={`px-2 py-0.5 rounded-md font-semibold border ${
+                        job.headcountMetrics?.isHeadcountFull
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-slate-50 text-slate-700 border-slate-200"
+                      }`}
+                    >
+                      Chỉ tiêu: {job.headcountMetrics?.hiredCount ?? 0}/
+                      {job.headcountMetrics?.targetHeadcount ?? job.targetHeadcount ?? 1} đã tuyển
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-md font-semibold border ${
+                        job.headcountMetrics?.isInterviewAtCap
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-slate-50 text-slate-600 border-slate-200"
+                      }`}
+                    >
+                      Đang PV: {job.headcountMetrics?.activeInterviewCount ?? 0}/
+                      {job.headcountMetrics?.effectiveInterviewCap ?? job.maxActiveInterviews ?? 3}
                     </span>
                   </div>
 
@@ -240,20 +332,31 @@ export default function AdminJobsPage() {
                   )}
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
                   <span className="font-semibold text-slate-700 flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-brand-600" />
-                    <strong>{job._count?.applications || 0}</strong> ứng viên
+                    <strong>{job._count?.applications || 0}</strong> hồ sơ
                   </span>
 
-                  <Link
-                    href={`/jobs/${job.id}`}
-                    target="_blank"
-                    className="inline-flex items-center gap-1 text-slate-500 hover:text-brand-600 font-medium"
-                  >
-                    <span>Trang ứng tuyển</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    {canCreateJob && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditJob(job)}
+                        className="text-slate-500 hover:text-brand-600 font-medium cursor-pointer"
+                      >
+                        Chỉnh chỉ tiêu
+                      </button>
+                    )}
+                    <Link
+                      href={`/jobs/${job.id}`}
+                      target="_blank"
+                      className="inline-flex items-center gap-1 text-slate-500 hover:text-brand-600 font-medium"
+                    >
+                      <span>Trang nộp CV</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             );
@@ -356,6 +459,59 @@ export default function AdminJobsPage() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Số lượng cần tuyển <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={targetHeadcount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setTargetHeadcount(val);
+                      const num = Number(val);
+                      if (Number.isInteger(num) && num >= 1) {
+                        setMaxActiveInterviews(String(num * 3));
+                      }
+                    }}
+                    className={`w-full rounded-xl border py-2 px-3 font-medium ${
+                      fieldErrors.targetHeadcount
+                        ? "border-red-500 bg-red-50/20"
+                        : "border-slate-200 bg-slate-50/50"
+                    }`}
+                  />
+                  {fieldErrors.targetHeadcount && (
+                    <p className="text-red-600 font-medium mt-1">{fieldErrors.targetHeadcount}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Giới hạn PV cùng lúc
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="300"
+                    value={maxActiveInterviews}
+                    onChange={(e) => setMaxActiveInterviews(e.target.value)}
+                    className={`w-full rounded-xl border py-2 px-3 font-medium ${
+                      fieldErrors.maxActiveInterviews
+                        ? "border-red-500 bg-red-50/20"
+                        : "border-slate-200 bg-slate-50/50"
+                    }`}
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Gợi ý chuẩn: gấp 3 lần số lượng tuyển để tránh phỏng vấn dư
+                  </p>
+                  {fieldErrors.maxActiveInterviews && (
+                    <p className="text-red-600 font-medium mt-1">{fieldErrors.maxActiveInterviews}</p>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
                   Kỹ năng bắt buộc (phân tách bằng dấu phẩy)
@@ -403,6 +559,105 @@ export default function AdminJobsPage() {
                   className="px-5 py-2 font-bold text-white bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 rounded-xl shadow-md shadow-brand-500/20"
                 >
                   {formLoading ? "Đang tạo..." : "Tạo tin tuyển dụng"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Điều chỉnh Chỉ tiêu Tuyển dụng & Giới hạn Phỏng vấn */}
+      {editingJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 shadow-xl space-y-4">
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Điều chỉnh chỉ tiêu tuyển dụng
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">{editingJob.title}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingJob(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-800 text-xs font-medium">
+                {editError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEditJob} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Số lượng cần tuyển
+                  </label>
+                  <input
+                    type="number"
+                    min={Math.max(1, editingJob.headcountMetrics?.hiredCount || 0)}
+                    max="100"
+                    value={editHeadcount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditHeadcount(val);
+                      const num = Number(val);
+                      if (Number.isInteger(num) && num >= 1) {
+                        setEditMaxInterviews(String(num * 3));
+                      }
+                    }}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Giới hạn PV cùng lúc
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="300"
+                    value={editMaxInterviews}
+                    onChange={(e) => setEditMaxInterviews(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Trạng thái nhận hồ sơ
+                </label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value as "ACTIVE" | "CLOSED")}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 px-3 font-medium"
+                >
+                  <option value="ACTIVE">Đang mở tuyển</option>
+                  <option value="CLOSED">Đóng nhận hồ sơ</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingJob(null)}
+                  disabled={editSaving}
+                  className="px-3.5 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="px-4 py-2 font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl"
+                >
+                  {editSaving ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
               </div>
             </form>
