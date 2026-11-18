@@ -655,6 +655,7 @@ async function runTests() {
     const drawerSrc = fs.readFileSync(path.join(process.cwd(), "src/components/candidate/CandidateDrawer.tsx"), "utf8");
     const cardSrc = fs.readFileSync(path.join(process.cwd(), "src/components/kanban/CandidateCard.tsx"), "utf8");
     assert(drawerSrc.includes('activeTab === "jd"') && drawerSrc.includes("getAiMatchTier"), "CandidateDrawer tách phần Tiêu chuẩn vị trí (JD) lên tab riêng và khôi phục AI đánh giá %");
+    assert(drawerSrc.includes('activeTab === "evaluation"') && drawerSrc.includes('activeTab === "history"') && drawerSrc.includes("ScorecardPanel") && !drawerSrc.includes("<ScorecardModal"), "CandidateDrawer tách riêng Tab Phiếu đánh giá (inline ScorecardPanel) và Tab Nhật ký (AuditLog), bỏ popup modal");
     assert(cardSrc.includes("getAiMatchTier"), "CandidateCard trên Kanban hiển thị huy hiệu AI đánh giá % theo chuẩn 3 mức");
 
   } catch (err) {

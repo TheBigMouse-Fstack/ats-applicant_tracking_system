@@ -45,7 +45,7 @@ import {
   Lock,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
-import ScorecardModal from "@/components/scorecard/ScorecardModal";
+import ScorecardPanel from "@/components/scorecard/ScorecardPanel";
 import StageMismatchConfirmModal from "@/components/candidate/StageMismatchConfirmModal";
 import RejectReasonModal from "@/components/candidate/RejectReasonModal";
 import { getAllowedTargetStages, validateStageTransition } from "@/lib/stage-rules";
@@ -69,10 +69,12 @@ export default function CandidateDrawer({
   const [data, setData] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "jd" | "cv" | "history">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "jd" | "cv" | "evaluation" | "history"
+  >("overview");
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
-  const [isScorecardOpen, setIsScorecardOpen] = useState(false);
+  const [openEvaluationForm, setOpenEvaluationForm] = useState(false);
 
   // Progressive Disclosure: Mặc định chỉ hiển thị 5 trường cốt lõi theo JD; bấm để xem chi tiết
   const [showDetailedProfile, setShowDetailedProfile] = useState(false);
@@ -571,7 +573,7 @@ export default function CandidateDrawer({
             </button>
           </div>
 
-          {/* Navigation Tabs */}
+          {/* Navigation Tabs (5 Tab Tách Biệt Rõ Ràng) */}
           <div className="flex border-b border-slate-200 px-6 bg-white gap-5 overflow-x-auto">
             <button
               onClick={() => setActiveTab("overview")}
@@ -582,7 +584,7 @@ export default function CandidateDrawer({
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              Hồ sơ &amp; Đánh giá AI
+              Hồ sơ &amp; AI
             </button>
 
             <button
@@ -606,7 +608,19 @@ export default function CandidateDrawer({
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              Xem trước CV Gốc
+              CV Gốc
+            </button>
+
+            <button
+              onClick={() => setActiveTab("evaluation")}
+              className={`py-3 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                activeTab === "evaluation"
+                  ? "border-purple-600 text-purple-700"
+                  : "border-transparent text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Star className="w-3.5 h-3.5" />
+              Phiếu đánh giá ({data?.evaluations?.length || 0})
             </button>
 
             <button
@@ -618,7 +632,7 @@ export default function CandidateDrawer({
               }`}
             >
               <History className="w-3.5 h-3.5" />
-              Nhật ký &amp; Đánh giá ({data?.evaluations?.length || 0})
+              Nhật ký ({data?.auditLogs?.length || 0})
             </button>
           </div>
 
@@ -1466,165 +1480,43 @@ export default function CandidateDrawer({
                           </div>
                         )}
 
-                        {/* KHỐI ĐÁNH GIÁ CỦA CHUYÊN GIA (EXPERT SCORECARD) */}
-                        <div className="pt-3 border-t border-purple-100 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                                Đánh Giá Phỏng Vấn
-                              </h4>
+                        {/* TÓM TẮT NHANH PHIẾU ĐÁNH GIÁ — CHUYỂN THẲNG SANG TAB PHIẾU ĐÁNH GIÁ */}
+                        <div className="pt-3 border-t border-purple-100">
+                          <div className="p-3.5 bg-white/90 rounded-xl border border-purple-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2.5">
+                              <Star className="w-4 h-4 text-purple-600 fill-purple-600 shrink-0" />
+                              <div>
+                                <p className="font-bold text-slate-900">
+                                  Phiếu đánh giá phỏng vấn ({data?.evaluations?.length || 0} phiếu)
+                                </p>
+                                <p className="text-[11px] text-slate-500">
+                                  {data?.evaluations && data.evaluations.length > 0
+                                    ? `Điểm trung bình: ${(
+                                        data.evaluations.reduce(
+                                          (s: number, e: any) => s + Number(e.overallScore || 0),
+                                          0
+                                        ) / data.evaluations.length
+                                      ).toFixed(2)}/5.0★ — Chuyển sang tab Phiếu đánh giá để xem chi tiết hoặc chấm thêm`
+                                    : "Chưa có phiếu đánh giá phỏng vấn — Chuyển sang tab Phiếu đánh giá để chấm điểm trực tiếp"}
+                                </p>
+                              </div>
                             </div>
                             <button
                               type="button"
-                              onClick={() => setIsScorecardOpen(true)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition-colors cursor-pointer"
+                              onClick={() => {
+                                setOpenEvaluationForm(true);
+                                setActiveTab("evaluation");
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
                             >
-                              <Plus className="w-3.5 h-3.5 text-amber-600" />
-                              <span>{data?.evaluations && data.evaluations.length > 0 ? "+ Thêm đánh giá" : "Nhập đánh giá phỏng vấn"}</span>
+                              <ClipboardCheck className="w-3.5 h-3.5" />
+                              <span>
+                                {data?.evaluations && data.evaluations.length > 0
+                                  ? "Mở tab Phiếu đánh giá"
+                                  : "Đánh giá ngay"}
+                              </span>
                             </button>
                           </div>
-
-                          {data?.evaluations && data.evaluations.length > 0 ? (
-                            <div className="space-y-3">
-                              {data.evaluations.map((ev: any, idx: number) => (
-                                <div
-                                  key={ev.id || idx}
-                                  className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-3 text-xs"
-                                >
-                                  {/* Header phiếu đánh giá */}
-                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-100">
-                                    <div className="flex items-center gap-2.5">
-                                      <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                                        {ev.evaluator?.fullName?.charAt(0) || "E"}
-                                      </div>
-                                      <div>
-                                        <div className="flex items-center gap-2">
-                                          <strong className="text-slate-900 font-bold">
-                                            {ev.evaluator?.fullName || "Chuyên gia phỏng vấn"}
-                                          </strong>
-                                          <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                            {ev.evaluator?.role === "HIRING_MANAGER" ? "Hiring Manager" : ev.evaluator?.role === "ADMIN" ? "Ban Lãnh Đạo" : "Ban Giám Khảo"}
-                                          </span>
-                                        </div>
-                                        <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">
-                                          {ev.round || "Vòng 1 — Đánh giá Chuyên môn"} &bull; {formatDateTime(ev.createdAt)}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      {ev.levelRecommendation && (
-                                        <span className="px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200">
-                                          Level: {ev.levelRecommendation}
-                                        </span>
-                                      )}
-                                      <span
-                                        className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
-                                          ev.recommendation === "STRONG_HIRE"
-                                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                            : ev.recommendation === "HIRE"
-                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                            : ev.recommendation === "NO_HIRE"
-                                            ? "bg-amber-50 text-amber-800 border-amber-300"
-                                            : "bg-red-50 text-red-700 border-red-300"
-                                        }`}
-                                      >
-                                        {ev.recommendation === "STRONG_HIRE"
-                                          ? "🌟 Xuất sắc — Tuyển dụng ngay"
-                                          : ev.recommendation === "HIRE"
-                                          ? "✅ Đạt chuẩn — Đề xuất tuyển dụng"
-                                          : ev.recommendation === "NO_HIRE"
-                                          ? "⚠️ Chưa đạt — Xem xét từ chối"
-                                          : "⛔ Không phù hợp"}
-                                      </span>
-                                      <div className="px-2.5 py-0.5 rounded-lg bg-purple-50 text-purple-900 border border-purple-200 font-bold text-xs flex items-center gap-1 shadow-2xs">
-                                        <Star className="w-3.5 h-3.5 text-purple-600 fill-purple-600" />
-                                        <span>{Number(ev.overallScore || 0).toFixed(2)}/5.0★</span>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Điểm từng tiêu chí */}
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center text-[11px]">
-                                    <div className="p-2.5 rounded-xl bg-purple-50/50 border border-purple-100 text-left">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-slate-500 text-[10px] font-semibold">Chuyên Môn</span>
-                                        <strong className="text-purple-700 font-extrabold text-xs">{ev.technicalScore}/5★</strong>
-                                      </div>
-                                      {ev.technicalNotes && (
-                                        <p className="text-[10px] text-slate-600 italic mt-1 font-medium">{ev.technicalNotes}</p>
-                                      )}
-                                    </div>
-
-                                    <div className="p-2.5 rounded-xl bg-blue-50/50 border border-blue-100 text-left">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-slate-500 text-[10px] font-semibold">Giao Tiếp</span>
-                                        <strong className="text-blue-700 font-extrabold text-xs">{ev.communicationScore}/5★</strong>
-                                      </div>
-                                      {ev.communicationNotes && (
-                                        <p className="text-[10px] text-slate-600 italic mt-1 font-medium">{ev.communicationNotes}</p>
-                                      )}
-                                    </div>
-
-                                    <div className="p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100 text-left">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-slate-500 text-[10px] font-semibold">Văn Hóa</span>
-                                        <strong className="text-emerald-700 font-extrabold text-xs">{ev.culturalFitScore}/5★</strong>
-                                      </div>
-                                      {ev.cultureNotes && (
-                                        <p className="text-[10px] text-slate-600 italic mt-1 font-medium">{ev.cultureNotes}</p>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Căn cứ tuyển dụng (Lý do Đạt / Điểm mạnh nổi bật) */}
-                                  {ev.strengths && (
-                                    <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 text-emerald-950 text-xs space-y-1">
-                                      <span className="font-bold flex items-center gap-1.5 text-emerald-900">
-                                        <ThumbsUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                        Căn cứ đề xuất tuyển dụng (Điểm mạnh nổi bật):
-                                      </span>
-                                      <p className="text-[11px] text-emerald-900 leading-relaxed font-medium pl-5">{ev.strengths}</p>
-                                    </div>
-                                  )}
-
-                                  {/* Điểm cần lưu ý / Rủi ro cần đào tạo */}
-                                  {ev.weaknesses && (
-                                    <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-950 text-xs space-y-1">
-                                      <span className="font-bold flex items-center gap-1.5 text-amber-900">
-                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                        Điểm cần lưu ý & Kế hoạch đào tạo khi nhận việc:
-                                      </span>
-                                      <p className="text-[11px] text-amber-900 leading-relaxed font-medium pl-5">{ev.weaknesses}</p>
-                                    </div>
-                                  )}
-
-                                  {/* Kết luận chung */}
-                                  {(ev.hireReason || ev.comments) && (
-                                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs space-y-1">
-                                      <span className="font-bold flex items-center gap-1.5 text-slate-900">
-                                        <FileText className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                                        Tóm tắt kết luận của Giám khảo:
-                                      </span>
-                                      <p className="text-[11px] text-slate-700 leading-relaxed pl-5">{ev.hireReason || ev.comments}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="p-3 bg-white/70 rounded-xl border border-dashed border-amber-200 text-xs text-amber-900 flex items-center justify-between">
-                              <span>Hội đồng chuyên môn chưa hoàn thành phiếu đánh giá phỏng vấn cho ứng viên này.</span>
-                              <button
-                                type="button"
-                                onClick={() => setIsScorecardOpen(true)}
-                                className="px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] shadow-xs cursor-pointer"
-                              >
-                                + Nhập Đánh Giá Ngay
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
@@ -1824,7 +1716,26 @@ export default function CandidateDrawer({
                 )}
 
                 {/* ========================================================================= */}
-                {/* TAB 3: AUDIT LOGS & SCORECARD */}
+                {/* TAB 4: PHIẾU ĐÁNH GIÁ SCORECARD TRỰC TIẾP (INLINE TAB - KHÔNG POPUP MODAL) */}
+                {/* ========================================================================= */}
+                {activeTab === "evaluation" && (
+                  <ScorecardPanel
+                    applicationId={applicationId}
+                    candidateName={data?.candidate?.fullName || "Ứng viên"}
+                    jobTitle={data?.job?.title || "Vị trí tuyển dụng"}
+                    evaluations={data?.evaluations || []}
+                    defaultFormOpen={openEvaluationForm}
+                    onSuccess={() => {
+                      setOpenEvaluationForm(false);
+                      fetch(`/api/applications/${applicationId}`)
+                        .then((r) => r.json())
+                        .then((r) => r.success && setData(r.data));
+                    }}
+                  />
+                )}
+
+                {/* ========================================================================= */}
+                {/* TAB 5: NHẬT KÝ LUÂN CHUYỂN & KIỂM TOÁN (TÁCH BIỆT HOÀN TOÀN VỚI SCORECARD) */}
                 {/* ========================================================================= */}
                 {activeTab === "history" && (
                   <div className="space-y-6">
@@ -1880,113 +1791,11 @@ export default function CandidateDrawer({
                       )}
                     </div>
 
-                    {/* 2. Danh sách Phiếu Đánh Giá Chuyên Môn */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <Star className="w-4 h-4 text-purple-600 fill-purple-600" />
-                          Phiếu đánh giá phỏng vấn ({data?.evaluations?.length || 0}):
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => setIsScorecardOpen(true)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
-                        >
-                          <Star className="w-3.5 h-3.5 fill-white" />
-                          + Đánh Giá Phỏng Vấn
-                        </button>
-                      </div>
-
-                      {data?.evaluations?.length === 0 ? (
-                        <div className="p-4 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
-                          Chưa có phiếu đánh giá phỏng vấn nào cho ứng viên này.
-                        </div>
-                      ) : (
-                        data?.evaluations?.map((ev: any) => (
-                          <div
-                            key={ev.id}
-                            className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white space-y-3 text-xs shadow-2xs"
-                          >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-bold text-slate-900 text-sm">
-                                    {ev.evaluator?.fullName || "Chuyên gia phỏng vấn"}
-                                  </span>
-                                  <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                    {ev.evaluator?.role === "HIRING_MANAGER" ? "Hiring Manager" : "Ban Giám Khảo"}
-                                  </span>
-                                </div>
-                                <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">
-                                  {ev.round || "Vòng 1 — Đánh giá Chuyên môn"} &bull; {formatDateTime(ev.createdAt)}
-                                </span>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                {ev.levelRecommendation && (
-                                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200">
-                                    Level: {ev.levelRecommendation}
-                                  </span>
-                                )}
-                                <span className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
-                                  ev.recommendation === "STRONG_HIRE" || ev.recommendation === "HIRE"
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                                    : "bg-red-50 text-red-700 border-red-300"
-                                }`}>
-                                  {ev.recommendation === "STRONG_HIRE"
-                                    ? "🌟 Xuất sắc"
-                                    : ev.recommendation === "HIRE"
-                                    ? "✅ Đạt chuẩn"
-                                    : "⚠️ Chưa đạt"}
-                                </span>
-                                <span className="font-extrabold text-purple-700 text-sm px-2 py-0.5 bg-purple-50 rounded-lg border border-purple-200">
-                                  {ev.overallScore ? `${ev.overallScore.toFixed(2)}/5.0★` : "Chưa chấm"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-2 py-2 border-y border-slate-100 text-[11px]">
-                              <div>
-                                Chuyên môn: <b>{ev.technicalScore}/5★</b>
-                              </div>
-                              <div>
-                                Giao tiếp: <b>{ev.communicationScore}/5★</b>
-                              </div>
-                              <div>
-                                Văn hóa: <b>{ev.culturalFitScore}/5★</b>
-                              </div>
-                            </div>
-
-                            {ev.strengths && (
-                              <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-emerald-950 text-xs">
-                                <strong className="text-emerald-900 block mb-0.5 font-bold">Căn cứ tuyển dụng (Điểm mạnh nổi bật):</strong>
-                                <p className="leading-relaxed font-medium">{ev.strengths}</p>
-                              </div>
-                            )}
-
-                            {ev.weaknesses && (
-                              <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-950 text-xs">
-                                <strong className="text-amber-900 block mb-0.5 font-bold">Điểm cần lưu ý & đào tạo:</strong>
-                                <p className="leading-relaxed font-medium">{ev.weaknesses}</p>
-                              </div>
-                            )}
-
-                            {(ev.hireReason || ev.comments) && (
-                              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs">
-                                <strong className="text-slate-900 block mb-0.5 font-bold">Kết luận của Giám khảo:</strong>
-                                <p className="leading-relaxed">{ev.hireReason || ev.comments}</p>
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    {/* 3. Timeline Audit Logs */}
+                    {/* 2. Timeline Audit Logs */}
                     <div className="space-y-3">
                       <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                         <History className="w-4 h-4 text-slate-500" />
-                        Nhật ký luân chuyển & Thao tác kiểm toán:
+                        Nhật ký luân chuyển & Thao tác kiểm toán ({data?.auditLogs?.length || 0}):
                       </h4>
 
                       <div className="space-y-2">
@@ -2101,20 +1910,6 @@ export default function CandidateDrawer({
         candidateName={data?.candidate?.fullName || "Ứng viên"}
         jobTitle={data?.job?.title || "Vị trí tuyển dụng"}
         currentStage={data?.currentStage || ""}
-      />
-
-      {/* Scorecard Modal (BRL-08) */}
-      <ScorecardModal
-        applicationId={applicationId}
-        candidateName={data?.candidate?.fullName || ""}
-        jobTitle={data?.job?.title || ""}
-        isOpen={isScorecardOpen}
-        onClose={() => setIsScorecardOpen(false)}
-        onSuccess={() => {
-          fetch(`/api/applications/${applicationId}`)
-            .then((r) => r.json())
-            .then((r) => r.success && setData(r.data));
-        }}
       />
 
       {/* Modal Lên Lịch Phỏng Vấn (UC-05A) */}
