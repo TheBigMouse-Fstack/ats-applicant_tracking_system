@@ -4,7 +4,7 @@ import OperationalDashboard from "@/components/admin/OperationalDashboard";
 
 export const metadata: Metadata = {
   title: "Bảng Điều Khiển Tổng Quan",
-  description: "Tổng quan vận hành phễu tuyển dụng, cảnh báo SLA và hàng đợi tác nghiệp theo vai trò",
+  description: "Tổng quan tiến độ tuyển dụng, hồ sơ quá hạn và danh sách việc cần xử lý theo vai trò",
 };
 
 export default function AdminDashboardPage() {

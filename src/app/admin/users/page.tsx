@@ -395,7 +395,7 @@ export default function UserManagementPage() {
                     <span>{fieldErrorMsg}</span>
                   </p>
                 ) : (
-                  <p className="text-[11px] text-slate-400 mt-1">Yêu cầu BRL-Auth: Tối thiểu 8 ký tự.</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Tối thiểu 8 ký tự.</p>
                 )}
               </div>
 

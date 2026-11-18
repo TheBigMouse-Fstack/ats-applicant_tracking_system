@@ -1079,7 +1079,7 @@ export default function CandidateDrawer({
                             2. Đánh Giá Mức Độ Phù Hợp AI
                           </h3>
                           <p className="text-[11px] text-slate-500 mt-0.5">
-                            Gợi ý hỗ trợ sàng lọc theo tiêu chuẩn JD (Human-in-the-loop)
+                            Gợi ý đối chiếu tự động theo yêu cầu vị trí — HR &amp; Quản lý quyết định cuối cùng
                           </p>
                         </div>
 

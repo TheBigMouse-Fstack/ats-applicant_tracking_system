@@ -143,7 +143,7 @@ function getRoleMeta(role: string) {
   if (role === "ADMIN") {
     return {
       badge: "Admin",
-      subtitle: "Giám sát tổng quan phễu tuyển dụng, cảnh báo SLA và nhật ký kiểm toán.",
+      subtitle: "Giám sát tổng quan tiến độ tuyển dụng, hồ sơ chờ xử lý lâu và lịch sử thao tác.",
     };
   }
   if (role === "HIRING_MANAGER") {
@@ -277,7 +277,7 @@ export default function OperationalDashboard() {
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              Tài khoản của bạn không có quyền truy cập phân hệ vừa yêu cầu theo ma trận RBAC.
+              Tài khoản của bạn không có quyền truy cập mục vừa yêu cầu.
             </span>
           </div>
           <button
@@ -315,9 +315,9 @@ export default function OperationalDashboard() {
             highlight={data.summary.unviewedNewCount > 0 ? "info" : "neutral"}
           />
           <KpiCard
-            label="Quá hạn SLA (>48h)"
+            label="Quá hạn xử lý (>48h)"
             value={data.sla.newBreachCount}
-            subtext="Cần sơ loại sớm (BRL-07)"
+            subtext="Hồ sơ mới chờ quá 48 giờ, cần sơ loại sớm"
             icon={<AlertTriangle className="w-4 h-4 text-slate-500" />}
             highlight={data.sla.newBreachCount > 0 ? "danger" : "neutral"}
           />
@@ -380,9 +380,9 @@ export default function OperationalDashboard() {
             icon={<Briefcase className="w-4 h-4 text-slate-500" />}
           />
           <KpiCard
-            label="Tồn đọng SLA"
+            label="Hồ sơ quá hạn xử lý"
             value={data.sla.totalBreaches}
-            subtext={`HR: ${data.sla.newBreachCount} • Manager: ${data.sla.screeningBreachCount}`}
+            subtext={`Chờ HR: ${data.sla.newBreachCount} • Chờ Manager: ${data.sla.screeningBreachCount}`}
             icon={<AlertTriangle className="w-4 h-4 text-slate-500" />}
             highlight={data.sla.totalBreaches > 0 ? "danger" : "neutral"}
           />
@@ -473,7 +473,7 @@ export default function OperationalDashboard() {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                Quá hạn SLA ({data.hrSlaBreachQueue?.length ?? 0})
+                Quá hạn (&gt;48h) ({data.hrSlaBreachQueue?.length ?? 0})
               </button>
               <button
                 onClick={() => setHrTab("ALL_NEW")}
@@ -483,7 +483,7 @@ export default function OperationalDashboard() {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                Tất cả NEW ({data.hrRecentNewQueue?.length ?? 0})
+                Tất cả hồ sơ mới ({data.hrRecentNewQueue?.length ?? 0})
               </button>
             </div>
           </div>
@@ -494,7 +494,7 @@ export default function OperationalDashboard() {
               hrTab === "UNVIEWED"
                 ? "Bạn đã xem toàn bộ CV mới tiếp nhận."
                 : hrTab === "SLA"
-                ? "Không có hồ sơ nào vượt quá hạn SLA 48h."
+                ? "Không có hồ sơ nào bị chờ quá 48 giờ."
                 : "Hiện chưa có hồ sơ nào ở vòng Mới nộp."
             }
             onSelect={(id) => setSelectedAppId(id)}
@@ -563,10 +563,10 @@ export default function OperationalDashboard() {
               <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">
-                    Hồ sơ tồn đọng quá hạn SLA (BRL-07)
+                    Hồ sơ chờ xử lý quá hạn
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Cột NEW &gt; 48h hoặc SCREENING &gt; 72h
+                    Hồ sơ ở vòng Mới nộp quá 48 giờ hoặc Sàng lọc quá 72 giờ
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-rose-700">
@@ -576,7 +576,7 @@ export default function OperationalDashboard() {
 
               <MinimalQueueList
                 items={data.slaBreachQueue || []}
-                emptyMessage="Chưa ghi nhận hồ sơ nào vượt quá hạn SLA."
+                emptyMessage="Chưa ghi nhận hồ sơ nào bị chờ xử lý quá hạn."
                 onSelect={(id) => setSelectedAppId(id)}
               />
             </section>
@@ -632,7 +632,7 @@ export default function OperationalDashboard() {
               <section className="bg-white border border-slate-200 rounded-2xl p-4 text-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-900">
-                    Lưu trữ 180 ngày (BRL-10)
+                    Thời hạn lưu trữ hồ sơ (180 ngày)
                   </span>
                   <span
                     className={`font-semibold ${
@@ -646,7 +646,7 @@ export default function OperationalDashboard() {
                 </div>
                 <p className="text-slate-500">
                   {data.adminStats.purgeEligibleCount > 0
-                    ? "Có hồ sơ REJECTED quá 180 ngày cần rà soát tại Kho nhân tài."
+                    ? "Có hồ sơ đã từ chối lưu quá 180 ngày cần rà soát dọn dẹp tại Kho nhân tài."
                     : "Chưa có hồ sơ bị từ chối nào vượt quá thời hạn 180 ngày."}
                 </p>
                 {data.adminStats.purgeEligibleCount > 0 && (

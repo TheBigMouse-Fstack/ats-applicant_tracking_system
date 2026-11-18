@@ -239,17 +239,17 @@ export default function ScorecardPanel({
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[11px] font-bold border border-purple-200">
               <Award className="w-3.5 h-3.5" />
-              Phiếu Đánh Giá Scorecard (BRL-08)
+              Phiếu Đánh Giá Phỏng Vấn
             </span>
             {hasPassingScorecard ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                Đủ điều kiện Tuyển chọn (BRL-06)
+                Đủ điều kiện Tuyển chọn
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                Chưa có phiếu đạt chuẩn (Chặn HIRED)
+                Cần phiếu đạt chuẩn trước khi Tuyển chọn
               </span>
             )}
           </div>
@@ -311,7 +311,7 @@ export default function ScorecardPanel({
               Nhập Phiếu Đánh Giá Phỏng Vấn Mới
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Trọng số chuẩn BRL-08: Chuyên môn 40% • Giao tiếp 30% • Văn hóa 30%
+              Cách tính điểm: Chuyên môn 40% • Giao tiếp 30% • Văn hóa 30%
             </p>
           </div>
 
@@ -419,7 +419,7 @@ export default function ScorecardPanel({
               <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-3.5 flex items-center justify-between">
                 <div>
                   <span className="text-[11px] font-bold text-purple-900 uppercase block">
-                    Điểm Tổng Hợp (BRL-08)
+                    Điểm Tổng Hợp
                   </span>
                   <span className="text-[10px] text-purple-600 block">
                     40% CM + 30% GT + 30% VH

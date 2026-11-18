@@ -195,7 +195,7 @@ export function validateStageTransition(
       statusCode: 400,
       rule: "BRL-STAGE-TERMINAL",
       error:
-        "Quy tắc trạng thái (BRL-STAGE-TERMINAL): Hồ sơ đã ở trạng thái Tuyển chọn (HIRED — Trạng thái kết thúc), không thể tự ý chuyển sang giai đoạn khác.",
+        "Hồ sơ này đã được xác nhận Tuyển chọn nên không thể chuyển sang giai đoạn khác.",
     };
   }
 
@@ -226,7 +226,7 @@ export function validateStageTransition(
       allowed: false,
       statusCode: 400,
       rule: "BRL-STAGE-ORDER",
-      error: `Vi phạm trình tự quy trình (BRL-STAGE-ORDER): Không thể chuyển trực tiếp từ ${STAGE_LABELS[from]} sang ${STAGE_LABELS[to]}.${hint}`,
+      error: `Không thể chuyển trực tiếp từ ${STAGE_LABELS[from]} sang ${STAGE_LABELS[to]}.${hint}`,
     };
   }
 
@@ -239,7 +239,7 @@ export function validateStageTransition(
         statusCode: 400,
         rule: "BRL-11",
         error:
-          "Bắt buộc nhập Lý do từ chối (tối thiểu 5 ký tự) khi chuyển hồ sơ sang trạng thái Từ chối (BRL-11).",
+          "Vui lòng nhập lý do từ chối (tối thiểu 5 ký tự) trước khi chuyển hồ sơ sang mục Từ chối.",
       };
     }
   }
@@ -252,7 +252,7 @@ export function validateStageTransition(
         statusCode: 400,
         rule: "BRL-06",
         error:
-          "Chưa thể tuyển chọn (BRL-06): Cần có ít nhất 01 phiếu đánh giá Scorecard hoàn tất từ người phỏng vấn chuyên môn trước khi xác nhận Tuyển chọn.",
+          "Chưa thể tuyển chọn: Cần có ít nhất 01 phiếu đánh giá phỏng vấn hoàn tất từ chuyên môn trước khi xác nhận Tuyển chọn.",
       };
     }
 
@@ -262,7 +262,7 @@ export function validateStageTransition(
         statusCode: 400,
         rule: "BRL-06",
         error:
-          "Chưa thể tuyển chọn (BRL-06): Hồ sơ cần có ít nhất 01 phiếu Scorecard với khuyến nghị đạt chuẩn (Đề xuất tuyển dụng / Tuyển dụng ngay).",
+          "Chưa thể tuyển chọn: Hồ sơ cần có ít nhất 01 phiếu đánh giá với khuyến nghị đạt chuẩn (Đề xuất tuyển dụng / Tuyển dụng ngay).",
       };
     }
   }

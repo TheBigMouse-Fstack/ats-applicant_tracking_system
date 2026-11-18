@@ -78,7 +78,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: `Mật khẩu hiện có ${password.length} ký tự. Yêu cầu tối thiểu 8 ký tự theo quy tắc BRL-Auth.`,
+          error: `Mật khẩu hiện có ${password.length} ký tự. Vui lòng nhập tối thiểu 8 ký tự.`,
           field: "password",
         },
         { status: 400 }

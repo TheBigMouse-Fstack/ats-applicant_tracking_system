@@ -116,7 +116,7 @@ export async function POST(req: Request) {
         {
           success: false,
           error:
-            "Hệ thống phát hiện tần suất nộp hồ sơ vượt quá giới hạn an toàn từ IP của bạn. Vui lòng chờ 10 phút trước khi thử lại theo quy định NFR-SEC-03.",
+            "Bạn đã gửi hồ sơ quá nhiều lần trong thời gian ngắn. Vui lòng chờ khoảng 10 phút trước khi thử lại.",
           rule: "NFR-SEC-03",
         },
         { status: 429 }
@@ -269,7 +269,7 @@ export async function POST(req: Request) {
         {
           success: false,
           error:
-            "Bạn đã nộp tối đa 3 vị trí công việc trong vòng 90 ngày qua. Vui lòng chờ kết quả phản hồi theo quy tắc hạn mức BRL-09.",
+            "Bạn đã nộp tối đa 3 vị trí công việc trong vòng 90 ngày qua. Vui lòng chờ kết quả phản hồi trước khi ứng tuyển thêm.",
           rule: "BRL-09",
         },
         { status: 400 }
@@ -293,7 +293,7 @@ export async function POST(req: Request) {
           {
             success: false,
             error:
-              "Tệp tin không đúng định dạng PDF hợp lệ (Chữ ký nhị phân Magic Bytes không khớp).",
+              "Tệp tin tải lên không đúng định dạng PDF hợp lệ. Vui lòng kiểm tra lại tệp CV của bạn.",
             fieldErrors: {
               cvFile: "Nội dung tệp không phải PDF chuẩn hoặc đã bị đổi đuôi giả mạo",
             },
@@ -309,7 +309,7 @@ export async function POST(req: Request) {
           {
             success: false,
             error:
-              "Tệp tin không đúng định dạng DOCX hợp lệ (Chữ ký nhị phân Magic Bytes không khớp).",
+              "Tệp tin tải lên không đúng định dạng DOCX hợp lệ. Vui lòng kiểm tra lại tệp CV của bạn.",
             fieldErrors: {
               cvFile: "Nội dung tệp không phải DOCX chuẩn hoặc đã bị đổi đuôi giả mạo",
             },

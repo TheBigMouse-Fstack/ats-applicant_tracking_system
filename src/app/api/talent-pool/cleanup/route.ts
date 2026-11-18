@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Truy cập bị từ chối: Chỉ Quản trị viên (Admin) mới có quyền thực thi tác vụ dọn dẹp vòng đời hồ sơ BRL-10.",
+          error: "Chỉ Quản trị viên (Admin) mới có quyền dọn dẹp hồ sơ quá hạn lưu trữ.",
         },
         { status: 403 }
       );
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
         cutoffDate: cutoffDate.toISOString(),
         eligibleCount: expiredApps.length,
         items: summaryItems,
-        message: `Chế độ mô phỏng: Tìm thấy ${expiredApps.length} hồ sơ từ chối đã lưu trữ quá ${days} ngày đủ điều kiện dọn dẹp theo BRL-10.`,
+        message: `Tìm thấy ${expiredApps.length} hồ sơ đã từ chối lưu trữ quá ${days} ngày đủ điều kiện dọn dẹp.`,
       });
     }
 
@@ -121,7 +121,7 @@ export async function POST(req: Request) {
       purgedApplicationsCount: deletedAppsCount,
       purgedCandidatesCount: deletedCandidatesCount,
       items: summaryItems,
-      message: `Đã dọn dẹp thành công ${deletedAppsCount} hồ sơ quá hạn ${days} ngày khỏi hệ thống tuân thủ quy tắc BRL-10.`,
+      message: `Đã xóa vĩnh viễn ${deletedAppsCount} hồ sơ quá thời hạn lưu trữ ${days} ngày khỏi hệ thống.`,
     });
   } catch (error: any) {
     console.error("Lỗi khi thực hiện dọn dẹp Talent Pool (BRL-10):", error);

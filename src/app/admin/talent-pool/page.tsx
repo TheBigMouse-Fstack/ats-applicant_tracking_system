@@ -156,7 +156,7 @@ export default function TalentPoolPage() {
         setPurgeError(resData.error || "Lỗi dọn dẹp dữ liệu");
       } else {
         setNotice(
-          `Tuân thủ BRL-10: Đã dọn dẹp vĩnh viễn ${resData.purgedApplicationsCount} hồ sơ quá hạn ${purgeDays} ngày khỏi Kho Nhân Tài!`
+          `Đã xóa vĩnh viễn ${resData.purgedApplicationsCount} hồ sơ đã quá thời hạn lưu trữ ${purgeDays} ngày khỏi Kho Nhân Tài.`
         );
         setIsPurgeModalOpen(false);
         setPurgeSimResult(null);
@@ -228,7 +228,7 @@ export default function TalentPoolPage() {
               handleSimulatePurge(purgeDays);
             }}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition-colors cursor-pointer shrink-0"
-            title="Dọn dẹp hồ sơ REJECTED quá hạn 180 ngày (BRL-10)"
+            title="Dọn dẹp các hồ sơ đã từ chối lưu trữ quá 180 ngày"
           >
             <Trash2 className="w-3.5 h-3.5 text-rose-600" />
             <span>Dọn dẹp hồ sơ quá hạn</span>
@@ -471,7 +471,7 @@ export default function TalentPoolPage() {
                             </span>
                             {app.retentionDaysLeft !== null && (
                               <span className="text-[10px] text-slate-400 mt-0.5">
-                                Còn {app.retentionDaysLeft} ngày (BRL-10)
+                                Còn {app.retentionDaysLeft} ngày lưu trữ
                               </span>
                             )}
                           </div>
@@ -658,7 +658,7 @@ export default function TalentPoolPage() {
                   </div>
                   {purgeSimResult.eligibleCount === 0 ? (
                     <p className="text-slate-500 italic">
-                      Hiện tại không có hồ sơ REJECTED nào lưu quá {purgeDays} ngày.
+                      Hiện tại không có hồ sơ đã từ chối nào lưu trữ quá {purgeDays} ngày.
                     </p>
                   ) : (
                     <div className="max-h-36 overflow-y-auto space-y-1 pr-1">

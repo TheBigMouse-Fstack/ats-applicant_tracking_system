@@ -159,7 +159,7 @@ export async function POST(req: Request) {
           success: false,
           error:
             app.currentStage === "NEW"
-              ? "Vi phạm trình tự quy trình (BRL-STAGE-ORDER): Hồ sơ ở vòng Mới tiếp nhận (NEW) cần được HR chuyển sang Sàng lọc tiêu chuẩn (SCREENING) trước khi xếp lịch phỏng vấn."
+              ? "Hồ sơ đang ở vòng Mới nộp, cần được HR chuyển sang Sàng lọc tiêu chuẩn trước khi xếp lịch phỏng vấn."
               : "Hồ sơ đã ở trạng thái Tuyển chọn (HIRED), không thể lên lịch phỏng vấn mới.",
           rule: "BRL-STAGE-ORDER",
         },
@@ -280,7 +280,7 @@ export async function DELETE(req: Request) {
         {
           success: false,
           error:
-            "Phân quyền HR: Chỉ Quản lý chuyên môn (Hiring Manager) hoặc Admin mới có quyền hủy lịch phỏng vấn theo quy chuẩn RBAC.",
+            "Chỉ Quản lý chuyên môn (Hiring Manager) hoặc Quản trị viên mới có quyền hủy lịch phỏng vấn.",
           rule: "RBAC-STAGE-LIMIT",
         },
         { status: 403 }
