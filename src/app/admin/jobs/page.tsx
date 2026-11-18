@@ -129,7 +129,7 @@ export default function AdminJobsPage() {
             Tin Tuyển Dụng
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {filteredJobs.length} vị trí đang mở &bull; Quản lý mô tả công việc (JD) và tiêu chuẩn kỹ năng
+            {filteredJobs.length} vị trí đang mở tuyển
           </p>
         </div>
 

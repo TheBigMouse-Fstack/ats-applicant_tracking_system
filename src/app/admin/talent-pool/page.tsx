@@ -217,7 +217,7 @@ export default function TalentPoolPage() {
             Kho Nhân Tài
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Lưu trữ và tái sử dụng hồ sơ ứng viên cho các vị trí phù hợp mới &bull; Nhấp vào từng dòng để xem chi tiết
+            {data.length} hồ sơ dự phòng sẵn sàng tái tuyển dụng
           </p>
         </div>
 

@@ -237,24 +237,20 @@ export default function ScorecardPanel({
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[11px] font-bold border border-purple-200">
-              <Award className="w-3.5 h-3.5" />
-              Phiếu Đánh Giá Phỏng Vấn
-            </span>
             {hasPassingScorecard ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold border border-emerald-200">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Đủ điều kiện Tuyển chọn
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold border border-amber-200">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 Cần phiếu đạt chuẩn trước khi Tuyển chọn
               </span>
             )}
           </div>
           <p className="text-xs text-slate-500">
-            Ứng viên: <strong className="text-slate-800">{candidateName}</strong> &bull; {jobTitle}
+            {candidateName} &bull; {jobTitle}
           </p>
         </div>
 

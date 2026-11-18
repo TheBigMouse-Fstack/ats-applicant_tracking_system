@@ -643,27 +643,24 @@ export default function CandidateDrawer({
                       </div>
                     )}
 
-                    {/* KHỐI 1 (HERO): THÔNG TIN CÁ NHÂN & 5 TRƯỜNG DỮ LIỆU CỐT LÕI */}
+                    {/* KHỐI HỒ SƠ CỐT LÕI */}
                     <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-100">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
                         <div className="flex items-center gap-3.5 min-w-0">
-                          <div className="w-12 h-12 rounded-2xl bg-brand-600 text-white flex items-center justify-center font-extrabold text-lg shadow-sm shadow-brand-500/25 shrink-0">
+                          <div className="w-11 h-11 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-base shrink-0">
                             {(data?.candidate?.fullName || "U").charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600 block">
-                              1. Thông Tin Cá Nhân &amp; Hồ Sơ Cốt Lõi
-                            </span>
-                            <h3 className="text-lg font-extrabold text-slate-900 tracking-tight truncate">
+                            <h3 className="text-base font-bold text-slate-900 tracking-tight truncate">
                               {data?.candidate?.fullName}
                             </h3>
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 mt-0.5">
-                              <span className="inline-flex items-center gap-1 font-medium text-slate-800">
-                                <Mail className="w-3.5 h-3.5 text-brand-500 shrink-0" />
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-0.5">
+                              <span className="inline-flex items-center gap-1 text-slate-700">
+                                <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                 {data?.candidate?.email}
                               </span>
                               {data?.candidate?.phone && (
-                                <span className="inline-flex items-center gap-1 font-medium text-slate-700">
+                                <span className="inline-flex items-center gap-1 text-slate-600">
                                   <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                   {data?.candidate?.phone}
                                 </span>
@@ -672,39 +669,17 @@ export default function CandidateDrawer({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          {canEditProfile && !isEditingProfile && (
-                            <button
-                              type="button"
-                              onClick={handleStartEditProfile}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer"
-                              title="Chỉnh sửa hoặc bổ sung thủ công các trường trích xuất từ CV"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              <span>Chỉnh sửa</span>
-                            </button>
-                          )}
-
-                          {!isEditingProfile && (
-                            <button
-                              type="button"
-                              onClick={() => setShowDetailedProfile((prev) => !prev)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 transition-all cursor-pointer"
-                            >
-                              {showDetailedProfile ? (
-                                <>
-                                  <ChevronUp className="w-3.5 h-3.5" />
-                                  <span>Thu gọn chi tiết</span>
-                                </>
-                              ) : (
-                                <>
-                                  <ChevronDown className="w-3.5 h-3.5" />
-                                  <span>Xem chi tiết hồ sơ</span>
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </div>
+                        {canEditProfile && !isEditingProfile && (
+                          <button
+                            type="button"
+                            onClick={handleStartEditProfile}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer shrink-0"
+                            title="Chỉnh sửa thông tin ứng viên"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Chỉnh sửa</span>
+                          </button>
+                        )}
                       </div>
 
                       {/* CHẾ ĐỘ CHỈNH SỬA THỦ CÔNG CHO HR / ADMIN */}
@@ -872,10 +847,10 @@ export default function CandidateDrawer({
                             </div>
                           </div>
 
-                          {/* Trường thứ 5: Kỹ năng theo JD */}
+                          {/* Kỹ năng */}
                           <div className="space-y-2">
-                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                              Kỹ Năng Trích Xuất ({parsedSkills.length})
+                            <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                              Kỹ năng ({parsedSkills.length})
                             </h4>
                             <div className="flex flex-wrap gap-1.5">
                               {parsedSkills.length > 0 ? (
@@ -888,10 +863,10 @@ export default function CandidateDrawer({
                                   return (
                                     <span
                                       key={idx}
-                                      className={`px-3 py-1 rounded-lg text-xs font-semibold border shadow-2xs ${
+                                      className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${
                                         isRequiredByJd
                                           ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                          : "bg-slate-100 text-slate-700 border-slate-200"
+                                          : "bg-slate-50 text-slate-700 border-slate-200"
                                       }`}
                                     >
                                       {skill}
@@ -900,7 +875,7 @@ export default function CandidateDrawer({
                                 })
                               ) : (
                                 <span className="text-xs text-slate-400">
-                                  Chưa trích xuất được kỹ năng — HR có thể bấm &quot;Chỉnh sửa&quot; để bổ sung
+                                  Chưa có kỹ năng — HR có thể bấm &quot;Chỉnh sửa&quot; để bổ sung
                                 </span>
                               )}
                             </div>
@@ -908,16 +883,9 @@ export default function CandidateDrawer({
                         </>
                       )}
 
-                      {/* PHẦN MỞ RỘNG KHI CẦN: XEM CHI TIẾT HỒ SƠ (Progressive Disclosure) */}
+                      {/* PHẦN MỞ RỘNG (Học vấn, Kinh nghiệm chi tiết, Chứng chỉ) */}
                       {showDetailedProfile && !isEditingProfile && (
-                        <div className="pt-4 mt-2 border-t border-slate-200 space-y-5 animate-in fade-in">
-                          <div className="flex items-center gap-3 text-xs">
-                            <span className="text-slate-500">Số điện thoại:</span>
-                            <span className="font-bold text-slate-800 flex items-center gap-1">
-                              <Phone className="w-3.5 h-3.5 text-slate-400" />
-                              {data?.candidate?.phone}
-                            </span>
-                          </div>
+                        <div className="pt-4 mt-2 border-t border-slate-100 space-y-5 animate-in fade-in">
 
                           {/* Học vấn & Bằng cấp */}
                           <div className="space-y-2">
@@ -1069,19 +1037,37 @@ export default function CandidateDrawer({
                           </div>
                         </div>
                       )}
+
+                      {/* Nút "Xem thêm" tinh gọn đặt ở chân thẻ hồ sơ */}
+                      {!isEditingProfile && (
+                        <div className="pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => setShowDetailedProfile((prev) => !prev)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors cursor-pointer"
+                          >
+                            {showDetailedProfile ? (
+                              <>
+                                <span>Thu gọn</span>
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              </>
+                            ) : (
+                              <>
+                                <span>Xem thêm (Học vấn, kinh nghiệm &amp; chứng chỉ)</span>
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    {/* KHỐI 2: ĐÁNH GIÁ MỨC ĐỘ PHÙ HỢP AI (% MATCH SCORE - NỀN TRẮNG PHẲNG THANH LỊCH) */}
+                    {/* KHỐI ĐÁNH GIÁ MỨC ĐỘ PHÙ HỢP AI */}
                     <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
-                        <div>
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                            2. Đánh Giá Mức Độ Phù Hợp AI
-                          </h3>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            Gợi ý đối chiếu tự động theo yêu cầu vị trí — HR &amp; Quản lý quyết định cuối cùng
-                          </p>
-                        </div>
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                          Đánh giá độ phù hợp AI
+                        </h3>
 
                         {canEditProfile && needsAiRetry && (
                           <button
@@ -1212,8 +1198,8 @@ export default function CandidateDrawer({
                               <Calendar className="w-4 h-4" />
                             </div>
                             <div>
-                              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                                <span>3. Lịch Hẹn Phỏng Vấn</span>
+                              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                                <span>Lịch hẹn phỏng vấn</span>
                                 {data?.interviewDate && (
                                   <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-200/70 text-purple-800 font-bold">
                                     Đã có lịch
@@ -1404,24 +1390,10 @@ export default function CandidateDrawer({
                 )}
 
                 {/* ========================================================================= */}
-                {/* TAB 2: TIÊU CHUẨN YÊU CẦU VỊ TRÍ (JD) - MỞ KHI HR/MANAGER CẦN ĐỐI CHIẾU */}
+                {/* TAB 2: TIÊU CHUẨN YÊU CẦU VỊ TRÍ (JD) */}
                 {/* ========================================================================= */}
                 {activeTab === "jd" && (
-                  <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs space-y-5">
-                    <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                      <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold border border-amber-100">
-                        <Building2 className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
-                          Tiêu Chuẩn Yêu Cầu Vị Trí (JD)
-                        </h3>
-                        <p className="text-xs text-slate-500">
-                          Cơ sở đối chiếu năng lực ứng viên và tiêu chuẩn chấm điểm AI
-                        </p>
-                      </div>
-                    </div>
-
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200/80 text-xs">
                       <div>
                         <span className="text-slate-400 block mb-0.5">Vị trí tuyển dụng</span>
@@ -1495,11 +1467,8 @@ export default function CandidateDrawer({
                           <FileText className="w-5 h-5" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
+                          <p className="font-semibold text-slate-900 truncate max-w-xs sm:max-w-md">
                             {data?.candidate?.cvFileUrl?.split("/").pop() || "Tệp CV gốc"}
-                          </p>
-                          <p className="text-[11px] text-slate-500">
-                            Tài liệu CV gốc của ứng viên
                           </p>
                         </div>
                       </div>

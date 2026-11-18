@@ -146,7 +146,7 @@ export default function CandidatesListPage() {
               Danh Sách Ứng Viên
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Hiển thị {candidates.length} hồ sơ &bull; Nhấp vào từng dòng để mở hồ sơ chi tiết, CV gốc, phiếu đánh giá và nhật ký
+              {candidates.length} hồ sơ ứng viên
             </p>
           </div>
 
