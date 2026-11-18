@@ -471,6 +471,15 @@ export default function CandidateDrawer({
   const jobRequiredSkills = safeParseJSON(data?.job?.requiredSkills, []);
   const matchTier = getAiMatchTier(data?.aiMatchScore);
 
+  // Chỉ hiển thị nút "Thử đánh giá lại AI" khi AI thực sự thất bại / chưa chấm được (mất mạng, lỗi server)
+  const needsAiRetry =
+    data?.aiMatchScore === null ||
+    data?.aiMatchScore === undefined ||
+    !data?.aiMatchRationale ||
+    /lỗi kết nối|chưa có đánh giá|không thể kết nối|timeout|thất bại/i.test(
+      String(data?.aiMatchRationale || "")
+    );
+
   const stages = [
     { key: "NEW", label: "Mới nộp" },
     { key: "SCREENING", label: "Sàng lọc" },
@@ -489,33 +498,11 @@ export default function CandidateDrawer({
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-2xl sm:max-w-3xl lg:max-w-4xl bg-white shadow-2xl flex flex-col justify-between border-l border-slate-200">
-          {/* Header Tối Giản: Tên + Vị trí + Stage + AI % + Sao + Đóng */}
-          <div className="px-6 py-4 border-b border-slate-200 bg-white flex items-start justify-between gap-4">
-            <div className="min-w-0 space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900 tracking-tight truncate">
-                  {loading ? "Đang tải hồ sơ..." : data?.candidate?.fullName}
-                </h2>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                  {data?.currentStage}
-                </span>
-                {matchTier.score !== null && (
-                  <span
-                    className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${matchTier.badgeClass}`}
-                    title={matchTier.recommendation}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${matchTier.dotClass}`} />
-                    AI {matchTier.score}%
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 flex items-center gap-1.5 truncate">
-                <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span className="truncate">
-                  {data?.job?.title} &bull; {data?.job?.department}
-                </span>
-              </p>
-            </div>
+          {/* Header Tối Giản: Chỉ Tên ứng viên + Icon Sao + Đóng (không lặp lại Stage/AI %/Vị trí vốn đã có ở dưới) */}
+          <div className="px-6 py-4 border-b border-slate-200 bg-white flex items-center justify-between gap-4">
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight truncate">
+              {loading ? "Đang tải hồ sơ..." : data?.candidate?.fullName}
+            </h2>
 
             <div className="flex items-center gap-1 shrink-0">
               <button
@@ -1096,16 +1083,16 @@ export default function CandidateDrawer({
                           </p>
                         </div>
 
-                        {canEditProfile && (
+                        {canEditProfile && needsAiRetry && (
                           <button
                             type="button"
                             onClick={handleReparse}
                             disabled={reparsing}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-                            title="Chạy lại Hybrid AI phân tích CV và tính lại % phù hợp"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors cursor-pointer"
+                            title="AI chưa chấm được điểm do lỗi mạng hoặc máy chủ — bấm để thử lại"
                           >
-                            <RotateCw className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-brand-600" : ""}`} />
-                            <span>{reparsing ? "Đang phân tích..." : "Đánh giá lại AI"}</span>
+                            <RotateCw className={`w-3.5 h-3.5 ${reparsing ? "animate-spin text-amber-600" : ""}`} />
+                            <span>{reparsing ? "Đang thử lại..." : "Thử đánh giá lại AI"}</span>
                           </button>
                         )}
                       </div>
@@ -1421,28 +1408,18 @@ export default function CandidateDrawer({
                 {/* ========================================================================= */}
                 {activeTab === "jd" && (
                   <div className="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs space-y-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold border border-amber-100">
-                          <Building2 className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
-                            Tiêu Chuẩn Yêu Cầu Vị Trí (JD)
-                          </h3>
-                          <p className="text-xs text-slate-500">
-                            Cơ sở đối chiếu năng lực ứng viên và tiêu chuẩn chấm điểm AI
-                          </p>
-                        </div>
+                    <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+                      <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold border border-amber-100">
+                        <Building2 className="w-5 h-5" />
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("overview")}
-                        className="text-xs font-semibold text-brand-600 hover:text-brand-700 cursor-pointer"
-                      >
-                        ← Quay lại Hồ sơ ứng viên
-                      </button>
+                      <div>
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">
+                          Tiêu Chuẩn Yêu Cầu Vị Trí (JD)
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Cơ sở đối chiếu năng lực ứng viên và tiêu chuẩn chấm điểm AI
+                        </p>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200/80 text-xs">
@@ -1731,13 +1708,6 @@ export default function CandidateDrawer({
                 })()}
               </div>
             </div>
-
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-            >
-              Đóng
-            </button>
           </div>
         </div>
       </div>

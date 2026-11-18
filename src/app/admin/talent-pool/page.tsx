@@ -20,6 +20,7 @@ import {
   Loader2,
 } from "lucide-react";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
+import { getAiMatchTier } from "@/lib/match-score";
 
 export default function TalentPoolPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -209,57 +210,31 @@ export default function TalentPoolPage() {
   };
 
   return (
-    <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      {/* 1. Header Toolbar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+      {/* 1. Header tối giản — không lặp Xuất CSV & Làm mới */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold border border-brand-200 mb-1.5">
-            <Users className="w-3.5 h-3.5" />
-            Quản trị Kho Nhân Tài
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Kho Nhân Tài & Xuất Dữ Liệu Tuyển Dụng
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            Kho Nhân Tài
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Lưu trữ tập trung dữ liệu ứng viên, hỗ trợ luân chuyển hồ sơ và xuất báo cáo chuẩn định dạng.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Lưu trữ và tái sử dụng hồ sơ ứng viên cho các vị trí phù hợp mới &bull; Nhấp vào từng dòng để xem chi tiết
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {currentUser?.role === "ADMIN" && (
-            <button
-              onClick={() => {
-                setIsPurgeModalOpen(true);
-                handleSimulatePurge(purgeDays);
-              }}
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold border border-red-200 transition-all cursor-pointer"
-              title="Dọn dẹp hồ sơ quá hạn lưu trữ"
-            >
-              <Trash2 className="w-4 h-4 text-red-600" />
-              <span>Dọn dẹp hồ sơ quá hạn</span>
-            </button>
-          )}
-
-          <a
-            href="/api/export"
-            download
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 hover:shadow-lg transition-all"
-          >
-            <Download className="w-4 h-4" />
-            <span>Xuất Báo Cáo CSV</span>
-          </a>
-
+        {currentUser?.role === "ADMIN" && (
           <button
-            onClick={() => fetchTalentPool()}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-bold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all"
+            onClick={() => {
+              setIsPurgeModalOpen(true);
+              handleSimulatePurge(purgeDays);
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition-colors cursor-pointer shrink-0"
+            title="Dọn dẹp hồ sơ REJECTED quá hạn 180 ngày (BRL-10)"
           >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${loading ? "animate-spin text-brand-600" : ""}`}
-            />
-            <span>Làm mới</span>
+            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+            <span>Dọn dẹp hồ sơ quá hạn</span>
           </button>
-        </div>
+        )}
       </div>
 
       {/* Thông báo Notice */}
@@ -391,28 +366,27 @@ export default function TalentPoolPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-3 text-center w-10">⭐</th>
-                <th className="py-3.5 px-4">Ứng viên</th>
-                <th className="py-3.5 px-4">Vị trí ứng tuyển</th>
-                <th className="py-3.5 px-4">Kỹ năng chuyên môn</th>
-                <th className="py-3.5 px-4 text-center">Đối chiếu tiêu chuẩn</th>
-                <th className="py-3.5 px-4 text-center">Scorecard</th>
-                <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                <th className="py-3.5 px-4 text-right">Thao tác</th>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                <th className="py-3 px-3 text-center w-10" />
+                <th className="py-3 px-4">Ứng viên</th>
+                <th className="py-3 px-4">Vị trí &amp; Kinh nghiệm</th>
+                <th className="py-3 px-4">Kỹ năng chính</th>
+                <th className="py-3 px-4 text-center">AI Đánh giá</th>
+                <th className="py-3 px-4 text-center">Trạng thái</th>
+                <th className="py-3 px-4 text-right">Luân chuyển</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-brand-600" />
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-brand-600" />
                     Đang tải dữ liệu kho nhân tài...
                   </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     Không tìm thấy ứng viên nào phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
@@ -426,32 +400,26 @@ export default function TalentPoolPage() {
                   }
 
                   const candidate = app.candidate;
-                  const hasScorecard = app.evaluations && app.evaluations.length > 0;
-                  const isNewUnviewed = app.currentStage === "NEW" && !app.isViewed;
+                  const matchTier = getAiMatchTier(app.aiMatchScore);
 
                   return (
                     <tr
                       key={app.id}
-                      className={`hover:bg-slate-50/70 transition-colors ${
-                        isNewUnviewed
-                          ? "bg-blue-50/30 border-l-4 border-l-blue-500"
-                          : app.isStarred
-                          ? "bg-amber-50/20"
-                          : ""
-                      }`}
+                      onClick={() => setDrawerAppId(app.id)}
+                      className="hover:bg-slate-50/90 transition-colors cursor-pointer group"
                     >
                       {/* Star Column */}
                       <td className="py-3.5 px-3 text-center">
                         <button
                           type="button"
                           onClick={(e) => handleToggleStar(app.id, e)}
-                          className="p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+                          className="p-1 rounded text-slate-300 hover:text-amber-400 transition-colors cursor-pointer"
                           title={app.isStarred ? "Bỏ gắn sao" : "Gắn sao ưu tiên"}
                         >
                           <Star
-                            className={`w-4 h-4 transition-colors ${
+                            className={`w-4 h-4 ${
                               app.isStarred
-                                ? "text-amber-400 fill-amber-400 drop-shadow-xs"
+                                ? "text-amber-400 fill-amber-400"
                                 : "text-slate-300 hover:text-amber-400"
                             }`}
                           />
@@ -460,120 +428,93 @@ export default function TalentPoolPage() {
 
                       {/* Ứng viên */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 text-sm">
-                            {candidate?.fullName}
-                          </span>
-                          {isNewUnviewed && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                              Mới • Chưa xem
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                          {candidate?.email} • {candidate?.phone}
-                        </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
-                          KN: {candidate?.experienceYears || 0} năm
-                        </div>
+                        <span className="font-semibold text-slate-900 text-sm group-hover:text-brand-600 transition-colors block">
+                          {candidate?.fullName}
+                        </span>
+                        <span className="text-[11px] text-slate-500 block mt-0.5">
+                          {candidate?.email}
+                        </span>
                       </td>
 
-                      {/* Vị trí */}
+                      {/* Vị trí & Kinh nghiệm */}
                       <td className="py-3.5 px-4">
-                        <span className="font-semibold text-slate-800">
+                        <span className="font-semibold text-slate-900 block">
                           {app.job?.title}
                         </span>
-                        <div className="text-[11px] text-slate-500">
-                          {app.job?.department}
-                        </div>
+                        <span className="text-[11px] text-slate-500 block mt-0.5">
+                          {candidate?.experienceYears > 0
+                            ? `${candidate.experienceYears} năm kinh nghiệm`
+                            : "Dưới 1 năm kinh nghiệm"}
+                        </span>
                       </td>
 
                       {/* Kỹ năng */}
                       <td className="py-3.5 px-4 max-w-xs">
                         <div className="flex flex-wrap gap-1">
-                          {skills.slice(0, 4).map((sk) => (
+                          {skills.slice(0, 3).map((sk) => (
                             <span
                               key={sk}
-                              className="px-2 py-0.5 rounded-md text-[10px] bg-slate-100 text-slate-600 border border-slate-200"
+                              className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700"
                             >
                               {sk}
                             </span>
                           ))}
-                          {skills.length > 4 && (
-                            <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-slate-50 text-slate-400">
-                              +{skills.length - 4}
+                          {skills.length > 3 && (
+                            <span className="px-1.5 py-0.5 text-[11px] text-slate-400">
+                              +{skills.length - 3}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      {/* Đối chiếu tiêu chuẩn */}
+                      {/* AI Đánh giá */}
                       <td className="py-3.5 px-4 text-center">
-                        {app.aiMatchedSkills ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Đã đối chiếu
+                        {matchTier.score !== null ? (
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${matchTier.badgeClass}`}
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${matchTier.dotClass}`} />
+                            {matchTier.score}%
                           </span>
                         ) : (
-                          <span className="text-slate-400 text-xs">—</span>
-                        )}
-                      </td>
-
-                      {/* Scorecard */}
-                      <td className="py-3.5 px-4 text-center">
-                        {hasScorecard ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                            <Star className="w-3 h-3 fill-purple-600" />
-                            {app.evaluations[0]?.overallScore?.toFixed(1) || "5.0"}/5★
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-xs">Chưa có</span>
+                          <span className="text-slate-400">—</span>
                         )}
                       </td>
 
                       {/* Trạng thái */}
                       <td className="py-3.5 px-4 text-center">
                         <span
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${app.currentStage === "HIRED"
-                              ? "bg-emerald-100 text-emerald-800"
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                            app.currentStage === "HIRED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                               : app.currentStage === "REJECTED"
-                                ? "bg-rose-100 text-rose-800"
-                                : app.currentStage === "INTERVIEW"
-                                  ? "bg-amber-100 text-amber-800"
-                                  : app.currentStage === "SCREENING"
-                                    ? "bg-indigo-100 text-indigo-800"
-                                    : "bg-blue-100 text-blue-800"
-                            }`}
+                              ? "bg-rose-50 text-rose-700 border-rose-200"
+                              : app.currentStage === "INTERVIEW"
+                              ? "bg-amber-50 text-amber-800 border-amber-200"
+                              : app.currentStage === "SCREENING"
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}
                         >
                           {app.currentStage}
                         </span>
                       </td>
 
-                      {/* Thao tác */}
+                      {/* Thao tác duy nhất: Khôi phục (Re-pooling) */}
                       <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => setDrawerAppId(app.id)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-brand-600 hover:bg-slate-100 transition-colors"
-                            title="Xem chi tiết hồ sơ"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-
-                          {/* Nút Re-pooling (UC-06) */}
-                          <button
-                            onClick={() => {
-                              setRepoolCandidate(candidate);
-                              setTargetJobId(String(jobs[0]?.id || ""));
-                              setRepoolError(null);
-                            }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold border border-brand-200 transition-colors"
-                            title="Tái sử dụng hồ sơ / Chuyển vị trí"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Khôi phục</span>
-                          </button>
-                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRepoolCandidate(candidate);
+                            setTargetJobId(String(jobs[0]?.id || ""));
+                            setRepoolError(null);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-brand-50 hover:text-brand-700 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors cursor-pointer"
+                          title="Tái sử dụng hồ sơ sang vị trí tuyển dụng khác"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Khôi phục</span>
+                        </button>
                       </td>
                     </tr>
                   );
