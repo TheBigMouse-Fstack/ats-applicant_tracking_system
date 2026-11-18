@@ -43,8 +43,8 @@ last_updated: "2026-11-18"
 | Nhóm Tác Nhân | Tác Nhân Cụ Thể Trong ReCoverX Career ATS | Vai Trò Tương Tác |
 | :--- | :--- | :--- |
 | **1. Primary Actor** *(Tác nhân chính)* | Ứng viên (`Public`), Chuyên viên HR (`HR`), Quản lý Chuyên môn (`HIRING_MANAGER`), Quản trị viên (`ADMIN`) | Trực tiếp khởi xướng thao tác nghiệp vụ trên hệ thống. |
-| **2. Secondary Actor** *(Tác nhân phụ)* | Google Gemini API (`@google/genai`), Dịch vụ gửi Email (SMTP/Resend) | Tiếp nhận yêu cầu từ hệ thống chính để phân tích ngữ nghĩa CV và gửi thư mời/từ chối. |
-| **3. System / Daemon Actor** *(Tác nhân ngầm)* | Edge Middleware (`src/middleware.ts`), Hybrid AI Fallback (`pdf-parse` + Heuristic NLP), SLA Checker, Rejection Delay Queue (12h) | Thực thi tự động bảo vệ biên, kiểm tra SLA, đệm trễ email và dự phòng offline. |
+| **2. Secondary Actor** *(Tác nhân phụ)* | Dịch vụ AI phân tích ngôn ngữ (Google Gemini), Dịch vụ gửi Email | Hỗ trợ phân tích ngữ nghĩa hồ sơ CV và gửi thông báo phỏng vấn/từ chối. |
+| **3. System / Daemon Actor** *(Tác nhân ngầm)* | Lớp bảo vệ truy cập hệ thống, Bộ phân tích CV dự phòng nội bộ, Bộ theo dõi hồ sơ quá hạn, Bộ hoãn gửi thư từ chối 12 giờ | Tự động bảo vệ truy cập trái phép, cảnh báo hồ sơ chờ quá hạn, hoãn thư từ chối và dự phòng khi mất kết nối AI. |
 | **4. Off-stage Stakeholder** *(Bên liên quan thụ hưởng)* | Ban Giám đốc (C-Level), Pháp chế / Kiểm toán (Nghị định 13/2023/NĐ-CP) | Thụ hưởng báo cáo CSV, Audit Trail bất biến và đảm bảo tuân thủ bảo mật dữ liệu cá nhân. |
 
 ### 1. Định nghĩa các Vai trò người dùng (User Roles)
@@ -62,28 +62,28 @@ last_updated: "2026-11-18"
 > * **R (Read):** Quyền xem / Đọc dữ liệu / Tra cứu.
 > * **U (Update):** Quyền chỉnh sửa / Kéo-thả chuyển trạng thái / Ghi nhận.
 > * **D (Delete):** Quyền xóa (Soft Delete: Ẩn/Đóng; Hard Delete: Xóa vĩnh viễn khỏi CSDL và ổ đĩa).
-> * **`-` :** Không có quyền truy cập (Bị ẩn giao diện hoặc chặn ở tầng Backend/Middleware).
+> * **`-` :** Không có quyền truy cập (Ẩn trên giao diện và tự động chặn trên hệ thống).
 
 | STT | Phân hệ & Chức năng nghiệp vụ | 👤 Ứng viên (Public) | 👔 Chuyên viên HR | 💼 Hiring Manager | 🛠️ Quản trị viên (Admin) | Ghi chú ràng buộc bảo mật & Thực thi Code |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
 | **0** | **Bảng điều khiển Tổng quan Vận hành (Operational Dashboard)** | | | | | |
-| 0a | Truy cập Dashboard Tổng quan (`/admin/dashboard`, `GET /api/dashboard`) | **`-` (CẤM)** | **R** *(Góc nhìn Đầu phễu)* | **R** *(Góc nhìn Chuyên môn)* | **R** *(Toàn cảnh 360°)* | **Phân quyền dữ liệu tại Backend API:** Mỗi Role chỉ nhận đúng KPI và hàng đợi thuộc phạm vi trách nhiệm; không phải BI Analytics Dashboard (tôn trọng Out-of-Scope đề bài). |
+| 0a | Truy cập Dashboard Tổng quan | **`-` (CẤM)** | **R** *(Góc nhìn Đầu phễu)* | **R** *(Góc nhìn Chuyên môn)* | **R** *(Toàn cảnh 360°)* | **Phân tách dữ liệu theo đúng vai trò:** Mỗi vai trò chỉ nhận đúng chỉ số và danh sách việc cần xử lý thuộc phạm vi trách nhiệm; không phải báo cáo BI phức tạp. |
 | 0b | Hàng đợi CV `NEW` chưa xem & SLA >48h (Đầu phễu HR) | - | **R** | - | **R** | HR thấy ngay CV cần sơ loại; Manager không bị nhiễu bởi CV chưa qua vòng HR. |
 | 0c | Hàng đợi duyệt Phỏng vấn (`SCREENING`), thiếu Scorecard (`INTERVIEW`) & Lịch PV | - | - | **R** | **R** | Hiring Manager tập trung ra quyết định chuyên môn (`SCREENING ➔ INTERVIEW ➔ HIRED`). |
 | 0d | Giám sát Quản trị (User hoạt động, Hồ sơ quá hạn 180 ngày BRL-10, AuditLog gần nhất) | - | **`-` (CẤM)** | **`-` (CẤM)** | **R** | API không trả trường `adminStats` / `recentAuditLogs` cho `HR` và `HIRING_MANAGER`. |
 | **I** | **Cổng ứng tuyển & Tra cứu trực tuyến** | | | | | |
 | 1 | Xem danh sách tin tuyển dụng & JD | **R** | **R** | **R** | **R** | Truy cập công khai tại `/jobs` |
-| 2 | Nộp hồ sơ & Tải CV, chứng chỉ (.pdf, .docx ≤ 10MB) | **C** | - | - | - | Chống spam: Rate Limit 5 lần/10 phút & Magic Bytes |
-| 3 | Tra cứu tiến độ hồ sơ ứng tuyển (Public Tracker) | **R** | **R** | **R** | **R** | Tra cứu qua Mã hồ sơ; **Bảo mật NFR-SEC-04: Ẩn điểm AI & nhận xét nội bộ** |
+| 2 | Nộp hồ sơ & Tải CV, chứng chỉ (.pdf, .docx ≤ 10MB) | **C** | - | - | - | Chống spam tối đa 5 lượt/10 phút và kiểm tra tính xác thực tệp gốc |
+| 3 | Tra cứu tiến độ hồ sơ ứng tuyển (Công khai) | **R** | **R** | **R** | **R** | Tra cứu qua Mã hồ sơ; **ẩn hoàn toàn điểm AI & nhận xét nội bộ** |
 | **II**| **Quản lý Vị trí tuyển dụng (Jobs Management)** | | | | | |
-| 4 | Tạo mới & Chỉnh sửa JD tuyển dụng | - | **C, R, U** | **R** *(chỉ đọc)* | **C, R, U, D** | **Chặn Manager tạo/sửa JD** (kiểm tra quyền tại API) |
-| 5 | Đóng / Mở đợt tuyển dụng (Trạng thái Active/Closed)| - | **U** | - | **U** | Cập nhật cờ trạng thái tiếp nhận hồ sơ |
-| 6 | Xóa vị trí tuyển dụng | - | - | - | **D** | Chỉ Admin có thẩm quyền xóa tin tuyển dụng |
+| 4 | Tạo mới & Chỉnh sửa JD tuyển dụng | - | **C, R, U** | **R** *(chỉ đọc)* | **C, R, U, D** | **Quản lý chuyên môn chỉ xem, không tạo/sửa JD** |
+| 5 | Đóng / Mở đợt tuyển dụng (Trạng thái Active/Closed)| - | **U** | - | **U** | Cập nhật trạng thái tiếp nhận hồ sơ |
+| 6 | Xóa vị trí tuyển dụng | - | - | - | **D** | Chỉ Quản trị viên có thẩm quyền xóa tin tuyển dụng |
 | **III**| **Tiếp nhận, Trích xuất 5 trường & Chỉnh sửa CV**| | | | | |
-| 7 | Tải lên CV nội bộ & đính kèm chứng chỉ (Add Candidate) | - | **C** | - | **C** | Phân loại nguồn (`LINKEDIN`, `REFERRAL`, `HEADHUNTER`) |
-| 8 | Xem 5 trường cốt lõi & Mở rộng chi tiết hồ sơ / CV gốc | - | **R** | **R** | **R** | Mặc định hiện 5 trường theo JD; bấm "Xem chi tiết" để mở rộng |
-| 9 | **Chỉnh sửa / Bổ sung thủ công trường trích xuất CV** | - | **U** | **`-` (CẤM)** | **U** | **`PATCH /api/applications/[id]/profile`: HR sửa tên, email, KN, thêm/xóa kỹ năng + tự tính lại khớp JD** |
-| 10 | Kích hoạt phân tích lại AI (Re-parse CV) | - | **U** | - | **U** | Kích hoạt khi có sự cố mạng hoặc muốn cập nhật phân tích |
+| 7 | Tải lên CV nội bộ & đính kèm chứng chỉ | - | **C** | - | **C** | Phân loại nguồn (LinkedIn, Giới thiệu nội bộ, Săn đầu người) |
+| 8 | Xem 5 trường cốt lõi & Mở rộng chi tiết hồ sơ / CV gốc | - | **R** | **R** | **R** | Mặc định hiện 5 trường theo JD; bấm "Xem chi tiết hồ sơ" để mở rộng |
+| 9 | **Chỉnh sửa / Bổ sung thủ công trường trích xuất CV** | - | **U** | **`-` (CẤM)** | **U** | HR sửa tên, email, năm KN, thêm/xóa kỹ năng + hệ thống tự tính lại độ khớp JD |
+| 10 | Thử đánh giá lại AI (chỉ khi AI gặp sự cố) | - | **U** | - | **U** | Chỉ hiển thị nút thử lại khi AI chưa chấm được điểm do lỗi mạng/máy chủ |
 | **IV**| **Quản lý Pipeline Kanban (Phân tách theo Vòng)** | | | | | |
 | 11 | Xem bảng Kanban 5 cột (`NEW` ➔ `REJECTED`) | - | **R** | **R** | **R** | Toàn bộ 5 cột hiển thị minh bạch cho cả HR & Manager |
 | 12 | **Chuyển `NEW ➔ SCREENING` (Sàng lọc tiêu chuẩn)** | - | **U** *(Max của HR)* | **`-` (CẤM)** | **U** | **`RBAC-STAGE-LIMIT`: HR chỉ được kéo tối đa đến `SCREENING`** |
@@ -102,58 +102,58 @@ last_updated: "2026-11-18"
 | 23 | Tự động hoãn gửi Email từ chối 12–24h (BRL-05) | - | - | - | - | Hệ thống tự động kích hoạt khi thẻ vào cột `REJECTED` |
 | 24 | Hủy lịch gửi email từ chối khi phục hồi thẻ | - | **U** *(về NEW/SCREENING)* | **U** *(về INTERVIEW)* | **U** | Kéo thẻ rời khỏi cột `REJECTED` tự động hủy lịch gửi |
 | **VII**| **Kho nhân tài & Quản trị Hệ thống** | | | | | |
-| 25 | Tra cứu Kho nhân tài (Talent Pool) | - | **R** | - | **R** | Tìm kiếm ứng viên dự phòng và kích hoạt Re-pooling |
-| 26 | Truy cập Trang Quản trị người dùng (`/admin/users`) | - | **`-` (CẤM)** | **`-` (CẤM)** | **C, R, U, D** | **Server Middleware chặn 307 Redirect về Pipeline nếu không phải Admin** |
-| 27 | Phân quyền tài khoản nội bộ (`HR`, `HIRING_MANAGER`) | - | - | - | **U** | Quản lý vòng đời tài khoản nhân viên |
-| 28 | Xóa vĩnh viễn hồ sơ quá hạn 6 tháng (BRL-10 Purge) | - | **`-` (CẤM)** | **`-` (CẤM)** | **D (Hard Delete)**| **BRL-10: Chỉ Admin có quyền xóa vĩnh viễn DB và file tệp CV** |
-| 29 | Xuất dữ liệu danh sách ứng viên (CSV Export) | - | **R** | - | **R** | Xuất file CSV mã hóa chuẩn UTF-8 BOM cho Excel |
-| 30 | Xem nhật ký kiểm toán hệ thống (Audit Log) | - | **R** | **R** | **R** | Theo dõi lịch sử thao tác, lý do từ chối và chỉnh sửa hồ sơ |
+| 25 | Tra cứu Kho Nhân Tài (3 nhóm dự phòng, không gồm hồ sơ mới & đã tuyển) | - | **R** | **`-` (CẤM)** | **R** | Tìm kiếm ứng viên dự bị và khôi phục sang vị trí mới |
+| 26 | Truy cập Quản trị Người dùng | - | **`-` (CẤM)** | **`-` (CẤM)** | **C, R, U, D** | Tự động chặn và chuyển về Tổng quan nếu không phải Quản trị viên |
+| 27 | Phân quyền tài khoản nội bộ (HR, Hiring Manager) | - | - | - | **U** | Quản lý tạo mới và tạm khóa tài khoản nhân viên |
+| 28 | Xóa vĩnh viễn hồ sơ từ chối quá hạn 180 ngày | - | **`-` (CẤM)** | **`-` (CẤM)** | **D** | Chỉ Quản trị viên có quyền xóa vĩnh viễn hồ sơ quá hạn 6 tháng |
+| 29 | Xuất dữ liệu danh sách ứng viên ra Excel | - | **R** | - | **R** | Xuất tệp bảng tính CSV mở chuẩn tiếng Việt có dấu trên Excel |
+| 30 | Xem nhật ký lịch sử hoạt động | - | **R** | **R** | **R** | Theo dõi lịch sử chuyển vòng, lý do từ chối và chỉnh sửa hồ sơ |
 
 ---
 
 # MỤC 14: YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS - NFR)
 
-Tài liệu được phân loại theo tiêu chuẩn quốc tế **ISO/IEC 25010** và chuẩn hóa chính xác theo các cơ chế bảo mật, kiến trúc mã nguồn và bộ kiểm thử tự động của hệ thống:
+Tài liệu phân loại các yêu cầu chất lượng hệ thống theo tiêu chuẩn quốc tế **ISO/IEC 25010** bằng ngôn ngữ dễ đo lường cho Ban quản trị và Đội kỹ thuật:
 
-### 1. Hiệu năng & Khả năng chịu tải (Performance & Scalability)
+### 1. Hiệu năng & Tốc độ xử lý (Performance)
 
-| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật thực tế | Chỉ số đo lường (Metric / SLA) |
+| Mã NFR | Tiêu chí | Mô tả yêu cầu thực tế | Chỉ số cam kết |
 | :---: | :--- | :--- | :--- |
-| **NFR-PER-01** | **Tốc độ phản hồi giao diện** | Thời gian phản hồi cho các tác vụ tải dữ liệu Pipeline, tìm kiếm từ khóa, lọc đa tiêu chí (Đánh sao, Chưa xem, Chưa đánh giá) và kéo-thả thẻ Kanban. | **≤ 1.5 – 3.0 giây** trong điều kiện mạng tiêu chuẩn. |
-| **NFR-PER-02** | **Tốc độ bóc tách AI (AI Parsing)** | Mô hình Lai (Hybrid Model): Lớp 1 bóc tách text thô cục bộ bằng `pdf-parse` (< 1.0s); Lớp 2 gọi Gemini API (`temperature: 0`) đối chiếu JD và tính điểm Match. | **≤ 5.0 giây/CV**. |
-| **NFR-PER-03** | **Xử lý tệp & Đính kèm chứng chỉ** | Tiếp nhận tệp CV chính (.pdf, .docx ≤ 10MB) và nhiều tệp bằng cấp/chứng chỉ ảnh/PDF đính kèm đồng thời qua luồng xử lý `FormData`. | Tiếp nhận và xử lý mượt mà, không gây treo giao diện hoặc tràn bộ nhớ đệm. |
-| **NFR-PER-04** | **Số lượng người dùng đồng thời** | Kiến trúc phi trạng thái (Stateless Next.js Server Components & Route Handlers) chịu tải đồng thời. | Tối thiểu **100 người dùng nội bộ** và **500 ứng viên vãng lai** truy cập đồng thời. |
+| **NFR-PER-01** | **Tốc độ tìm kiếm & lọc hồ sơ** | Tốc độ tải bảng Tổng quan, Pipeline, tìm kiếm từ khóa (không phân biệt chữ hoa/thường), lọc đa tiêu chí và chuyển vòng hồ sơ. | **≤ 1.5 – 3.0 giây** trong điều kiện mạng tiêu chuẩn. |
+| **NFR-PER-02** | **Tốc độ đọc & đánh giá CV tự động** | Thời gian đọc nội dung CV, bóc tách 5 trường cốt lõi và chấm mức độ phù hợp 3 mức màu theo JD. | **≤ 5.0 giây / CV**. |
+| **NFR-PER-03** | **Tiếp nhận tệp CV & Chứng chỉ** | Hỗ trợ tải lên tệp CV (`.pdf`, `.docx` ≤ 10MB) kèm nhiều ảnh/PDF bằng cấp chứng chỉ trong cùng 1 lần nộp. | Mượt mà, không treo màn hình. |
+| **NFR-PER-04** | **Khả năng chịu tải đồng thời** | Đáp ứng ổn định trong các đợt tuyển dụng cao điểm của doanh nghiệp. | Tối thiểu **100 nhân sự nội bộ** và **500 ứng viên** truy cập cùng lúc. |
 
 ---
 
-### 2. Độ sẵn sàng & Khả năng phục hồi (Availability & Reliability)
+### 2. Độ ổn định & Khả năng dự phòng (Reliability)
 
-| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật thực tế | Chỉ số đo lường (Metric / SLA) |
+| Mã NFR | Tiêu chí | Mô tả yêu cầu thực tế | Chỉ số cam kết |
 | :---: | :--- | :--- | :--- |
-| **NFR-REL-01** | **Thời gian hoạt động (Uptime)** | Tỷ lệ hệ thống hoạt động liên tục, sẵn sàng phục vụ tuyển dụng và nhận hồ sơ. | Đạt **≥ 99.5%** thời gian trong năm (ngoại trừ lịch bảo trì định kỳ có thông báo trước). |
-| **NFR-REL-02** | **Cơ sở dữ liệu & Sao lưu (Backup)** | Sử dụng Prisma ORM làm việc với SQLite (`dev.db`) trên môi trường phát triển và PostgreSQL trên môi trường sản xuất. Tự động sao lưu định kỳ hàng ngày. | Sao lưu tự động **hàng ngày (Daily snapshot)**, lưu trữ bản sao lưu trong 30 ngày. |
-| **NFR-REL-03** | **Dung sai lỗi AI (Fault Tolerance)** | Khi Gemini API gặp sự cố quá tải hoặc mất kết nối, hệ thống vẫn lưu an toàn đơn nộp ở trạng thái `NEW` với `aiMatchScore = null` và cung cấp nút chạy lại cho HR. | **0% mất mát dữ liệu hồ sơ** khi bên thứ 3 (AI service) gián đoạn. |
+| **NFR-REL-01** | **Tính sẵn sàng hệ thống** | Hệ thống vận hành liên tục phục vụ tiếp nhận và xử lý tuyển dụng. | **≥ 99.5%** thời gian hoạt động trong năm. |
+| **NFR-REL-02** | **Sao lưu dữ liệu định kỳ** | Dữ liệu hồ sơ ứng viên và lịch sử tuyển dụng được sao lưu tự động định kỳ hàng ngày. | Lưu giữ bản sao lưu tối thiểu **30 ngày**. |
+| **NFR-REL-03** | **Dự phòng khi AI gặp sự cố** | Khi dịch vụ AI bên ngoài mất mạng hoặc quá tải, hệ thống tự động dùng bộ phân tích dự phòng nội bộ và vẫn lưu đầy đủ hồ sơ ở cột Mới nộp. | **0% thất lạc hồ sơ** trong mọi tình huống mất kết nối AI. |
 
 ---
 
-### 3. An toàn thông tin & Bảo mật (Security & Compliance)
+### 3. Bảo mật & Tuân thủ Pháp lý (Security & Compliance)
 
-| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật thực tế | Phương pháp triển khai trong Code |
+| Mã NFR | Tiêu chí | Mô tả yêu cầu bảo mật | Cơ chế đảm bảo *(chi tiết kỹ thuật tại Tài liệu số 13 & 15)* |
 | :---: | :--- | :--- | :--- |
-| **NFR-SEC-01** | **Mã hóa đường truyền** | Toàn bộ lưu lượng giao tiếp giữa Client, Server và AI APIs bắt buộc phải được mã hóa. | Sử dụng giao thức **HTTPS (TLS 1.3)** với chứng chỉ SSL hợp lệ. |
-| **NFR-SEC-02** | **Bảo mật Mật khẩu & Phiên đăng nhập** | Bảo vệ tuyệt đối thông tin định danh và tài khoản nội bộ chống tấn công Brute-force/Rainbow Table. | • Băm mật khẩu chuẩn NIST bằng **PBKDF2 với SHA-512, Salt ngẫu nhiên 16 bytes và 100,000 vòng lặp**.<br>• Phiên đăng nhập được ký số bằng **HMAC-SHA256** lưu trong HttpOnly Cookie chống giả mạo session.<br>• Xác thực Edge Middleware ngăn chặn FOUC. |
-| **NFR-SEC-03** | **Chống Spam & Tệp giả mạo** | Chặn bot spam đơn nộp và ngăn chặn tấn công tải lên tệp mã độc (Polyglot File Upload). | • **Rate Limiting trượt:** Tối đa 05 lượt nộp / 10 phút trên mỗi IP.<br>• **Kiểm tra Magic Bytes nhị phân:** Bắt buộc `%PDF-` cho file PDF và `PK` cho file DOCX ở tầng Backend. |
-| **NFR-SEC-04** | **Bảo mật phân quyền cấp hàng (RLS)** | Giấu các thông tin bảo mật theo phân quyền người dùng và bảo vệ quyền riêng tư trên cổng tra cứu công khai. | • **Ẩn thông tin nhạy cảm** (mức lương kỳ vọng) đối với tài khoản `HIRING_MANAGER`.<br>• Cổng Public Tracker **ẩn hoàn toàn điểm AI, giải trình đánh giá và nhận xét của ban giám khảo**. |
-| **NFR-SEC-05** | **Ghi vết kiểm toán (Audit Trail)** | Lưu vết bất biến toàn bộ hành vi thay đổi dữ liệu nhạy cảm, luân chuyển trạng thái thẻ, lên lịch phỏng vấn và chấm điểm. | Tự động ghi vào bảng `AuditLog` gồm: `applicationId`, `userId`, `fromStage`, `toStage`, `action`, `createdAt`. Bảng là **Append-only (Chỉ ghi thêm, cấm sửa/xóa)**. |
+| **NFR-SEC-01** | **Mã hóa kết nối truyền tải** | Toàn bộ dữ liệu ứng viên và tài khoản truyền qua Internet đều được mã hóa. | Kết nối bảo mật chuẩn **HTTPS**. |
+| **NFR-SEC-02** | **An toàn Mật khẩu & Phiên làm việc** | Bảo vệ tài khoản nội bộ chống đánh cắp mật khẩu, chống giả mạo phiên đăng nhập và chặn truy cập trái phép. | Mật khẩu mã hóa một chiều an toàn; phiên làm việc chống giả mạo tự hết hạn sau 7 ngày; tự động chuyển về trang đăng nhập nếu chưa xác thực. |
+| **NFR-SEC-03** | **Chống nộp đơn rác & Tệp giả mạo** | Ngăn chặn gửi đơn hàng loạt tự động và chặn tệp mã độc đổi tên thành `.pdf`/`.docx`. | Giới hạn tối đa **5 lượt nộp / 10 phút** từ cùng địa chỉ mạng và kiểm tra cấu trúc thực của tệp tin gốc trước khi lưu. |
+| **NFR-SEC-04** | **Bảo mật dữ liệu theo vai trò & Trang công khai** | Mỗi vai trò chỉ thấy đúng dữ liệu trong phạm vi trách nhiệm; ứng viên không thấy dữ liệu nội bộ. | Dashboard phân tách dữ liệu ngay từ máy chủ; Cổng tra cứu ứng viên ẩn 100% điểm AI và nhận xét phỏng vấn. |
+| **NFR-SEC-05** | **Nhật ký kiểm toán bất biến** | Mọi thay đổi trạng thái, lý do từ chối, chỉnh sửa hồ sơ và chấm điểm đều được ghi nhận đầy đủ để đối soát. | Chỉ cho phép ghi bổ sung, tuyệt đối không cho sửa hay xóa lịch sử hoạt động. |
 
 ---
 
-### 4. Tính khả dụng & Khả năng bảo trì (Usability & Maintainability)
+### 4. Tính dễ sử dụng & Khả năng mở rộng (Usability & Maintainability)
 
-| Mã NFR | Tiêu chí | Mô tả yêu cầu kỹ thuật thực tế | Tiêu chuẩn đánh giá |
+| Mã NFR | Tiêu chí | Mô tả yêu cầu thực tế | Tiêu chuẩn nghiệm thu |
 | :---: | :--- | :--- | :--- |
-| **NFR-USA-01** | **Tính tương thích đa thiết bị** | Cổng ứng tuyển công khai và bảng Kanban hiển thị tối ưu trên cả máy tính, máy tính bảng và điện thoại. | **Responsive 100%** với Tailwind CSS, hỗ trợ Chrome, Safari, Edge, Firefox và trình duyệt di động. |
-| **NFR-USA-02** | **Độ dễ sử dụng & Cảnh báo trực quan** | Trải nghiệm kéo-thả Kanban mượt mà qua `@hello-pangea/dnd`; cảnh báo đổi màu viền đỏ khi vi phạm SLA (BRL-07); đánh sáng viền thẻ chưa xem chống bỏ sót. | Toast thông báo rõ ràng cho mọi tác vụ thành công hoặc thất bại; nhân viên sử dụng thành thạo sau **dưới 01 giờ**. |
-| **NFR-MNT-01** | **Kiến trúc mô hình hóa AI (Agnostic)** | Tách biệt tầng logic gọi AI qua interface mô hình hóa (`src/lib/ai-parser.ts`), cấu hình `temperature: 0` và strict JSON Schema. | Có thể nâng cấp hoặc chuyển đổi giữa **Gemini 1.5 Flash, GPT-4o, Claude 3.5** mà không cần sửa đổi giao diện người dùng. |
-| **NFR-MNT-02** | **Kiểm thử tự động & Độ tin cậy mã nguồn** | Mã nguồn viết hoàn toàn bằng TypeScript Strict Mode, phân tách rõ ràng giữa API Routes, Server Actions và Client Components. | Tích hợp bộ **97 kiểm thử tự động (Unit & Integration Tests)** đạt tỷ lệ thành công **100% (97/97 Passed)**, bảo vệ toàn bộ BRL, State Machine và RBAC. |
+| **NFR-USA-01** | **Tương thích đa thiết bị** | Hiển thị rõ ràng trên máy tính bàn, laptop, máy tính bảng và điện thoại di động. | Tương thích tốt trên Chrome, Edge, Safari, Firefox. |
+| **NFR-USA-02** | **Giao diện dịu mắt & Dễ làm quen** | Thiết kế tối giản, không chớp nháy gây mỏi mắt, tách bạch Tổng quan và Chi tiết 5 tab, thông báo lỗi tiếng Việt thân thiện không chứa mã kỹ thuật. | Nhân sự tuyển dụng sử dụng thành thạo sau **dưới 01 giờ** làm quen. |
+| **NFR-MNT-01** | **Dễ dàng mở rộng & nâng cấp AI** | Kiến trúc tách rời phần gọi dịch vụ AI và sẵn sàng tích hợp gửi Email tự động trong tương lai đúng yêu cầu đề bài. | Nâng cấp mô hình AI hoặc kết nối hệ thống gửi mail mà không phải làm lại giao diện. |
+| **NFR-MNT-02** | **Kiểm thử tự động đảm bảo chất lượng** | Tích hợp bộ kịch bản kiểm thử tự động rà soát toàn bộ quy tắc nghiệp vụ, phân quyền và vòng đời hồ sơ sau mỗi lần cập nhật. | Duy trì tỷ lệ **100% kiểm thử đạt chuẩn** (hiện đạt **112/112 kịch bản**). |
 

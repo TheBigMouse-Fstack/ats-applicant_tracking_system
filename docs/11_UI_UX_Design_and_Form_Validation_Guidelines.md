@@ -1,15 +1,16 @@
 ---
 id: "UIUX-ATS-11"
-title: "Quy chuẩn Thiết kế UI/UX & Xử lý Lỗi Biểu mẫu"
+title: "Quy chuẩn Trải nghiệm Người dùng (UI/UX) & Quy tắc Kiểm tra Dữ liệu Biểu mẫu"
 type: "spec"
-version: "2.0.0"
+version: "2.2.0"
 status: "approved"
-owner: "ReCoverX BA & Engineering Team"
+owner: "ReCoverX BA & Product Team"
 domain: "recruitment-ats"
 tags:
   - "ui-ux"
   - "validation"
   - "enterprise-design"
+  - "non-tech-friendly"
 upstream_deps:
   - "FDD-ATS-04"
 downstream_deps:
@@ -17,10 +18,11 @@ downstream_deps:
 last_updated: "2026-11-18"
 ---
 
-# QUY CHUẨN THIẾT KẾ UI/UX & XỬ LÝ LỖI BIỂU MẪU (UI/UX & FORM VALIDATION GUIDELINES)
+# QUY CHUẨN TRẢI NGHIỆM NGƯỜI DÙNG (UI/UX) & QUY TẮC KIỂM TRA DỮ LIỆU BIỂU MẪU
 
-> **Dự án:** ReCoverX Career — Applicant Tracking System (ATS)  
-> **Mục tiêu:** Thiết lập bộ tiêu chuẩn bắt buộc cho toàn bộ giao diện Frontend, ngăn chặn triệt để các lỗi trải nghiệm người dùng như: không đánh dấu đỏ ô nhập sai, thông báo lỗi chung chung mập mờ, không rõ lý do trùng lặp dữ liệu.
+> **Hệ thống nội bộ:** ATS — Applicant Tracking System *(Cổng ứng tuyển công khai giả lập: RecoverX)*  
+> **Đối tượng đọc:** Ban Giám đốc, Trưởng phòng Tuyển dụng, BA, Designer & Đội phát triển.  
+> **Mục tiêu:** Đảm bảo giao diện quản trị gọn mắt, dễ sử dụng ngay lần đầu, không trùng lặp nút thao tác, và mọi thông báo lỗi đều viết bằng tiếng Việt tự nhiên, dễ hiểu cho người dùng cuối.
 
 ---
 
@@ -28,91 +30,65 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.0.0` | 2026-11-18 | ReCoverX BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.0.0` | 2026-11-18 | BA Team | **Changed** | Chuẩn hóa theo bộ tiêu chuẩn Universal BA Toolkit. | Product Owner |
+| `v2.2.0` | 2026-11-18 | BA Team | **Changed** | Viết lại bằng ngôn ngữ nghiệp vụ thân thiện cho người đọc phi kỹ thuật; bổ sung quy tắc kiểm tra dữ liệu đầu vào (tìm kiếm, email, SĐT, tải tệp), nguyên tắc dịu mắt (60-30-10), tách bạch Tổng quan vs Chi tiết và loại bỏ hoàn toàn mã kỹ thuật khỏi thông báo người dùng. | Product Owner & Trưởng phòng Tuyển dụng |
 
 ---
 
-## I. QUY CHUẨN 1: ĐÁNH DẤU Ô NHẬP LIỆU BỊ LỖI (FIELD-LEVEL ERROR HIGHLIGHTING)
+## I. NGUYÊN TẮC THIẾT KẾ GIAO DIỆN DOANH NGHIỆP (ENTERPRISE UX PRINCIPLES)
 
-Mọi ô nhập liệu (`input`, `textarea`, `select`) khi người dùng nhập sai, nhập thiếu hoặc vi phạm nghiệp vụ **BẮT BUỘC** phải tuân theo 3 yếu tố trực quan:
-
-```text
-+-----------------------------------------------------------------------------------+
-|  Email tài khoản *                                                                |
-|  [ ✉ | hr_invalid_email                                           ] (Viền đỏ rực) |
-|  ⚠ Email không đúng định dạng (Ví dụ: name@company.com)         (Chữ đỏ ngay dưới)|
-+-----------------------------------------------------------------------------------+
-```
-
-### 1. Cấu hình Tailwind CSS chuẩn cho trạng thái Lỗi:
-* **Trạng thái bình thường:**  
-  `border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-slate-900 bg-white`
-* **Trạng thái LỖI (Error State):**  
-  `border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50/30 text-red-900 placeholder:text-red-300`
-* **Dòng thông báo lỗi ngay dưới chân ô nhập (Inline Error Text):**  
-  Phải nằm ngay bên dưới ô nhập lỗi, cỡ chữ nhỏ `text-xs text-red-600 mt-1 flex items-center gap-1 font-medium`.
+1. **Dịu mắt & Tối giản (Visual Calm — Quy tắc màu 60-30-10):**
+   * Sử dụng nền trắng và xám nhạt làm chủ đạo cho toàn bộ không gian làm việc nội bộ.
+   * **Không sử dụng hiệu ứng chớp nháy** gây mỏi mắt trên danh sách ứng viên (chỉ dùng một chấm tròn xanh tĩnh để nhận diện hồ sơ mới chưa xem).
+   * Màu sắc chỉ dùng cho các tín hiệu nghiệp vụ có ý nghĩa: **Đánh giá AI 3 mức màu** (Xanh lá ≥75% Phù hợp cao / Vàng 50–74% Cân nhắc / Đỏ <50% Phù hợp thấp) và **Cảnh báo đỏ** khi hồ sơ chờ quá hạn xử lý.
+2. **Tách bạch Tổng quan & Chi tiết (Overview vs. Detail):**
+   * **Màn hình Tổng quan** (*Dashboard, Thẻ Kanban, Bảng Ứng viên*): Chỉ hiển thị đúng các thông tin cốt lõi cần quét nhanh trong 3 giây (Họ tên, Vị trí, Kinh nghiệm, Đánh giá AI %, Trạng thái).
+   * **Ngăn Chi tiết Hồ sơ (5 Tab độc lập):** Gộp toàn bộ thông tin chuyên sâu vào 5 ngăn riêng biệt để người dùng cần xem mục nào mới mở mục đó:
+     1. *Hồ sơ & AI* (5 trường cốt lõi + nút mở rộng chi tiết + Đánh giá AI % + Lịch phỏng vấn)
+     2. *Tiêu chuẩn vị trí (JD)* (Mở khi cần đối chiếu mô tả công việc)
+     3. *CV Gốc* (Chỉ gồm khung xem trực tiếp CV và nút Tải về)
+     4. *Phiếu đánh giá* (Chấm điểm trực tiếp ngay trong tab, không bật cửa sổ đè màn hình)
+     5. *Nhật ký* (Tách riêng hoàn toàn lịch sử luân chuyển và lịch sử ứng tuyển tại công ty)
+3. **Một nhiệm vụ — Một vị trí nút duy nhất (Single Action Place):**
+   * Không lặp lại các nút có cùng chức năng ở nhiều màn hình khác nhau (ví dụ: *Xuất báo cáo Excel* đặt tập trung tại Danh sách Ứng viên; *Tạo tin mới* đặt tại Tin Tuyển Dụng; *Thử đánh giá lại AI* chỉ xuất hiện khi AI thực sự gặp sự cố kết nối chưa chấm được điểm).
 
 ---
 
-## II. QUY CHUẨN 2: THÔNG ĐIỆP LỖI RÕ RÀNG & HÀNH ĐỘNG ĐƯỢC (ACTIONABLE ERROR MESSAGING)
+## II. QUY TẮC KIỂM TRA DỮ LIỆU ĐẦU VÀO (BUSINESS VALIDATION RULES)
 
-Tuyệt đối **NGHIÊM CẤM** sử dụng các câu thông báo chung chung, vô nghĩa như:
-- ❌ *"Có lỗi xảy ra."*
-- ❌ *"Dữ liệu không hợp lệ."*
-- ❌ *"Đăng nhập thất bại."*
-- ❌ *"Thao tác thất bại."*
+Thay vì mô tả bằng cú pháp lập trình, các quy tắc kiểm tra dữ liệu đầu vào được quy định rõ theo hành vi người dùng:
 
-### Bảng Quy chuẩn Thông điệp Lỗi Bắt buộc:
-
-| Trường / Nghiệp vụ | Lỗi phát sinh | ❌ Thông báo CẤM dùng | ✅ Thông báo CHUẨN BẮT BUỘC |
-| :--- | :--- | :--- | :--- |
-| **Email đăng nhập** | Email không tồn tại trong DB | "Lỗi đăng nhập" | *"Không tìm thấy tài khoản với email này trong hệ thống."* |
-| **Mật khẩu đăng nhập**| Sai mật khẩu | "Sai thông tin" | *"Mật khẩu không chính xác. Vui lòng kiểm tra lại."* |
-| **Tài khoản bị khóa**| `isActive = false` | "Không đăng nhập được" | *"Tài khoản này đã bị Quản trị viên tạm khóa. Vui lòng liên hệ Admin."* |
-| **Tạo User - Mật khẩu**| Mật khẩu < 8 ký tự | "Mật khẩu yếu" | *"Mật khẩu hiện có {n} ký tự. Yêu cầu tối thiểu 8 ký tự theo quy tắc BRL-Auth."* |
-| **Tạo User - Email** | Email đã được nhân viên khác dùng | "Trùng lặp dữ liệu" | *"Email '{email}' đã được đăng ký bởi nhân viên khác trong hệ thống."* |
-| **Nộp CV - Tệp tin** | Tệp tin > 10MB | "File quá lớn" | *"Tệp '{file_name}' nặng {size}MB, vượt quá giới hạn cho phép (Tối đa 10MB theo BRL-01)."* |
-| **Nộp CV - Định dạng**| Tệp .png, .exe, .zip | "Sai định dạng" | *"Định dạng tệp không hợp lệ. Hệ thống chỉ chấp nhận tệp .pdf hoặc .docx."* |
-| **Nộp CV - Trùng lặp**| Đã nộp cùng Job trong 30 ngày | "Hồ sơ bị trùng" | *"Bạn đã nộp hồ sơ cho vị trí '{job_title}' vào ngày {date} (trong vòng 30 ngày qua theo BRL-02). Vui lòng không nộp lại liên tiếp."* |
-| **Kéo sang HIRED** | Chưa có phiếu Scorecard | "Không kéo được" | *"Không thể chuyển sang HIRED: Ứng viên cần ít nhất 01 phiếu đánh giá Scorecard hoàn tất từ Hiring Manager (BRL-06)."* |
+| Nhóm dữ liệu / Ô nhập | Quy tắc chấp nhận hợp lệ | Hành vi khi nhập sai hoặc thiếu |
+| :--- | :--- | :--- |
+| **Ô tìm kiếm ứng viên** | Cho phép nhập **tên ứng viên, email hoặc kỹ năng**; **không phân biệt chữ hoa / chữ thường**, hỗ trợ tìm theo một phần từ khóa (VD: gõ `"react"` hoặc `"Nguyễn"` đều trả về kết quả trong ≤ 3 giây). | Nếu không có hồ sơ khớp, hiển thị thông báo lịch sự *"Không tìm thấy ứng viên phù hợp với bộ lọc hiện tại"*. |
+| **Họ và tên ứng viên** | Bắt buộc nhập; chấp nhận chữ cái tiếng Việt có dấu hoặc không dấu và khoảng trắng; tự động loại bỏ khoảng trắng thừa ở hai đầu. | Báo viền đỏ và chú thích: *"Vui lòng nhập họ và tên ứng viên."* |
+| **Địa chỉ Email** | Bắt buộc nhập; đúng định dạng email chuẩn gồm tên người dùng, ký tự `@` và tên miền hợp lệ (VD: `nguyenvana@gmail.com`); không phân biệt chữ hoa/thường khi đối chiếu trùng lặp. | Báo viền đỏ: *"Email không đúng định dạng (Ví dụ: name@company.com)."* |
+| **Số điện thoại** | Bắt buộc nhập khi ứng tuyển; chấp nhận số điện thoại di động Việt Nam **10 chữ số** bắt đầu bằng `0` (VD: `0912345678`) hoặc kèm mã quốc gia `+84` (VD: `+84912345678`); cho phép người dùng gõ kèm dấu cách/gạch ngang để dễ đọc. | Báo viền đỏ: *"Số điện thoại không hợp lệ. Vui lòng nhập số di động 10 chữ số (VD: 0912345678)."* |
+| **Tệp CV tải lên** | Bắt buộc khi nộp hồ sơ; chỉ chấp nhận định dạng **PDF** hoặc **DOCX** thật (không chấp nhận tệp đổi đuôi giả mạo), dung lượng **không vượt quá 10MB**. | Báo viền đỏ nêu rõ lý do sai định dạng hoặc vượt dung lượng 10MB. |
+| **Mật khẩu tài khoản nội bộ** | Tối thiểu **8 ký tự**; không chấp nhận mật khẩu để trống hoặc quá ngắn. | Báo viền đỏ: *"Mật khẩu hiện có {n} ký tự. Vui lòng nhập tối thiểu 8 ký tự."* |
+| **Lý do từ chối ứng viên** | Bắt buộc chọn 1 lý do có sẵn hoặc tự nhập lý do cụ thể tối thiểu **5 ký tự** trước khi xác nhận chuyển hồ sơ sang Từ chối. | Không cho phép xác nhận và nhắc nhở nhập rõ lý do để lưu lịch sử. |
 
 ---
 
-## III. QUY CHUẨN 3: XỬ LÝ KHỬ TRÙNG LẶP DỮ LIỆU (DEDUPLICATION UI/UX)
+## III. QUY CHUẨN THÔNG BÁO LỖI THÂN THIỆN (END-USER ERROR MESSAGING)
 
-Trùng lặp là nghiệp vụ trọng tâm của hệ thống ATS. Khi phát hiện trùng lặp:
-1. **Tại Cổng Ứng viên:**
-   - Đánh viền đỏ cả ô Email và ô Số điện thoại.
-   - Hiển thị hộp thông báo màu hổ phách/đỏ: Nêu rõ ứng viên đã nộp ngày nào, vị trí nào.
-2. **Tại Màn hình Quản trị HR:**
-   - Trên thẻ ứng viên hoặc Drawer, nếu là hồ sơ từng nộp trong quá khứ (> 30 ngày), hiển thị huy hiệu:  
-     `[Hồ sơ Tái ứng tuyển - Đợt 2]` để HR biết ngay đây là ứng viên cũ quay lại.
+* **Nguyên tắc vàng:** Thông báo hiển thị trên màn hình **tuyệt đối không chứa mã kỹ thuật hoặc mã tài liệu nội bộ** (không ghi các cụm như `BRL-10`, `NFR-03`, `RBAC`, `Magic Bytes`, `HTTP 403`).
+* Mọi thông báo lỗi phải chỉ rõ **nguyên nhân** và **hướng xử lý** bằng tiếng Việt tự nhiên:
 
----
-
-## IV. QUY CHUẨN 4: TRẠNG THÁI TƯƠNG TÁC (INTERACTIVE FEEDBACK & STATES)
-
-1. **Trạng thái Đang xử lý (Loading State):**
-   - Khi bấm bất kỳ nút Submit nào (Đăng nhập, Tạo User, Nộp CV, Chấm Scorecard):
-     - Nút bấm phải bị **vô hiệu hóa (`disabled`)**, giảm độ mờ (`opacity-60`).
-     - Hiển thị biểu tượng xoay (Spinner) và đổi chữ hành động:
-       - *"Đăng nhập"* ➔ *"Đang xác thực tài khoản..."*
-       - *"Nộp hồ sơ"* ➔ *"Đang bóc tách CV bằng AI..."*
-       - *"Tạo tài khoản"* ➔ *"Đang lưu vào CSDL..."*
-2. **Trạng thái Trống (Empty State):**
-   - Khi bảng/danh sách chưa có dữ liệu (ví dụ không tìm thấy User, không có ứng viên ở cột Kanban):
-     - Tuyệt đối không để màn hình trắng trơn.
-     - Phải hiển thị icon minh họa mờ + dòng thông báo lịch sự + nút hành động (ví dụ: *"Chưa có ứng viên nào ở vòng này"*).
-3. **Cách ly Ngữ cảnh Tuyệt đối (Context Isolation):**
-   - Các màn hình trước đăng nhập (`/admin/login`, `/jobs`) **tuyệt đối không được render các thành phần của trang sau đăng nhập** (như thanh Navbar Admin, thông tin tài khoản nội bộ).
+| Tình huống phát sinh | ❌ Câu thông báo CẤM dùng | ✅ Thông báo CHUẨN hiển thị cho người dùng |
+| :--- | :--- | :--- |
+| **Sai mật khẩu** | *"Sai thông tin"* | *"Mật khẩu không chính xác. Vui lòng kiểm tra lại."* |
+| **Tài khoản bị khóa** | *"Lỗi 403 Forbidden"* | *"Tài khoản của bạn đã bị Quản trị viên tạm khóa. Vui lòng liên hệ Quản trị viên."* |
+| **Nộp trùng vị trí (trong 30 ngày)** | *"Vi phạm BRL-02"* | *"Bạn đã nộp hồ sơ cho vị trí này trong vòng 30 ngày qua. Vui lòng không nộp lặp lại."* |
+| **Nộp quá 3 vị trí (trong 90 ngày)** | *"Vượt hạn mức BRL-09"* | *"Bạn đã nộp tối đa 3 vị trí công việc trong vòng 90 ngày qua. Vui lòng chờ kết quả phản hồi trước khi ứng tuyển thêm."* |
+| **Tệp CV giả mạo định dạng** | *"Magic Bytes không khớp"* | *"Tệp tin tải lên không đúng định dạng PDF/DOCX hợp lệ. Vui lòng kiểm tra lại tệp CV của bạn."* |
+| **Chuyển sang Tuyển chọn thiếu phiếu đánh giá** | *"Vi phạm chốt chặn BRL-06"* | *"Chưa thể tuyển chọn: Cần có ít nhất 01 phiếu đánh giá phỏng vấn đạt chuẩn trước khi xác nhận Tuyển chọn."* |
+| **Vượt quá quyền vai trò** | *"Vi phạm ma trận RBAC"* | *"Chuyên viên HR chỉ có quyền chuyển hồ sơ tối đa đến vòng Sàng lọc tiêu chuẩn. Vòng Phỏng vấn và Tuyển chọn do Quản lý chuyên môn phụ trách."* |
 
 ---
 
-## V. CHECKLIST KIỂM SOÁT KHI CODE BẤT KỲ MÀN HÌNH NÀO
+## IV. TRẠNG THÁI TƯƠNG TÁC & PHẢN HỒI NGƯỜI DÙNG
 
-Trước khi bàn giao bất kỳ màn hình nào, lập trình viên/Agent phải tự rà soát:
-- [ ] Mọi trường bắt buộc đều có dấu sao đỏ (`*`).
-- [ ] Khi submit để trống hoặc nhập sai, ô đó có viền đỏ rực và chữ đỏ chú thích ngay dưới chân không?
-- [ ] Thông báo lỗi có giải thích rõ nguyên nhân và cách sửa không?
-- [ ] Khi gọi API, nút bấm có bị khóa và hiện spinner loading không?
-- [ ] Các trường dữ liệu trùng lặp có hiển thị rõ đối tượng bị trùng không?
+1. **Khi đang xử lý (Loading):** Nút bấm tự động khóa tránh bấm đúp và hiển thị dòng chữ rõ ràng (*"Đang xác thực..."*, *"Đang tải lên và phân tích hồ sơ..."*, *"Đang lưu..."*).
+2. **Khi danh sách trống (Empty State):** Không để màn hình trắng trơn; luôn hiển thị thông điệp rõ ràng giải thích tình trạng hiện tại (*"Bạn đã xem toàn bộ CV mới tiếp nhận"*, *"Chưa có phiếu đánh giá nào"*).
+3. **Tách biệt hoàn toàn khu vực Công khai & Nội bộ:** Trang đăng nhập và Cổng tuyển dụng công khai tuyệt đối không hiển thị thanh menu hay thông tin quản trị nội bộ khi người dùng chưa đăng nhập.

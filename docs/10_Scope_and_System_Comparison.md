@@ -88,7 +88,7 @@ So với Base E-Hiring nguyên bản, hệ thống của bạn có **3 điểm �
 * **Hệ thống của bạn:** Khi hồ sơ bị xếp vào cột `REJECTED`, hệ thống **tự động lên lịch hẹn giờ (Queue Delay 12–24 tiếng sau mới bắn email)**. Ứng viên nhận được email vào sáng hôm sau và cảm thấy công ty đã xem xét hồ sơ rất kỹ lưỡng.
 
 ### 2. Bóc tách & Chấm điểm bằng Trí tuệ Nhân tạo thế hệ mới (Native Generative AI)
-* **Base E-Hiring:** Hệ thống bóc tách truyền thống chủ yếu dựa trên từ khóa cố định (Regex / Keyword Matching), rất hay bị lỗi khi gặp CV định dạng tiếng Việt lạ, CV 2 cột hoặc tên trường đại học viết tắt.
+* **Base E-Hiring:** Cơ chế dò từ khóa cố định truyền thống dễ bị sót khi gặp CV định dạng tiếng Việt đa dạng, bố cục 2 cột hoặc tên trường học/công nghệ viết tắt.
 * **Hệ thống của bạn:** Sử dụng **Google Gemini API**, có khả năng đọc hiểu ngữ nghĩa (Semantic Understanding), tự nhận diện kinh nghiệm tương đương (ví dụ: biết "Next.js" là kinh nghiệm thuộc "React"), và viết ra **lời giải thích tại sao đạt/không đạt (Rationale)** cho HR đọc.
 
 ### 3. Cửa sổ làm việc tập trung (Split-Screen Candidate Drawer)
