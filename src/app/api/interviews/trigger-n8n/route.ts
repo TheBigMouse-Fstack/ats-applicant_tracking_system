@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const sessionUser = getSessionUser();
     if (!sessionUser) {
       return NextResponse.json(
-        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để kích hoạt n8n." },
+        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để kích hoạt gửi thư tự động." },
         { status: 401 }
       );
     }
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
     if (!app.interviewDate) {
       return NextResponse.json(
-        { success: false, error: "Hồ sơ ứng viên chưa có lịch phỏng vấn để gửi sang n8n." },
+        { success: false, error: "Hồ sơ ứng viên chưa có lịch phỏng vấn để kích hoạt gửi thư tự động." },
         { status: 400 }
       );
     }
@@ -99,15 +99,15 @@ export async function POST(req: Request) {
           userId: sessionUser.id,
           fromStage: app.currentStage,
           toStage: app.currentStage,
-          action: "INTERVIEW_INVITE_SENT_N8N",
-          reason: `Kích hoạt thành công n8n webhook: ${n8nResult.webhookUrl || "Default URL"}`,
+          action: "INTERVIEW_INVITE_SENT_AUTO",
+          reason: `Kích hoạt thành công gửi thư tự động`,
         },
       });
 
       return NextResponse.json({
         success: true,
         n8nResult,
-        message: `Đã kích hoạt n8n thành công! Email mời và sự kiện lịch hẹn cho ứng viên ${app.candidate.fullName} đã được n8n tiếp nhận.`,
+        message: `Đã kích hoạt gửi thư mời tự động thành công! Thư mời và lịch hẹn cho ứng viên ${app.candidate.fullName} đã được chuyển đi.`,
         data: updatedApp,
       });
     } else {
@@ -119,9 +119,9 @@ export async function POST(req: Request) {
       });
     }
   } catch (error: any) {
-    console.error("Trigger n8n error:", error);
+    console.error("Trigger automation error:", error);
     return NextResponse.json(
-      { success: false, error: "Lỗi hệ thống khi kích hoạt n8n: " + error.message },
+      { success: false, error: "Lỗi hệ thống khi gửi thư tự động: " + error.message },
       { status: 500 }
     );
   }

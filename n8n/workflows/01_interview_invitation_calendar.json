@@ -1,0 +1,110 @@
+{
+  "name": "01_RecoverX_ATS_Interview_Invitation_And_Calendar",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "interview-schedule",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook-interview",
+      "name": "Webhook Tiếp Nhận Sự Kiện Phỏng Vấn",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "interview-schedule"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "primary",
+          "mode": "list"
+        },
+        "start": "={{ $json.body.interview.date }}",
+        "end": "={{ new Date(new Date($json.body.interview.date).getTime() + 60*60*1000).toISOString() }}",
+        "summary": "=Phỏng vấn ứng viên: {{ $json.body.candidate.fullName }} — {{ $json.body.job.title }}",
+        "description": "=Họ tên ứng viên: {{ $json.body.candidate.fullName }}\nEmail: {{ $json.body.candidate.email }}\nSĐT: {{ $json.body.candidate.phone }}\nHình thức: {{ $json.body.interview.format }}\nĐịa điểm / Link họp: {{ $json.body.interview.location }}\nGhi chú: {{ $json.body.interview.notes || 'Không có' }}\nNgười phỏng vấn: {{ $json.body.interviewer.name }} ({{ $json.body.interviewer.email }})",
+        "attendees": [
+          "={{ $json.body.candidate.email }}"
+        ],
+        "options": {}
+      },
+      "id": "node-google-calendar",
+      "name": "Tạo Sự Kiện Google Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.email }}",
+        "subject": "=Thư Mời Phỏng Vấn Vị Trí {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.job.title }} — RecoverX",
+        "message": "=Chào bạn {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.fullName }},\n\nBan Tuyển dụng RecoverX xin trân trọng kính mời bạn tham dự buổi phỏng vấn cho vị trí {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.job.title }}.\n\n- Thời gian: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.formattedTime }}\n- Hình thức: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.format === 'ONLINE' ? 'Trực tuyến' : 'Trực tiếp tại văn phòng' }}\n- Địa điểm / Liên kết họp: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.location }}\n- Ghi chú: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.notes || 'Vui lòng chuẩn bị trang phục lịch sự và vào phòng họp trước 5 phút.' }}\n\nTrân trọng,\nBan Tuyển dụng RecoverX",
+        "options": {}
+      },
+      "id": "node-gmail-invite",
+      "name": "Gửi Gmail Thư Mời HTML",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [480, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã tự động gửi thư mời qua Gmail và đồng bộ Google Calendar thành công!\",\n  \"candidate\": \"{{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.fullName }}\",\n  \"interviewTime\": \"{{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.formattedTime }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-webhook",
+      "name": "Phản Hồi Webhook HTTP 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Tiếp Nhận Sự Kiện Phỏng Vấn": {
+      "main": [
+        [
+          {
+            "node": "Tạo Sự Kiện Google Calendar",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gửi Gmail Thư Mời HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tạo Sự Kiện Google Calendar": {
+      "main": [
+        [
+          {
+            "node": "Phản Hồi Webhook HTTP 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi Gmail Thư Mời HTML": {
+      "main": [
+        [
+          {
+            "node": "Phản Hồi Webhook HTTP 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

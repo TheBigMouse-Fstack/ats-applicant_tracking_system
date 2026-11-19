@@ -257,7 +257,7 @@ export async function POST(req: Request) {
               ? "Tự soạn thư mời và lưu trữ trên hệ thống"
               : interviewEmailOption === "NONE"
               ? "Không gửi email (đã liên hệ trực tiếp)"
-              : "Kích hoạt gửi thư tự động qua n8n & Google Calendar",
+              : "Kích hoạt gửi thư mời tự động kèm lịch hẹn",
         },
       }),
     ]);
@@ -341,11 +341,11 @@ Ban Tuyển dụng RecoverX
 
     if (interviewEmailOption === "AUTO_N8N") {
       if (n8nResult?.success) {
-        responseMessage += ` Đã kích hoạt n8n tự động gửi thư mời và đồng bộ Google Calendar.`;
+        responseMessage += ` Đã kích hoạt hệ thống tự động gửi thư mời và đồng bộ lịch hẹn cho ứng viên.`;
       } else if (n8nResult?.triggered === false) {
-        responseMessage += ` (Chưa cấu hình N8N_WEBHOOK_URL trong biến môi trường nên n8n chưa được kích hoạt tự động).`;
+        responseMessage += ` (Chưa cấu hình dịch vụ gửi thư tự động trong biến môi trường hệ thống).`;
       } else if (n8nResult && !n8nResult.success) {
-        responseMessage += ` (Lưu ý: n8n webhook phản hồi lỗi: ${n8nResult.error || n8nResult.message}).`;
+        responseMessage += ` (Lưu ý: Dịch vụ gửi thư tự động phản hồi lỗi: ${n8nResult.error || n8nResult.message}).`;
       }
     }
 

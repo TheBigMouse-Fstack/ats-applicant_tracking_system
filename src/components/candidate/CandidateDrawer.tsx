@@ -124,9 +124,8 @@ export default function CandidateDrawer({
     message: string;
   } | null>(null);
 
-  // Kích hoạt webhook n8n thủ công / Kiểm tra trạng thái n8n
+  // Kích hoạt gửi thư tự động thủ công / Kiểm tra trạng thái
   const [isTriggeringN8N, setIsTriggeringN8N] = useState(false);
-  const [customN8NWebhookUrl, setCustomN8NWebhookUrl] = useState("");
 
   // Lightbox xem ảnh Bằng cấp / Chứng chỉ phóng to
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -402,7 +401,7 @@ export default function CandidateDrawer({
         setDrawerToast({
           type: toastType,
           title: resData.n8nResult?.success
-            ? "Lên lịch & Kích hoạt n8n thành công"
+            ? "Lên lịch & Gửi thư tự động thành công"
             : "Lưu lịch phỏng vấn thành công",
           message: resData.message || "Đã lưu lịch phỏng vấn cho ứng viên thành công!",
         });
@@ -424,7 +423,7 @@ export default function CandidateDrawer({
     }
   };
 
-  // Kích hoạt n8n thủ công (gửi webhook kiểm thử hoặc gửi lại cho ứng viên)
+  // Kích hoạt gửi thư tự động thủ công
   const handleTriggerN8N = async () => {
     if (!applicationId) return;
     setIsTriggeringN8N(true);
@@ -432,10 +431,7 @@ export default function CandidateDrawer({
       const res = await fetch("/api/interviews/trigger-n8n", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          applicationId,
-          customWebhookUrl: customN8NWebhookUrl || undefined,
-        }),
+        body: JSON.stringify({ applicationId }),
       });
       const result = await res.json();
       if (result.success) {
@@ -444,21 +440,21 @@ export default function CandidateDrawer({
         }
         setDrawerToast({
           type: "success",
-          title: "Kích hoạt n8n thành công",
-          message: result.message || "n8n đã nhận webhook gửi thư mời và đồng bộ lịch!",
+          title: "Gửi thư tự động thành công",
+          message: result.message || "Hệ thống đã tự động gửi thư mời và đồng bộ lịch hẹn cho ứng viên!",
         });
       } else {
         setDrawerToast({
           type: "warning",
-          title: "Webhook n8n chưa phản hồi",
-          message: result.message || result.error || "Vui lòng kiểm tra lại địa chỉ webhook n8n.",
+          title: "Chưa kích hoạt gửi thư tự động",
+          message: result.message || result.error || "Chưa cấu hình dịch vụ gửi thư tự động.",
         });
       }
     } catch (err: any) {
       setDrawerToast({
         type: "error",
-        title: "Lỗi kết nối n8n",
-        message: "Không thể gửi yêu cầu đến n8n: " + err.message,
+        title: "Lỗi gửi thư tự động",
+        message: "Không thể kết nối đến dịch vụ gửi thư tự động: " + err.message,
       });
     } finally {
       setIsTriggeringN8N(false);
@@ -1619,7 +1615,7 @@ export default function CandidateDrawer({
                               <div>
                                 <div className="flex items-center gap-2">
                                   <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                                    Tự Động Hóa n8n (Gmail &amp; Google Calendar)
+                                    Gửi Thư Mời &amp; Tạo Lịch Tự Động
                                   </h4>
                                   <span
                                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -1629,14 +1625,14 @@ export default function CandidateDrawer({
                                     }`}
                                   >
                                     {data?.isInterviewInviteSent
-                                      ? "✓ n8n đã gửi thư mời"
-                                      : "⏳ Chờ kích hoạt n8n / Chưa gửi"}
+                                      ? "✓ Đã gửi thư mời tự động"
+                                      : "⏳ Chưa gửi thư mời"}
                                   </span>
                                 </div>
                                 <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
                                   {data?.isInterviewInviteSent
-                                    ? "n8n đã nhận webhook và hoàn tất gửi thư mời HTML kèm lịch hẹn cho ứng viên."
-                                    : "Lịch hẹn đã được xếp nhưng n8n chưa nhận được webhook gửi thư tự động."}
+                                    ? "Hệ thống đã tự động gửi thư mời kèm lịch hẹn cho ứng viên."
+                                    : "Lịch hẹn đã được xếp. Bạn có thể nhấn kích hoạt gửi thư tự động ngay."}
                                 </p>
                               </div>
                             </div>
@@ -1652,30 +1648,16 @@ export default function CandidateDrawer({
                                 {isTriggeringN8N ? (
                                   <>
                                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                    <span>Đang gửi n8n...</span>
+                                    <span>Đang gửi thư tự động...</span>
                                   </>
                                 ) : (
                                   <>
                                     <Send className="w-3.5 h-3.5" />
-                                    <span>Kích hoạt n8n gửi thư ngay</span>
+                                    <span>Kích hoạt gửi thư tự động ngay</span>
                                   </>
                                 )}
                               </button>
                             )}
-                          </div>
-
-                          {/* Nhập Webhook URL tùy chọn nếu người dùng chưa cài .env */}
-                          <div className="pt-2 border-t border-emerald-200/60 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 text-xs">
-                            <span className="text-slate-500 text-[11px] font-semibold shrink-0">
-                              Webhook n8n:
-                            </span>
-                            <input
-                              type="url"
-                              value={customN8NWebhookUrl}
-                              onChange={(e) => setCustomN8NWebhookUrl(e.target.value)}
-                              placeholder="Nhập URL n8n webhook (VD: http://localhost:5678/webhook/interview-schedule) hoặc để trống lấy từ .env"
-                              className="flex-1 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-white text-[11px] font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                            />
                           </div>
                         </div>
                       </div>
@@ -2036,7 +2018,7 @@ export default function CandidateDrawer({
                             >
                               <div className="flex items-start justify-between gap-2 mb-2">
                                 <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                  Tự động n8n
+                                  Tự động
                                 </span>
                                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                                   interviewEmailOption === "AUTO_N8N"
@@ -2051,7 +2033,7 @@ export default function CandidateDrawer({
                                 <span>Gửi Gmail Tự Động</span>
                               </h4>
                               <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                                Kích hoạt n8n gửi thư mời HTML &amp; tự tạo lịch Google Calendar
+                                Tự động gửi thư mời kèm lịch hẹn đến email ứng viên
                               </p>
                             </button>
 
@@ -2217,7 +2199,7 @@ Hội đồng Tuyển dụng RecoverX`
                             <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
                               <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
                               <span>
-                                <strong>Chế độ n8n:</strong> Khi lưu lịch, hệ thống sẽ tự động kích hoạt n8n gửi thư mời HTML chuyên nghiệp qua Gmail và đồng bộ Google Calendar cho ứng viên.
+                                <strong>Chế độ tự động:</strong> Khi lưu lịch, hệ thống sẽ tự động gửi thư mời chuyên nghiệp kèm lịch hẹn cho ứng viên.
                               </span>
                             </div>
                           )}

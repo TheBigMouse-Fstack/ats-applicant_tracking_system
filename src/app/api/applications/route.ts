@@ -10,6 +10,7 @@ import {
   detectContactMismatch,
 } from "@/lib/dedup-and-contact";
 import { uploadCvFile } from "@/lib/storage";
+import { dispatchN8NTelegramAlert } from "@/lib/n8n";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -602,6 +603,38 @@ export async function POST(req: Request) {
         reason: uploadNotes.length > 0 ? uploadNotes.join(" | ") : null,
       },
     });
+
+    // 12. Tự động hóa Workflow 2: Bắn thông báo tức thì cho HR qua Telegram (@Rec_Hr_rBot)
+    try {
+      const telegramResult = await dispatchN8NTelegramAlert({
+        event: "NEW_APPLICATION",
+        applicationId: application.id,
+        candidate: {
+          fullName: candidate.fullName,
+          email: candidate.email,
+          phone: candidate.phone,
+        },
+        job: {
+          title: job.title,
+          department: job.department,
+        },
+        aiMatchScore: aiResult.matchScore,
+        skills: aiResult.skills,
+        currentStage: "NEW",
+        botChannel: "@Rec_Hr_rBot",
+        messageText: `🔔 [RecoverX ATS] Ứng viên mới nộp đơn: ${candidate.fullName} ứng tuyển vị trí ${job.title} (Điểm phù hợp: ${aiResult.matchScore || 0}%).`,
+        timestamp: new Date().toISOString(),
+      });
+
+      if (telegramResult.success) {
+        await prisma.application.update({
+          where: { id: application.id },
+          data: { isTelegramNotified: true },
+        });
+      }
+    } catch (teleErr) {
+      console.warn("Auto Telegram alert warning:", teleErr);
+    }
 
     return NextResponse.json({
       success: true,

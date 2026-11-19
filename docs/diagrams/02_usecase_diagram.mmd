@@ -1,0 +1,106 @@
+flowchart LR
+    %% ACTORS SPECIFICATION
+    subgraph ACTORS["TÁC NHÂN HỆ THỐNG (ACTORS)"]
+        direction TB
+        Candidate["👤 Ứng viên (Guest/Candidate)"]
+        Recruiter["👔 Chuyên viên HR (Recruiter)"]
+        HiringMgr["🎯 Quản lý Chuyên môn (Hiring Manager)"]
+        Admin["🛡️ Quản trị viên (Admin)"]
+        AIEngine["🤖 Động cơ AI (Hybrid AI Engine)"]
+        AutoService["⚡ Dịch vụ Gửi thư Tự động (Automation Service)"]
+    end
+
+    %% SYSTEM BOUNDARY
+    subgraph SYS_BOUNDARY["HỆ THỐNG QUẢN TRỊ TUYỂN DỤNG ATS (SYSTEM BOUNDARY)"]
+        direction TB
+
+        subgraph MOD_PUBLIC["Phân hệ 1: Cổng Tuyển Dụng Công Khai"]
+            UC01(["UC-01: Xem danh sách & Chi tiết việc làm"])
+            UC02(["UC-02: Nộp hồ sơ ứng tuyển trực tuyến"])
+            UC03(["UC-03: Tra cứu tiến độ hồ sơ cá nhân"])
+            UC04(["UC-04: Trích xuất CV tự điền biểu mẫu (Auto-fill)"])
+            UC05(["UC-05: Kiểm tra hạn mức nộp đơn 3 vị trí/90 ngày"])
+        end
+
+        subgraph MOD_PIPELINE["Phân hệ 2: Quản Trị Pipeline Tuyển Dụng & Kanban"]
+            UC06(["UC-06: Đăng nhập & Phân quyền RBAC"])
+            UC07(["UC-07: Sàng lọc & Tìm kiếm hồ sơ trên Kanban"])
+            UC08(["UC-08: Chuyển vòng ứng tuyển (5-Stage Kanban)"])
+            UC09(["UC-09: Khử trùng lặp Email/SĐT tự động"])
+            UC10(["UC-10: Đối chiếu JD & Chấm điểm 3 mức AI"])
+            UC11(["UC-11: Chỉnh sửa thủ công 5 trường dữ liệu CV"])
+            UC12(["UC-12: Từ chối hồ sơ & Nhập lý do bắt buộc"])
+        end
+
+        subgraph MOD_INTERVIEW["Phân hệ 3: Lịch Phỏng Vấn & Đánh Giá Scorecard"]
+            UC13(["UC-13: Lên lịch phỏng vấn (Online / Offline)"])
+            UC14(["UC-14: Tự động gửi thư mời & Đồng bộ lịch hẹn"])
+            UC15(["UC-15: Chấm điểm Phiếu đánh giá Scorecard 3 tiêu chí"])
+            UC16(["UC-16: Phê duyệt Tuyển chọn (HIRED)"])
+        end
+
+        subgraph MOD_TALENT["Phân hệ 4: Quản Trị Kho Nhân Tài & Hệ Thống"]
+            UC17(["UC-17: Tra cứu & Luân chuyển Kho Nhân Tài (Re-pool)"])
+            UC18(["UC-18: Quản trị người dùng & Phân bổ vai trò"])
+            UC19(["UC-19: Xuất báo cáo dữ liệu CSV / Excel"])
+            UC20(["UC-20: Tự động gửi thư từ chối sau đệm hoãn 12 giờ"])
+        end
+    end
+
+    %% ASSOCIATIONS: CANDIDATE
+    Candidate --> UC01
+    Candidate --> UC02
+    Candidate --> UC03
+
+    %% ASSOCIATIONS: HR RECRUITER
+    Recruiter --> UC06
+    Recruiter --> UC07
+    Recruiter --> UC08
+    Recruiter --> UC11
+    Recruiter --> UC12
+    Recruiter --> UC13
+    Recruiter --> UC17
+    Recruiter --> UC19
+
+    %% ASSOCIATIONS: HIRING MANAGER
+    HiringMgr --> UC06
+    HiringMgr --> UC07
+    HiringMgr --> UC08
+    HiringMgr --> UC12
+    HiringMgr --> UC13
+    HiringMgr --> UC15
+    HiringMgr --> UC16
+
+    %% ASSOCIATIONS: ADMIN
+    Admin --> UC06
+    Admin --> UC18
+    Admin --> UC19
+    Admin --> UC07
+    Admin --> UC17
+
+    %% ASSOCIATIONS: SYSTEM ACTORS
+    AIEngine --> UC04
+    AIEngine --> UC10
+    AutoService --> UC14
+    AutoService --> UC20
+
+    %% INCLUDE & EXTEND DEPENDENCIES
+    UC02 -.->|<<include>>| UC05
+    UC02 -.->|<<include>>| UC09
+    UC04 -.->|<<extend>>| UC02
+
+    UC07 -.->|<<include>>| UC10
+    UC11 -.->|<<extend>>| UC07
+
+    UC12 -.->|<<extend>>| UC08
+    UC12 -.->|<<include>>| UC20
+
+    UC13 -.->|<<include>>| UC14
+    UC16 -.->|<<include>>| UC15
+
+    %% STYLING
+    classDef actor fill:#EEF2FF,stroke:#4F46E5,stroke-width:2px;
+    classDef boundary fill:#F8FAFC,stroke:#64748B,stroke-width:2px;
+    classDef uc fill:#FFFFFF,stroke:#0284C7,stroke-width:1.5px;
+    class Candidate,Recruiter,HiringMgr,Admin,AIEngine,AutoService actor;
+    class UC01,UC02,UC03,UC04,UC05,UC06,UC07,UC08,UC09,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18,UC19,UC20 uc;

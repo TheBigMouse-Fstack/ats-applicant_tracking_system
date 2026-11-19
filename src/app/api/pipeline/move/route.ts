@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { validateStageTransition } from "@/lib/stage-rules";
 import { evaluateHeadcountGate } from "@/lib/headcount-rules";
+import { dispatchN8NRejectionEmail } from "@/lib/n8n";
 
 export async function POST(req: Request) {
   try {
@@ -180,6 +181,51 @@ export async function POST(req: Request) {
     }
 
     const [updatedApp] = await prisma.$transaction(txOps);
+
+    // 5. Tự động hóa Workflow 3: Kích hoạt hoặc hủy đệm hoãn 12 giờ thư từ chối (BRL-05)
+    if (toStage === "REJECTED" && emailScheduledAt) {
+      try {
+        await dispatchN8NRejectionEmail({
+          event: "REJECTION_SCHEDULED",
+          applicationId: app.id,
+          candidate: {
+            fullName: app.candidate.fullName,
+            email: app.candidate.email,
+          },
+          job: {
+            title: app.job.title,
+            department: app.job.department,
+          },
+          rejectionReason: savedRejectionReason || "Chưa phù hợp ở thời điểm hiện tại",
+          scheduledSendAt: emailScheduledAt.toISOString(),
+          delayHours: 12,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (rejErr) {
+        console.warn("Auto Rejection webhook warning:", rejErr);
+      }
+    } else if (fromStage === "REJECTED" && toStage !== "REJECTED") {
+      try {
+        await dispatchN8NRejectionEmail({
+          event: "REJECTION_CANCELLED",
+          applicationId: app.id,
+          candidate: {
+            fullName: app.candidate.fullName,
+            email: app.candidate.email,
+          },
+          job: {
+            title: app.job.title,
+            department: app.job.department,
+          },
+          rejectionReason: "",
+          scheduledSendAt: "",
+          delayHours: 0,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (rejErr) {
+        console.warn("Auto Rejection cancel webhook warning:", rejErr);
+      }
+    }
 
     return NextResponse.json({
       success: true,

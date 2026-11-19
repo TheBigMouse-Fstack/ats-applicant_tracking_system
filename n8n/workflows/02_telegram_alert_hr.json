@@ -1,0 +1,71 @@
+{
+  "name": "02_RecoverX_ATS_Telegram_Alert_HR",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram-alert",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook-telegram",
+      "name": "Webhook Tiếp Nhận Hồ Sơ Mới",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "telegram-alert"
+    },
+    {
+      "parameters": {
+        "chatId": "@Rec_Hr_rBot",
+        "text": "=🔔 [RECOVERX CAREER ATS] CÓ HỒ SƠ ỨNG VIÊN MỚI!\n\n👤 Họ tên: {{ $json.body.candidate.fullName }}\n💼 Vị trí: {{ $json.body.job.title }} ({{ $json.body.job.department }})\n🎯 Điểm AI Match: {{ $json.body.aiMatchScore || 0 }}%\n📧 Email: {{ $json.body.candidate.email }}\n📱 SĐT: {{ $json.body.candidate.phone }}\n🛠️ Kỹ năng trích xuất: {{ ($json.body.skills || []).join(', ') }}\n\n👉 Vui lòng truy cập ATS Pipeline để sàng lọc hồ sơ!",
+        "options": {}
+      },
+      "id": "node-telegram-bot",
+      "name": "Gửi Tin Nhắn Telegram @Rec_Hr_rBot",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã bắn tin nhắn thông báo Telegram cho HR (@Rec_Hr_rBot) thành công!\",\n  \"candidate\": \"{{ $('Webhook Tiếp Nhận Hồ Sơ Mới').item.json.body.candidate.fullName }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-telegram",
+      "name": "Phản Hồi Webhook HTTP 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Tiếp Nhận Hồ Sơ Mới": {
+      "main": [
+        [
+          {
+            "node": "Gửi Tin Nhắn Telegram @Rec_Hr_rBot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi Tin Nhắn Telegram @Rec_Hr_rBot": {
+      "main": [
+        [
+          {
+            "node": "Phản Hồi Webhook HTTP 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}

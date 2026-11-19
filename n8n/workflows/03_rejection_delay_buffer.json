@@ -1,0 +1,88 @@
+{
+  "name": "03_RecoverX_ATS_Rejection_Delay_Buffer_12h",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rejection-buffer",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook-rejection",
+      "name": "Webhook Tiếp Nhận Trạng Thái Từ Chối",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "rejection-buffer"
+    },
+    {
+      "parameters": {
+        "amount": 12,
+        "unit": "hours"
+      },
+      "id": "node-delay-buffer-12h",
+      "name": "Bộ Đệm Chờ 12 Giờ (BRL-05 Buffer)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [480, 200]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook Tiếp Nhận Trạng Thái Từ Chối').item.json.body.candidate.email }}",
+        "subject": "=Thông Báo Kết Quả Tuyển Dụng Vị Trí {{ $('Webhook Tiếp Nhận Trạng Thái Từ Chối').item.json.body.job.title }} — RecoverX",
+        "message": "=Chào bạn {{ $('Webhook Tiếp Nhận Trạng Thái Từ Chối').item.json.body.candidate.fullName }},\n\nBan Tuyển dụng RecoverX chân thành cảm ơn sự quan tâm và thời gian bạn đã dành để ứng tuyển cho vị trí {{ $('Webhook Tiếp Nhận Trạng Thái Từ Chối').item.json.body.job.title }}.\n\nSau khi xem xét kỹ lưỡng hồ sơ, chúng tôi rất tiếc phải thông báo rằng hiện tại hồ sơ của bạn chưa phù hợp với các tiêu chí ưu tiên của đợt tuyển dụng này.\n\nThông tin của bạn đã được lưu giữ cẩn trọng trong Kho Nhân Tài (Talent Pool) của công ty. Khi có các cơ hội nghề nghiệp phù hợp hơn trong tương lai, chúng tôi sẽ chủ động liên hệ lại với bạn.\n\nChúc bạn luôn nhiều sức khỏe và gặt hái nhiều thành công trên con đường sự nghiệp!\n\nTrân trọng,\nBan Tuyển dụng RecoverX",
+        "options": {}
+      },
+      "id": "node-gmail-rejection",
+      "name": "Gửi Gmail Từ Chối Lịch Sự",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [720, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã tiếp nhận yêu cầu đệm hoãn 12 giờ cho ứng viên {{ $('Webhook Tiếp Nhận Trạng Thái Từ Chối').item.json.body.candidate.fullName }}. Email từ chối sẽ tự động gửi sau 12 giờ.\",\n  \"scheduledSendAt\": \"{{ $('Webhook Tiếp Nhận Trạng Thái Từ Chối').item.json.body.scheduledSendAt }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-rejection",
+      "name": "Phản Hồi Webhook Tiếp Nhận Thành Công",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [480, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Tiếp Nhận Trạng Thái Từ Chối": {
+      "main": [
+        [
+          {
+            "node": "Bộ Đệm Chờ 12 Giờ (BRL-05 Buffer)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Phản Hồi Webhook Tiếp Nhận Thành Công",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bộ Đệm Chờ 12 Giờ (BRL-05 Buffer)": {
+      "main": [
+        [
+          {
+            "node": "Gửi Gmail Từ Chối Lịch Sự",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}
