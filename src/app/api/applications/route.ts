@@ -67,10 +67,45 @@ export async function GET(req: Request) {
 
     const applications = await prisma.application.findMany({
       where,
-      include: {
-        candidate: true,
-        job: true,
-        evaluations: true,
+      select: {
+        id: true,
+        candidateId: true,
+        jobId: true,
+        source: true,
+        currentStage: true,
+        aiMatchScore: true,
+        aiMatchRationale: true,
+        isStarred: true,
+        isViewed: true,
+        viewedAt: true,
+        stageUpdatedAt: true,
+        createdAt: true,
+        candidate: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            experienceYears: true,
+            parsedSkills: true,
+            createdAt: true,
+          },
+        },
+        job: {
+          select: {
+            id: true,
+            title: true,
+            department: true,
+            status: true,
+          },
+        },
+        evaluations: {
+          select: {
+            id: true,
+            overallScore: true,
+            recommendation: true,
+          },
+        },
       },
       orderBy,
     });

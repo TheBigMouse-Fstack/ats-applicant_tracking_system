@@ -453,9 +453,17 @@ export default function KanbanBoard() {
       <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Quy Trình Tuyển Dụng
-            </h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                Quy Trình Tuyển Dụng
+              </h1>
+              {loading && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-semibold border border-brand-200 animate-pulse">
+                  <RefreshCw className="w-3 h-3 animate-spin text-brand-600" />
+                  <span>Đang tải dữ liệu...</span>
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 mt-0.5">
               {currentUser?.role === "HR"
                 ? "Phạm vi HR: Sơ loại hồ sơ mới và chuyển tối đa đến Sàng lọc tiêu chuẩn."
@@ -542,7 +550,12 @@ export default function KanbanBoard() {
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              <span>Chưa xem ({columns.NEW?.filter((c: any) => !c.isViewed).length || 0})</span>
+              <span>
+                Chưa xem{" "}
+                {loading
+                  ? "(...)"
+                  : `(${columns.NEW?.filter((c: any) => !c.isViewed).length || 0})`}
+              </span>
             </button>
 
             {/* Lọc nhanh vi phạm SLA */}
@@ -758,7 +771,13 @@ export default function KanbanBoard() {
                       className={`px-2 py-0.5 rounded-full text-[11px] font-black border ${col.badgeColor}`}
                       title={`Đang hiển thị ${displayedItems.length} trên tổng số ${count} hồ sơ`}
                     >
-                      {displayedItems.length < count ? `${displayedItems.length}/${count}` : count}
+                      {loading ? (
+                        <span className="inline-block w-4 h-2.5 bg-slate-300/80 rounded animate-pulse" />
+                      ) : displayedItems.length < count ? (
+                        `${displayedItems.length}/${count}`
+                      ) : (
+                        count
+                      )}
                     </span>
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">
@@ -778,7 +797,26 @@ export default function KanbanBoard() {
                           : ""
                       }`}
                     >
-                      {displayedItems.length === 0 ? (
+                      {loading ? (
+                        <div className="space-y-2.5">
+                          {[1, 2, 3].map((n) => (
+                            <div
+                              key={n}
+                              className="rounded-xl border border-slate-200/80 p-3.5 bg-white space-y-2.5 animate-pulse"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="h-4 w-28 bg-slate-200 rounded-md" />
+                                <div className="h-3.5 w-3.5 bg-slate-100 rounded-full" />
+                              </div>
+                              <div className="h-3 w-36 bg-slate-100 rounded-md" />
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                                <div className="h-4 w-12 bg-slate-100 rounded-md" />
+                                <div className="h-3 w-14 bg-slate-100 rounded-md" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : displayedItems.length === 0 ? (
                         <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
                           <Users className="w-6 h-6 text-slate-300 mb-1" />
                           <p className="text-xs font-semibold text-slate-500">

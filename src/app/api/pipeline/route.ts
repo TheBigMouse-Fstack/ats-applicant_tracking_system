@@ -93,7 +93,16 @@ export async function GET(req: Request) {
     const applications = await prisma.application.findMany({
       where: whereClause,
       include: {
-        candidate: true,
+        candidate: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            experienceYears: true,
+            parsedSkills: true,
+          },
+        },
         job: {
           select: {
             id: true,

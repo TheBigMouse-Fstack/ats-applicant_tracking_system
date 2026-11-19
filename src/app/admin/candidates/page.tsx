@@ -142,7 +142,14 @@ export default function CandidatesListPage() {
               Danh Sách Ứng Viên
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              {candidates.length} hồ sơ ứng viên
+              {loading ? (
+                <span className="inline-flex items-center gap-1.5 text-brand-600 font-medium animate-pulse">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>Đang tải danh sách ứng viên...</span>
+                </span>
+              ) : (
+                `${candidates.length} hồ sơ ứng viên`
+              )}
             </p>
           </div>
 
@@ -299,12 +306,41 @@ export default function CandidatesListPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-brand-600" />
-                    Đang tải danh sách ứng viên...
-                  </td>
-                </tr>
+                Array.from({ length: 6 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-4 px-3 text-center">
+                      <div className="w-4 h-4 bg-slate-200 rounded-full mx-auto" />
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="space-y-1.5">
+                        <div className="h-4 w-36 bg-slate-200 rounded-md" />
+                        <div className="h-3 w-48 bg-slate-100 rounded-md" />
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="space-y-1.5">
+                        <div className="h-4 w-40 bg-slate-200 rounded-md" />
+                        <div className="h-3 w-20 bg-slate-100 rounded-md" />
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex gap-1.5">
+                        <div className="h-5 w-14 bg-slate-100 rounded-md" />
+                        <div className="h-5 w-16 bg-slate-100 rounded-md" />
+                        <div className="h-5 w-12 bg-slate-100 rounded-md" />
+                      </div>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <div className="h-5 w-14 bg-slate-100 rounded-full mx-auto" />
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <div className="h-5 w-20 bg-slate-100 rounded-full mx-auto" />
+                    </td>
+                    <td className="py-4 px-3 text-right">
+                      <div className="w-4 h-4 bg-slate-100 rounded mx-auto" />
+                    </td>
+                  </tr>
+                ))
               ) : candidates.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
