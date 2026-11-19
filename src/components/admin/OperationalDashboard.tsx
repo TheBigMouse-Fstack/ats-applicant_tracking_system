@@ -26,6 +26,7 @@ import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import { formatDateTime } from "@/lib/utils";
 import { getAiMatchTier } from "@/lib/match-score";
 import { useLanguage } from "@/lib/i18n";
+import { clientCache } from "@/lib/client-cache";
 
 interface QueueCandidateItem {
   id: number;
@@ -177,9 +178,14 @@ export default function OperationalDashboard() {
   const [hmTab, setHmTab] = useState<"SCREENING" | "SCORECARD">("SCREENING");
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
 
-  const fetchDashboard = useCallback(async () => {
+  const fetchDashboard = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        setData((prev) => {
+          if (!prev) setLoading(true);
+          return prev;
+        });
+      }
       setError(null);
       const res = await fetch("/api/dashboard", { cache: "no-store" });
       const json = await res.json();
@@ -188,6 +194,7 @@ export default function OperationalDashboard() {
         return;
       }
       setData(json.data);
+      clientCache.set("dashboard_data", json.data);
     } catch {
       setError("Lỗi kết nối máy chủ khi tải dữ liệu tổng quan.");
     } finally {
@@ -196,7 +203,14 @@ export default function OperationalDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchDashboard();
+    const cached = clientCache.getStale<any>("dashboard_data");
+    if (cached) {
+      setData(cached);
+      setLoading(false);
+      fetchDashboard(true);
+    } else {
+      fetchDashboard(false);
+    }
   }, [fetchDashboard]);
 
   const handleStageChange = async (
@@ -247,7 +261,7 @@ export default function OperationalDashboard() {
           <h2 className="text-base font-bold text-slate-900">Không thể tải dữ liệu</h2>
           <p className="text-xs text-slate-500 mt-1">{error}</p>
           <button
-            onClick={fetchDashboard}
+            onClick={() => fetchDashboard()}
             className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -744,7 +758,7 @@ export default function OperationalDashboard() {
           applicationId={selectedAppId}
           onClose={() => {
             setSelectedAppId(null);
-            fetchDashboard();
+            fetchDashboard(true);
           }}
           onStageChange={handleStageChange}
         />

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { clientCache } from "@/lib/client-cache";
 import {
   X,
   Sparkles,
@@ -136,11 +137,46 @@ export default function CandidateDrawer({
     // session provided by useSession()
   }, []);
 
-  // Tải chi tiết hồ sơ
+  // Helper chuẩn hóa dữ liệu hồ sơ vào form state
+  const initApplicationState = useCallback((appData: any) => {
+    setData(appData);
+    if (appData.interviewDate) {
+      setIsEditingSchedule(false);
+      const d = new Date(appData.interviewDate);
+      const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      setInterviewDate(iso);
+      setInterviewFormat(appData.interviewFormat || "ONLINE");
+      setInterviewLocation(appData.interviewLocation || "");
+      setInterviewNotes(appData.interviewNotes || "");
+      setInterviewInterviewerNotes(appData.interviewInterviewerNotes || "");
+      setInterviewPostNotes(appData.interviewPostNotes || "");
+      setInterviewEmailOption(appData.interviewEmailOption || "AUTO_N8N");
+      setCustomEmailSubject(appData.customEmailSubject || "");
+      setCustomEmailBody(appData.customEmailBody || "");
+    } else {
+      setIsEditingSchedule(true);
+      const defDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      defDate.setHours(9, 0, 0, 0);
+      const iso = new Date(defDate.getTime() - defDate.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
+      setInterviewDate(iso);
+      setInterviewFormat("ONLINE");
+      setInterviewLocation("https://meet.google.com/xyz-recoverx-meet");
+      setInterviewNotes(
+        "Vui lòng chuẩn bị slide giới thiệu bản thân và kiểm tra micro/camera trước 5 phút."
+      );
+      setInterviewInterviewerNotes(appData.interviewInterviewerNotes || "");
+      setInterviewPostNotes(appData.interviewPostNotes || "");
+    }
+  }, []);
+
+  // Tải chi tiết hồ sơ (Tích hợp Client Cache & SWR: Hiển thị ngay 0ms nếu đã có cache)
   useEffect(() => {
     if (!applicationId) return;
 
-    setLoading(true);
     setActionError("");
     setReparseNotice(null);
     setInterviewSuccessEmail(null);
@@ -149,47 +185,27 @@ export default function CandidateDrawer({
     setIsEditingProfile(false);
     setIsRejectModalOpen(false);
 
+    // 1. Kiểm tra cache: Nếu từng mở hồ sơ này, mở ra ngay lập tức (0ms delay)
+    const cached = clientCache.getStale<any>(`app_detail_${applicationId}`);
+    if (cached) {
+      initApplicationState(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    // 2. Tải ngầm bản mới nhất từ API để cập nhật dữ liệu mới nhất
     fetch(`/api/applications/${applicationId}`)
       .then((res) => res.json())
       .then((res) => {
         if (res.success) {
-          setData(res.data);
-          if (res.data.interviewDate) {
-            setIsEditingSchedule(false);
-            const d = new Date(res.data.interviewDate);
-            const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-              .toISOString()
-              .slice(0, 16);
-            setInterviewDate(iso);
-            setInterviewFormat(res.data.interviewFormat || "ONLINE");
-            setInterviewLocation(res.data.interviewLocation || "");
-            setInterviewNotes(res.data.interviewNotes || "");
-            setInterviewInterviewerNotes(res.data.interviewInterviewerNotes || "");
-            setInterviewPostNotes(res.data.interviewPostNotes || "");
-            setInterviewEmailOption(res.data.interviewEmailOption || "AUTO_N8N");
-            setCustomEmailSubject(res.data.customEmailSubject || "");
-            setCustomEmailBody(res.data.customEmailBody || "");
-          } else {
-            setIsEditingSchedule(true);
-            const defDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-            defDate.setHours(9, 0, 0, 0);
-            const iso = new Date(defDate.getTime() - defDate.getTimezoneOffset() * 60000)
-              .toISOString()
-              .slice(0, 16);
-            setInterviewDate(iso);
-            setInterviewFormat("ONLINE");
-            setInterviewLocation("https://meet.google.com/xyz-recoverx-meet");
-            setInterviewNotes(
-              "Vui lòng chuẩn bị slide giới thiệu bản thân và kiểm tra micro/camera trước 5 phút."
-            );
-            setInterviewInterviewerNotes(res.data.interviewInterviewerNotes || "");
-            setInterviewPostNotes(res.data.interviewPostNotes || "");
-          }
+          clientCache.set(`app_detail_${applicationId}`, res.data);
+          initApplicationState(res.data);
         }
       })
       .catch((e) => console.error(e))
       .finally(() => setLoading(false));
-  }, [applicationId]);
+  }, [applicationId, initApplicationState]);
 
   if (!applicationId) return null;
 

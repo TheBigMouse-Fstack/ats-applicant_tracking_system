@@ -14,6 +14,7 @@ import { ToastNotification } from "@/components/common/Toast";
 import { canRoleDragFromStage, validateStageTransition } from "@/lib/stage-rules";
 import { useLanguage } from "@/lib/i18n";
 import { useSession } from "@/contexts/SessionContext";
+import { clientCache } from "@/lib/client-cache";
 import {
   Search,
   Filter,
@@ -198,15 +199,22 @@ export default function KanbanBoard() {
     });
   }, [selectedJobId, debouncedSearch, sortBy, showStarredOnly, showUnviewedOnly, showSlaOnly, showHighMatchOnly]);
 
+  const cacheKey = `pipeline_${selectedJobId}_${debouncedSearch}_${sortBy}_${showStarredOnly}_${showUnviewedOnly}_${showSlaOnly}_${showHighMatchOnly}`;
+
   useEffect(() => {
     setIsMounted(true);
-    // session provided by useSession()
   }, []);
 
-  // Fetch Pipeline Data
-  const fetchPipeline = useCallback(async () => {
+  // Fetch Pipeline Data (Hỗ trợ Silent Background Refresh để không bị giật Skeleton)
+  const fetchPipeline = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        setColumns((prev) => {
+          const hasExistingCards = Object.values(prev).some((arr) => arr && arr.length > 0);
+          if (!hasExistingCards) setLoading(true);
+          return prev;
+        });
+      }
       const params = new URLSearchParams();
       if (selectedJobId && selectedJobId !== "ALL") {
         params.append("jobId", selectedJobId);
@@ -234,15 +242,25 @@ export default function KanbanBoard() {
       const data = await res.json();
 
       if (data.success) {
-        setJobs(data.jobs || []);
-        setColumns(data.columns || {
+        const newJobs = data.jobs || [];
+        const newCols = data.columns || {
           NEW: [],
           SCREENING: [],
           INTERVIEW: [],
           HIRED: [],
           REJECTED: [],
+        };
+        const newStats = data.stats || {};
+        setJobs(newJobs);
+        setColumns(newCols);
+        setStats(newStats);
+
+        // Lưu vào Client Cache
+        clientCache.set(cacheKey, {
+          jobs: newJobs,
+          columns: newCols,
+          stats: newStats,
         });
-        setStats(data.stats || {});
       } else {
         setAlertError(data.error || "Không thể tải dữ liệu tuyển dụng.");
       }
@@ -252,7 +270,7 @@ export default function KanbanBoard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedJobId, debouncedSearch, sortBy, showStarredOnly, showUnviewedOnly, showSlaOnly, showHighMatchOnly]);
+  }, [selectedJobId, debouncedSearch, sortBy, showStarredOnly, showUnviewedOnly, showSlaOnly, showHighMatchOnly, cacheKey]);
 
   // Xử lý bật/tắt gắn sao nhanh (Gmail star toggle)
   const handleToggleStar = async (appId: number) => {
@@ -271,18 +289,29 @@ export default function KanbanBoard() {
       const res = await fetch(`/api/applications/${appId}/star`, { method: "POST" });
       const data = await res.json();
       if (!data.success) {
-        fetchPipeline();
+        fetchPipeline(true);
       }
     } catch {
-      fetchPipeline();
+      fetchPipeline(true);
     }
   };
 
   useEffect(() => {
     if (isMounted) {
-      fetchPipeline();
+      // 1. Kiểm tra Cache trước: nếu có dữ liệu lưu tạm, hiển thị ngay lập tức (0ms)!
+      const cached = clientCache.getStale<any>(cacheKey);
+      if (cached) {
+        if (cached.jobs) setJobs(cached.jobs);
+        if (cached.columns) setColumns(cached.columns);
+        if (cached.stats) setStats(cached.stats);
+        setLoading(false);
+        // Tải ngầm cập nhật lại trong nền
+        fetchPipeline(true);
+      } else {
+        fetchPipeline(false);
+      }
     }
-  }, [isMounted, fetchPipeline]);
+  }, [isMounted, fetchPipeline, cacheKey]);
 
   // Stage change logic (used both by Drag-Drop and CandidateDrawer)
   const handleMoveStage = async (
@@ -329,8 +358,9 @@ export default function KanbanBoard() {
         setAlertSuccess(result.message);
       }
 
-      // Re-fetch để đồng bộ lại toàn bộ thống kê, chỉ tiêu và SLA
-      await fetchPipeline();
+      // Re-fetch để đồng bộ lại toàn bộ thống kê, chỉ tiêu và SLA ngầm (Silent sync)
+      clientCache.invalidate("pipeline_");
+      await fetchPipeline(true);
       return true;
     } catch (err: any) {
       const msg = err.message || "Lỗi hệ thống khi cập nhật trạng thái.";
@@ -862,7 +892,8 @@ export default function KanbanBoard() {
         applicationId={selectedAppId}
         onClose={() => {
           setSelectedAppId(null);
-          fetchPipeline();
+          // Silent refresh ngầm trong nền: giữ nguyên giao diện thẻ, không bao giờ nhấp nháy Skeleton!
+          fetchPipeline(true);
         }}
         onStageChange={async (appId, toStage, rejectionReason) => {
           const res = await handleMoveStage(appId, toStage, rejectionReason);
@@ -875,7 +906,8 @@ export default function KanbanBoard() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={() => {
-          fetchPipeline();
+          clientCache.invalidate("pipeline_");
+          fetchPipeline(false);
           setAlertSuccess("Tiếp nhận hồ sơ ứng viên thành công!");
         }}
         defaultJobId={selectedJobId !== "ALL" ? Number(selectedJobId) : null}

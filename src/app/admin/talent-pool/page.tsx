@@ -22,6 +22,7 @@ import {
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import { getAiMatchTier } from "@/lib/match-score";
 import { useSession } from "@/contexts/SessionContext";
+import { clientCache } from "@/lib/client-cache";
 
 export default function TalentPoolPage() {
   const { user: currentUser } = useSession();
@@ -82,10 +83,17 @@ export default function TalentPoolPage() {
     }
   };
 
+  const cacheKey = `talent_pool_${search.trim()}_${selectedJobId}_${selectedPoolStatus}_${sortBy}_${starredOnly}`;
+
   // Fetch Talent Pool candidates
-  const fetchTalentPool = useCallback(async () => {
+  const fetchTalentPool = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        setData((prev) => {
+          if (!prev || prev.length === 0) setLoading(true);
+          return prev;
+        });
+      }
       const params = new URLSearchParams();
       if (search.trim()) params.append("search", search.trim());
       if (selectedJobId !== "ALL") params.append("jobId", selectedJobId);
@@ -96,19 +104,28 @@ export default function TalentPoolPage() {
       const res = await fetch(`/api/talent-pool?${params.toString()}`);
       const resData = await res.json();
       if (resData.success) {
-        setData(resData.data || []);
+        const list = resData.data || [];
+        setData(list);
+        clientCache.set(cacheKey, list);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [search, selectedJobId, selectedPoolStatus, sortBy, starredOnly]);
+  }, [search, selectedJobId, selectedPoolStatus, sortBy, starredOnly, cacheKey]);
 
   useEffect(() => {
     fetchJobs();
-    fetchTalentPool();
-  }, [fetchTalentPool]);
+    const cached = clientCache.getStale<any[]>(cacheKey);
+    if (cached && cached.length > 0) {
+      setData(cached);
+      setLoading(false);
+      fetchTalentPool(true);
+    } else {
+      fetchTalentPool(false);
+    }
+  }, [fetchTalentPool, cacheKey]);
 
   // BRL-10: Mô phỏng quét dữ liệu quá hạn
   const handleSimulatePurge = async (days = purgeDays) => {
@@ -715,7 +732,7 @@ export default function TalentPoolPage() {
         applicationId={drawerAppId}
         onClose={() => {
           setDrawerAppId(null);
-          fetchTalentPool();
+          fetchTalentPool(true);
         }}
         onStageChange={async (appId, toStage, rejectionReason) => {
           try {

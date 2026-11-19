@@ -16,6 +16,7 @@ import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 import { getAiMatchTier } from "@/lib/match-score";
 import { useSession } from "@/contexts/SessionContext";
 import { useLanguage } from "@/lib/i18n";
+import { clientCache } from "@/lib/client-cache";
 
 interface JobOption {
   id: number;
@@ -67,9 +68,16 @@ export default function CandidatesListPage() {
       .catch(() => {});
   }, []);
 
-  const fetchCandidates = useCallback(async () => {
+  const cacheKey = `candidates_${search.trim()}_${selectedJobId}_${selectedStage}_${sortBy}_${quickFilter}`;
+
+  const fetchCandidates = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        setCandidates((prev) => {
+          if (!prev || prev.length === 0) setLoading(true);
+          return prev;
+        });
+      }
       const params = new URLSearchParams();
       if (search.trim()) params.append("search", search.trim());
       if (selectedJobId !== "ALL") params.append("jobId", selectedJobId);
@@ -81,18 +89,28 @@ export default function CandidatesListPage() {
       const res = await fetch(`/api/applications?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
-        setCandidates(data.data || []);
+        const list = data.data || [];
+        setCandidates(list);
+        clientCache.set(cacheKey, list);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [search, selectedJobId, selectedStage, sortBy, quickFilter]);
+  }, [search, selectedJobId, selectedStage, sortBy, quickFilter, cacheKey]);
 
   useEffect(() => {
-    fetchCandidates();
-  }, [fetchCandidates]);
+    // Kiểm tra cache: hiển thị ngay lập tức nếu có, sau đó revalidate ngầm
+    const cached = clientCache.getStale<any[]>(cacheKey);
+    if (cached && cached.length > 0) {
+      setCandidates(cached);
+      setLoading(false);
+      fetchCandidates(true);
+    } else {
+      fetchCandidates(false);
+    }
+  }, [fetchCandidates, cacheKey]);
 
   const handleToggleStar = async (appId: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -484,7 +502,7 @@ export default function CandidatesListPage() {
           applicationId={selectedAppId}
           onClose={() => {
             setSelectedAppId(null);
-            fetchCandidates();
+            fetchCandidates(true);
           }}
           onStageChange={handleStageChange}
         />
