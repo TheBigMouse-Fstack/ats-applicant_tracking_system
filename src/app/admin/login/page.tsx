@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   Briefcase,
   Lock,
@@ -61,14 +60,14 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-brand-50/20 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Brand & Heading */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
-          <div className="w-12 h-12 rounded-2xl bg-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
+        <div className="inline-flex items-center gap-2.5 mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/25">
             <Briefcase className="w-6 h-6" />
           </div>
           <span className="text-2xl font-bold text-slate-900 tracking-tight">
             ATS
           </span>
-        </Link>
+        </div>
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
           Applicant Tracking System
         </h2>
@@ -190,15 +189,6 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
-
-          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-            <Link
-              href="/jobs"
-              className="text-xs font-medium text-slate-500 hover:text-brand-600 transition-colors"
-            >
-              ← Quay lại Cổng việc làm công khai
-            </Link>
-          </div>
         </div>
 
         <p className="mt-4 text-center text-xs text-slate-400">
