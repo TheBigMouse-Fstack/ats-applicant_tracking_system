@@ -8,9 +8,9 @@ async function main() {
   // 1. Tạo tài khoản HR / Admin
   const hrUser = await prisma.user.upsert({
     where: { email: "hr@recoverx.career" },
-    update: {},
+    update: { fullName: "Nguyễn Thu Hà" },
     create: {
-      fullName: "Nguyễn Thu Hà (Lead HR)",
+      fullName: "Nguyễn Thu Hà",
       email: "hr@recoverx.career",
       passwordHash: "hashed_password_123",
       role: "HR",
@@ -20,9 +20,9 @@ async function main() {
 
   const hiringManager = await prisma.user.upsert({
     where: { email: "techlead@recoverx.career" },
-    update: {},
+    update: { fullName: "Trần Minh Quân" },
     create: {
-      fullName: "Trần Minh Quân (Engineering Lead)",
+      fullName: "Trần Minh Quân",
       email: "techlead@recoverx.career",
       passwordHash: "hashed_password_123",
       role: "HIRING_MANAGER",

@@ -101,10 +101,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Tạo người dùng mới
+    // Tạo người dùng mới (tự động lọc bỏ các ghi chú chức danh trong ngoặc đơn nếu có)
+    const cleanFullName = fullName.replace(/\s*\(.*?\)\s*/g, " ").trim();
     const newUser = await prisma.user.create({
       data: {
-        fullName: fullName.trim(),
+        fullName: cleanFullName,
         email: email.toLowerCase().trim(),
         passwordHash: hashPassword(password), // Băm an toàn chuẩn NIST PBKDF2-SHA512 (NFR-SEC-02)
         role: role.toUpperCase(),

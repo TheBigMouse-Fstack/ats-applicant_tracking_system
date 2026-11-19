@@ -17,9 +17,9 @@ async function main() {
   // 1. admin@ats.vn & admin@recoverx.career
   await prisma.user.upsert({
     where: { email: "admin@ats.vn" },
-    update: { passwordHash: hashPassword("Admin@123456"), isActive: true, role: "ADMIN" },
+    update: { passwordHash: hashPassword("Admin@123456"), isActive: true, role: "ADMIN", fullName: "Nguyễn Văn An" },
     create: {
-      fullName: "Nguyễn Văn An (Quản Trị Hệ Thống)",
+      fullName: "Nguyễn Văn An",
       email: "admin@ats.vn",
       passwordHash: hashPassword("Admin@123456"),
       role: "ADMIN",
@@ -29,9 +29,9 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "admin@recoverx.career" },
-    update: { passwordHash: hashPassword("Admin@123456"), isActive: true, role: "ADMIN" },
+    update: { passwordHash: hashPassword("Admin@123456"), isActive: true, role: "ADMIN", fullName: "Nguyễn Văn An" },
     create: {
-      fullName: "Nguyễn Văn An (Quản Trị Hệ Thống)",
+      fullName: "Nguyễn Văn An",
       email: "admin@recoverx.career",
       passwordHash: hashPassword("Admin@123456"),
       role: "ADMIN",
@@ -42,9 +42,9 @@ async function main() {
   // 2. hr@ats.vn & hr@recoverx.career
   await prisma.user.upsert({
     where: { email: "hr@ats.vn" },
-    update: { passwordHash: hashPassword("Hr@123456"), isActive: true, role: "HR" },
+    update: { passwordHash: hashPassword("Hr@123456"), isActive: true, role: "HR", fullName: "Nguyễn Thu Hà" },
     create: {
-      fullName: "Nguyễn Thu Hà (Trưởng Phòng Tuyển Dụng)",
+      fullName: "Nguyễn Thu Hà",
       email: "hr@ats.vn",
       passwordHash: hashPassword("Hr@123456"),
       role: "HR",
@@ -54,9 +54,9 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "hr@recoverx.career" },
-    update: { passwordHash: hashPassword("Hr@123456"), isActive: true, role: "HR" },
+    update: { passwordHash: hashPassword("Hr@123456"), isActive: true, role: "HR", fullName: "Nguyễn Thu Hà" },
     create: {
-      fullName: "Nguyễn Thu Hà (Trưởng Phòng Tuyển Dụng)",
+      fullName: "Nguyễn Thu Hà",
       email: "hr@recoverx.career",
       passwordHash: hashPassword("Hr@123456"),
       role: "HR",
@@ -67,9 +67,9 @@ async function main() {
   // 3. manager@ats.vn & techlead@recoverx.career
   await prisma.user.upsert({
     where: { email: "manager@ats.vn" },
-    update: { passwordHash: hashPassword("Manager@123456"), isActive: true, role: "HIRING_MANAGER" },
+    update: { passwordHash: hashPassword("Manager@123456"), isActive: true, role: "HIRING_MANAGER", fullName: "Trần Minh Quân" },
     create: {
-      fullName: "Trần Minh Quân (Engineering Lead)",
+      fullName: "Trần Minh Quân",
       email: "manager@ats.vn",
       passwordHash: hashPassword("Manager@123456"),
       role: "HIRING_MANAGER",
@@ -79,9 +79,9 @@ async function main() {
 
   await prisma.user.upsert({
     where: { email: "techlead@recoverx.career" },
-    update: { passwordHash: hashPassword("Manager@123456"), isActive: true, role: "HIRING_MANAGER" },
+    update: { passwordHash: hashPassword("Manager@123456"), isActive: true, role: "HIRING_MANAGER", fullName: "Trần Minh Quân" },
     create: {
-      fullName: "Trần Minh Quân (Engineering Lead)",
+      fullName: "Trần Minh Quân",
       email: "techlead@recoverx.career",
       passwordHash: hashPassword("Manager@123456"),
       role: "HIRING_MANAGER",
