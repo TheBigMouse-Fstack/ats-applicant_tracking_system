@@ -42,13 +42,14 @@ export interface UploadResult {
 export async function uploadCvFile(
   safeFileName: string,
   buffer: Buffer,
-  contentType: string = "application/pdf"
+  contentType: string = "application/pdf",
+  folder: string = "cvs"
 ): Promise<UploadResult> {
   const client = getFilesClient();
 
   if (client) {
     try {
-      const storageKey = `cvs/${safeFileName}`;
+      const storageKey = `${folder}/${safeFileName}`;
       await client.upload(storageKey, buffer, {
         contentType,
       });
@@ -65,18 +66,27 @@ export async function uploadCvFile(
   }
 
   // Fallback sang lưu trữ cục bộ (dành cho local development hoặc khi mất kết nối đám mây)
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  if (!existsSync(uploadDir)) {
-    await mkdir(uploadDir, { recursive: true });
-  }
-  const filePath = path.join(uploadDir, safeFileName);
-  await writeFile(filePath, buffer);
+  try {
+    const uploadDir = path.join(process.cwd(), "public", "uploads", folder === "cvs" ? "" : folder);
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
+    }
+    const filePath = path.join(uploadDir, safeFileName);
+    await writeFile(filePath, buffer);
 
-  return {
-    url: `/uploads/${safeFileName}`,
-    storageKey: safeFileName,
-    storageType: "LOCAL_DISK",
-  };
+    return {
+      url: folder === "cvs" ? `/uploads/${safeFileName}` : `/uploads/${folder}/${safeFileName}`,
+      storageKey: safeFileName,
+      storageType: "LOCAL_DISK",
+    };
+  } catch (fsErr) {
+    console.warn("Lưu trữ cục bộ không khả dụng (serverless read-only filesystem):", fsErr);
+    return {
+      url: `/uploads/${safeFileName}`,
+      storageKey: safeFileName,
+      storageType: "LOCAL_DISK",
+    };
+  }
 }
 
 /**
@@ -87,7 +97,7 @@ export async function getCvFile(
 ): Promise<{ buffer: Buffer; contentType: string } | null> {
   const client = getFilesClient();
 
-  if (client && storageKey.startsWith("cvs/")) {
+  if (client && (storageKey.startsWith("cvs/") || storageKey.startsWith("certificates/"))) {
     try {
       const downloaded = await client.download(storageKey);
       const arrayBuf = await downloaded.arrayBuffer();
@@ -96,6 +106,10 @@ export async function getCvFile(
         ? "application/pdf"
         : storageKey.endsWith(".docx")
         ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : storageKey.endsWith(".png")
+        ? "image/png"
+        : storageKey.endsWith(".jpg") || storageKey.endsWith(".jpeg")
+        ? "image/jpeg"
         : "application/octet-stream";
 
       return { buffer, contentType };

@@ -389,12 +389,6 @@ export async function POST(req: Request) {
     const newCertificates: any[] = [];
 
     if (certFiles && certFiles.length > 0) {
-      const uploadDir = path.join(process.cwd(), "public", "uploads");
-      const certDir = path.join(uploadDir, "certificates");
-      try {
-        await mkdir(certDir, { recursive: true });
-      } catch {}
-
       for (const certFile of certFiles) {
         if (!certFile || !(certFile instanceof File) || certFile.size === 0) continue;
         const cExt = certFile.name.slice(certFile.name.lastIndexOf(".")).toLowerCase();
@@ -403,14 +397,13 @@ export async function POST(req: Request) {
         if (certFile.size > 10 * 1024 * 1024) continue; // Tối đa 10MB
 
         const cSafeName = `cert_${Date.now()}_${path.basename(certFile.name).replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-        const cPath = path.join(certDir, cSafeName);
         const cBuffer = Buffer.from(await certFile.arrayBuffer());
-        await writeFile(cPath, cBuffer);
+        const certUploadResult = await uploadCvFile(cSafeName, cBuffer, certFile.type || "application/pdf", "certificates");
 
         newCertificates.push({
           id: `cert_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
           name: certFile.name,
-          fileUrl: `/uploads/certificates/${cSafeName}`,
+          fileUrl: certUploadResult.url,
           fileType: cExt === ".pdf" ? "pdf" : "image",
           size: certFile.size,
           uploadedAt: new Date().toISOString(),
