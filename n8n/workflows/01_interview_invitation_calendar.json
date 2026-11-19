@@ -12,8 +12,26 @@
       "name": "Webhook Tiếp Nhận Sự Kiện Phỏng Vấn",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 300],
+      "position": [200, 300],
       "webhookId": "interview-schedule"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.event }}",
+              "operation": "equal",
+              "value2": "INTERVIEW_CANCELLED"
+            }
+          ]
+        }
+      },
+      "id": "node-if-cancel",
+      "name": "Kiểm Tra Sự Kiện Hủy Lịch?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [440, 300]
     },
     {
       "parameters": {
@@ -22,12 +40,12 @@
           "value": "primary",
           "mode": "list"
         },
-        "start": "={{ $json.body.interview.date }}",
-        "end": "={{ new Date(new Date($json.body.interview.date).getTime() + 60*60*1000).toISOString() }}",
-        "summary": "=Phỏng vấn ứng viên: {{ $json.body.candidate.fullName }} — {{ $json.body.job.title }}",
-        "description": "=Họ tên ứng viên: {{ $json.body.candidate.fullName }}\nEmail: {{ $json.body.candidate.email }}\nSĐT: {{ $json.body.candidate.phone }}\nHình thức: {{ $json.body.interview.format }}\nĐịa điểm / Link họp: {{ $json.body.interview.location }}\nGhi chú: {{ $json.body.interview.notes || 'Không có' }}\nNgười phỏng vấn: {{ $json.body.interviewer.name }} ({{ $json.body.interviewer.email }})",
+        "start": "={{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.date }}",
+        "end": "={{ new Date(new Date($('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.date).getTime() + 60*60*1000).toISOString() }}",
+        "summary": "=Phỏng vấn ứng viên: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.fullName }} — {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.job.title }}",
+        "description": "=Họ tên ứng viên: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.fullName }}\nEmail: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.email }}\nSĐT: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.phone }}\nHình thức: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.format }}\nĐịa điểm / Link họp: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.location }}\nGhi chú: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.notes || 'Không có' }}\nNgười phỏng vấn: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interviewer.name }} ({{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interviewer.email }})",
         "attendees": [
-          "={{ $json.body.candidate.email }}"
+          "={{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.email }}"
         ],
         "options": {}
       },
@@ -35,7 +53,7 @@
       "name": "Tạo Sự Kiện Google Calendar",
       "type": "n8n-nodes-base.googleCalendar",
       "typeVersion": 1,
-      "position": [480, 200],
+      "position": [700, 180],
       "continueOnFail": true,
       "onError": "continueRegularOutput"
     },
@@ -50,28 +68,75 @@
       "name": "Gửi Gmail Thư Mời HTML",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2,
-      "position": [480, 400],
+      "position": [920, 180],
       "continueOnFail": true,
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Đã tự động gửi thư mời qua Gmail và đồng bộ Google Calendar thành công!\",\n  \"candidate\": \"{{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.fullName }}\",\n  \"interviewTime\": \"{{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.formattedTime }}\"\n}",
+        "responseBody": "={\n  \"success\": true,\n  \"event\": \"INTERVIEW_SCHEDULED\",\n  \"message\": \"Đã tự động gửi thư mời qua Gmail và đồng bộ Google Calendar thành công!\",\n  \"candidate\": \"{{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.fullName }}\",\n  \"interviewTime\": \"{{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.formattedTime }}\"\n}",
         "options": {
           "responseCode": 200
         }
       },
-      "id": "node-respond-webhook",
-      "name": "Phản Hồi Webhook HTTP 200",
+      "id": "node-respond-schedule",
+      "name": "Phản Hồi Webhook Lên Lịch 200",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [720, 300]
+      "position": [1140, 180]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.email }}",
+        "subject": "=Thông Báo Hủy Lịch Phỏng Vấn Vị Trí {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.job.title }} — RecoverX",
+        "message": "=Chào bạn {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.fullName }},\n\nBan Tuyển dụng RecoverX xin gửi thông báo lịch phỏng vấn cho vị trí {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.job.title }} đã được hủy bỏ.\n\n- Thời gian dự kiến ban đầu: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.formattedTime }}\n- Hình thức: {{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.interview.format === 'ONLINE' ? 'Trực tuyến' : 'Trực tiếp tại văn phòng' }}\n\nChúng tôi sẽ liên hệ lại với bạn nếu có kế hoạch phỏng vấn mới trong các đợt tuyển dụng tiếp theo.\nMọi thắc mắc bạn có thể phản hồi trực tiếp qua email này.\n\nTrân trọng,\nBan Tuyển dụng RecoverX",
+        "options": {}
+      },
+      "id": "node-gmail-cancel",
+      "name": "Gửi Gmail Thông Báo Hủy Lịch",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [700, 420],
+      "continueOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"event\": \"INTERVIEW_CANCELLED\",\n  \"message\": \"Đã tự động gửi thông báo hủy lịch phỏng vấn qua Gmail đến ứng viên thành công!\",\n  \"candidate\": \"{{ $('Webhook Tiếp Nhận Sự Kiện Phỏng Vấn').item.json.body.candidate.fullName }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "node-respond-cancel",
+      "name": "Phản Hồi Webhook Hủy Lịch 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [940, 420]
     }
   ],
   "connections": {
     "Webhook Tiếp Nhận Sự Kiện Phỏng Vấn": {
       "main": [
+        [
+          {
+            "node": "Kiểm Tra Sự Kiện Hủy Lịch?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kiểm Tra Sự Kiện Hủy Lịch?": {
+      "main": [
+        [
+          {
+            "node": "Gửi Gmail Thông Báo Hủy Lịch",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Tạo Sự Kiện Google Calendar",
@@ -96,7 +161,18 @@
       "main": [
         [
           {
-            "node": "Phản Hồi Webhook HTTP 200",
+            "node": "Phản Hồi Webhook Lên Lịch 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gửi Gmail Thông Báo Hủy Lịch": {
+      "main": [
+        [
+          {
+            "node": "Phản Hồi Webhook Hủy Lịch 200",
             "type": "main",
             "index": 0
           }

@@ -423,7 +423,10 @@ export async function DELETE(req: Request) {
     }
 
     const prevDate = app.interviewDate
-      ? new Date(app.interviewDate).toLocaleString("vi-VN")
+      ? new Date(app.interviewDate).toLocaleString("vi-VN", {
+          dateStyle: "full",
+          timeStyle: "short",
+        })
       : "";
 
     // Xóa lịch phỏng vấn và ghi AuditLog
@@ -437,6 +440,7 @@ export async function DELETE(req: Request) {
           interviewNotes: null,
           interviewInterviewerNotes: null,
           interviewPostNotes: null,
+          isInterviewInviteSent: false,
         },
         include: {
           candidate: true,
@@ -457,13 +461,54 @@ export async function DELETE(req: Request) {
           fromStage: app.currentStage,
           toStage: app.currentStage,
           action: "INTERVIEW_CANCELLED",
+          reason: `Hủy lịch phỏng vấn (${prevDate || "đã xếp"})`,
         },
       }),
     ]);
 
+    // Tự động kích hoạt n8n gửi thông báo hủy lịch phỏng vấn và hủy Calendar
+    let cancelNotice = "";
+    if (app.interviewDate) {
+      const cancelPayload: N8NInterviewPayload = {
+        event: "INTERVIEW_CANCELLED",
+        applicationId: app.id,
+        candidate: {
+          fullName: app.candidate.fullName,
+          email: app.candidate.email,
+          phone: app.candidate.phone,
+        },
+        job: {
+          title: app.job.title,
+          department: app.job.department,
+        },
+        interview: {
+          date: new Date(app.interviewDate).toISOString(),
+          formattedTime: prevDate,
+          format: app.interviewFormat === "OFFLINE" ? "OFFLINE" : "ONLINE",
+          location: app.interviewLocation || "Chưa xác định",
+          notes: app.interviewNotes,
+        },
+        interviewer: {
+          name: sessionUser.fullName,
+          email: sessionUser.email,
+        },
+        emailOption: app.interviewEmailOption || "AUTO_N8N",
+        timestamp: new Date().toISOString(),
+      };
+
+      try {
+        const n8nResult = await dispatchN8NInterviewWebhook(cancelPayload);
+        if (n8nResult.success) {
+          cancelNotice = " Đã tự động gửi thông báo hủy lịch phỏng vấn cho ứng viên qua n8n.";
+        }
+      } catch (err: any) {
+        console.warn("Lỗi kích hoạt webhook n8n hủy lịch:", err.message);
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Đã hủy lịch phỏng vấn (${prevDate || "đã xếp"}) của ứng viên ${app.candidate.fullName} thành công!`,
+      message: `Đã hủy lịch phỏng vấn (${prevDate || "đã xếp"}) của ứng viên ${app.candidate.fullName} thành công!${cancelNotice}`,
       data: updatedApp,
     });
   } catch (error: any) {
