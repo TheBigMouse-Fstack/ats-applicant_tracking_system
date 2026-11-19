@@ -213,6 +213,15 @@ export default function OperationalDashboard() {
     }
   }, [fetchDashboard]);
 
+  useEffect(() => {
+    const handleNewApp = () => {
+      clientCache.invalidate("dashboard_data");
+      fetchDashboard(true);
+    };
+    window.addEventListener("ats:new-application", handleNewApp);
+    return () => window.removeEventListener("ats:new-application", handleNewApp);
+  }, [fetchDashboard]);
+
   const handleStageChange = async (
     appId: number,
     toStage: string,

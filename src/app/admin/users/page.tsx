@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { clientCache } from "@/lib/client-cache";
 
 interface UserItem {
   id: number;
@@ -47,12 +48,19 @@ export default function UserManagementPage() {
   const [errorField, setErrorField] = useState<"fullName" | "email" | "password" | "">("");
   const [fieldErrorMsg, setFieldErrorMsg] = useState("");
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (isSilent = false) => {
     try {
+      if (!isSilent) {
+        setUsers((prev) => {
+          if (!prev || prev.length === 0) setLoading(true);
+          return prev;
+        });
+      }
       const res = await fetch("/api/users");
       const data = await res.json();
       if (data.success) {
         setUsers(data.data);
+        clientCache.set("admin_users_list", data.data);
       }
     } catch (e) {
       console.error(e);
@@ -62,7 +70,15 @@ export default function UserManagementPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    // 1. Kiểm tra cache: Nếu có dữ liệu người dùng, hiển thị ngay tức thì (0ms)
+    const cached = clientCache.getStale<UserItem[]>("admin_users_list");
+    if (cached && cached.length > 0) {
+      setUsers(cached);
+      setLoading(false);
+      fetchUsers(true);
+    } else {
+      fetchUsers(false);
+    }
   }, []);
 
   // Xử lý tạo User mới
@@ -98,7 +114,8 @@ export default function UserManagementPage() {
       setPassword("");
       setErrorField("");
       setFieldErrorMsg("");
-      fetchUsers();
+      clientCache.invalidate("admin_users_list");
+      fetchUsers(true);
     } catch {
       setModalGeneralError("Lỗi kết nối máy chủ");
     } finally {
@@ -115,7 +132,8 @@ export default function UserManagementPage() {
         body: JSON.stringify({ userId, isActive: !currentStatus }),
       });
       if (res.ok) {
-        fetchUsers();
+        clientCache.invalidate("admin_users_list");
+        fetchUsers(true);
       }
     } catch (e) {
       console.error(e);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "@/contexts/SessionContext";
+import { clientCache } from "@/lib/client-cache";
 import {
   Plus,
   RefreshCw,
@@ -48,13 +49,20 @@ export default function AdminJobsPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        setJobs((prev) => {
+          if (!prev || prev.length === 0) setLoading(true);
+          return prev;
+        });
+      }
       const res = await fetch("/api/jobs");
       const data = await res.json();
       if (data.success) {
-        setJobs(data.data || []);
+        const list = data.data || [];
+        setJobs(list);
+        clientCache.set("admin_jobs_list", list);
       }
     } catch (e) {
       console.error(e);
@@ -64,7 +72,15 @@ export default function AdminJobsPage() {
   };
 
   useEffect(() => {
-    fetchJobs();
+    // 1. Kiểm tra cache: Nếu có dữ liệu, hiển thị ngay lập tức (0ms) không cần spinner
+    const cached = clientCache.getStale<any[]>("admin_jobs_list");
+    if (cached && cached.length > 0) {
+      setJobs(cached);
+      setLoading(false);
+      fetchJobs(true);
+    } else {
+      fetchJobs(false);
+    }
   }, []);
 
   const handleCreateJob = async (e: React.FormEvent) => {
@@ -120,7 +136,9 @@ export default function AdminJobsPage() {
         setTargetHeadcount("1");
         setMaxActiveInterviews("3");
         setRequirementsJd("");
-        fetchJobs();
+        clientCache.invalidate("admin_jobs_list");
+        clientCache.invalidate("pipeline_");
+        fetchJobs(true);
       }
     } catch (err: any) {
       setFormError("Lỗi kết nối máy chủ khi tạo tin.");
@@ -158,7 +176,9 @@ export default function AdminJobsPage() {
       } else {
         setNotice(data.message || "Đã cập nhật chỉ tiêu tuyển dụng.");
         setEditingJob(null);
-        fetchJobs();
+        clientCache.invalidate("admin_jobs_list");
+        clientCache.invalidate("pipeline_");
+        fetchJobs(true);
       }
     } catch {
       setEditError("Lỗi kết nối khi cập nhật chỉ tiêu.");

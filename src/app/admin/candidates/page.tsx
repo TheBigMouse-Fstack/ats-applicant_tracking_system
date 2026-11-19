@@ -112,6 +112,15 @@ export default function CandidatesListPage() {
     }
   }, [fetchCandidates, cacheKey]);
 
+  useEffect(() => {
+    const handleNewApp = () => {
+      clientCache.invalidate("candidates_");
+      fetchCandidates(true);
+    };
+    window.addEventListener("ats:new-application", handleNewApp);
+    return () => window.removeEventListener("ats:new-application", handleNewApp);
+  }, [fetchCandidates]);
+
   const handleToggleStar = async (appId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setCandidates((prev) =>

@@ -313,6 +313,17 @@ export default function KanbanBoard() {
     }
   }, [isMounted, fetchPipeline, cacheKey]);
 
+  // Lắng nghe sự kiện Realtime khi có ứng viên mới nộp hồ sơ -> Tự động cập nhật vào cột NEW không cần F5
+  useEffect(() => {
+    const handleNewApplication = () => {
+      clientCache.invalidate("pipeline_");
+      fetchPipeline(true);
+    };
+
+    window.addEventListener("ats:new-application", handleNewApplication);
+    return () => window.removeEventListener("ats:new-application", handleNewApplication);
+  }, [fetchPipeline]);
+
   // Stage change logic (used both by Drag-Drop and CandidateDrawer)
   const handleMoveStage = async (
     applicationId: number,
