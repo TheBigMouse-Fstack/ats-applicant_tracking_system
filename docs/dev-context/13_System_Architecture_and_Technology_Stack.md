@@ -88,8 +88,8 @@ flowchart TB
         direction TB
         ORM["Prisma ORM 5.22 (Type-Safe Query Builder & Migrations)"]
         DB_DEV[("SQLite dev.db (Zero-Config Local Demo)")]
-        DB_PROD[("PostgreSQL (Production Cloud Ready)")]
-        FS["File Storage: public/uploads/ (Lưu tệp CV gốc)"]
+        DB_PROD[("Neon Serverless PostgreSQL (Production Cloud Ready)")]
+        FS["Cloud Storage: Neon Object Storage S3 (Bucket: uploads)<br>với Local Disk Fallback & PII Proxy Route"]
     end
 
     CLIENT_TIER --> API_TIER

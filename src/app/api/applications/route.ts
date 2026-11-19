@@ -9,6 +9,7 @@ import {
   extractContactsFromCvText,
   detectContactMismatch,
 } from "@/lib/dedup-and-contact";
+import { uploadCvFile } from "@/lib/storage";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -380,19 +381,15 @@ export async function POST(req: Request) {
     ipSubmissionTimestamps.set(clientIp, history);
 
     const safeFileName = `cv_${Date.now()}_${path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch {}
-    const filePath = path.join(uploadDir, safeFileName);
-    await writeFile(filePath, buffer);
-    const cvFileUrl = `/uploads/${safeFileName}`;
+    const uploadResult = await uploadCvFile(safeFileName, buffer, file?.type || "application/pdf");
+    const cvFileUrl = uploadResult.url;
 
     // 6.5. Xử lý các tệp Bằng cấp / Chứng chỉ đính kèm (Certificates & Attachments)
     const certFiles = formData.getAll("certificates") as File[];
     const newCertificates: any[] = [];
 
     if (certFiles && certFiles.length > 0) {
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
       const certDir = path.join(uploadDir, "certificates");
       try {
         await mkdir(certDir, { recursive: true });

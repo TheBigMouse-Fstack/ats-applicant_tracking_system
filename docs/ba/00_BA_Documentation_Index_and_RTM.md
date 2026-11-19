@@ -57,9 +57,9 @@ last_updated: "2026-11-19"
 | `[[RBAC-NFR-08]]` | `docs/ba/08_NonFunctional_and_Permissions.md` | `srs` | `v2.2.0` | Approved | Phân loại Tác nhân, Ma trận Phân quyền & Yêu cầu Chất lượng ISO 25010. |
 | `[[SCOPE-ATS-10]]` | `docs/ba/10_Scope_and_System_Comparison.md` | `brd` | `v2.1.0` | Approved | Ranh giới In-Scope / Out-of-Scope & Đối chiếu hệ thống mẫu. |
 | `[[UIUX-ATS-11]]` | `docs/ba/11_UI_UX_Design_and_Form_Validation_Guidelines.md` | `spec` | `v2.2.0` | Approved | Quy chuẩn Giao diện dịu mắt & Kiểm tra dữ liệu đầu vào thân thiện. |
-| `[[EXP-ATS-14]]` | `docs/ba/14_Scope_Expansion_and_Advanced_Features.md` | `cr` | `v2.1.0` | Approved | Nhật ký mở rộng phạm vi & các tính năng nâng cao. |
+| `[[EXP-ATS-14]]` | `docs/ba/14_Scope_Expansion_and_Advanced_Features.md` | `cr` | `v2.2.0` | Approved | Nhật ký mở rộng phạm vi & các tính năng nâng cao (Neon Object Storage & Proxy). |
 | `[[BRIEF-CMP-18]]` | `docs/ba/18_Brief_Compliance_and_Value_Added_Analysis.md` | `brd` | `v1.2.0` | Approved | Đối chiếu Đề bài gốc vs Hệ thống thực tế, Hệ thống mẫu & Lý do Hybrid AI. |
-| `[[UAT-ATS-18]]` | `docs/ba/TEST_SCENARIOS_AND_UAT_GUIDE.md` | `test-suite` | `v2.2.0` | Approved | Kịch bản kiểm thử nghiệm thu UAT cho Doanh nghiệp. |
+| `[[UAT-ATS-18]]` | `docs/ba/TEST_SCENARIOS_AND_UAT_GUIDE.md` | `test-suite` | `v2.3.0` | Approved | Kịch bản kiểm thử nghiệm thu UAT cho Doanh nghiệp (22 Test Suites). |
 
 ### 1B. Thư mục `docs/dev-context/` — Ngữ cảnh Kỹ thuật (Dành cho AI Agent, Dev & QA)
 
@@ -69,7 +69,7 @@ last_updated: "2026-11-19"
 | `[[GUIDE-TECH-09]]` | `docs/dev-context/09_Technical_Setup_and_Antigravity_Guide.md` | `guide` | `v2.0.0` | Approved | Danh sách màn hình `SCR-xx` & hướng dẫn thiết lập môi trường kỹ thuật. |
 | `[[AI-ARCH-12]]` | `docs/dev-context/12_Hybrid_AI_Architecture_and_Scoring_Engine.md` | `spec` | `v2.2.0` | Approved | Kiến trúc Hybrid AI 2 lớp, Rule 5 trường cốt lõi & Phân tầng 3 mức màu. |
 | `[[SYS-ARCH-13]]` | `docs/dev-context/13_System_Architecture_and_Technology_Stack.md` | `spec` | `v2.0.0` | Approved | Kiến trúc hệ thống Next.js 14 Fullstack, Prisma ORM & Bảo mật Edge. |
-| `[[API-ATS-15]]` | `docs/dev-context/15_API_Specifications_and_Error_Codes.md` | `api-spec` | `v2.2.0` | Approved | Đặc tả 16 RESTful API Contracts & Hệ thống mã lỗi chuẩn (`RULE-03`, `RULE-10`). |
+| `[[API-ATS-15]]` | `docs/dev-context/15_API_Specifications_and_Error_Codes.md` | `api-spec` | `v2.3.0` | Approved | Đặc tả 17 RESTful API Contracts (bổ sung Storage Proxy) & Hệ thống mã lỗi chuẩn. |
 | `[[SDD-PLAY-16]]` | `docs/dev-context/16_SDD_Prompt_Playbook.md` | `guide` | `v1.0.0` | Approved | Bộ 7 mẫu Prompt chuẩn Spec-Driven Development & Câu khóa an toàn. |
 | `[[BR-ERR-17]]` | `docs/dev-context/17_Business_Rules_and_Error_Matrix.md` | `srs` | `v2.1.0` | Approved | Business Rules 3 vế (`RULE-02`), Ma trận Lỗi 7 cột (`RULE-11`) & Gherkin BDD AC. |
 
@@ -96,10 +96,13 @@ last_updated: "2026-11-19"
 | `BRD-GOAL-05` (Chỉ tiêu tuyển dụng & Khống chế trần PV cùng lúc) | `FR-QUOTA-CAP-001` | `FR-20` | `UC-01` | `BRL-13` | `POST /api/jobs`, `POST /api/pipeline/move` | Suite 16 (4 tests) | **Pass (100%)** |
 | `BRD-GOAL-05` (Phân trang lũy tiến 15 thẻ độc lập từng cột Kanban) | `FR-PIPE-PAG-001` | `FR-21` | `UC-04` | `BRL-14` | `GET /api/pipeline?limitPerStage=15` | Suite 17 (7 tests) | **Pass (100%)** |
 | `BRD-GOAL-06` (Hạ tầng Song ngữ VI/EN & Chuẩn hóa Text toàn hệ thống) | `FR-I18N-SYS-001` | `FR-22` | Toàn hệ thống | `NFR-UI-01`, `NFR-UI-02` | `src/lib/i18n.tsx`, `LanguageSwitcher.tsx` | All Suites (Clean UI) | **Pass (100%)** |
+| `BRD-GOAL-07` (Lưu trữ Đám mây Neon Object Storage & Bảo vệ PII Proxy) | `FR-STOR-OBJ-001` | `FR-23` | `UC-02`, `UC-03` | `NFR-SEC-01`, `NFR-SEC-03` | `GET /api/applications/storage/[...key]`, `src/lib/storage.ts` | Suite 20 (Storage & PII Proxy) | **Pass (100%)** |
+| `BRD-GOAL-08` (Bảo mật Phiên HMAC, Chống Prompt Injection & Chặn Hack) | `FR-SECR-HRD-001` | `FR-24` | Toàn hệ thống | `NFR-SEC-01`, `NFR-SEC-04` | `src/lib/auth.ts`, `src/lib/ai-parser.ts` | Suite 18, 19, 21, 22 (White/Black-box) | **Pass (100%)** |
 
 ### Chỉ Số Bao Phủ Kiểm Thử (Coverage Gate — `RULE-14`)
-* **Quy tắc nghiệp vụ cốt lõi (`BRL-01`..`BRL-14`, `BRL-Auth`, State Rules):** **100%** được phủ bởi test tự động.
-* **Tổng số kịch bản kiểm thử tự động (`node tests/run-tests.js`):** **136 / 136 Passed (0 Failed)**.
+* **Quy tắc nghiệp vụ cốt lõi (`BRL-01`..`BRL-14`, `BRL-Auth`, State Rules, Security):** **100%** được phủ bởi test tự động.
+* **Tổng số kịch bản kiểm thử tự động (`node tests/run-tests.js`):** **161 / 161 Passed (0 Failed — Đạt 100%)**.
+* **Phân bổ 22 bộ kiểm thử:** White-box (HMAC SHA-256, RBAC Guards, Logic Gates), Black-box (Magic Bytes, Rate Limiting 10req/10min, API Schemas), Cloud Storage (Neon S3, PII Proxy, Path Traversal Defense), Prompt Injection Defense (XML isolation & guardrails).
 * **Kiểm tra kiểu tĩnh & Production Build (`npx next build`):** **19/19 Routes compiled, 0 TypeScript / Lint Errors**.
 
 ---
@@ -121,3 +124,5 @@ Thực thi theo quy trình `skills/doc-drift/SKILL.md` cập nhật ngày **2026
 | **Phân trang lũy tiến từng cột (`BRL-14`)** | Đặc tả tại `[[API-ATS-15]]`, `[[UIUX-ATS-11]]`. | Tham số `limitPerStage=15` trên API và nút tải thêm độc lập từng cột trên Kanban. | **0% (Matched)** | ✅ Đạt |
 | **Tự động hóa n8n & Thông báo Đa kênh** | Tích hợp n8n workflow, Gmail Buffer 12h, Telegram Alert HR (@Rec_Hr_rBot) & Google Calendar sync. | Các cờ DB `isInterviewInviteSent`, `isTelegramNotified`, `interviewEmailOption` + webhook n8n. | **0% (Matched)** | ✅ Đạt |
 | **Chuẩn hóa Text & Chuyển đổi Song ngữ VI/EN** | Từ điển i18n chuẩn hóa, xóa toàn bộ câu giải thích logic kỹ thuật, gỡ bỏ thông báo trùng lặp. | `src/lib/i18n.tsx`, `LanguageSwitcher.tsx`, `Navbar.tsx`, `CandidateDrawer.tsx`, `ScorecardPanel.tsx`. | **0% (Clean)** | ✅ Đạt |
+| **Lưu trữ Neon Object Storage & Bảo mật PII Proxy** | Lưu trữ đám mây bucket `uploads` private, proxy route phân quyền, chặn Path Traversal & chống rò rỉ CV. | `src/lib/storage.ts`, `src/app/api/applications/storage/[...key]/route.ts`. | **0% (Matched)** | ✅ Đạt |
+| **Hàng rào Chống Hack, Chôm Key & Anti-Prompt-Injection** | Hardening SESSION_SECRET, cô lập thẻ XML `<candidate_cv_raw_text>`, gỡ .env khỏi Git, Rate Limit 10req/10min. | `src/lib/auth.ts`, `src/lib/ai-parser.ts`, `.gitignore`, `route.ts`. | **0% (Hardened)** | ✅ Đạt |

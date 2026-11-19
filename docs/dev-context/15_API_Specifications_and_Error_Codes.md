@@ -523,3 +523,19 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
     }
   }
   ```
+
+---
+
+### Phân hệ 7: Lưu Trữ Đám Mây & Bảo Vệ PII Proxy (Cloud Storage & PII Shield)
+
+#### 15. `GET /api/applications/storage/[...key]` — Truy xuất An toàn Tệp CV & Chứng chỉ
+* **Mục đích:** Đóng vai trò là Proxy trung chuyển tệp tin từ Cloud Object Storage (Neon bucket `uploads`) hoặc đĩa cục bộ đến trình duyệt, bảo vệ quyền riêng tư PII của ứng viên và ngăn chặn thu thập trái phép (Web Scraping).
+* **Phân quyền truy cập:**
+  * **Nội bộ:** Bắt buộc có Cookie phiên xác thực hợp lệ (`HR`, `HIRING_MANAGER`, `ADMIN`).
+  * **Công khai:** Cho phép ứng viên xem lại bản nộp thông qua referer hợp lệ từ trang tra cứu `/jobs/tracker`.
+  * **Trường hợp từ chối:** Trả về HTTP 401 Unauthorized nếu không có quyền truy cập.
+* **Bảo vệ an ninh (Path Traversal Protection):** Kiểm tra và từ chối ngay lập tức các tham số chứa `..` hoặc `\\` bằng mã lỗi HTTP 400 Bad Request.
+* **Headers phản hồi (HTTP 200):**
+  * `Content-Type`: `application/pdf` (hoặc `image/jpeg`, `image/png`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`)
+  * `Content-Disposition`: `inline; filename="{safeFileName}"`
+  * `Cache-Control`: `private, max-age=3600` (Không cache trên CDN công cộng).
