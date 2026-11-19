@@ -2,7 +2,7 @@
 id: "BR-ERR-17"
 title: "Danh mục Business Rules 3 Vế, Ma trận Lỗi 7 Cột & Acceptance Criteria (Gherkin BDD)"
 type: "srs"
-version: "2.1.0"
+version: "2.2.0"
 status: "approved"
 owner: "ATS BA & QA Team"
 domain: "recruitment-ats"
@@ -29,6 +29,7 @@ last_updated: "2026-11-18"
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Người Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
 | `v2.1.0` | 2026-11-18 | BA & QA Team | **Initial** | Chuẩn hóa trọn bộ Business Rules (3 vế `WHEN/THEN/UNLESS`), Ma trận Lỗi 7 cột chuẩn `ERR-[MOD]-[HTTP]-[SEQ]` và Acceptance Criteria Gherkin BDD bám sát 100% mã nguồn ATS — Applicant Tracking System. | Product Owner & Tech Lead |
+| `v2.2.0` | 2026-11-19 | BA & QA Team | **Added** | Bổ sung quy tắc nghiệp vụ BRL-14 Phân trang Lũy tiến từng Cột trên Bảng Kanban (Column Progressive Loading) & kịch bản BDD Acceptance Criteria. | Product Owner & Tech Lead |
 
 ---
 
@@ -51,6 +52,7 @@ Mọi quy tắc nghiệp vụ của hệ thống đều tuân thủ cấu trúc 
 | **`BRL-11`**<br>`BR-REJ-001` | Bắt buộc Lý do khi Từ chối hồ sơ | `POST /api/pipeline/move` | **WHEN** bất kỳ người dùng có thẩm quyền nào chuyển hồ sơ sang trạng thái `REJECTED` **THEN** bắt buộc cung cấp `rejectionReason` có độ dài tối thiểu 5 ký tự (lưu vào `Application.rejectionReason` và `AuditLog.reason`) **UNLESS** Không có ngoại lệ. | `ERR-PIPE-422-03` |
 | **`BRL-12`**<br>`BR-SOT-001` | Nguồn chân lý (Source of Truth) & Chống trùng lặp 2 lớp | `dedup-and-contact.ts`, `applications/route.ts`, `preview-cv/route.ts` | **WHEN** ứng viên nộp hồ sơ có cả thông tin Form và tệp CV **THEN** hệ thống chuẩn hóa Email/SĐT (`+84` ➔ `0`), ưu tiên Form làm liên hệ chính và lưu liên hệ từ CV làm bản phụ (`cvExtracted*`); nếu lệch hoàn toàn cả Tên lẫn liên hệ (`CRITICAL`) thì yêu cầu xác nhận 1 bước (`409`); đồng thời áp dụng Chống trùng Lớp 1 (chặn cứng Email/SĐT Form trùng 30 ngày) và Lớp 2 (gắn cờ mềm nghi ngờ trùng nếu trùng Email/SĐT trong CV hoặc trùng SHA-256 `cvFileHash`) **UNLESS** nộp từ nội bộ HR (bỏ qua hộp xác nhận 1 bước nhưng vẫn lưu cảnh báo sai khác và cờ trùng Lớp 2). | `ERR-APP-409-01`<br>`ERR-APP-409-02` |
 | **`BRL-13`**<br>`BR-HEAD-001` | Chỉ tiêu tuyển dụng, Trần phỏng vấn cùng lúc & Tự đóng tin | `headcount-rules.ts`, `jobs/route.ts`, `pipeline/move/route.ts`, `interviews/schedule/route.ts` | **WHEN** HR đăng tin tuyển dụng có `targetHeadcount` (`≥ 1`) và `maxActiveInterviews` (mặc định `3 × targetHeadcount`, tự co tỷ lệ theo số suất còn trống) **THEN** (1) khi `activeInterviewCount >= effectiveInterviewCap`, hệ thống cảnh báo mềm (`409 requiresOverride`) chống phỏng vấn dư; (2) khi tuyển đủ suất cuối (`hiredCount + 1 >= targetHeadcount`), hệ thống tự đóng tin (`Job.status = "CLOSED"`); (3) khi đã đủ chỉ tiêu (`remainingSlots == 0`), chặn chuyển thêm sang `INTERVIEW`/`HIRED` và khóa form nộp công khai **UNLESS** `HIRING_MANAGER`/`ADMIN` xác nhận vượt trần phỏng vấn (`forceInterviewCapOverride = true`, ghi vết `AuditLog`) hoặc `HR`/`ADMIN` tăng `targetHeadcount` qua `PATCH /api/jobs/[id]`. | `ERR-PIPE-409-02`<br>`ERR-PIPE-400-04` |
+| **`BRL-14`**<br>`BR-PIPE-002` | Phân trang Lũy tiến Từng Cột trên Bảng Kanban (Column Progressive Loading) | `GET /api/pipeline`, `KanbanBoard` | **WHEN** một cột trên bảng Kanban có số lượng hồ sơ thực tế vượt quá kích thước hiển thị mặc định (`DEFAULT_STAGE_PAGE_SIZE = 15` hồ sơ) **THEN** hệ thống chỉ kết xuất (render) 15 thẻ hồ sơ đầu tiên theo tiêu chí sắp xếp hiện tại, đồng thời hiển thị widget chân cột thông báo số lượng `Đang xem X / Tổng Y` và nút bấm "+ Tải thêm 15 hồ sơ" nhằm chống quá tải DOM và duy trì tốc độ khung hình kéo thả (≥ 55 FPS) **UNLESS** người dùng bấm "Xem tất cả" hoặc số lượng hồ sơ trong cột nhỏ hơn hoặc bằng 15. | - |
 | **`BRL-STAGE-ORDER`**<br>`BR-FSM-001` | Tuân thủ trình tự tuyến tính State Machine | `src/lib/stage-rules.ts` | **WHEN** người dùng thao tác chuyển trạng thái hồ sơ **THEN** chỉ chấp nhận các đường chuyển hợp lệ kế tiếp (`NEW ➔ SCREENING ➔ INTERVIEW ➔ HIRED`) và nghiêm cấm nhảy cóc (`NEW ➔ INTERVIEW`, `NEW ➔ HIRED`, `SCREENING ➔ HIRED`, `REJECTED ➔ HIRED`) **UNLESS** Không có ngoại lệ (áp dụng cho cả `ADMIN`). | `ERR-PIPE-422-01` |
 | **`BRL-STAGE-TERMINAL`**<br>`BR-FSM-002` | Khóa trạng thái kết thúc (`HIRED`) | `src/lib/stage-rules.ts` | **WHEN** hồ sơ đã đạt trạng thái `HIRED` **THEN** hệ thống khóa hoàn toàn thao tác chuyển sang bất kỳ trạng thái nào khác nhằm bảo vệ toàn vẹn dữ liệu tuyển chọn **UNLESS** Không có ngoại lệ trên luồng Kanban tiêu chuẩn. | `ERR-PIPE-409-01` |
 | **`RBAC-STAGE-LIMIT`**<br>`BR-RBAC-001` | Phân tách thẩm quyền vòng tuyển HR vs Hiring Manager | `src/lib/stage-rules.ts`, `schedule/route.ts` | **WHEN** người dùng luân chuyển cột Kanban hoặc xếp/hủy lịch phỏng vấn **THEN** `HR` chỉ được chuyển tối đa đến `SCREENING` (`NEW ➔ SCREENING`, `NEW/SCREENING ➔ REJECTED`, phục hồi về `NEW/SCREENING`); `HIRING_MANAGER` phụ trách từ `SCREENING` trở đi (`SCREENING ➔ INTERVIEW`, xếp/sửa/hủy lịch PV, `INTERVIEW ➔ HIRED`, `SCREENING/INTERVIEW ➔ REJECTED`) và không tác động vòng `NEW` **UNLESS** người dùng có vai trò `ADMIN`. | `ERR-PIPE-403-01`<br>`ERR-INTV-403-01` |
@@ -209,4 +211,32 @@ Feature: Quản trị chỉ tiêu tuyển dụng và chống phỏng vấn dư
     When Hiring Manager chuyển ứng viên đạt Scorecard từ "INTERVIEW" sang "HIRED"
     Then hệ thống chuyển hồ sơ sang "HIRED", tự động cập nhật Job.status = "CLOSED" và trả về jobAutoClosed = true
     And trang nộp hồ sơ công khai tự động khóa nhận đơn mới cho vị trí này
+```
+
+---
+
+### Feature 6: Phân Trang Lũy Tiến Từng Cột Trên Bảng Kanban (`BRL-14`)
+
+```gherkin
+Feature: Tối ưu hóa hiệu năng hiển thị và kéo thả Kanban với tập dữ liệu lớn
+
+  Scenario: Happy Path — Tự động giới hạn hiển thị 15 thẻ đầu tiên và hiển thị nút tải thêm
+    Given cột "NEW" của vị trí tuyển dụng có tổng cộng 45 ứng viên
+    When chuyên viên HR mở bảng Pipeline Kanban
+    Then hệ thống chỉ kết xuất đúng 15 thẻ hồ sơ đầu tiên trong cột "NEW"
+    And badge đếm trên đầu cột vẫn hiển thị đầy đủ tổng số "45"
+    And chân cột hiển thị nút "+ Tải thêm 15 hồ sơ" kèm thông tin "Đang xem 15 / 45"
+
+  Scenario: Happy Path — Tải thêm hồ sơ lũy tiến khi người dùng yêu cầu
+    Given cột "NEW" đang hiển thị 15 / 45 hồ sơ
+    When HR bấm vào nút "+ Tải thêm 15 hồ sơ"
+    Then số lượng thẻ hiển thị trong cột tăng lên 30 hồ sơ
+    And thông tin chân cột cập nhật thành "Đang xem 30 / 45"
+    And các cột khác (SCREENING, INTERVIEW, HIRED, REJECTED) giữ nguyên trạng thái hiển thị độc lập
+
+  Scenario: Boundary Path — Cột có số lượng hồ sơ nhỏ hơn hoặc bằng 15
+    Given cột "INTERVIEW" có tổng cộng 4 ứng viên
+    When Quản lý chuyên môn mở bảng Pipeline Kanban
+    Then toàn bộ 4 thẻ hồ sơ được hiển thị đầy đủ
+    And chân cột không hiển thị nút tải thêm
 ```

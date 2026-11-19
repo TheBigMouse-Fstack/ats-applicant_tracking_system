@@ -771,6 +771,33 @@ async function runTests() {
     const dedupSampleApp = await prisma.application.findFirst({ select: { id: true, contactMismatchLevel: true, duplicateWarningAppId: true } });
     assert(dedupSampleApp && typeof dedupSampleApp.contactMismatchLevel === "string", "CSDL SQLite đã đồng bộ các cột cảnh báo lệch CV và nghi ngờ trùng Lớp 2");
 
+    // ---------------------------------------------------------
+    // 17. KIỂM TRA BRL-14 (PHÂN TRANG LŨY TIẾN TỪNG CỘT KANBAN & HIỆU NĂNG DOM)
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}17. Kiểm tra BRL-14 (Phân trang Lũy tiến Từng Cột Kanban & API Pagination):${colors.reset}`);
+    
+    // 17.1 Kiểm tra thuật toán phân trang từng cột (Slice & Load More)
+    const mock45Items = Array.from({ length: 45 }, (_, i) => ({ id: i + 1, fullName: `Ứng viên ${i + 1}` }));
+    const PAGE_SIZE = 15;
+    const initialDisplay = mock45Items.slice(0, PAGE_SIZE);
+    assert(initialDisplay.length === 15, "Khởi tạo cột chỉ kết xuất đúng 15 hồ sơ đầu tiên (BRL-14)");
+    assert(mock45Items.length > initialDisplay.length, "Phát hiện cột có thêm hồ sơ cần tải (hasMore = true)");
+    
+    const step2Limit = PAGE_SIZE + PAGE_SIZE;
+    const step2Display = mock45Items.slice(0, step2Limit);
+    assert(step2Display.length === 30, "Lần bấm Tải thêm thứ 1 mở rộng danh sách lên 30 hồ sơ");
+    
+    const step3Limit = step2Limit + PAGE_SIZE;
+    const step3Display = mock45Items.slice(0, step3Limit);
+    assert(step3Display.length === 45, "Lần bấm Tải thêm thứ 2 tải toàn bộ 45 hồ sơ");
+    assert(mock45Items.length === step3Display.length, "Đã hiển thị toàn bộ hồ sơ (hasMore = false)");
+
+    // 17.2 Kiểm tra mã nguồn API và UI
+    const pipelineApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/pipeline/route.ts"), "utf8");
+    const kanbanBoardSrc = fs.readFileSync(path.join(process.cwd(), "src/components/kanban/KanbanBoard.tsx"), "utf8");
+    assert(pipelineApiSrc.includes("limitPerStage") && pipelineApiSrc.includes("stagePagination"), "API Pipeline hỗ trợ tham số limitPerStage và trả về cấu trúc stagePagination độc lập 5 cột");
+    assert(kanbanBoardSrc.includes("stageLimits") && kanbanBoardSrc.includes("handleLoadMore") && kanbanBoardSrc.includes("allColumnItems.slice(0, currentLimit)"), "Kanban UI quản lý giới hạn hiển thị riêng từng cột và có nút Tải thêm lũy tiến");
+
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
   } finally {

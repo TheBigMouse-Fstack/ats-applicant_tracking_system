@@ -2,7 +2,7 @@
 id: "API-ATS-15"
 title: "Đặc tả Hợp đồng API Chính & Hệ thống Mã lỗi Chuẩn"
 type: "api-spec"
-version: "2.1.0"
+version: "2.2.0"
 status: "approved"
 owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
@@ -33,6 +33,7 @@ last_updated: "2026-11-18"
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
 | `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.2.0` | 2026-11-19 | ATS BA Team | **Added** | Bổ sung query parameter `limitPerStage` và siêu dữ liệu `stagePagination` trong `GET /api/pipeline` phục vụ BRL-14. | Product Owner & Tech Lead |
 | `v2.2.0` | 2026-11-18 | ATS BA Team | **Added** | Bổ sung hợp đồng API `GET /api/dashboard` cho Bảng điều khiển Tổng quan Vận hành phân quyền theo Role (`ADMIN`, `HR`, `HIRING_MANAGER`). | Product Owner |
 
 ---
@@ -310,9 +311,15 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 
 ### Phân hệ 3: Quản trị Quy trình Tuyển dụng (Kanban Pipeline)
 
-#### 8. `GET /api/pipeline` — Lấy toàn bộ dữ liệu Pipeline
-* **Mục đích:** Nạp dữ liệu đồng thời cho 5 cột Kanban Pipeline (`/admin/pipeline`).
-* **Query Parameters:** `jobId`, `search`, `starred`, `unviewed`, `sortBy`.
+#### 8. `GET /api/pipeline` — Lấy toàn bộ dữ liệu Pipeline & Phân trang theo Cột
+* **Mục đích:** Nạp dữ liệu đồng thời cho 5 cột Kanban Pipeline (`/admin/pipeline`) kèm khả năng phân trang lũy tiến chống quá tải DOM (`BRL-14`).
+* **Query Parameters:**
+  * `jobId` *(string/number, optional)*: ID vị trí tuyển dụng hoặc `"ALL"`.
+  * `search` *(string, optional)*: Từ khóa tìm kiếm theo Tên, Email, SĐT, Kỹ năng.
+  * `starred` *(boolean, optional)*: Chỉ lấy hồ sơ được gắn sao ưu tiên (`"true"`).
+  * `unviewed` *(boolean, optional)*: Chỉ lấy hồ sơ mới chưa mở xem (`"true"`).
+  * `sortBy` *(string, optional)*: Tiêu chí sắp xếp (`"NEWEST"` | `"OLDEST"` | `"STARRED_FIRST"` | `"UNVIEWED_FIRST"` | `"UNEVALUATED_FIRST"`).
+  * `limitPerStage` *(integer, optional)*: Số lượng hồ sơ tối đa trả về trên mỗi cột (phục vụ phân trang lũy tiến, mặc định nạp toàn bộ nếu không truyền).
 * **Success Response (HTTP 200):**
   ```json
   {
@@ -324,6 +331,21 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
       "INTERVIEW": [ ... ],
       "HIRED": [ ... ],
       "REJECTED": [ ... ]
+    },
+    "stagePagination": {
+      "NEW": { "total": 45, "loaded": 15, "hasMore": true },
+      "SCREENING": { "total": 8, "loaded": 8, "hasMore": false },
+      "INTERVIEW": { "total": 4, "loaded": 4, "hasMore": false },
+      "HIRED": { "total": 1, "loaded": 1, "hasMore": false },
+      "REJECTED": { "total": 12, "loaded": 12, "hasMore": false }
+    },
+    "stats": {
+      "total": 70,
+      "new": 45,
+      "screening": 8,
+      "interview": 4,
+      "hired": 1,
+      "rejected": 12
     }
   }
   ```

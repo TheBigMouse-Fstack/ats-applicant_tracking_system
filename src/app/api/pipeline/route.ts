@@ -22,6 +22,8 @@ export async function GET(req: Request) {
     const sortByParam = searchParams.get("sortBy") || "NEWEST";
     const starredOnly = searchParams.get("starred") === "true";
     const unviewedOnly = searchParams.get("unviewed") === "true";
+    const limitPerStageParam = searchParams.get("limitPerStage");
+    const limitPerStage = limitPerStageParam ? parseInt(limitPerStageParam, 10) : undefined;
 
     // 1. Lấy danh sách Jobs kèm chỉ tiêu tuyển dụng & số lượng đang phỏng vấn / đã tuyển
     const rawJobs = await prisma.job.findMany({
@@ -176,10 +178,25 @@ export async function GET(req: Request) {
       rejected: columns.REJECTED.length,
     };
 
+    // BRL-14: Phân trang theo từng cột nếu client yêu cầu limitPerStage
+    const stagePagination: Record<string, { total: number; loaded: number; hasMore: boolean }> = {};
+    Object.keys(columns).forEach((key) => {
+      const total = columns[key].length;
+      if (limitPerStage && limitPerStage > 0 && total > limitPerStage) {
+        columns[key] = columns[key].slice(0, limitPerStage);
+      }
+      stagePagination[key] = {
+        total,
+        loaded: columns[key].length,
+        hasMore: total > columns[key].length,
+      };
+    });
+
     return NextResponse.json({
       success: true,
       jobs,
       columns,
+      stagePagination,
       stats,
     });
   } catch (error) {

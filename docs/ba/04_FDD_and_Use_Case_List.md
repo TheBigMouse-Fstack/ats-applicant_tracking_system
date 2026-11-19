@@ -2,7 +2,7 @@
 id: "FDD-ATS-04"
 title: "Sơ đồ Phân rã Chức năng (FDD), Bảng Yêu cầu Chức năng (FR) & Use Case Diagram"
 type: "srs"
-version: "2.1.0"
+version: "2.2.0"
 status: "approved"
 owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
@@ -31,6 +31,7 @@ last_updated: "2026-11-18"
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
 | `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v2.2.0` | 2026-11-19 | ATS BA Team | **Added** | Bổ sung đặc tả kỹ thuật FR-09: Cơ chế Phân trang Lũy tiến độc lập theo từng Cột Kanban (Column Progressive Loading) chống nghẽn DOM khi dữ liệu lớn (BRL-14). | Product Owner |
 
 ---
 
@@ -159,7 +160,7 @@ Dưới đây là **Bảng FR-xx hoàn chỉnh** được thiết kế chuẩn x
 | **FR-08**<br>`FR-AI-MAIL-002` | Tự động hoãn gửi thư từ chối 12 giờ | Khi chuyển hồ sơ sang **Từ chối** (kèm lý do bắt buộc), hệ thống hẹn hoãn gửi thư phản hồi sau 12 giờ; tự động hủy lịch gửi nếu HR/Quản lý khôi phục hồ sơ trong thời gian chờ. | Hệ thống | BRL-05, BRL-11 | **UC-03** | P0 (Must Have) |
 | **Phân hệ 3: Tổng quan & Quản lý Quy trình Tuyển dụng (Dashboard & Pipeline)** | | | | | | |
 | **FR-08A**<br>`FR-DASH-OVW-001` | Bảng điều khiển Tổng quan theo Vai trò | Hiển thị số liệu phễu 5 giai đoạn, cảnh báo quá hạn và danh sách hồ sơ cần xử lý ngay tùy biến riêng cho HR, Quản lý chuyên môn và Quản trị viên. | HR, Manager, Admin | RBAC-DASH | **UC-04** | P0 (Must Have) |
-| **FR-09**<br>`FR-PIPE-BRD-001` | Quản lý Pipeline Kanban 5 cột | Hiển thị bảng 5 cột: Mới nộp, Sàng lọc tiêu chuẩn, Phỏng vấn, Tuyển chọn, Từ chối; bắt buộc đi đúng thứ tự từng vòng và khóa hồ sơ đã Tuyển chọn. | HR, Manager, Admin | BRL-STAGE-ORDER | **UC-04** | P0 (Must Have) |
+| **FR-09**<br>`FR-PIPE-BRD-001` | Quản lý Pipeline Kanban 5 cột & Phân trang Lũy tiến | Hiển thị bảng 5 cột: Mới nộp, Sàng lọc tiêu chuẩn, Phỏng vấn, Tuyển chọn, Từ chối; bắt buộc đi đúng thứ tự từng vòng và khóa hồ sơ đã Tuyển chọn; hỗ trợ cơ chế Phân trang Lũy tiến độc lập từng cột (15 hồ sơ/lượt) duy trì tốc độ kéo thả mượt mà ≥ 55 FPS khi số lượng ứng viên lên đến 1.000+. | HR, Manager, Admin | BRL-STAGE-ORDER, BRL-14 | **UC-04** | P0 (Must Have) |
 | **FR-10**<br>`FR-PIPE-MOV-002` | Kéo-thả phân quyền HR vs Manager & Lý do từ chối | **HR** chỉ chuyển tối đa đến vòng Sàng lọc tiêu chuẩn; **Quản lý chuyên môn** phụ trách vòng Phỏng vấn và Tuyển chọn; mọi thao tác Từ chối bắt buộc nhập lý do rõ ràng (≥ 5 ký tự). | HR, Manager, Admin | RBAC-STAGE-LIMIT, BRL-11 | **UC-04** | P0 (Must Have) |
 | **FR-11**<br>`FR-PIPE-FLT-003` | Tìm kiếm, Lọc, Đánh dấu chưa xem & Gắn sao | Tìm kiếm theo tên, email, kỹ năng (không phân biệt chữ hoa/thường) phản hồi ≤ 3 giây; hỗ trợ lọc Chưa xem (chấm xanh tĩnh dịu mắt), Gắn sao ưu tiên. | HR, Manager | BR-07 | **UC-04** | P0 (Must Have) |
 | **FR-12**<br>`FR-PIPE-SLA-004` | Cảnh báo hồ sơ chờ xử lý quá hạn | Tự động hiển thị cảnh báo đỏ khi hồ sơ chờ quá 48 giờ ở vòng Mới nộp hoặc quá 72 giờ ở vòng Sàng lọc tiêu chuẩn. | Hệ thống | BRL-07 | **UC-04** | P1 (Should Have) |

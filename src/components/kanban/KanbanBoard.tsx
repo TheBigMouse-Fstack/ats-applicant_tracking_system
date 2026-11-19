@@ -151,6 +151,34 @@ export default function KanbanBoard() {
   const [alertError, setAlertError] = useState<string | null>(null);
   const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
 
+  // BRL-14: Phân trang lũy tiến theo từng cột Kanban (Mặc định: 15 hồ sơ / cột)
+  const DEFAULT_PAGE_SIZE = 15;
+  const [stageLimits, setStageLimits] = useState<Record<string, number>>({
+    NEW: DEFAULT_PAGE_SIZE,
+    SCREENING: DEFAULT_PAGE_SIZE,
+    INTERVIEW: DEFAULT_PAGE_SIZE,
+    HIRED: DEFAULT_PAGE_SIZE,
+    REJECTED: DEFAULT_PAGE_SIZE,
+  });
+
+  const handleLoadMore = (stage: string) => {
+    setStageLimits((prev) => ({
+      ...prev,
+      [stage]: (prev[stage] || DEFAULT_PAGE_SIZE) + DEFAULT_PAGE_SIZE,
+    }));
+  };
+
+  // Reset phân trang lũy tiến về mặc định khi thay đổi bộ lọc hoặc tìm kiếm
+  useEffect(() => {
+    setStageLimits({
+      NEW: DEFAULT_PAGE_SIZE,
+      SCREENING: DEFAULT_PAGE_SIZE,
+      INTERVIEW: DEFAULT_PAGE_SIZE,
+      HIRED: DEFAULT_PAGE_SIZE,
+      REJECTED: DEFAULT_PAGE_SIZE,
+    });
+  }, [selectedJobId, searchQuery, sortBy, showStarredOnly, showUnviewedOnly]);
+
   useEffect(() => {
     setIsMounted(true);
     fetch("/api/auth/me")
@@ -616,8 +644,11 @@ export default function KanbanBoard() {
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start pb-6">
           {COLUMNS_CONFIG.map((col) => {
-            const columnItems = columns[col.id] || [];
-            const count = columnItems.length;
+            const allColumnItems = columns[col.id] || [];
+            const count = allColumnItems.length;
+            const currentLimit = stageLimits[col.id] || DEFAULT_PAGE_SIZE;
+            const displayedItems = allColumnItems.slice(0, currentLimit);
+            const hasMore = allColumnItems.length > currentLimit;
 
             return (
               <div
@@ -635,8 +666,9 @@ export default function KanbanBoard() {
                     </div>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[11px] font-black border ${col.badgeColor}`}
+                      title={`Đang hiển thị ${displayedItems.length} trên tổng số ${count} hồ sơ`}
                     >
-                      {count}
+                      {displayedItems.length < count ? `${displayedItems.length}/${count}` : count}
                     </span>
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">
@@ -650,12 +682,13 @@ export default function KanbanBoard() {
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`flex-1 p-3 overflow-y-auto transition-colors ${snapshot.isDraggingOver
+                      className={`flex-1 p-3 overflow-y-auto transition-colors ${
+                        snapshot.isDraggingOver
                           ? "bg-brand-50/50 ring-2 ring-brand-400/50 ring-inset"
                           : ""
-                        }`}
+                      }`}
                     >
-                      {columnItems.length === 0 ? (
+                      {displayedItems.length === 0 ? (
                         <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
                           <Users className="w-6 h-6 text-slate-300 mb-1" />
                           <p className="text-xs font-semibold text-slate-400">
@@ -666,7 +699,7 @@ export default function KanbanBoard() {
                           </p>
                         </div>
                       ) : (
-                        columnItems.map((app, index) => (
+                        displayedItems.map((app, index) => (
                           <CandidateCard
                             key={app.id}
                             application={app}
@@ -678,6 +711,27 @@ export default function KanbanBoard() {
                         ))
                       )}
                       {provided.placeholder}
+
+                      {/* BRL-14: Nút Tải thêm lũy tiến theo từng cột */}
+                      {hasMore && (
+                        <div className="pt-2.5 pb-1">
+                          <button
+                            type="button"
+                            onClick={() => handleLoadMore(col.id)}
+                            className="w-full py-2 px-3 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 hover:text-brand-700 shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <span>+ Tải thêm {Math.min(DEFAULT_PAGE_SIZE, count - displayedItems.length)} hồ sơ</span>
+                            <span className="text-[10px] text-slate-400 font-normal">
+                              ({displayedItems.length}/{count})
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                      {!hasMore && count > DEFAULT_PAGE_SIZE && (
+                        <p className="text-[10px] text-center text-slate-400 py-2 font-medium">
+                          Đã hiển thị toàn bộ {count} hồ sơ
+                        </p>
+                      )}
                     </div>
                   )}
                 </Droppable>
@@ -770,5 +824,4 @@ export default function KanbanBoard() {
     </div>
   );
 }
-
 

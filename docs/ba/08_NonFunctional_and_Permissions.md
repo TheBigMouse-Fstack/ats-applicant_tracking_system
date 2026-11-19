@@ -2,7 +2,7 @@
 id: "RBAC-NFR-08"
 title: "Phân loại Tác nhân, Ma trận Phân quyền RBAC & Yêu cầu Phi chức năng (ISO/IEC 25010)"
 type: "srs"
-version: "2.1.0"
+version: "2.3.0"
 status: "approved"
 owner: "ATS BA & Security Team"
 domain: "recruitment-ats"
@@ -33,6 +33,7 @@ last_updated: "2026-11-18"
 | `v2.0.0` | 2026-11-15 | BA & Security Team | **Security** | Đồng bộ chuẩn băm mật khẩu NIST PBKDF2-SHA512, chữ ký phiên HMAC-SHA256, Magic Bytes và Edge Middleware. | Tech Lead |
 | `v2.1.0` | 2026-11-18 | BA & Security Team | **Changed** | Bổ sung Phân loại 4 nhóm Tác nhân (`RULE-17`); phân tách thẩm quyền vòng tuyển: `HR` max `SCREENING` + sửa 5 trường CV; `HIRING_MANAGER` phụ trách `INTERVIEW`/`HIRED` & lịch phỏng vấn. | Product Owner & Tech Lead |
 | `v2.2.0` | 2026-11-18 | BA & Security Team | **Added** | Đặc tả phân quyền **Operational Dashboard** (`/admin/dashboard`) theo từng vai trò (Least Privilege + Job-to-be-Done) và tách biệt thương hiệu Nội bộ (`ATS — Applicant Tracking System`) vs Public (`RecoverX`). | Product Owner & Tech Lead |
+| `v2.3.0` | 2026-11-19 | BA & QA Team | **Added** | Bổ sung tiêu chuẩn hiệu năng NFR-PER-05: Giới hạn DOM rendering và phân trang lũy tiến cột Kanban (BRL-14) đảm bảo tốc độ kéo thả ≥ 55 FPS khi số lượng hồ sơ > 1.000. | Tech Lead |
 
 ---
 
@@ -123,6 +124,7 @@ Tài liệu phân loại các yêu cầu chất lượng hệ thống theo tiêu
 | **NFR-PER-02** | **Tốc độ đọc & đánh giá CV tự động** | Thời gian đọc nội dung CV, bóc tách 5 trường cốt lõi và chấm mức độ phù hợp 3 mức màu theo JD. | **≤ 5.0 giây / CV**. |
 | **NFR-PER-03** | **Tiếp nhận tệp CV & Chứng chỉ** | Hỗ trợ tải lên tệp CV (`.pdf`, `.docx` ≤ 10MB) kèm nhiều ảnh/PDF bằng cấp chứng chỉ trong cùng 1 lần nộp. | Mượt mà, không treo màn hình. |
 | **NFR-PER-04** | **Khả năng chịu tải đồng thời** | Đáp ứng ổn định trong các đợt tuyển dụng cao điểm của doanh nghiệp. | Tối thiểu **100 nhân sự nội bộ** và **500 ứng viên** truy cập cùng lúc. |
+| **NFR-PER-05** | **Hiệu năng Bảng Kanban khi dữ liệu lớn** | Duy trì tốc độ khung hình mượt mà của thao tác kéo thả và tránh nghẽn bộ nhớ DOM khi một vị trí có hơn 1.000 hồ sơ. | Tốc độ kéo thả **≥ 55 FPS**; thời gian kết xuất cột **≤ 1.0 giây** thông qua cơ chế Phân trang Lũy tiến từng cột (15 hồ sơ/lượt theo `BRL-14`). |
 
 ---
 
