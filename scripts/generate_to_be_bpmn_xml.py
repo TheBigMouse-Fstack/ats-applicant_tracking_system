@@ -1,30 +1,32 @@
-<?xml version="1.0" encoding="UTF-8"?>
+import xml.etree.ElementTree as ET
+
+to_be_bpmn_content = '''<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-                  id="Definitions_ATS_Recruitment"
+                  id="Definitions_ATS_Recruitment_ToBe"
                   targetNamespace="http://bpmn.io/schema/bpmn"
                   exporter="Antigravity BPMN 2.0 Generator"
-                  exporterVersion="2.1.0">
+                  exporterVersion="2.2.0">
 
-  <bpmn:collaboration id="Collaboration_ATS_Recruitment">
-    <bpmn:participant id="Participant_RecruitmentProcess" name="QUY TRÌNH TUYỂN DỤNG NHÂN SỰ CHUẨN ATS (TO-BE)" processRef="Process_Recruitment_ATS" />
+  <bpmn:collaboration id="Collaboration_ToBe_Recruitment">
+    <bpmn:participant id="Participant_ToBeProcess" name="RECOVERX ATS TO-BE RECRUITMENT WORKFLOW (AI-ASSISTED)" processRef="Process_ToBe_Recruitment" />
   </bpmn:collaboration>
 
-  <bpmn:process id="Process_Recruitment_ATS" name="Quy trình Tuyển dụng Chuẩn ATS" isExecutable="false">
+  <bpmn:process id="Process_ToBe_Recruitment" name="AI-Assisted ATS Recruitment Process" isExecutable="false">
     
-    <!-- LANE SET -->
-    <bpmn:laneSet id="LaneSet_Recruitment">
+    <!-- 4 LANES SET -->
+    <bpmn:laneSet id="LaneSet_ToBe">
       <!-- LANE 1: CANDIDATE -->
-      <bpmn:lane id="Lane_Candidate" name="1. Ứng viên (Candidate)">
+      <bpmn:lane id="Lane_Candidate" name="1. Candidate (Self-Service)">
         <bpmn:flowNodeRef>Start_CandidateApply</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_SubmitOnlineCV</bpmn:flowNodeRef>
       </bpmn:lane>
 
-      <!-- LANE 2: SYSTEM & AI ENGINE -->
-      <bpmn:lane id="Lane_SystemAI" name="2. Hệ thống ATS &amp; Động cơ AI (System &amp; AI Engine)">
+      <!-- LANE 2: ATS & AI ENGINE -->
+      <bpmn:lane id="Lane_SystemAI" name="2. ATS Platform &amp; AI Engine (Automated Services)">
         <bpmn:flowNodeRef>Task_Deduplication</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_DuplicateCheck</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_MergeApplication</bpmn:flowNodeRef>
@@ -37,7 +39,7 @@
       </bpmn:lane>
 
       <!-- LANE 3: HR RECRUITER -->
-      <bpmn:lane id="Lane_RecruiterHR" name="3. Chuyên viên Tuyển dụng (Recruiter / HR)">
+      <bpmn:lane id="Lane_RecruiterHR" name="3. Recruiter / HR Talent Acquisition Lead">
         <bpmn:flowNodeRef>Start_HRInternalIntake</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_HRUploadCV</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_HRScreenKanban</bpmn:flowNodeRef>
@@ -47,10 +49,10 @@
       </bpmn:lane>
 
       <!-- LANE 4: HIRING MANAGER -->
-      <bpmn:lane id="Lane_HiringManager" name="4. Quản lý Chuyên môn (Hiring Manager)">
+      <bpmn:lane id="Lane_HiringManager" name="4. Hiring Manager / Technical Department Lead">
         <bpmn:flowNodeRef>Task_HMReviewProfile</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_HMApproveInterview</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_ScheduleInterviewN8N</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ScheduleInterviewAuto</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_ConductInterviewScorecard</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_CheckScorecardRule</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Gateway_FinalHiringDecision</bpmn:flowNodeRef>
@@ -60,148 +62,152 @@
       </bpmn:lane>
     </bpmn:laneSet>
 
-    <!-- FLOW NODES & ACTIVITIES -->
+    <!-- DATA OBJECTS -->
+    <bpmn:dataStoreReference id="DataStore_TalentPool" name="Centralized Talent Pool Database (3 Tier Retention)" />
 
-    <!-- CANDIDATE LANE -->
-    <bpmn:startEvent id="Start_CandidateApply" name="Truy cập Cổng tuyển dụng công khai">
+    <!-- CANDIDATE LANE NODES -->
+    <bpmn:startEvent id="Start_CandidateApply" name="Access Public Careers Portal (/jobs)">
       <bpmn:outgoing>Flow_Cand_1</bpmn:outgoing>
     </bpmn:startEvent>
 
-    <bpmn:userTask id="Task_SubmitOnlineCV" name="1A. Điền biểu mẫu &amp; Tải lên tệp CV (.pdf, .docx)">
+    <bpmn:userTask id="Task_SubmitOnlineCV" name="1A. Complete application form &amp; upload resume (.pdf, .docx)">
       <bpmn:incoming>Flow_Cand_1</bpmn:incoming>
       <bpmn:outgoing>Flow_Cand_To_System</bpmn:outgoing>
     </bpmn:userTask>
 
-    <!-- HR LANE -->
-    <bpmn:startEvent id="Start_HRInternalIntake" name="Tiếp nhận CV nội bộ (Referral / Headhunt)">
+    <!-- HR START NODES -->
+    <bpmn:startEvent id="Start_HRInternalIntake" name="Receive Employee Referral or Direct Source">
       <bpmn:outgoing>Flow_HR_1</bpmn:outgoing>
     </bpmn:startEvent>
 
-    <bpmn:userTask id="Task_HRUploadCV" name="1B. Tải tệp CV lên hệ thống ATS">
+    <bpmn:userTask id="Task_HRUploadCV" name="1B. Ingest resume file into ATS intake modal">
       <bpmn:incoming>Flow_HR_1</bpmn:incoming>
       <bpmn:outgoing>Flow_HR_To_System</bpmn:outgoing>
     </bpmn:userTask>
 
-    <!-- SYSTEM & AI ENGINE LANE -->
-    <bpmn:serviceTask id="Task_Deduplication" name="2. Khử trùng lặp Email/SĐT trong 30 ngày (BRL-02)">
+    <!-- SYSTEM & AI ENGINE NODES -->
+    <bpmn:serviceTask id="Task_Deduplication" name="2. Automated deduplication check: Email/Phone in 30 days (BRL-02)">
       <bpmn:incoming>Flow_Cand_To_System</bpmn:incoming>
       <bpmn:incoming>Flow_HR_To_System</bpmn:incoming>
       <bpmn:outgoing>Flow_Dedup_To_Gateway</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <bpmn:exclusiveGateway id="Gateway_DuplicateCheck" name="Hồ sơ đã tồn tại?">
+    <bpmn:exclusiveGateway id="Gateway_DuplicateCheck" name="Candidate already exists in 30 days?">
       <bpmn:incoming>Flow_Dedup_To_Gateway</bpmn:incoming>
       <bpmn:outgoing>Flow_Dup_Yes</bpmn:outgoing>
       <bpmn:outgoing>Flow_Dup_No</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
-    <bpmn:serviceTask id="Task_MergeApplication" name="Gộp lịch sử ứng tuyển &amp; Cảnh báo">
+    <bpmn:serviceTask id="Task_MergeApplication" name="Merge application history &amp; raise warning flag">
       <bpmn:incoming>Flow_Dup_Yes</bpmn:incoming>
       <bpmn:outgoing>Flow_Merge_To_AI</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <bpmn:serviceTask id="Task_AIParsing" name="3. AI Parsing: Trích xuất 5 trường cốt lõi">
+    <bpmn:serviceTask id="Task_AIParsing" name="3. Hybrid AI Parsing: Extract 5 core fields (Name, Phone, Email, Skills, Exp)">
       <bpmn:incoming>Flow_Dup_No</bpmn:incoming>
       <bpmn:incoming>Flow_Merge_To_AI</bpmn:incoming>
       <bpmn:outgoing>Flow_AI_Parse_To_Score</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <bpmn:serviceTask id="Task_AIScoring" name="4. AI Scoring: Đối chiếu JD &amp; Tính điểm 3 mức">
+    <bpmn:serviceTask id="Task_AIScoring" name="4. AI Semantic Matching: Compare JD criteria &amp; generate 3-tier Match Score">
       <bpmn:incoming>Flow_AI_Parse_To_Score</bpmn:incoming>
       <bpmn:outgoing>Flow_AI_Score_To_Kanban</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <bpmn:serviceTask id="Task_CreateKanbanNew" name="5. Khởi tạo thẻ tại cột Mới tiếp nhận (NEW)">
+    <bpmn:serviceTask id="Task_CreateKanbanNew" name="5. Create candidate card in Kanban NEW column (Human-in-the-Loop)">
       <bpmn:incoming>Flow_AI_Score_To_Kanban</bpmn:incoming>
       <bpmn:outgoing>Flow_System_To_HR_Review</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <!-- HR RECRUITER LANE CONT. -->
-    <bpmn:userTask id="Task_HRScreenKanban" name="6. Sàng lọc hồ sơ trên Kanban (Bộ lọc nâng cao)">
+    <!-- HR SCREENING NODES -->
+    <bpmn:userTask id="Task_HRScreenKanban" name="6. Review candidate profile &amp; match score on Kanban pipeline">
       <bpmn:incoming>Flow_System_To_HR_Review</bpmn:incoming>
       <bpmn:outgoing>Flow_HR_Review_To_Gate</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:exclusiveGateway id="Gateway_HRSortingDecision" name="Hồ sơ đạt tiêu chuẩn sơ loại?">
+    <bpmn:exclusiveGateway id="Gateway_HRSortingDecision" name="Candidate passes initial screening?">
       <bpmn:incoming>Flow_HR_Review_To_Gate</bpmn:incoming>
       <bpmn:outgoing>Flow_HRSort_Pass</bpmn:outgoing>
       <bpmn:outgoing>Flow_HRSort_Reject</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
-    <bpmn:userTask id="Task_MoveToScreening" name="7. Kéo sang cột Sàng lọc tiêu chuẩn (SCREENING)">
+    <bpmn:userTask id="Task_MoveToScreening" name="7. Advance card to SCREENING stage (RBAC boundary)">
       <bpmn:incoming>Flow_HRSort_Pass</bpmn:incoming>
       <bpmn:outgoing>Flow_HR_To_HM_Review</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:userTask id="Task_MoveToRejectScreening" name="Kéo sang Từ chối &amp; Chọn lý do (BRL-11)">
+    <bpmn:userTask id="Task_MoveToRejectScreening" name="Move card to REJECTED &amp; select mandatory reason (BRL-11)">
       <bpmn:incoming>Flow_HRSort_Reject</bpmn:incoming>
       <bpmn:outgoing>Flow_HR_Reject_To_Buffer</bpmn:outgoing>
     </bpmn:userTask>
 
-    <!-- HIRING MANAGER LANE -->
-    <bpmn:userTask id="Task_HMReviewProfile" name="8. Đánh giá hồ sơ chuyên môn">
+    <!-- HIRING MANAGER NODES -->
+    <bpmn:userTask id="Task_HMReviewProfile" name="8. Review technical competence &amp; qualification details">
       <bpmn:incoming>Flow_HR_To_HM_Review</bpmn:incoming>
       <bpmn:outgoing>Flow_HM_Review_To_Gate</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:exclusiveGateway id="Gateway_HMApproveInterview" name="Đạt tiêu chuẩn phỏng vấn?">
+    <bpmn:exclusiveGateway id="Gateway_HMApproveInterview" name="Approve candidate for technical interview?">
       <bpmn:incoming>Flow_HM_Review_To_Gate</bpmn:incoming>
       <bpmn:outgoing>Flow_HM_Interview_Pass</bpmn:outgoing>
       <bpmn:outgoing>Flow_HM_Interview_Reject</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
-    <bpmn:userTask id="Task_ScheduleInterviewN8N" name="9. Lên lịch phỏng vấn (Kéo sang INTERVIEW) &amp; Tự động gửi thư mời">
+    <bpmn:userTask id="Task_ScheduleInterviewAuto" name="9. Advance to INTERVIEW, pick date/time &amp; trigger automated invite workflow">
       <bpmn:incoming>Flow_HM_Interview_Pass</bpmn:incoming>
       <bpmn:outgoing>Flow_Schedule_To_Conduct</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:userTask id="Task_ConductInterviewScorecard" name="10. Tổ chức phỏng vấn &amp; Nhập điểm Scorecard (BRL-08)">
+    <bpmn:userTask id="Task_ConductInterviewScorecard" name="10. Conduct interview &amp; submit 3-criteria weighted Scorecard (BRL-08)">
       <bpmn:incoming>Flow_Schedule_To_Conduct</bpmn:incoming>
       <bpmn:outgoing>Flow_Conduct_To_Gate_Scorecard</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:exclusiveGateway id="Gateway_CheckScorecardRule" name="Có ít nhất 1 Scorecard hoàn chỉnh? (BRL-06)">
+    <bpmn:exclusiveGateway id="Gateway_CheckScorecardRule" name="At least 1 valid completed Scorecard exists? (BRL-06 Gate)">
       <bpmn:incoming>Flow_Conduct_To_Gate_Scorecard</bpmn:incoming>
       <bpmn:outgoing>Flow_Scorecard_Valid</bpmn:outgoing>
       <bpmn:outgoing>Flow_Scorecard_Missing</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
-    <bpmn:exclusiveGateway id="Gateway_FinalHiringDecision" name="Quyết định tuyển dụng?">
+    <bpmn:exclusiveGateway id="Gateway_FinalHiringDecision" name="Hiring consensus reached?">
       <bpmn:incoming>Flow_Scorecard_Valid</bpmn:incoming>
       <bpmn:outgoing>Flow_Final_Hired</bpmn:outgoing>
       <bpmn:outgoing>Flow_Final_Reject</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
-    <bpmn:userTask id="Task_MoveToHiredOffer" name="11. Kéo sang Tuyển chọn (HIRED) &amp; Gửi Thư mời nhận việc">
+    <bpmn:userTask id="Task_MoveToHiredOffer" name="11. Advance card to HIRED &amp; generate official Job Offer">
       <bpmn:incoming>Flow_Final_Hired</bpmn:incoming>
       <bpmn:outgoing>Flow_Hired_To_End</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:endEvent id="End_HiredSuccess" name="Tuyển dụng thành công &amp; Bàn giao Onboarding">
+    <bpmn:endEvent id="End_HiredSuccess" name="Recruitment Successful: Candidate Hired &amp; Handed to Onboarding">
       <bpmn:incoming>Flow_Hired_To_End</bpmn:incoming>
     </bpmn:endEvent>
 
-    <bpmn:userTask id="Task_MoveToRejectInterview" name="Kéo sang Từ chối &amp; Chọn lý do (BRL-11)">
+    <bpmn:userTask id="Task_MoveToRejectInterview" name="Move card to REJECTED &amp; record interview evaluation reason (BRL-11)">
       <bpmn:incoming>Flow_HM_Interview_Reject</bpmn:incoming>
       <bpmn:incoming>Flow_Final_Reject</bpmn:incoming>
       <bpmn:incoming>Flow_Scorecard_Missing</bpmn:incoming>
       <bpmn:outgoing>Flow_HM_Reject_To_Buffer</bpmn:outgoing>
     </bpmn:userTask>
 
-    <!-- REJECTION BUFFER & TALENT POOL IN SYSTEM LANE -->
-    <bpmn:intermediateCatchEvent id="Event_DelayRejectBuffer" name="Bộ đệm hoãn 12 giờ (Delay Buffer BRL-05)">
+    <!-- REJECTION DELAY BUFFER & TALENT POOL IN SYSTEM LANE -->
+    <bpmn:intermediateCatchEvent id="Event_DelayRejectBuffer" name="12-Hour Delay Buffer (Psychological grace period BRL-05)">
       <bpmn:incoming>Flow_HR_Reject_To_Buffer</bpmn:incoming>
       <bpmn:incoming>Flow_HM_Reject_To_Buffer</bpmn:incoming>
       <bpmn:outgoing>Flow_Buffer_To_SendNotice</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_Delay12h" />
     </bpmn:intermediateCatchEvent>
 
-    <bpmn:sendTask id="Task_SendRejectNotice" name="12. Tự động gửi Email từ chối lịch sự &amp; Gắn thẻ Talent Pool">
+    <bpmn:sendTask id="Task_SendRejectNotice" name="12. Dispatch automated polite regret email &amp; index into Talent Pool">
       <bpmn:incoming>Flow_Buffer_To_SendNotice</bpmn:incoming>
       <bpmn:outgoing>Flow_Notice_To_EndArchive</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutput_TalentPoolArchive">
+        <bpmn:targetRef>DataStore_TalentPool</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
     </bpmn:sendTask>
 
-    <bpmn:endEvent id="End_RejectedArchive" name="Lưu trữ hồ sơ dự phòng trong Kho Nhân Tài (180 ngày)">
+    <bpmn:endEvent id="End_RejectedArchive" name="Candidate Profile Archived in Talent Pool (180-Day Lifecycle)">
       <bpmn:incoming>Flow_Notice_To_EndArchive</bpmn:incoming>
     </bpmn:endEvent>
 
@@ -211,26 +217,26 @@
     <bpmn:sequenceFlow id="Flow_HR_1" sourceRef="Start_HRInternalIntake" targetRef="Task_HRUploadCV" />
     <bpmn:sequenceFlow id="Flow_HR_To_System" sourceRef="Task_HRUploadCV" targetRef="Task_Deduplication" />
     <bpmn:sequenceFlow id="Flow_Dedup_To_Gateway" sourceRef="Task_Deduplication" targetRef="Gateway_DuplicateCheck" />
-    <bpmn:sequenceFlow id="Flow_Dup_Yes" name="Có trùng lặp" sourceRef="Gateway_DuplicateCheck" targetRef="Task_MergeApplication" />
-    <bpmn:sequenceFlow id="Flow_Dup_No" name="Hồ sơ mới" sourceRef="Gateway_DuplicateCheck" targetRef="Task_AIParsing" />
+    <bpmn:sequenceFlow id="Flow_Dup_Yes" name="Duplicate Found" sourceRef="Gateway_DuplicateCheck" targetRef="Task_MergeApplication" />
+    <bpmn:sequenceFlow id="Flow_Dup_No" name="Unique New Profile" sourceRef="Gateway_DuplicateCheck" targetRef="Task_AIParsing" />
     <bpmn:sequenceFlow id="Flow_Merge_To_AI" sourceRef="Task_MergeApplication" targetRef="Task_AIParsing" />
     <bpmn:sequenceFlow id="Flow_AI_Parse_To_Score" sourceRef="Task_AIParsing" targetRef="Task_AIScoring" />
     <bpmn:sequenceFlow id="Flow_AI_Score_To_Kanban" sourceRef="Task_AIScoring" targetRef="Task_CreateKanbanNew" />
     <bpmn:sequenceFlow id="Flow_System_To_HR_Review" sourceRef="Task_CreateKanbanNew" targetRef="Task_HRScreenKanban" />
     <bpmn:sequenceFlow id="Flow_HR_Review_To_Gate" sourceRef="Task_HRScreenKanban" targetRef="Gateway_HRSortingDecision" />
-    <bpmn:sequenceFlow id="Flow_HRSort_Pass" name="Đạt sơ loại" sourceRef="Gateway_HRSortingDecision" targetRef="Task_MoveToScreening" />
-    <bpmn:sequenceFlow id="Flow_HRSort_Reject" name="Không phù hợp" sourceRef="Gateway_HRSortingDecision" targetRef="Task_MoveToRejectScreening" />
+    <bpmn:sequenceFlow id="Flow_HRSort_Pass" name="Qualified" sourceRef="Gateway_HRSortingDecision" targetRef="Task_MoveToScreening" />
+    <bpmn:sequenceFlow id="Flow_HRSort_Reject" name="Not Suitable" sourceRef="Gateway_HRSortingDecision" targetRef="Task_MoveToRejectScreening" />
     <bpmn:sequenceFlow id="Flow_HR_Reject_To_Buffer" sourceRef="Task_MoveToRejectScreening" targetRef="Event_DelayRejectBuffer" />
     <bpmn:sequenceFlow id="Flow_HR_To_HM_Review" sourceRef="Task_MoveToScreening" targetRef="Task_HMReviewProfile" />
     <bpmn:sequenceFlow id="Flow_HM_Review_To_Gate" sourceRef="Task_HMReviewProfile" targetRef="Gateway_HMApproveInterview" />
-    <bpmn:sequenceFlow id="Flow_HM_Interview_Pass" name="Đạt chuyên môn" sourceRef="Gateway_HMApproveInterview" targetRef="Task_ScheduleInterviewN8N" />
-    <bpmn:sequenceFlow id="Flow_HM_Interview_Reject" name="Không đạt" sourceRef="Gateway_HMApproveInterview" targetRef="Task_MoveToRejectInterview" />
-    <bpmn:sequenceFlow id="Flow_Schedule_To_Conduct" sourceRef="Task_ScheduleInterviewN8N" targetRef="Task_ConductInterviewScorecard" />
+    <bpmn:sequenceFlow id="Flow_HM_Interview_Pass" name="Approved for Interview" sourceRef="Gateway_HMApproveInterview" targetRef="Task_ScheduleInterviewAuto" />
+    <bpmn:sequenceFlow id="Flow_HM_Interview_Reject" name="Rejected" sourceRef="Gateway_HMApproveInterview" targetRef="Task_MoveToRejectInterview" />
+    <bpmn:sequenceFlow id="Flow_Schedule_To_Conduct" sourceRef="Task_ScheduleInterviewAuto" targetRef="Task_ConductInterviewScorecard" />
     <bpmn:sequenceFlow id="Flow_Conduct_To_Gate_Scorecard" sourceRef="Task_ConductInterviewScorecard" targetRef="Gateway_CheckScorecardRule" />
-    <bpmn:sequenceFlow id="Flow_Scorecard_Valid" name="Đủ điều kiện BRL-06" sourceRef="Gateway_CheckScorecardRule" targetRef="Gateway_FinalHiringDecision" />
-    <bpmn:sequenceFlow id="Flow_Scorecard_Missing" name="Thiếu Scorecard" sourceRef="Gateway_CheckScorecardRule" targetRef="Task_MoveToRejectInterview" />
-    <bpmn:sequenceFlow id="Flow_Final_Hired" name="Trúng tuyển" sourceRef="Gateway_FinalHiringDecision" targetRef="Task_MoveToHiredOffer" />
-    <bpmn:sequenceFlow id="Flow_Final_Reject" name="Không trúng tuyển" sourceRef="Gateway_FinalHiringDecision" targetRef="Task_MoveToRejectInterview" />
+    <bpmn:sequenceFlow id="Flow_Scorecard_Valid" name="Scorecard Rule Passed" sourceRef="Gateway_CheckScorecardRule" targetRef="Gateway_FinalHiringDecision" />
+    <bpmn:sequenceFlow id="Flow_Scorecard_Missing" name="Blocked: Missing Scorecard" sourceRef="Gateway_CheckScorecardRule" targetRef="Task_MoveToRejectInterview" />
+    <bpmn:sequenceFlow id="Flow_Final_Hired" name="Selected for Hire" sourceRef="Gateway_FinalHiringDecision" targetRef="Task_MoveToHiredOffer" />
+    <bpmn:sequenceFlow id="Flow_Final_Reject" name="Declined" sourceRef="Gateway_FinalHiringDecision" targetRef="Task_MoveToRejectInterview" />
     <bpmn:sequenceFlow id="Flow_Hired_To_End" sourceRef="Task_MoveToHiredOffer" targetRef="End_HiredSuccess" />
     <bpmn:sequenceFlow id="Flow_HM_Reject_To_Buffer" sourceRef="Task_MoveToRejectInterview" targetRef="Event_DelayRejectBuffer" />
     <bpmn:sequenceFlow id="Flow_Buffer_To_SendNotice" sourceRef="Event_DelayRejectBuffer" targetRef="Task_SendRejectNotice" />
@@ -238,30 +244,38 @@
 
   </bpmn:process>
 
-  <!-- DIAGRAM DISPLAY / GRAPHICAL COORDINATES (DI) -->
-  <bpmndi:BPMNDiagram id="BPMNDiagram_ATS">
-    <bpmndi:BPMNPlane id="BPMNPlane_ATS" bpmnElement="Collaboration_ATS_Recruitment">
+  <!-- GRAPHICAL COORDINATES (DI) -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ATS_ToBe">
+    <bpmndi:BPMNPlane id="BPMNPlane_ATS_ToBe" bpmnElement="Collaboration_ToBe_Recruitment">
       
       <!-- PARTICIPANT POOL -->
-      <bpmndi:BPMNShape id="Participant_RecruitmentProcess_di" bpmnElement="Participant_RecruitmentProcess" isHorizontal="true">
-        <dc:Bounds x="160" y="80" width="1900" height="960" />
+      <bpmndi:BPMNShape id="Participant_ToBeProcess_di" bpmnElement="Participant_ToBeProcess" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="1920" height="960" />
       </bpmndi:BPMNShape>
 
-      <!-- LANES -->
+      <!-- 4 LANES -->
       <bpmndi:BPMNShape id="Lane_Candidate_di" bpmnElement="Lane_Candidate" isHorizontal="true">
-        <dc:Bounds x="190" y="80" width="1870" height="180" />
+        <dc:Bounds x="190" y="80" width="1890" height="180" />
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Lane_SystemAI_di" bpmnElement="Lane_SystemAI" isHorizontal="true">
-        <dc:Bounds x="190" y="260" width="1870" height="260" />
+        <dc:Bounds x="190" y="260" width="1890" height="260" />
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Lane_RecruiterHR_di" bpmnElement="Lane_RecruiterHR" isHorizontal="true">
-        <dc:Bounds x="190" y="520" width="1870" height="240" />
+        <dc:Bounds x="190" y="520" width="1890" height="240" />
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="Lane_HiringManager_di" bpmnElement="Lane_HiringManager" isHorizontal="true">
-        <dc:Bounds x="190" y="760" width="1870" height="280" />
+        <dc:Bounds x="190" y="760" width="1890" height="280" />
+      </bpmndi:BPMNShape>
+
+      <!-- DATA STORES -->
+      <bpmndi:BPMNShape id="DataStore_TalentPool_di" bpmnElement="DataStore_TalentPool">
+        <dc:Bounds x="1875" y="445" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1855" y="502" width="90" height="40" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
       <!-- CANDIDATE SHAPES -->
@@ -296,7 +310,7 @@
       <bpmndi:BPMNShape id="Gateway_DuplicateCheck_di" bpmnElement="Gateway_DuplicateCheck" isMarkerVisible="true">
         <dc:Bounds x="765" y="365" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="748" y="341" width="85" height="14" />
+          <dc:Bounds x="748" y="341" width="85" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
@@ -344,11 +358,11 @@
       <bpmndi:BPMNShape id="Gateway_HMApproveInterview_di" bpmnElement="Gateway_HMApproveInterview" isMarkerVisible="true">
         <dc:Bounds x="1595" y="915" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1582" y="972" width="76" height="27" />
+          <dc:Bounds x="1582" y="972" width="76" height="40" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="Task_ScheduleInterviewN8N_di" bpmnElement="Task_ScheduleInterviewN8N">
+      <bpmndi:BPMNShape id="Task_ScheduleInterviewAuto_di" bpmnElement="Task_ScheduleInterviewAuto">
         <dc:Bounds x="1350" y="800" width="160" height="80" />
       </bpmndi:BPMNShape>
 
@@ -377,7 +391,7 @@
       <bpmndi:BPMNShape id="End_HiredSuccess_di" bpmnElement="End_HiredSuccess">
         <dc:Bounds x="642" y="822" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="620" y="865" width="81" height="40" />
+          <dc:Bounds x="618" y="865" width="85" height="40" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
@@ -398,13 +412,13 @@
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNShape id="End_RejectedArchive_di" bpmnElement="End_RejectedArchive">
-        <dc:Bounds x="1902" y="322" width="36" height="36" />
+        <dc:Bounds x="1912" y="322" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1879" y="365" width="83" height="53" />
+          <dc:Bounds x="1888" y="365" width="85" height="53" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
-      <!-- EDGES / FLOW ARROWS -->
+      <!-- EDGES -->
       <bpmndi:BPMNEdge id="Flow_Cand_1_di" bpmnElement="Flow_Cand_1">
         <di:waypoint x="286" y="160" />
         <di:waypoint x="350" y="160" />
@@ -439,7 +453,7 @@
         <di:waypoint x="790" y="315" />
         <di:waypoint x="860" y="315" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="798" y="293" width="63" height="14" />
+          <dc:Bounds x="798" y="293" width="78" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
@@ -481,7 +495,7 @@
         <di:waypoint x="1495" y="610" />
         <di:waypoint x="1550" y="610" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1495" y="592" width="55" height="14" />
+          <dc:Bounds x="1498" y="592" width="46" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
@@ -489,7 +503,7 @@
         <di:waypoint x="1470" y="635" />
         <di:waypoint x="1470" y="660" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1474" y="638" width="76" height="14" />
+          <dc:Bounds x="1474" y="638" width="61" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
@@ -514,7 +528,7 @@
         <di:waypoint x="1430" y="940" />
         <di:waypoint x="1430" y="880" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1472" y="922" width="81" height="14" />
+          <dc:Bounds x="1472" y="922" width="81" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
@@ -523,7 +537,7 @@
         <di:waypoint x="1650" y="965" />
         <di:waypoint x="1150" y="965" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1646" y="948" width="53" height="14" />
+          <dc:Bounds x="1646" y="948" width="45" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
@@ -549,7 +563,7 @@
         <di:waypoint x="1060" y="865" />
         <di:waypoint x="1060" y="930" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1065" y="885" width="83" height="14" />
+          <dc:Bounds x="1065" y="885" width="83" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
@@ -557,7 +571,7 @@
         <di:waypoint x="925" y="840" />
         <di:waypoint x="880" y="840" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="874" y="822" width="60" height="14" />
+          <dc:Bounds x="874" y="822" width="60" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
@@ -566,7 +580,7 @@
         <di:waypoint x="950" y="950" />
         <di:waypoint x="1000" y="950" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="954" y="895" width="91" height="14" />
+          <dc:Bounds x="954" y="895" width="45" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
 
@@ -589,10 +603,23 @@
 
       <bpmndi:BPMNEdge id="Flow_Notice_To_EndArchive_di" bpmnElement="Flow_Notice_To_EndArchive">
         <di:waypoint x="1850" y="340" />
-        <di:waypoint x="1902" y="340" />
+        <di:waypoint x="1912" y="340" />
+      </bpmndi:BPMNEdge>
+
+      <!-- DATA ASSOCIATION -->
+      <bpmndi:BPMNEdge id="DataOutput_TalentPoolArchive_di" bpmnElement="DataOutput_TalentPoolArchive">
+        <di:waypoint x="1770" y="380" />
+        <di:waypoint x="1770" y="470" />
+        <di:waypoint x="1875" y="470" />
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 
 </bpmn:definitions>
+'''
+
+with open("docs/diagrams/02_to_be_recruitment_process_bpmn.bpmn", "w", encoding="utf-8") as f:
+    f.write(to_be_bpmn_content.strip())
+
+print("TO-BE BPMN 2.0 XML written successfully.")

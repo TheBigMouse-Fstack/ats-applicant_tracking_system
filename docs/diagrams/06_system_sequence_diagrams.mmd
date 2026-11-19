@@ -1,0 +1,133 @@
+%% =========================================================================
+%% ATS — CORE SYSTEM SEQUENCE DIAGRAMS (UML 2.5)
+%% High-integrity message flows, error branches, and third-party integrations
+%% =========================================================================
+
+%% -------------------------------------------------------------------------
+%% FLOW 1: CANDIDATE APPLICATION INTAKE, DEDUPLICATION & HYBRID AI SCORING
+%% -------------------------------------------------------------------------
+sequenceDiagram
+    autonumber
+    actor C as Candidate (Applicant)
+    participant FE as Next.js Web Client (/jobs)
+    participant API as Next.js API Route (/api/applications)
+    participant DB as Neon PostgreSQL (Prisma ORM)
+    participant AI as Hybrid AI Engine (NLP + Gemini)
+    participant N8N as n8n Webhook Automation
+
+    C->>+FE: Selects Job & Uploads Resume (PDF/DOCX)
+    FE->>FE: Validates File Size (<= 5MB) & Magic Bytes (%PDF/PK)
+    FE->>+API: POST /api/applications (Multipart Form Data)
+    
+    API->>API: Computes SHA-256 Resume File Hash
+    API->>+DB: Query Candidate by Email & Phone (BRL-02)
+    DB-->>-API: Return Matching Profile (if any)
+    
+    alt Candidate Already Exists within 30 Days
+        API->>API: Flag Duplicate Warning Badge (Soft Link)
+    else Unique Candidate Profile
+        API->>+DB: INSERT into candidates table
+        DB-->>-API: Return New candidateId
+    end
+
+    API->>+AI: Trigger Hybrid AI Parsing (Layer 1 NLP + Layer 2 Gemini)
+    AI-->>-API: Return 5 Core Fields + Match Score (0-100%) + Rationale
+
+    API->>+DB: INSERT into applications (currentStage="NEW", aiMatchScore)
+    DB-->>-API: Return application record
+
+    API->>+DB: INSERT into audit_logs (action="CV_UPLOAD")
+    DB-->>-API: Acknowledge Audit Trail
+
+    opt Telegram Alert Configured (N8N_TELEGRAM_WEBHOOK_URL)
+        API-)N8N: Async POST /webhook/telegram-alert (Candidate Applied)
+        Note right of N8N: Dispatches alert to HR Telegram Channel
+    end
+
+    API-->>-FE: 201 Created (Application ID, Score, Status="NEW")
+    FE-->>-C: Display Success Confirmation & Application Tracking ID
+
+%% -------------------------------------------------------------------------
+%% FLOW 2: KANBAN DRAG-AND-DROP STAGE TRANSITION & GUARD CHECKS
+%% -------------------------------------------------------------------------
+sequenceDiagram
+    autonumber
+    actor U as Recruiter / Hiring Manager
+    participant UI as Kanban Board View (/dashboard)
+    participant API as Pipeline Move API (/api/pipeline/move)
+    participant DB as Neon PostgreSQL (Prisma ORM)
+    participant N8N as n8n Webhook (Delayed Rejection Buffer)
+
+    U->>+UI: Drags Candidate Card to Target Column
+    UI->>+API: PATCH /api/pipeline/move { applicationId, toStage, reason? }
+
+    API->>+DB: Fetch Application & Current User Role (RBAC Check)
+    DB-->>-API: Return Application State & User Role
+
+    alt User Role Unauthorized for Target Stage
+        API-->>UI: 403 Forbidden (ERR_FORBIDDEN_STAGE_TRANSITION)
+        UI-->>U: Alert: "You do not have permission to advance to this stage."
+    else Target Stage is "HIRED" and Scorecard is Missing (BRL-06)
+        API->>+DB: Query Count of Evaluations for applicationId
+        DB-->>-API: Return Count = 0
+        API-->>UI: 422 Unprocessable Entity (ERR_MISSING_SCORECARD)
+        UI-->>U: Alert: "Cannot Hire candidate without a completed Scorecard."
+    else Target Stage is "REJECTED" and Reason is Empty (BRL-11)
+        API-->>UI: 422 Unprocessable Entity (ERR_MANDATORY_REJECTION_REASON)
+        UI-->>U: Prompt: "Please provide a valid rejection reason."
+    else Valid Transition (Happy Path)
+        API->>+DB: UPDATE applications SET currentStage=toStage, stageUpdatedAt=now()
+        alt Target Stage is "REJECTED"
+            API->>DB: SET emailScheduledAt = now() + 12 Hours (BRL-05 Buffer)
+            opt n8n Rejection Buffer Configured
+                API-)N8N: Async POST /webhook/rejection-buffer (Queue Delayed Notice)
+            end
+        end
+        DB-->>-API: Updated Record
+
+        API->>+DB: INSERT into audit_logs (action="STAGE_CHANGE", fromStage, toStage, reason)
+        DB-->>-API: Log Persisted
+
+        API-->>-UI: 200 OK { success: true, updatedStage: toStage }
+        UI-->>-U: Card Snaps to Target Column with Visual Confirmation
+    end
+
+%% -------------------------------------------------------------------------
+%% FLOW 3: INTERVIEW SCHEDULING & AUTOMATED CALENDAR DISPATCH
+%% -------------------------------------------------------------------------
+sequenceDiagram
+    autonumber
+    actor HM as Hiring Manager
+    participant UI as Interview Modal (/dashboard)
+    participant API as Schedule API (/api/interviews/schedule)
+    participant DB as Neon PostgreSQL (Prisma ORM)
+    participant N8N as n8n Webhook (Calendar & Email Worker)
+    actor C as Candidate
+
+    HM->>+UI: Selects Date, Time, Format (Google Meet) & Notes
+    UI->>+API: POST /api/interviews/schedule { applicationId, interviewDate, format, location, notes }
+
+    API->>+DB: Check Concurrency Limit for Job (BRL-13: Active <= 3x Headcount)
+    DB-->>-API: Current Active Interviews Count
+
+    alt Interview Quota Exceeded
+        API-->>UI: 422 Unprocessable Entity (ERR_INTERVIEW_QUOTA_EXCEEDED)
+        UI-->>HM: Alert: "Interview concurrency cap reached for this job opening."
+    else Quota Verified
+        API->>+DB: UPDATE applications SET interviewDate, interviewFormat, interviewLocation, currentStage="INTERVIEW"
+        DB-->>-API: Update Success
+
+        API->>+DB: INSERT into audit_logs (action="STAGE_CHANGE", toStage="INTERVIEW")
+        DB-->>-API: Log Recorded
+
+        opt Automated Dispatch Enabled (N8N_INTERVIEW_WEBHOOK_URL)
+            API->>+N8N: POST /webhook/interview-schedule (Candidate & Session Details)
+            N8N-)C: Dispatches Automated Email Invite & Google Calendar Event (.ics)
+            N8N-)HM: Dispatches Calendar Invite with Google Meet Link
+            N8N-->>-API: 200 OK { calendarEventId: "evt_99182", status: "DISPATCHED" }
+            API->>DB: UPDATE applications SET isInterviewInviteSent=true
+        end
+
+        API-->>-UI: 200 OK { success: true, scheduledDate: interviewDate }
+        UI-->>-HM: Display Confirmation Banner: "Interview Scheduled & Calendar Synced"
+    end

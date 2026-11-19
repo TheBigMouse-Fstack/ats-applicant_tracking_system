@@ -1,0 +1,54 @@
+stateDiagram-v2
+    %% =========================================================================
+    %% ATS — CANDIDATE APPLICATION FINITE STATE MACHINE (FSM)
+    %% Standard UML State Machine with Composite States, Guards, and Transitions
+    %% =========================================================================
+
+    [*] --> NEW: Submit Application [Valid Resume & Rate Limit < 3/90d]
+
+    state NEW {
+        [*] --> IntakePending
+        IntakePending --> DeduplicationCheck: Automated Intake
+        DeduplicationCheck --> AIParsingAndScoring: [Unique Profile BRL-02]
+        DeduplicationCheck --> DuplicateMerged: [Duplicate Profile Detected]
+        DuplicateMerged --> AIParsingAndScoring
+        AIParsingAndScoring --> ReadyForScreening: Extract 5 Core Fields & 3-Tier Match Score
+        ReadyForScreening --> [*]
+    }
+
+    state SCREENING {
+        [*] --> UnderHRReview
+        UnderHRReview --> TechnicalLeadEvaluation: Recruiter Shortlists Candidate
+        TechnicalLeadEvaluation --> [*]
+    }
+
+    state INTERVIEW {
+        [*] --> InterviewScheduled: Pick Date/Time & Trigger Calendar Invite
+        InterviewScheduled --> ScorecardPending: Session Conducted
+        ScorecardPending --> ScorecardCompleted: Evaluator Submits 3-Criteria Weighted Rating [BRL-08]
+        ScorecardCompleted --> [*]
+    }
+
+    state REJECTED {
+        [*] --> RejectionBuffered: Mandate Reason Selected [BRL-11]
+        RejectionBuffered --> OutboundEmailDispatched: 12-Hour Timer Elapses [BRL-05]
+        OutboundEmailDispatched --> TalentPoolArchived: Categorize into 3 Retention Tiers
+        TalentPoolArchived --> [*]
+    }
+
+    %% STATE TRANSITIONS WITH GUARDS
+    NEW --> SCREENING: HR approves profile [Actor: HR / Admin]
+    NEW --> REJECTED: HR rejects profile [Reason required BRL-11]
+
+    SCREENING --> INTERVIEW: HM approves for interview [Actor: HM / Admin; Guard: Active Interviews <= 3x Quota BRL-13]
+    SCREENING --> REJECTED: HM rejects candidate [Reason required BRL-11]
+
+    INTERVIEW --> HIRED: Final Hiring Approval [Actor: HM / Admin; Guard: Valid Scorecard count >= 1 BRL-06]
+    INTERVIEW --> REJECTED: Candidate declined [Reason required BRL-11]
+
+    %% TALENT POOL REACTIVATION (RE-POOL)
+    REJECTED --> SCREENING: Recruiter re-pools candidate [Guard: Age <= 180 days & Active Job Available]
+
+    %% TERMINAL STATES
+    HIRED --> [*]: Candidate Onboarded & Handoff Complete
+    REJECTED --> [*]: Exceeds 180-Day Retention Lifecycle

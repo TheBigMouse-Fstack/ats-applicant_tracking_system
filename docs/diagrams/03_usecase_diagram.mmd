@@ -1,0 +1,105 @@
+flowchart LR
+    %% ACTORS SPECIFICATION
+    subgraph ACTORS["SYSTEM ACTORS"]
+        direction TB
+        Candidate["👤 Candidate (Job Seeker / Guest)"]
+        Recruiter["👔 HR Recruiter (Talent Acquisition)"]
+        HiringMgr["🎯 Hiring Manager (Department Lead)"]
+        Admin["🛡️ System Administrator"]
+        AIEngine["🤖 Hybrid AI Engine (NLP & LLM)"]
+        AutoService["⚡ Automation Service (Webhook / Worker)"]
+    end
+
+    %% SYSTEM BOUNDARY
+    subgraph SYS_BOUNDARY["APPLICANT TRACKING SYSTEM (ATS SYSTEM BOUNDARY)"]
+        direction TB
+
+        subgraph MOD_PUBLIC["Module 1: Public Careers Portal (/jobs)"]
+            UC01(["UC-01: Browse & View Job Openings"])
+            UC02(["UC-02: Submit Online Application & Resume"])
+            UC03(["UC-03: Track Personal Application Status"])
+            UC04(["UC-04: Auto-Fill Form from Resume Extraction"])
+            UC05(["UC-05: Enforce Application Rate Limit (3 jobs/90 days)"])
+        end
+
+        subgraph MOD_PIPELINE["Module 2: Recruitment Pipeline & Kanban Management"]
+            UC06(["UC-06: Authenticate & RBAC Session Authorization"])
+            UC07(["UC-07: Search, Filter & Inspect Candidate Profiles"])
+            UC08(["UC-08: Transition Stage on 5-Stage Kanban Board"])
+            UC09(["UC-09: Automated Deduplication (Email/Phone 30-Day Check)"])
+            UC10(["UC-10: Match CV Against JD & Compute 3-Tier Score"])
+            UC11(["UC-11: Manually Edit 5 Core Extracted Profile Fields"])
+            UC12(["UC-12: Reject Candidate & Record Mandatory Reason"])
+        end
+
+        subgraph MOD_INTERVIEW["Module 3: Interview Scheduling & Scorecards"]
+            UC13(["UC-13: Schedule Interview Session (Online/In-person)"])
+            UC14(["UC-14: Dispatch Automated Calendar Invite & Meeting Link"])
+            UC15(["UC-15: Complete 3-Criteria Weighted Scorecard Evaluation"])
+            UC16(["UC-16: Final Hiring Approval (Scorecard Prerequisite Gate)"])
+        end
+
+        subgraph MOD_TALENT["Module 4: Talent Pool & System Administration"]
+            UC17(["UC-17: Query, Filter & Reactivate Talent Pool Candidates"])
+            UC18(["UC-18: Manage User Accounts & Role Assignments"])
+            UC19(["UC-19: Export Pipeline Metrics & Analytical Reports"])
+            UC20(["UC-20: Dispatch Automated Regret Email After 12-Hour Delay"])
+        end
+    end
+
+    %% ASSOCIATIONS: CANDIDATE
+    Candidate --> UC01
+    Candidate --> UC02
+    Candidate --> UC03
+
+    %% ASSOCIATIONS: HR RECRUITER
+    Recruiter --> UC06
+    Recruiter --> UC07
+    Recruiter --> UC08
+    Recruiter --> UC11
+    Recruiter --> UC12
+    Recruiter --> UC17
+
+    %% ASSOCIATIONS: HIRING MANAGER
+    HiringMgr --> UC06
+    HiringMgr --> UC07
+    HiringMgr --> UC08
+    HiringMgr --> UC13
+    HiringMgr --> UC15
+    HiringMgr --> UC16
+    HiringMgr --> UC12
+
+    %% ASSOCIATIONS: ADMINISTRATOR
+    Admin --> UC06
+    Admin --> UC18
+    Admin --> UC19
+
+    %% ASSOCIATIONS: AI ENGINE
+    AIEngine --> UC04
+    AIEngine --> UC09
+    AIEngine --> UC10
+
+    %% ASSOCIATIONS: AUTOMATION SERVICE
+    AutoService --> UC14
+    AutoService --> UC20
+
+    %% INCLUDES AND EXTENDS RELATIONSHIPS
+    UC02 -. "<<include>>" .-> UC04
+    UC02 -. "<<include>>" .-> UC05
+    UC02 -. "<<include>>" .-> UC09
+    UC02 -. "<<include>>" .-> UC10
+
+    UC13 -. "<<include>>" .-> UC14
+    UC16 -. "<<include>>" .-> UC15
+
+    UC08 -. "<<extend>>" .-> UC12
+    UC12 -. "<<include>>" .-> UC20
+    UC12 -. "<<extend>>" .-> UC17
+
+    %% CLASS STYLES
+    classDef actorStyle fill:#f8fafc,stroke:#334155,stroke-width:2px,color:#0f172a;
+    classDef ucStyle fill:#f0f9ff,stroke:#0284c7,stroke-width:1.5px,color:#0369a1;
+    classDef includeStyle stroke:#64748b,stroke-width:1px,stroke-dasharray: 5 5;
+
+    class Candidate,Recruiter,HiringMgr,Admin,AIEngine,AutoService actorStyle;
+    class UC01,UC02,UC03,UC04,UC05,UC06,UC07,UC08,UC09,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18,UC19,UC20 ucStyle;
