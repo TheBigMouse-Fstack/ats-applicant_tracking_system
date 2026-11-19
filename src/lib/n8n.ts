@@ -87,7 +87,7 @@ export async function dispatchN8NInterviewWebhook(
         success: true,
         statusCode: res.status,
         webhookUrl,
-        message: `Kích hoạt n8n thành công (Mã phản hồi HTTP ${res.status}).`,
+        message: `Kích hoạt tiến trình gửi thư tự động thành công (Mã phản hồi HTTP ${res.status}).`,
       };
     } else {
       const errText = await res.text().catch(() => "");
@@ -96,22 +96,22 @@ export async function dispatchN8NInterviewWebhook(
         success: false,
         statusCode: res.status,
         webhookUrl,
-        error: `n8n phản hồi lỗi HTTP ${res.status}: ${errText.slice(0, 150)}`,
-        message: `Webhook n8n phản hồi mã lỗi HTTP ${res.status}. Vui lòng kiểm tra workflow trong n8n.`,
+        error: `Cổng tự động phản hồi mã ${res.status}: ${errText.slice(0, 150)}`,
+        message: `Hệ thống tự động đã kết nối nhưng quy trình gửi thư chưa được bật (Active). Vui lòng gạt nút Active trên quy trình tự động.`,
       };
     }
   } catch (err: any) {
     const isTimeout = err.name === "AbortError";
     const errorMsg = isTimeout
-      ? "Quá thời gian chờ phản hồi từ n8n (Timeout 7 giây)"
-      : err.message || "Không thể kết nối đến địa chỉ webhook n8n";
+      ? "Quá thời gian chờ phản hồi (Timeout 7 giây)"
+      : "Không thể kết nối đến máy chủ gửi thư tự động";
 
     return {
       triggered: true,
       success: false,
       webhookUrl,
       error: errorMsg,
-      message: `Lỗi kết nối n8n tại ${webhookUrl} (${errorMsg}). Vui lòng đảm bảo n8n đang chạy và webhook đã Active.`,
+      message: `Chưa kết nối được cổng gửi thư tự động (${errorMsg}). Lịch hẹn vẫn được lưu an toàn trên hệ thống.`,
     };
   }
 }
