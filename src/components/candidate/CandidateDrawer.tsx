@@ -102,6 +102,9 @@ export default function CandidateDrawer({
   const [interviewNotes, setInterviewNotes] = useState("");
   const [interviewInterviewerNotes, setInterviewInterviewerNotes] = useState("");
   const [interviewPostNotes, setInterviewPostNotes] = useState("");
+  const [interviewEmailOption, setInterviewEmailOption] = useState<"AUTO_N8N" | "MANUAL_CUSTOM" | "NONE">("AUTO_N8N");
+  const [customEmailSubject, setCustomEmailSubject] = useState("");
+  const [customEmailBody, setCustomEmailBody] = useState("");
   const [interviewLoading, setInterviewLoading] = useState(false);
   const [isSavingPostNotes, setIsSavingPostNotes] = useState(false);
   const [isCancellingInterview, setIsCancellingInterview] = useState(false);
@@ -151,6 +154,9 @@ export default function CandidateDrawer({
             setInterviewNotes(res.data.interviewNotes || "");
             setInterviewInterviewerNotes(res.data.interviewInterviewerNotes || "");
             setInterviewPostNotes(res.data.interviewPostNotes || "");
+            setInterviewEmailOption(res.data.interviewEmailOption || "AUTO_N8N");
+            setCustomEmailSubject(res.data.customEmailSubject || "");
+            setCustomEmailBody(res.data.customEmailBody || "");
           } else {
             const defDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
             defDate.setHours(9, 0, 0, 0);
@@ -345,6 +351,9 @@ export default function CandidateDrawer({
           interviewNotes,
           interviewInterviewerNotes,
           interviewPostNotes,
+          interviewEmailOption,
+          customEmailSubject: interviewEmailOption === "MANUAL_CUSTOM" ? customEmailSubject : undefined,
+          customEmailBody: interviewEmailOption === "MANUAL_CUSTOM" ? customEmailBody : undefined,
           moveToInterviewStage: data?.currentStage !== "INTERVIEW",
           forceInterviewCapOverride,
         }),
@@ -1929,6 +1938,220 @@ export default function CandidateDrawer({
                             placeholder="Ghi nhận tóm tắt diễn biến buổi phỏng vấn, phản hồi của hội đồng, các câu trả lời tiêu biểu..."
                             className="w-full text-xs rounded-xl border border-slate-200 bg-white p-2.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
                           />
+                        </div>
+
+                        {/* 4. TÙY CHỌN GỬI THƯ MỜI: TỰ ĐỘNG N8N vs TỰ SOẠN LƯU HỆ THỐNG vs KHÔNG GỬI */}
+                        <div className="pt-2 border-t border-slate-100 space-y-3">
+                          <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                            4. Phương Thức Xử Lý Thư Mời Ứng Viên <span className="text-rose-500">*</span>
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {/* OPTION 1: TỰ ĐỘNG QUA N8N */}
+                            <button
+                              type="button"
+                              onClick={() => setInterviewEmailOption("AUTO_N8N")}
+                              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                                interviewEmailOption === "AUTO_N8N"
+                                  ? "border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20 shadow-xs"
+                                  : "border-slate-200 bg-white hover:bg-slate-50/80"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  Tự động n8n
+                                </span>
+                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                  interviewEmailOption === "AUTO_N8N"
+                                    ? "border-emerald-600 bg-emerald-600 text-white"
+                                    : "border-slate-300 bg-white"
+                                }`}>
+                                  {interviewEmailOption === "AUTO_N8N" && <Check className="w-2.5 h-2.5" />}
+                                </div>
+                              </div>
+                              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>Gửi Gmail Tự Động</span>
+                              </h4>
+                              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                Kích hoạt n8n gửi thư mời HTML &amp; tự tạo lịch Google Calendar
+                              </p>
+                            </button>
+
+                            {/* OPTION 2: TỰ VIẾT THƯ & LƯU HỆ THỐNG */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setInterviewEmailOption("MANUAL_CUSTOM");
+                                if (!customEmailSubject) {
+                                  setCustomEmailSubject(`[RecoverX] Thư mời phỏng vấn vị trí ${data?.job?.title || "Chuyên môn"} — ${data?.candidate?.fullName || ""}`);
+                                }
+                                if (!customEmailBody) {
+                                  setCustomEmailBody(
+`Kính gửi bạn ${data?.candidate?.fullName || ""},
+
+Ban Tuyển dụng RecoverX trân trọng chúc mừng hồ sơ của bạn đã vượt qua vòng sơ loại tiêu chuẩn cho vị trí "${data?.job?.title || ""}".
+
+Thông tin buổi phỏng vấn chi tiết như sau:
+• Vị trí ứng tuyển: ${data?.job?.title || ""} (${data?.job?.department || "Bộ phận Chuyên môn"})
+• Thời gian: ${interviewDate ? new Date(interviewDate).toLocaleString("vi-VN") : "Sắp xếp theo thỏa thuận"}
+• Hình thức: ${interviewFormat === "ONLINE" ? "Phỏng vấn Trực tuyến (Online Meeting)" : "Phỏng vấn Trực tiếp tại Văn phòng"}
+• Địa điểm / Link họp: ${interviewLocation || ""}
+${interviewNotes ? "• Ghi chú chuẩn bị: " + interviewNotes : ""}
+
+Vui lòng phản hồi email này để xác nhận lịch phỏng vấn trước 24 giờ.
+
+Trân trọng,
+Hội đồng Tuyển dụng RecoverX`
+                                  );
+                                }
+                              }}
+                              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                                interviewEmailOption === "MANUAL_CUSTOM"
+                                  ? "border-brand-500 bg-brand-50/60 ring-2 ring-brand-500/20 shadow-xs"
+                                  : "border-slate-200 bg-white hover:bg-slate-50/80"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-brand-100 text-brand-800 border border-brand-200">
+                                  Soạn thủ công
+                                </span>
+                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                  interviewEmailOption === "MANUAL_CUSTOM"
+                                    ? "border-brand-600 bg-brand-600 text-white"
+                                    : "border-slate-300 bg-white"
+                                }`}>
+                                  {interviewEmailOption === "MANUAL_CUSTOM" && <Check className="w-2.5 h-2.5" />}
+                                </div>
+                              </div>
+                              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                <Edit3 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                                <span>Tự Viết Mail &amp; Lưu Trữ</span>
+                              </h4>
+                              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                Tự soạn thư tùy chỉnh theo ý muốn và lưu vào hồ sơ hệ thống
+                              </p>
+                            </button>
+
+                            {/* OPTION 3: KHÔNG GỬI GMAIL */}
+                            <button
+                              type="button"
+                              onClick={() => setInterviewEmailOption("NONE")}
+                              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer relative ${
+                                interviewEmailOption === "NONE"
+                                  ? "border-slate-500 bg-slate-50/90 ring-2 ring-slate-500/20 shadow-xs"
+                                  : "border-slate-200 bg-white hover:bg-slate-50/80"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-2">
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                  Bỏ qua thư
+                                </span>
+                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                  interviewEmailOption === "NONE"
+                                    ? "border-slate-600 bg-slate-600 text-white"
+                                    : "border-slate-300 bg-white"
+                                }`}>
+                                  {interviewEmailOption === "NONE" && <Check className="w-2.5 h-2.5" />}
+                                </div>
+                              </div>
+                              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                <Phone className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                                <span>Không Gửi Email</span>
+                              </h4>
+                              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                Đã liên hệ qua SĐT/Zalo hoặc trao đổi trực tiếp, không gửi email
+                              </p>
+                            </button>
+                          </div>
+
+                          {/* KHUNG SOẠN THẢO THƯ TÙY CHỈNH KHI CHỌN MANUAL_CUSTOM */}
+                          {interviewEmailOption === "MANUAL_CUSTOM" && (
+                            <div className="p-4 rounded-2xl bg-brand-50/40 border border-brand-200 space-y-3 animate-in fade-in">
+                              <div className="flex items-center justify-between pb-2 border-b border-brand-100">
+                                <span className="text-xs font-bold text-brand-950 flex items-center gap-1.5">
+                                  <Edit3 className="w-3.5 h-3.5 text-brand-600" />
+                                  Khung Soạn Thảo Thư Mời Phỏng Vấn Tùy Chỉnh:
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCustomEmailSubject(`[RecoverX] Thư mời phỏng vấn vị trí ${data?.job?.title || "Chuyên môn"} — ${data?.candidate?.fullName || ""}`);
+                                    setCustomEmailBody(
+`Kính gửi bạn ${data?.candidate?.fullName || ""},
+
+Ban Tuyển dụng RecoverX trân trọng chúc mừng hồ sơ của bạn đã vượt qua vòng sơ loại tiêu chuẩn cho vị trí "${data?.job?.title || ""}".
+
+Thông tin buổi phỏng vấn chi tiết như sau:
+• Vị trí ứng tuyển: ${data?.job?.title || ""} (${data?.job?.department || "Bộ phận Chuyên môn"})
+• Thời gian: ${interviewDate ? new Date(interviewDate).toLocaleString("vi-VN") : "Sắp xếp theo thỏa thuận"}
+• Hình thức: ${interviewFormat === "ONLINE" ? "Phỏng vấn Trực tuyến (Online Meeting)" : "Phỏng vấn Trực tiếp tại Văn phòng"}
+• Địa điểm / Link họp: ${interviewLocation || ""}
+${interviewNotes ? "• Ghi chú chuẩn bị: " + interviewNotes : ""}
+
+Vui lòng phản hồi email này để xác nhận lịch phỏng vấn trước 24 giờ.
+
+Trân trọng,
+Hội đồng Tuyển dụng RecoverX`
+                                    );
+                                  }}
+                                  className="text-[11px] font-bold text-brand-700 hover:text-brand-900 underline cursor-pointer"
+                                >
+                                  Nạp lại thư mẫu chuẩn
+                                </button>
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                  Tiêu đề Email <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={customEmailSubject}
+                                  onChange={(e) => setCustomEmailSubject(e.target.value)}
+                                  required={interviewEmailOption === "MANUAL_CUSTOM"}
+                                  placeholder="[RecoverX] Thư mời phỏng vấn..."
+                                  className="w-full text-xs rounded-xl border border-slate-200 bg-white p-2.5 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                  Nội dung Email Lưu Trữ <span className="text-rose-500">*</span>
+                                </label>
+                                <textarea
+                                  rows={7}
+                                  value={customEmailBody}
+                                  onChange={(e) => setCustomEmailBody(e.target.value)}
+                                  required={interviewEmailOption === "MANUAL_CUSTOM"}
+                                  placeholder="Soạn thảo nội dung thư mời chi tiết tại đây..."
+                                  className="w-full text-xs font-mono rounded-xl border border-slate-200 bg-white p-3 font-medium text-slate-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-brand-500"
+                                />
+                              </div>
+
+                              <p className="text-[11px] text-brand-800 flex items-center gap-1.5 font-medium">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                                <span>Nội dung thư này sẽ được lưu trữ vĩnh viễn trong CSDL hệ thống để phục vụ kiểm toán và tra cứu hồ sơ.</span>
+                              </p>
+                            </div>
+                          )}
+
+                          {interviewEmailOption === "AUTO_N8N" && (
+                            <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>
+                                <strong>Chế độ n8n:</strong> Khi lưu lịch, hệ thống sẽ tự động kích hoạt n8n gửi thư mời HTML chuyên nghiệp qua Gmail và đồng bộ Google Calendar cho ứng viên.
+                              </span>
+                            </div>
+                          )}
+
+                          {interviewEmailOption === "NONE" && (
+                            <div className="p-3 bg-slate-100 rounded-xl border border-slate-200 text-xs text-slate-700 flex items-center gap-2">
+                              <Phone className="w-4 h-4 text-slate-500 shrink-0" />
+                              <span>
+                                <strong>Bỏ qua gửi Email:</strong> Lịch hẹn chỉ được lưu nội bộ trên hệ thống ATS để nhắc nhở HR và Giám khảo. Không gửi thư cho ứng viên.
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Cảnh báo trần phỏng vấn nếu có */}

@@ -25,6 +25,9 @@ export async function POST(req: Request) {
       interviewNotes,
       interviewInterviewerNotes,
       interviewPostNotes,
+      interviewEmailOption = "AUTO_N8N",
+      customEmailSubject,
+      customEmailBody,
       moveToInterviewStage,
       isQuickNotesUpdate,
       forceInterviewCapOverride,
@@ -216,6 +219,10 @@ export async function POST(req: Request) {
           interviewNotes: notes,
           interviewInterviewerNotes: interviewerNotes,
           interviewPostNotes: postNotes,
+          interviewEmailOption,
+          customEmailSubject: interviewEmailOption === "MANUAL_CUSTOM" ? (customEmailSubject || null) : null,
+          customEmailBody: interviewEmailOption === "MANUAL_CUSTOM" ? (customEmailBody || null) : null,
+          isInterviewInviteSent: interviewEmailOption === "AUTO_N8N" ? false : true,
           currentStage: targetStage,
           stageUpdatedAt: targetStage !== app.currentStage ? new Date() : app.stageUpdatedAt,
         },
@@ -237,7 +244,19 @@ export async function POST(req: Request) {
           userId: sessionUser.id,
           fromStage: app.currentStage,
           toStage: targetStage,
-          action: isRescheduling ? "INTERVIEW_RESCHEDULED" : "INTERVIEW_SCHEDULED",
+          action: isRescheduling
+            ? "INTERVIEW_RESCHEDULED"
+            : interviewEmailOption === "MANUAL_CUSTOM"
+            ? "INTERVIEW_SCHEDULED_CUSTOM_EMAIL"
+            : interviewEmailOption === "NONE"
+            ? "INTERVIEW_SCHEDULED_NO_EMAIL"
+            : "INTERVIEW_SCHEDULED_AUTO_EMAIL",
+          reason:
+            interviewEmailOption === "MANUAL_CUSTOM"
+              ? "Tự soạn thư mời và lưu trữ trên hệ thống"
+              : interviewEmailOption === "NONE"
+              ? "Không gửi email (đã liên hệ trực tiếp)"
+              : "Kích hoạt gửi thư tự động qua n8n & Google Calendar",
         },
       }),
     ]);

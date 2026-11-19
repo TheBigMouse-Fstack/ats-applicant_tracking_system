@@ -104,6 +104,9 @@ model Application {
   interviewNotes            String?      // Ghi chú chuẩn bị cho ứng viên (Trước PV)
   interviewInterviewerNotes String?      // Ghi chú nội bộ cho chuyên gia / giám khảo (Trước PV)
   interviewPostNotes        String?      // Biên bản & ghi chú tổng kết sau phỏng vấn (Sau PV)
+  interviewEmailOption      String       @default("AUTO_N8N") // AUTO_N8N, MANUAL_CUSTOM, NONE
+  customEmailSubject        String?      // Tiêu đề email do HR tự soạn (nếu chọn MANUAL_CUSTOM)
+  customEmailBody           String?      // Nội dung email do HR tự soạn / lưu trữ hồ sơ
   rejectionReason           String?      // BRL-11: Lý do từ chối bắt buộc khi chuyển sang REJECTED
   contactMismatchLevel      String       @default("NONE") // NONE, MINOR, CRITICAL, UNREADABLE (BRL-12)
   contactMismatchNote       String?      // Ghi chú lệch thông tin giữa Form đăng ký và tệp CV
@@ -121,6 +124,7 @@ model Application {
   @@index([isViewed])
   @@index([isInterviewInviteSent])
   @@index([isTelegramNotified])
+  @@index([interviewEmailOption])
   @@index([emailScheduledAt])
   @@map("applications")
 }
