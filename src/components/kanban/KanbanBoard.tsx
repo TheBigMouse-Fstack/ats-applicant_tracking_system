@@ -9,7 +9,6 @@ import {
 import CandidateCard from "@/components/kanban/CandidateCard";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
-import StageMismatchConfirmModal from "@/components/candidate/StageMismatchConfirmModal";
 import RejectReasonModal from "@/components/candidate/RejectReasonModal";
 import { canRoleDragFromStage, validateStageTransition } from "@/lib/stage-rules";
 import {
@@ -132,18 +131,6 @@ export default function KanbanBoard() {
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-  // Modal cảnh báo khi chuyển vòng ứng viên chưa đạt tiêu chí (tránh bấm nhầm)
-  const [pendingMismatchMove, setPendingMismatchMove] = useState<{
-    applicationId: number;
-    toStage: string;
-    candidateName: string;
-    jobTitle: string;
-    missingSkills: string[];
-    expYears: number;
-    minExpYears: number;
-    rationale: string;
-  } | null>(null);
 
   // Modal bắt buộc nhập Lý do từ chối khi chuyển sang REJECTED
   const [pendingRejectMove, setPendingRejectMove] = useState<{
@@ -352,40 +339,6 @@ export default function KanbanBoard() {
         jobTitle: movedCandidate.job?.title || "Vị trí tuyển dụng",
       });
       return;
-    }
-
-    // 3. KIỂM TRA HỒ SƠ CHƯA ĐẠT TIÊU CHUẨN KHI CHUYỂN SANG SCREENING HOẶC INTERVIEW (TRÁNH BẤM NHẦM)
-    if (movedCandidate && (destColId === "SCREENING" || destColId === "INTERVIEW")) {
-      let missingSkills: string[] = [];
-      try {
-        if (typeof movedCandidate.aiMissingSkills === "string") {
-          missingSkills = JSON.parse(movedCandidate.aiMissingSkills);
-        } else if (Array.isArray(movedCandidate.aiMissingSkills)) {
-          missingSkills = movedCandidate.aiMissingSkills;
-        }
-      } catch (e) {}
-
-      const minExp = movedCandidate.job?.minExperienceYears || 0;
-      const candExp = movedCandidate.candidate?.experienceYears || 0;
-
-      const isUnderQualified =
-        (movedCandidate.aiMatchScore != null && movedCandidate.aiMatchScore < 60) ||
-        missingSkills.length >= 2 ||
-        (minExp > 0 && candExp < minExp);
-
-      if (isUnderQualified) {
-        setPendingMismatchMove({
-          applicationId: appId,
-          toStage: destColId,
-          candidateName: movedCandidate.candidate?.fullName || "Ứng viên",
-          jobTitle: movedCandidate.job?.title || "Vị trí tuyển dụng",
-          missingSkills,
-          expYears: candExp,
-          minExpYears: minExp,
-          rationale: movedCandidate.aiMatchRationale || "",
-        });
-        return; // Dừng lại, giữ nguyên thẻ ở cột cũ cho đến khi HR xác nhận
-      }
     }
 
     // Lưu lại trạng thái ban đầu để rollback nếu có lỗi
@@ -757,27 +710,6 @@ export default function KanbanBoard() {
         }}
         defaultJobId={selectedJobId !== "ALL" ? Number(selectedJobId) : null}
       />
-
-      {/* 6. Modal Cảnh báo khi chuyển vòng ứng viên chưa đạt tiêu chuẩn */}
-      {pendingMismatchMove && (
-        <StageMismatchConfirmModal
-          isOpen={true}
-          onClose={() => setPendingMismatchMove(null)}
-          onConfirm={async () => {
-            const { applicationId, toStage } = pendingMismatchMove;
-            setPendingMismatchMove(null);
-            await handleMoveStage(applicationId, toStage);
-          }}
-          candidateName={pendingMismatchMove.candidateName}
-          jobTitle={pendingMismatchMove.jobTitle}
-          targetStage={pendingMismatchMove.toStage}
-          missingSkills={pendingMismatchMove.missingSkills}
-          expYears={pendingMismatchMove.expYears}
-          minExpYears={pendingMismatchMove.minExpYears}
-          rationale={pendingMismatchMove.rationale}
-          actionType="MOVE_STAGE"
-        />
-      )}
 
       {/* 7. Modal Bắt buộc nhập Lý do Từ chối */}
       {pendingRejectMove && (

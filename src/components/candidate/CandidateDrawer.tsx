@@ -46,7 +46,6 @@ import {
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import ScorecardPanel from "@/components/scorecard/ScorecardPanel";
-import StageMismatchConfirmModal from "@/components/candidate/StageMismatchConfirmModal";
 import RejectReasonModal from "@/components/candidate/RejectReasonModal";
 import { getAllowedTargetStages, validateStageTransition } from "@/lib/stage-rules";
 import { getAiMatchTier } from "@/lib/match-score";
@@ -114,12 +113,6 @@ export default function CandidateDrawer({
   // Lightbox xem ảnh Bằng cấp / Chứng chỉ phóng to
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewImageTitle, setPreviewImageTitle] = useState<string>("");
-
-  // Modal cảnh báo tiêu chuẩn tuyển dụng khi chuyển vòng hoặc xếp lịch (tránh HR bấm nhầm)
-  const [mismatchWarning, setMismatchWarning] = useState<{
-    targetStage: string;
-    actionType: "MOVE_STAGE" | "SCHEDULE_INTERVIEW";
-  } | null>(null);
 
   // Tải thông tin tài khoản hiện tại để phân quyền UI (RBAC)
   useEffect(() => {
@@ -314,11 +307,6 @@ export default function CandidateDrawer({
       setIsRejectModalOpen(true);
       return;
     }
-
-    if (isUnderQualified && (toStage === "SCREENING" || toStage === "INTERVIEW")) {
-      setMismatchWarning({ targetStage: toStage, actionType: "MOVE_STAGE" });
-      return;
-    }
     await executeQuickMove(toStage);
   };
 
@@ -393,10 +381,6 @@ export default function CandidateDrawer({
 
   const handleScheduleInterview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isUnderQualified && !data?.interviewDate) {
-      setMismatchWarning({ targetStage: "INTERVIEW", actionType: "SCHEDULE_INTERVIEW" });
-      return;
-    }
     await executeScheduleInterview();
   };
 
@@ -2045,32 +2029,6 @@ export default function CandidateDrawer({
             </div>
           </div>
         </div>
-      )}
-
-      {/* Modal Cảnh báo khi chuyển vòng / xếp lịch hồ sơ chưa đạt chuẩn */}
-      {mismatchWarning && (
-        <StageMismatchConfirmModal
-          isOpen={true}
-          onClose={() => setMismatchWarning(null)}
-          onConfirm={async () => {
-            const action = mismatchWarning.actionType;
-            const target = mismatchWarning.targetStage;
-            setMismatchWarning(null);
-            if (action === "MOVE_STAGE") {
-              await executeQuickMove(target);
-            } else if (action === "SCHEDULE_INTERVIEW") {
-              await executeScheduleInterview();
-            }
-          }}
-          candidateName={data?.candidate?.fullName || "Ứng viên"}
-          jobTitle={data?.job?.title || "Vị trí tuyển dụng"}
-          targetStage={mismatchWarning.targetStage}
-          missingSkills={missingSkillsList}
-          expYears={candidateExp}
-          minExpYears={minExpRequired}
-          rationale={data?.aiMatchRationale || ""}
-          actionType={mismatchWarning.actionType}
-        />
       )}
     </div>
   );
