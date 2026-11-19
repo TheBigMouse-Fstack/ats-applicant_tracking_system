@@ -40,23 +40,34 @@ The companion XML file [`01_as_is_recruitment_process_bpmn.bpmn`](file:///d:/ATS
 
 ---
 
-## 2. Visual Workflow Representation (Mermaid Flowchart)
+## 2. Visual Workflow Representation (Mermaid Flowchart with Red Bottleneck Highlights)
 
 ```mermaid
 flowchart TD
+    %% LANES & STYLING DEFINITIONS
+    classDef startEvent fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a;
+    classDef endEvent fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d;
+    classDef endPassEvent fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d;
+    classDef userTask fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#334155;
+    classDef sendTask fill:#f1f5f9,stroke:#64748b,stroke-width:1.5px,color:#334155;
+    classDef manualTask fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#334155;
+    classDef gateway fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f;
+    classDef bottleneck fill:#ffe4e6,stroke:#e11d48,stroke-width:2.5px,color:#9f1239;
+    classDef bottleneckData fill:#fee2e2,stroke:#b91c1c,stroke-width:2.5px,stroke-dasharray: 4 4,color:#7f1d1d;
+
     %% START EVENT
     Start(["● Receive Candidate Applications via Email / Job Portals"]):::startEvent
 
     %% STEP 1 & 2
     T1["1. Download & Save CV to Local Computer Folder"]:::userTask
-    T2["2. Read PDF CV & Manually Log Details into Excel"]:::userTask
+    T2["🚨 BOTTLENECK 1: Read PDF CV & Manually Type Details into Excel<br>(8-15 mins/CV | High Error Rate)"]:::bottleneck
 
-    %% DATA STORES
-    DB_Folder[("📁 Local Storage Directory<br>(Unindexed CV Files)")]:::dataStore
-    DB_Excel[("📊 Recruitment Tracking<br>Excel Spreadsheet")]:::dataStore
+    %% DATA STORES (CRITICAL SILOS)
+    DB_Folder[("📁 BOTTLENECK SILO: Local Storage Directory<br>(Unindexed CV Files | High Loss Risk)")]:::bottleneckData
+    DB_Excel[("📊 BOTTLENECK SILO: Recruitment Tracking Excel<br>(Version Conflicts | No Audit Trail)")]:::bottleneckData
 
     %% STEP 3: SCREENING
-    T3["3. Manually Screen & Match CV against JD Requirements"]:::userTask
+    T3["🚨 BOTTLENECK 2: Manually Screen & Match CV against JD<br>(12-20 mins/CV | Subjective Bias)"]:::bottleneck
     GW1{"Profile meets<br>initial criteria?"}:::gateway
 
     %% REJECT AT CV STAGE
@@ -65,8 +76,8 @@ flowchart TD
     End_RejCV(["⦿ Closed: Disqualified at CV Screening"]):::endEvent
 
     %% INTERVIEW & EVALUATION
-    T4["4B. Contact Candidate & Arrange Interview Schedule"]:::userTask
-    T5["5B. Conduct Interview & Take Manual Evaluation Notes"]:::manualTask
+    T4["🚨 BOTTLENECK 3: Contact Candidate & Arrange Interview<br>(2-4 Days Latency | Email Ping-Pong)"]:::bottleneck
+    T5["🚨 BOTTLENECK 4: Conduct Interview & Take Manual Paper Notes<br>(< 25% Notes Retained | Uncalibrated)"]:::bottleneck
     GW2{"Hiring assessment<br>result?"}:::gateway
 
     %% PASS / HIRED BRANCH

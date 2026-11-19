@@ -6,6 +6,8 @@ as_is_bpmn_content = '''<?xml version="1.0" encoding="UTF-8"?>
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0"
+                  xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0"
                   id="Definitions_ATS_Recruitment_AsIs"
                   targetNamespace="http://bpmn.io/schema/bpmn"
                   exporter="Antigravity BPMN 2.0 Generator"
@@ -188,15 +190,19 @@ as_is_bpmn_content = '''<?xml version="1.0" encoding="UTF-8"?>
         <dc:Bounds x="190" y="80" width="1530" height="600" />
       </bpmndi:BPMNShape>
 
-      <!-- DATA STORES -->
-      <bpmndi:BPMNShape id="DataStore_LocalFolder_di" bpmnElement="DataStore_LocalFolder">
+      <!-- DATA STORES (BOTTLENECK SILOS - HIGHLIGHTED RED) -->
+      <bpmndi:BPMNShape id="DataStore_LocalFolder_di" bpmnElement="DataStore_LocalFolder"
+                        bioc:stroke="#e11d48" bioc:fill="#ffe4e6"
+                        color:border-color="#e11d48" color:background-color="#ffe4e6">
         <dc:Bounds x="375" y="105" width="50" height="50" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="357" y="162" width="87" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="DataStore_ExcelSpreadsheet_di" bpmnElement="DataStore_ExcelSpreadsheet">
+      <bpmndi:BPMNShape id="DataStore_ExcelSpreadsheet_di" bpmnElement="DataStore_ExcelSpreadsheet"
+                        bioc:stroke="#e11d48" bioc:fill="#ffe4e6"
+                        color:border-color="#e11d48" color:background-color="#ffe4e6">
         <dc:Bounds x="575" y="385" width="50" height="50" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="557" y="442" width="86" height="27" />
@@ -216,11 +222,17 @@ as_is_bpmn_content = '''<?xml version="1.0" encoding="UTF-8"?>
         <dc:Bounds x="325" y="220" width="150" height="80" />
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="Task_LogDataExcel_di" bpmnElement="Task_LogDataExcel">
+      <!-- BOTTLENECK 1: MANUAL DATA ENTRY -->
+      <bpmndi:BPMNShape id="Task_LogDataExcel_di" bpmnElement="Task_LogDataExcel"
+                        bioc:stroke="#e11d48" bioc:fill="#ffe4e6"
+                        color:border-color="#e11d48" color:background-color="#ffe4e6">
         <dc:Bounds x="525" y="220" width="150" height="80" />
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="Task_ScreenMatchJD_di" bpmnElement="Task_ScreenMatchJD">
+      <!-- BOTTLENECK 2: MANUAL JD MATCHING -->
+      <bpmndi:BPMNShape id="Task_ScreenMatchJD_di" bpmnElement="Task_ScreenMatchJD"
+                        bioc:stroke="#e11d48" bioc:fill="#ffe4e6"
+                        color:border-color="#e11d48" color:background-color="#ffe4e6">
         <dc:Bounds x="725" y="220" width="150" height="80" />
       </bpmndi:BPMNShape>
 
@@ -248,11 +260,17 @@ as_is_bpmn_content = '''<?xml version="1.0" encoding="UTF-8"?>
       </bpmndi:BPMNShape>
 
       <!-- INTERVIEW BRANCH -->
-      <bpmndi:BPMNShape id="Task_ScheduleManualInterview_di" bpmnElement="Task_ScheduleManualInterview">
+      <!-- BOTTLENECK 3: EMAIL PING-PONG SCHEDULING -->
+      <bpmndi:BPMNShape id="Task_ScheduleManualInterview_di" bpmnElement="Task_ScheduleManualInterview"
+                        bioc:stroke="#e11d48" bioc:fill="#ffe4e6"
+                        color:border-color="#e11d48" color:background-color="#ffe4e6">
         <dc:Bounds x="1025" y="220" width="150" height="80" />
       </bpmndi:BPMNShape>
 
-      <bpmndi:BPMNShape id="Task_ConductInterviewNotes_di" bpmnElement="Task_ConductInterviewNotes">
+      <!-- BOTTLENECK 4: UNSTRUCTURED PAPER EVALUATION -->
+      <bpmndi:BPMNShape id="Task_ConductInterviewNotes_di" bpmnElement="Task_ConductInterviewNotes"
+                        bioc:stroke="#e11d48" bioc:fill="#ffe4e6"
+                        color:border-color="#e11d48" color:background-color="#ffe4e6">
         <dc:Bounds x="1025" y="340" width="150" height="80" />
       </bpmndi:BPMNShape>
 
