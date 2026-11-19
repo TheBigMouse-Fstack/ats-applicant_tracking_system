@@ -23,7 +23,7 @@ interface UserItem {
   role: string;
   isActive: boolean;
   createdAt: string;
-  _count: {
+  _count?: {
     jobs: number;
     evaluations: number;
   };
@@ -191,7 +191,6 @@ export default function UserManagementPage() {
                   <th className="py-3.5 px-4">Thành viên</th>
                   <th className="py-3.5 px-4">Email</th>
                   <th className="py-3.5 px-4">Vai trò</th>
-                  <th className="py-3.5 px-4">Hoạt động</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
                   <th className="py-3.5 px-4 text-right">Thao tác</th>
                 </tr>
@@ -229,14 +228,6 @@ export default function UserManagementPage() {
                       {user.role === "HIRING_MANAGER" && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
                           HIRING MANAGER
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-xs text-slate-500">
-                      <span>{user._count.jobs} tin tuyển dụng</span>
-                      {user._count.evaluations > 0 && (
-                        <span className="ml-2 font-medium text-slate-700">
-                          &bull; {user._count.evaluations} Scorecards
                         </span>
                       )}
                     </td>
