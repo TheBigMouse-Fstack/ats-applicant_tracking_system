@@ -16,6 +16,7 @@
 - **Phân tách quyền vòng tuyển:** `HR` chuyển tối đa đến `SCREENING` + chỉnh sửa 5 trường CV; `HIRING_MANAGER` phụ trách `SCREENING ➔ INTERVIEW ➔ HIRED` & lịch phỏng vấn; bắt buộc lý do khi `REJECTED` (`BRL-11`) và bắt buộc có Phiếu đánh giá đạt chuẩn trước khi `HIRED` (`BRL-06`).
 - **Kho Nhân Tài:** Chỉ gồm hồ sơ đã qua sàng lọc theo 3 nhóm thực tế (*Tiềm năng / Dự bị*, *Đang chờ đợt khác*, *Lưu trữ dự phòng 180 ngày*), loại trừ `NEW` và `HIRED`.
 
-## 4. Hướng dẫn Lập trình
+## 4. Hướng dẫn Lập trình & Tài liệu
+- Khi người dùng yêu cầu soạn thảo tài liệu (SRS/BRD) và xuất Word, tự động viết file Markdown thuần tại `docs/` và tự động thực thi Pandoc/script biên dịch ra file `.docx` tại `docs/exports/` (tuân thủ `.agents/rules/ba-export-workflow.md`).
 - Luôn kiểm tra TypeScript (`npx tsc --noEmit`) và chạy bộ kiểm thử (`node tests/run-tests.js`) sau mỗi thay đổi.
 - Giữ giao diện phẳng, dịu mắt (60-30-10), tách bạch Tổng quan và Chi tiết 5 tab, không trùng lặp nút thao tác.

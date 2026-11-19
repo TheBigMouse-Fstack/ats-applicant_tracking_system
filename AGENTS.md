@@ -42,6 +42,7 @@
 
 ## 4. Specialized Rules & BA Skills Directory
 - `.agents/rules/ba-documentation-standards.md`: Universal BA Toolkit 19 Documentation Standards
+- `.agents/rules/ba-export-workflow.md`: Quy trình tự động soạn thảo Markdown & tự động chạy Pandoc xuất file Word (.docx)
 - `.agents/rules/business-ats.md`: Core Business Rules (`BRL-01` to `BRL-11`, State Machine & RBAC Stage Limits)
 - `.agents/rules/nextjs-app-router.md`: Next.js 14 App Router & TypeScript conventions
 - `.agents/rules/tailwind-shadcn.md`: UI styling, visual calm, Kanban, and Drawer design
