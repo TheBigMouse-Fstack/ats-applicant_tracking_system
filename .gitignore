@@ -59,3 +59,6 @@ public/uploads/certificates/*
 ~$*.docx
 *.tmp
 .neon
+
+.vercel
+.env*

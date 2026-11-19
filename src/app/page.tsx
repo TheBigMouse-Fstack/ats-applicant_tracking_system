@@ -88,13 +88,6 @@ export default function HomePage() {
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Link
-              href="/jobs"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>{t("home.nav.cta", "Cơ Hội Tuyển Dụng")}</span>
-            </Link>
           </div>
         </div>
       </header>
