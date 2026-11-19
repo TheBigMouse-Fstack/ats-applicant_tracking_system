@@ -286,21 +286,14 @@ export default function KanbanBoard() {
         return errorMsg;
       }
 
-      // Thông báo thành công (bao gồm tự động đóng tin khi tuyển đủ chỉ tiêu)
+      // Thông báo thành công: Silent success cho thao tác kéo thả thông thường (Chuẩn Ashby/Greenhouse)
+      // Chỉ hiện toast khi có sự kiện hệ thống đặc biệt (như tự động đóng tin khi đã tuyển đủ chỉ tiêu)
       if (result.jobAutoClosed) {
         setAlertSuccess(result.message);
-      } else if (toStage === "REJECTED") {
-        setAlertSuccess(
-          "Đã chuyển sang Từ chối kèm lý do lưu vết. Email phản hồi đã được lên lịch tự động sau 12 giờ."
-        );
-      } else if (toStage === "HIRED") {
-        setAlertSuccess("Ứng viên đã được chuyển sang Tuyển chọn thành công.");
+        setTimeout(() => {
+          setAlertSuccess(null);
+        }, 4000);
       }
-
-      // Tự tắt alert sau 6 giây
-      setTimeout(() => {
-        setAlertSuccess(null);
-      }, 6000);
 
       // Re-fetch để đồng bộ lại toàn bộ thống kê, chỉ tiêu và SLA
       await fetchPipeline();
@@ -344,6 +337,7 @@ export default function KanbanBoard() {
 
       if (!preCheck.allowed) {
         setAlertError(preCheck.error || "Không được phép chuyển sang giai đoạn này.");
+        setTimeout(() => setAlertError(null), 5000);
         return;
       }
     }
@@ -604,51 +598,46 @@ export default function KanbanBoard() {
         })()}
       </div>
 
-      {/* 2. Banner Thông báo Vi phạm Business Rules (Nếu có lỗi từ chối chuyển trạng thái) */}
-      {alertError && (
-        <div className="bg-red-50 border-2 border-red-300 rounded-2xl p-4 text-red-900 shadow-sm flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-red-700">
-                Chưa thể chuyển giai đoạn
-              </h4>
-              <p className="text-xs font-medium text-red-800 mt-0.5 leading-relaxed">
-                {alertError}
-              </p>
+      {/* Toast Thông báo Nổi góc màn hình (Zero Layout Shift - Chuẩn UI/UX Enterprise) */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 max-w-sm sm:max-w-md pointer-events-none">
+        {alertError && (
+          <div className="pointer-events-auto bg-white border border-red-200 rounded-2xl p-4 text-slate-800 shadow-xl shadow-red-500/10 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+            <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4 h-4" />
             </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-bold text-red-900">Chưa thể chuyển giai đoạn</h4>
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{alertError}</p>
+            </div>
+            <button
+              onClick={() => setAlertError(null)}
+              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              title="Đóng thông báo"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={() => setAlertError(null)}
-            className="text-red-400 hover:text-red-700 p-1"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+        )}
 
-      {/* Banner Thành công */}
-      {alertSuccess && (
-        <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-4 text-emerald-900 shadow-sm flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-                Thành công
-              </h4>
-              <p className="text-xs font-medium text-emerald-800 mt-0.5 leading-relaxed">
-                {alertSuccess}
-              </p>
+        {alertSuccess && (
+          <div className="pointer-events-auto bg-white border border-emerald-200 rounded-2xl p-4 text-slate-800 shadow-xl shadow-emerald-500/10 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <CheckCircle className="w-4 h-4" />
             </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-bold text-emerald-900">Thông báo tuyển dụng</h4>
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{alertSuccess}</p>
+            </div>
+            <button
+              onClick={() => setAlertSuccess(null)}
+              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              title="Đóng thông báo"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={() => setAlertSuccess(null)}
-            className="text-emerald-400 hover:text-emerald-700 p-1"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Banner thông báo chế độ Hiring Manager */}
       {currentUser?.role === "HIRING_MANAGER" && (
