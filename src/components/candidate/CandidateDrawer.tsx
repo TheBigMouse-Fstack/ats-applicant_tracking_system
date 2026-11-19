@@ -1425,19 +1425,13 @@ export default function CandidateDrawer({
                             </div>
                           </div>
                         ) : (
-                          <div className="p-4 bg-white/80 rounded-xl border border-dashed border-purple-200 text-xs text-purple-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <span>Hồ sơ chưa có lịch hẹn phỏng vấn. Hãy lên lịch hẹn để sinh Thư mời và cung cấp link họp cho ứng viên.</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setIsInterviewModalOpen(true);
-                                setInterviewSuccessEmail(null);
-                                setInterviewError(null);
-                              }}
-                              className="px-3 py-1.5 rounded-lg bg-purple-600 text-white font-bold text-xs shrink-0 cursor-pointer"
-                            >
-                              + Lên lịch ngay
-                            </button>
+                          <div className="p-4 bg-white/80 rounded-xl border border-dashed border-purple-200 text-xs text-purple-700 flex items-center gap-2.5">
+                            <Calendar className="w-4 h-4 text-purple-500 shrink-0" />
+                            <span>
+                              {canManageInterview
+                                ? 'Hồ sơ chưa có lịch hẹn phỏng vấn. Vui lòng bấm "+ Lên Lịch Phỏng Vấn" ở góc trên để thiết lập thời gian, link họp và gửi thư mời.'
+                                : 'Hồ sơ chưa có lịch hẹn phỏng vấn (Chức năng lên lịch do Trưởng bộ phận tuyển dụng phụ trách).'}
+                            </span>
                           </div>
                         )}
                       </div>
