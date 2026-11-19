@@ -1,80 +1,153 @@
-# 🎯 ATS — Applicant Tracking System (Hệ thống Quản lý Tuyển dụng)
-## Tài liệu Tổng quan Dự án & Cấu trúc Kho tài liệu
+# 🎯 ATS — Applicant Tracking System
+### Hệ Thống Quản Trị & Tự Động Hóa Tuyển Dụng Doanh Nghiệp
 
-> **Tên hệ thống nội bộ:** `ATS — Applicant Tracking System`  
-> **Thương hiệu giả lập Cổng Tuyển dụng Công khai (Public Careers Portal):** `RecoverX`  
-> **Thư mục lưu trữ dự án:** `D:\ATS project`
+[![Tests](https://img.shields.io/badge/tests-161%20passed-brightgreen.svg)](tests/run-tests.js)
+[![Framework](https://img.shields.io/badge/framework-Next.js%2014%20App%20Router-black.svg)](https://nextjs.org)
+[![Database](https://img.shields.io/badge/database-Neon%20PostgreSQL-00E599.svg)](https://neon.tech)
+[![AI Engine](https://img.shields.io/badge/AI-Google%20Gemini%202.5-4285F4.svg)](https://aistudio.google.com)
+[![Storage](https://img.shields.io/badge/storage-Neon%20S3%20Object%20Storage-blue.svg)](https://neon.tech)
+[![Security](https://img.shields.io/badge/security-HMAC%20SHA--256%20%7C%20PII%20Shield-success.svg)](src/lib/auth.ts)
 
 ---
 
-## 📁 Cấu trúc Thư mục Tài liệu (Tách biệt 2 nhóm)
+## 📌 1. Giới Thiệu Dự Án
+
+**ATS — Applicant Tracking System** là nền tảng quản trị quy trình tuyển dụng thông minh được phát triển nhằm hiện đại hóa toàn diện công tác thu hút, sàng lọc và tuyển dụng nhân tài cho doanh nghiệp. 
+
+Hệ thống được thiết kế theo tiêu chuẩn phần mềm doanh nghiệp (Enterprise SaaS), tích hợp công nghệ **Hybrid AI (Lớp 1 NLP cục bộ + Lớp 2 Google Gemini)**, tự động hóa quy trình đa kênh qua **n8n (Gmail, Telegram Bot, Google Calendar)**, cơ sở dữ liệu serverless đám mây **Neon PostgreSQL** và giải pháp lưu trữ tệp tin an toàn **Neon Object Storage**.
+
+Hệ thống hiện đã hoàn thiện đầy đủ các khâu kiểm thử khắt khe (**161/161 test cases PASS**) và sẵn sàng đưa vào **thử nghiệm thực tế 1 tuần** dành cho Bộ phận Nhân sự (HR) và Hội đồng Tuyển dụng.
+
+---
+
+## 🌐 2. Cổng Truy Cập Hệ Thống
+
+Hệ thống phân tách rạch ròi giữa **Cổng Thông Tin Công Khai** dành cho Ứng viên và **Cổng Quản Trị Vận Hành** dành cho Cán bộ Nội bộ:
+
+### A. Cổng Thông Tin Tuyển Dụng Dành Cho Ứng Viên (Public Portal)
+* **Trang chủ Doanh nghiệp:**  
+  👉 Đường dẫn: `/`  
+  *Giới thiệu tổng quan về thương hiệu RecoverX, văn hóa doanh nghiệp và cơ hội nghề nghiệp.*
+* **Cổng Tuyển Dụng & Nộp CV Trực Tuyến:**  
+  👉 Đường dẫn: `/jobs`  
+  *Khám phá các vị trí tuyển dụng đang mở, xem yêu cầu chi tiết (JD), tải CV lên để tự động điền form (Auto-fill) và nộp đơn ứng tuyển trực tuyến.*
+* **Cổng Tra Cứu Tiến Độ Hồ Sơ Theo Thời Gian Thực (Candidate Tracker):**  
+  👉 Đường dẫn: `/jobs/tracker` *(Tích hợp ngay trong trang Tuyển dụng)*  
+  *Cho phép ứng viên chủ động kiểm tra trạng thái xét duyệt, thời gian và địa điểm phỏng vấn (Online Meet hoặc Văn phòng) thông qua Email và Số điện thoại/Mã hồ sơ.*
+
+> [!NOTE]
+> Toàn bộ các đường dẫn và nút bấm quản trị nội bộ đã được gỡ bỏ khỏi giao diện công khai để đảm bảo tính chuyên nghiệp và bảo mật tuyệt đối cho cổng tuyển dụng.
+
+### B. Cổng Quản Trị & Điều Phối Tuyển Dụng Nội Bộ (Internal ATS Portal)
+* **Trang Đăng Nhập Bảo Mật:**  
+  👉 Đường dẫn: `/admin/login`  
+  *Cổng đăng nhập tập trung được bảo vệ bởi xác thực phân quyền RBAC và mã hóa phiên HMAC-SHA256.*
+* **Bảng Điều Khiển Vận Hành Theo Vai Trò (Operational Dashboard):**  
+  👉 Đường dẫn: `/admin/dashboard`  
+  *Cung cấp số liệu thống kê thời gian thực: Hàng đợi hồ sơ mới, cảnh báo vi phạm SLA (>48h), tiến độ phỏng vấn và chỉ tiêu tuyển dụng theo từng vai trò.*
+* **Bảng Điều Phối Kanban 5 Giai Đoạn (Pipeline Board):**  
+  👉 Đường dẫn: `/admin/pipeline`  
+  *Kéo thả hồ sơ trực quan qua 5 cột (`NEW` ➔ `SCREENING` ➔ `INTERVIEW` ➔ `HIRED` / `REJECTED`), xem chi tiết hồ sơ trong Drawer 5 tab, xem tệp CV gốc và chấm điểm Scorecard.*
+* **Quản Lý Vị Trí Tuyển Dụng (Job Management):**  
+  👉 Đường dẫn: `/admin/jobs`  
+  *Tạo mới JD, thiết lập chỉ tiêu tuyển dụng (`targetHeadcount`) và giới hạn phỏng vấn đồng thời (`maxActiveInterviews`).*
+* **Kho Dữ Liệu Nhân Tài & CRM (Talent Pool):**  
+  👉 Đường dẫn: `/admin/talent-pool`  
+  *Lưu trữ và phân loại các ứng viên tiềm năng (Silver Medalist, Đang chờ đợt sau, Dự phòng 180 ngày) phục vụ tái tuyển dụng.*
+
+---
+
+## 👥 3. Tài Khoản Thử Nghiệm 1 Tuần Dành Cho Doanh Nghiệp
+
+Để Ban Giám đốc, HR và Quản lý Chuyên môn trải nghiệm đầy đủ các phân quyền trong đợt thử nghiệm:
+
+| Vai Trò (Role) | Tài Khoản Đăng Nhập | Mật Khẩu Mặc Định | Quyền Hạn Nghiệp Vụ Cốt Lõi |
+| :--- | :--- | :---: | :--- |
+| **Quản trị viên (Admin)** | `admin@ats.vn` | `Admin@123456` | Toàn quyền cấu hình hệ thống, tạo tài khoản người dùng, xem toàn cảnh 360 độ và nhật ký kiểm toán (Audit Trail). |
+| **Trưởng nhóm Tuyển dụng (HR Lead)** | `hr@ats.vn` | `Hr@123456` | Tiếp nhận CV đầu phễu, sàng lọc tiêu chuẩn (`NEW ➔ SCREENING`), chỉnh sửa thủ công 5 trường thông tin CV, quản lý kho nhân tài. |
+| **Quản lý Chuyên môn (Hiring Manager)** | `manager@ats.vn` | `Manager@123456` | Xem hồ sơ đã qua sơ tuyển, thiết lập lịch phỏng vấn Online/Offline, chấm điểm Phiếu đánh giá Scorecard và duyệt tuyển (`SCREENING ➔ INTERVIEW ➔ HIRED`). |
+
+---
+
+## 🚀 4. Kịch Bản Thử Nghiệm Chuẩn 7 Bước (1-Week Trial Workflow)
+
+1. **Bước 1 — Nộp đơn ứng tuyển:** Ứng viên truy cập `/jobs`, chọn vị trí mong muốn, tải tệp CV (.pdf hoặc .docx). Hệ thống tự động bóc tách thông tin điền trước vào form.
+2. **Bước 2 — Thông báo đẩy tức thì:** Ngay khi ứng viên nộp đơn thành công, bot Telegram `@Rec_Hr_rBot` sẽ gửi thông báo đến nhóm HR kèm thông tin vị trí và ứng viên.
+3. **Bước 3 — Sàng lọc tự động bằng AI:** Hệ thống chấm điểm độ phù hợp (Match Score %) và giải trình lý do theo 3 mức màu:
+   * 🟢 **Xanh lá (≥ 75%):** Phù hợp cao, ưu tiên phỏng vấn.
+   * 🟡 **Vàng (50% – 74%):** Tiềm năng, cân nhắc phỏng vấn vòng phụ.
+   * 🔴 **Đỏ (< 50%):** Không đáp ứng yêu cầu tối thiểu.
+4. **Bước 4 — Tiếp nhận & Sơ tuyển (HR):** HR đăng nhập `/admin/login`, kiểm tra hàng đợi tại `/admin/pipeline`, mở Drawer xem CV gốc và xác nhận chuyển sang `SCREENING`.
+5. **Bước 5 — Xếp lịch Phỏng vấn (Hiring Manager):** Chọn hình thức **🌐 Online (Google Meet)** hoặc **🏢 Offline (Tại Văn phòng)**. Hệ thống tự động tạo mẫu thư mời chuyên nghiệp và hỗ trợ đồng bộ Google Calendar.
+6. **Bước 6 — Đánh giá năng lực chuyên sâu (Scorecard):** Hội đồng phỏng vấn chấm điểm 3 tiêu chí theo trọng số chuẩn mực:
+   * **Chuyên môn kỹ thuật (40%)**
+   * **Giao tiếp & Thuyết trình (30%)**
+   * **Độ phù hợp văn hóa & Làm việc nhóm (30%)**  
+   *(Khóa chặt quy tắc BRL-06: Bắt buộc phải có Scorecard đạt chuẩn mới được phép duyệt trúng tuyển `HIRED`)*.
+7. **Bước 7 — Quyết định tuyển dụng hoặc Lưu trữ nhân tài:**
+   * **Nếu Trúng tuyển:** Chuyển sang cột `HIRED`, hệ thống tự động trừ chỉ tiêu và tự đóng tin khi đã đủ quân số (`BRL-13`).
+   * **Nếu Chưa phù hợp:** Bắt buộc nhập lý do từ chối cụ thể (`BRL-11`). Hệ thống tự động kích hoạt bộ đệm hoãn gửi thư từ chối 12–24h (`BRL-05`) và lưu hồ sơ vào Kho Nhân Tài (`Talent Pool`).
+
+---
+
+## 🛡️ 5. Kiến Trúc An Ninh & Chống Tấn Công / Đánh Cắp Dữ Liệu
+
+Hệ thống được rà soát và cài đặt các cơ chế bảo mật nghiêm ngặt nhằm triệt tiêu nguy cơ rò rỉ dữ liệu hoặc bị xâm nhập:
+
+* **Không Lưu Trữ Secret / Token trên Git:** Toàn bộ thông tin nhạy cảm (`DATABASE_URL`, `GEMINI_API_KEY`, `SESSION_SECRET`, `AWS_SECRET_ACCESS_KEY`) được quản lý bằng biến môi trường `.env` riêng biệt, đã bị loại bỏ 100% khỏi lịch sử Git index.
+* **Bảo Vệ Tệp Tin CV & Quyền Riêng Tư (PII Shield):** Tệp CV gốc được lưu trữ trên Bucket riêng tư (Private S3) của Neon Cloud. Trình duyệt không thể truy cập trực tiếp URL của S3 mà phải thông qua Proxy route nội bộ `/api/applications/storage/[...key]`. Endpoint này kiểm tra phiên đăng nhập của HR/Admin và chặn đứng 100% các cuộc tấn công vượt cấp thư mục (**Path Traversal `../`**).
+* **Mã Hóa Phiên Đăng Nhập HMAC-SHA256 & Timing-Safe:** Cookie phiên làm việc được ký bằng chuỗi bí mật entropy cao (256-bit). Thuật toán giải mã sử dụng `crypto.timingSafeEqual` để vô hiệu hóa hoàn toàn tấn công giả mạo quyền hạn (Privilege Escalation) và tấn công đo thời gian (Timing Attacks).
+* **Hàng Rào Chống Vượt Rào Mệnh Lệnh (Anti-Prompt-Injection Guardrails):** Văn bản CV của ứng viên được cô lập hoàn toàn bên trong thẻ XML `<candidate_cv_raw_text>` kèm các chỉ thị hệ thống nghiêm ngặt, ngăn chặn ứng viên chèn các lệnh bí mật nhằm đánh lừa AI nâng điểm hoặc trích xuất dữ liệu nội bộ.
+* **Chống Thư Rác & Tấn Công Từ Chối Dịch Vụ (Rate Limiting HTTP 429):** Bộ giới hạn tần suất giới hạn tối đa 10 lượt nộp hồ sơ / 10 phút trên mỗi địa chỉ IP.
+* **Xác Thực Magic Bytes Nhị Phân:** Hệ thống đọc trực tiếp 4 bytes đầu của tệp tin (`%PDF` và `PK\x03\x04`), từ chối lập tức các tệp mã độc thực thi (`.exe`, `.sh`, `.php`, script HTML) giả danh phần mở rộng tài liệu.
+
+---
+
+## 💻 6. Hướng Dẫn Cài Đặt & Vận Hành Cục Bộ
+
+### Yêu cầu môi trường:
+* **Node.js:** Phiên bản 18.x trở lên (khuyên dùng Node.js 20+ LTS).
+* **NPM:** Phiên bản 9.x trở lên.
+
+### Các bước khởi động:
+```bash
+# 1. Cài đặt các thư viện phụ thuộc
+npm install
+
+# 2. Khởi tạo và đồng bộ cơ sở dữ liệu
+npx prisma db push
+
+# 3. Nạp dữ liệu mẫu ban đầu (Người dùng, Vị trí tuyển dụng, Hồ sơ mẫu)
+npx ts-node prisma/seed.ts
+
+# 4. Chạy bộ kiểm thử tự động toàn diện (Xác nhận 161/161 tests PASS)
+node tests/run-tests.js
+
+# 5. Khởi động máy chủ phát triển
+npm run dev
+```
+
+Truy cập hệ thống tại: **`http://localhost:3000`**
+
+---
+
+## 📋 7. Cấu Trúc Mã Nguồn & Tài Liệu Kỹ Thuật
 
 ```text
-D:\ATS project/
-├── README.md                                       # Tài liệu tổng quan dự án & chỉ mục tập tin
-├── AGENTS.md / GEMINI.md                           # Quy tắc vận hành cho AI Agent & Dev
-│
+ATS-Project/
 ├── docs/
-│   ├── README.md                                   # Hướng dẫn phân loại 2 thư mục tài liệu
-│   │
-│   ├── ba/                                         # 📘 TÀI LIỆU BA (Dành cho Doanh nghiệp / Khách hàng / Non-Tech)
-│   │   ├── 00_BA_Documentation_Index_and_RTM.md    # Chỉ mục tổng thể & Ma trận Truy vết (RTM v2.3.0)
-│   │   ├── 02_BRD_Updated_Full.md                  # Tài liệu Yêu cầu Nghiệp vụ (BRD)
-│   │   ├── 03_BPMN_As_Is_and_To_Be.md              # Quy trình Tuyển dụng Hiện tại (As-Is) & Đề xuất (To-Be)
-│   │   ├── 04_FDD_and_Use_Case_List.md             # Cây phân rã chức năng & Danh mục Use Case cốt lõi
-│   │   ├── 05_Use_Case_Specifications.md           # Đặc tả chi tiết từng nghiệp vụ sử dụng
-│   │   ├── 06_Dynamic_Models_Activity_Sequence_State.md # Vòng đời hồ sơ & Luồng phối hợp giữa các vai trò
-│   │   ├── 08_NonFunctional_and_Permissions.md     # Ma trận Phân quyền & Yêu cầu chất lượng hệ thống
-│   │   ├── 10_Scope_and_System_Comparison.md       # Phạm vi dự án (In/Out-of-Scope) & Đối sánh chuẩn thị trường
-│   │   ├── 11_UI_UX_Design_and_Form_Validation_Guidelines.md # Quy chuẩn giao diện & Thông báo hướng dẫn người dùng
-│   │   ├── 14_Scope_Expansion_and_Advanced_Features.md # Khai phóng tính năng nâng cao & Bảo mật dữ liệu
-│   │   ├── 18_Brief_Compliance_and_Value_Added_Analysis.md # Báo cáo kiểm chứng bám sát đề bài & Giá trị gia tăng
-│   │   └── TEST_SCENARIOS_AND_UAT_GUIDE.md         # Kịch bản nghiệm thu thực tế (UAT) cho doanh nghiệp
-│   │
-│   └── dev-context/                                # ⚙️ TÀI LIỆU KỸ THUẬT (Dành cho Dev / QA / AI Agent lập trình)
-│       ├── 07_Database_Design_ERD.md               # Thiết kế CSDL, Từ điển dữ liệu & Sơ đồ ERD
-│       ├── 09_Technical_Setup_and_Antigravity_Guide.md # Hướng dẫn cài đặt môi trường & Quy trình phát triển
-│       ├── 12_Hybrid_AI_Architecture_and_Scoring_Engine.md # Kiến trúc bộ lọc Lai & Thuật toán chấm điểm độ phù hợp
-│       ├── 13_System_Architecture_and_Technology_Stack.md # Kiến trúc hệ thống & Công nghệ sử dụng
-│       ├── 15_API_Specifications_and_Error_Codes.md # Hợp đồng REST API & Mã lỗi hệ thống
-│       ├── 16_SDD_Prompt_Playbook.md               # Bộ Prompt chuẩn Spec-Driven Development cho AI Agent
-│       └── 17_Business_Rules_and_Error_Matrix.md   # Quy tắc nghiệp vụ 3 vế, Ma trận lỗi & Tiêu chí chấp nhận Gherkin
-│
-├── src/                                            # Mã nguồn Next.js Fullstack (App Router + TypeScript + i18n)
-├── prisma/                                         # Schema CSDL (SQLite dev / PostgreSQL prod) & Seed data
-└── tests/                                          # Bộ kiểm thử nghiệp vụ tự động (136/136 test cases PASS 100%)
+│   ├── ba/                       # Hồ sơ Nghiệp vụ BA (BRD, BPMN, Use Cases, RTM ma trận truy vết)
+│   └── dev-context/              # Ngữ cảnh Kỹ thuật (ERD, Kiến trúc hệ thống, API Docs, Staging Guide)
+├── prisma/
+│   ├── schema.prisma             # Lược đồ Cơ sở dữ liệu chuẩn PostgreSQL / SQLite
+│   └── seed.ts                   # Dữ liệu khởi tạo mặc định cho đợt thử nghiệm
+├── src/
+│   ├── app/                      # Next.js 14 App Router (Public routes & Internal admin routes)
+│   ├── components/               # Các khối giao diện: Kanban, Drawer, Scorecard, Form ứng tuyển
+│   └── lib/                      # Thư viện dùng chung: Hybrid AI parser, Auth HMAC, Storage S3, i18n
+└── tests/
+    └── run-tests.js              # Bộ kiểm thử nghiệp vụ & an ninh tự động (161 tests)
 ```
 
 ---
-
-## 📌 Tóm tắt Các Tính năng & Quyết định Trọng yếu của Hệ thống ATS
-
-### 1. Phạm vi & Điểm mới trong BRD
-- **Cổng Ứng viên (Candidate Portal):** Ứng viên trực tiếp nộp CV qua giao diện Web, hệ thống tự động khử trùng lặp (Deduplication) 2 lớp dựa trên Email, Số điện thoại và mã băm SHA-256 (`BRL-02`, `BRL-12`).
-- **Bóc tách hồ sơ tự động (AI Parsing):** Trích xuất thông tin học vấn, kỹ năng, kinh nghiệm từ file PDF/Docx với bộ đệm fallback regex NLP cục bộ.
-- **Sàng lọc tự động bằng AI (AI Automated Screening):** Chấm điểm độ phù hợp (Match Score % và Rationale) đối chiếu với mô tả công việc (JD) theo phân tầng 3 mức màu: Xanh (≥75%), Vàng (50-74%), Đỏ (<50%).
-- **Gửi Email từ chối tự động có cơ chế Delay:** Tự động gửi thư từ chối sau khoảng thời gian hoãn (Delay Buffer 12 - 24 giờ) qua n8n webhook kết nối Neon PostgreSQL (`BRL-05`).
-- **Thông báo Ứng viên mới qua Telegram Bot:** Tự động bắn thông báo đẩy về kênh Telegram cho HR (`@Rec_Hr_rBot`) ngay khi có hồ sơ mới.
-- **Tự động hóa Lịch phỏng vấn & Đồng bộ Google Calendar:** Phân tách thẻ Online (Meet/Zoom/Teams) vs Offline (Văn phòng), hỗ trợ 3 tùy chọn gửi thư mời (`AUTO_N8N`, `MANUAL_CUSTOM`, `NONE`) và tự động tạo sự kiện Google Calendar.
-- **Phân trang Lũy tiến Từng Cột Kanban:** Quản lý hiển thị mặc định 15 hồ sơ / cột kèm nút tải thêm lũy tiến độc lập (`BRL-14`).
-- **Khống chế Chỉ tiêu Tuyển dụng & Giới hạn Phỏng vấn cùng lúc:** Tự động chốt đóng tin khi tuyển đủ chỉ tiêu (`BRL-13`).
-- **Chuẩn hóa Văn bản & Chuyển đổi Song ngữ VI/EN:** Loại bỏ hoàn toàn các câu giải thích logic kỹ thuật rườm rà, hỗ trợ nút gạt song ngữ `[ 🇻🇳 VI | 🇬🇧 EN ]` trên toàn bộ hệ thống.
-
-### 2. Danh mục Use Case Cốt lõi
-| Mã UC | Tên Use Case | Tác nhân chính (Actors) |
-| :--- | :--- | :--- |
-| **UC-01** | Tạo & Quản lý Tin tuyển dụng (Job Posting, Quota & WIP Cap) | HR, Hiring Manager |
-| **UC-02** | Nộp hồ sơ Trực tuyến & Khử trùng lặp 2 lớp (Deduplication) | Ứng viên, HR |
-| **UC-03** | Bóc tách & Sàng lọc CV Tự động bằng AI (3-Tier Match) | Hệ thống AI, HR |
-| **UC-04** | Vận hành Kanban 5 cột, Cảnh báo SLA & Phân trang lũy tiến | HR, Hiring Manager |
-| **UC-05A**| Lên lịch Phỏng vấn Online/Offline & Đồng bộ Calendar | Hiring Manager, Admin, Ứng viên |
-| **UC-05** | Đánh giá Scorecard 3 tiêu chí trọng số & Stage Gate Hired | Hiring Manager, HR, Giám đốc |
-| **UC-06** | Quản lý Kho Dữ liệu Tài năng (Talent Pool & CRM 180 ngày) | HR |
-| **UC-07** | Báo cáo Phân tích Tuyển dụng (Recruitment Analytics) | HR Manager, Ban Giám đốc |
-
-### 3. Công nghệ & Tự Động Hóa Vận Hành
-- **Fullstack:** Next.js 14+ (App Router) + TypeScript + Tailwind CSS.
-- **Database & ORM:** Prisma ORM (SQLite `dev.db` cho môi trường cục bộ; Neon Serverless PostgreSQL cho môi trường đám mây).
-- **Tự động hóa Workflow:** n8n Workflow Automation (Gmail API + Telegram Bot API + Google Calendar API).
-- **Đa ngôn ngữ (i18n):** Ngữ cảnh React `LanguageProvider` với bộ từ điển tuyển dụng chuẩn hóa `vi` & `en`.
-- **Kiểm thử Nghiệp vụ Tự động:** **136/136 test cases PASS (100%)** (`node tests/run-tests.js`).
+© 2026 **ATS — Applicant Tracking System**. Bảo lưu mọi quyền. Đã sẵn sàng cho giai đoạn Thử nghiệm Doanh nghiệp & Triển khai Đám mây.

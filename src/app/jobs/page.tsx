@@ -10,6 +10,8 @@ import {
   Building2,
   Calendar,
   CheckCircle,
+  Search,
+  ArrowRight,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -69,12 +71,6 @@ export default async function JobsPublicPage() {
               <ArrowLeft className="w-3.5 h-3.5" />
               Trang chủ
             </Link>
-            <Link
-              href="/admin/login"
-              className="text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200"
-            >
-              Cổng Nội Bộ
-            </Link>
           </div>
         </div>
       </header>
@@ -112,6 +108,30 @@ export default async function JobsPublicPage() {
 
       {/* 3. Danh sách công việc mở tuyển */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
+        {/* Banner Tra Cứu Tiến Độ Hồ Sơ */}
+        <div className="mb-8 p-4.5 rounded-2xl bg-gradient-to-r from-brand-50/90 via-indigo-50/60 to-purple-50/50 border border-brand-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-brand-500/20">
+              <Search className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">
+                Bạn đã nộp hồ sơ ứng tuyển tại RecoverX?
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Tra cứu tiến độ xét duyệt hồ sơ, lịch phỏng vấn và phản hồi nhanh chóng theo thời gian thực.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/jobs/tracker"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-brand-50 text-brand-700 font-bold text-xs border border-brand-200 shadow-2xs transition-all shrink-0 cursor-pointer"
+          >
+            <span>Tra Cứu Hồ Sơ Ngay</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <Building2 className="w-5 h-5 text-brand-600" />

@@ -27,6 +27,7 @@ import {
   Cpu,
   Database,
   Check,
+  Briefcase,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -86,18 +87,11 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
             <Link
-              href="/jobs/tracker"
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-brand-600 px-3.5 py-2 rounded-xl hover:bg-slate-100 transition-all border border-slate-200"
+              href="/jobs"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
             >
-              <Search className="w-3.5 h-3.5 text-slate-400" />
-              Tra cứu hồ sơ
-            </Link>
-            <Link
-              href="/admin/pipeline"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-brand-600 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
-            >
-              <Terminal className="w-3.5 h-3.5" />
-              <span>Cổng Tuyển Dụng Nội Bộ</span>
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>Cơ Hội Tuyển Dụng</span>
             </Link>
           </div>
         </div>
