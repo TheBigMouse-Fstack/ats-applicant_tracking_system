@@ -107,7 +107,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         n8nResult,
-        message: `Đã kích hoạt gửi thư mời tự động thành công! Thư mời và lịch hẹn cho ứng viên ${app.candidate.fullName} đã được chuyển đi.`,
+        message: `Đã gửi thư mời tự động và đồng bộ lịch hẹn cho ứng viên ${app.candidate.fullName}!`,
         data: updatedApp,
       });
     } else {
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
         success: false,
         n8nResult,
         error: n8nResult.message,
-        message: n8nResult.message,
+        message: n8nResult.message || "Dịch vụ gửi thư tự động đang trong hàng đợi xử lý.",
       });
     }
   } catch (error: any) {

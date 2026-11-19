@@ -61,7 +61,7 @@ export async function dispatchN8NInterviewWebhook(
     return {
       triggered: false,
       success: false,
-      message: "Chưa cấu hình N8N_WEBHOOK_URL trong biến môi trường (.env) ở tầng hạ tầng.",
+      message: "Chưa cấu hình cổng gửi thư tự động.",
     };
   }
 
@@ -87,7 +87,7 @@ export async function dispatchN8NInterviewWebhook(
         success: true,
         statusCode: res.status,
         webhookUrl,
-        message: `Kích hoạt tiến trình gửi thư tự động thành công (Mã phản hồi HTTP ${res.status}).`,
+        message: "Kích hoạt tiến trình gửi thư tự động thành công.",
       };
     } else {
       const errText = await res.text().catch(() => "");
@@ -97,13 +97,13 @@ export async function dispatchN8NInterviewWebhook(
         statusCode: res.status,
         webhookUrl,
         error: `Cổng tự động phản hồi mã ${res.status}: ${errText.slice(0, 150)}`,
-        message: `Hệ thống tự động đã kết nối nhưng quy trình gửi thư chưa được bật (Active). Vui lòng gạt nút Active trên quy trình tự động.`,
+        message: "Hệ thống tự động đã kết nối nhưng tiến trình gửi thư chưa được kích hoạt.",
       };
     }
   } catch (err: any) {
     const isTimeout = err.name === "AbortError";
     const errorMsg = isTimeout
-      ? "Quá thời gian chờ phản hồi (Timeout 7 giây)"
+      ? "Quá thời gian chờ phản hồi"
       : "Không thể kết nối đến máy chủ gửi thư tự động";
 
     return {
@@ -111,7 +111,7 @@ export async function dispatchN8NInterviewWebhook(
       success: false,
       webhookUrl,
       error: errorMsg,
-      message: `Chưa kết nối được cổng gửi thư tự động (${errorMsg}). Lịch hẹn vẫn được lưu an toàn trên hệ thống.`,
+      message: "Chưa thể gửi thư tự động lúc này. Lịch hẹn vẫn được lưu an toàn trên hệ thống.",
     };
   }
 }
@@ -150,7 +150,7 @@ export async function dispatchN8NTelegramAlert(
     return {
       triggered: false,
       success: false,
-      message: "Chưa cấu hình N8N_TELEGRAM_WEBHOOK_URL trong biến môi trường (.env).",
+      message: "Chưa cấu hình cổng thông báo Telegram.",
     };
   }
 
@@ -176,7 +176,7 @@ export async function dispatchN8NTelegramAlert(
         success: true,
         statusCode: res.status,
         webhookUrl,
-        message: `Kích hoạt n8n gửi thông báo Telegram cho HR (@Rec_Hr_rBot) thành công.`,
+        message: "Gửi thông báo Telegram cho chuyên viên tuyển dụng thành công.",
       };
     } else {
       const errText = await res.text().catch(() => "");
@@ -185,22 +185,22 @@ export async function dispatchN8NTelegramAlert(
         success: false,
         statusCode: res.status,
         webhookUrl,
-        error: `n8n phản hồi lỗi HTTP ${res.status}: ${errText.slice(0, 150)}`,
-        message: `Webhook n8n Telegram phản hồi mã lỗi HTTP ${res.status}.`,
+        error: `Cổng thông báo phản hồi mã ${res.status}: ${errText.slice(0, 150)}`,
+        message: "Tiến trình gửi thông báo Telegram chưa được kích hoạt.",
       };
     }
   } catch (err: any) {
     const isTimeout = err.name === "AbortError";
     const errorMsg = isTimeout
-      ? "Quá thời gian chờ phản hồi từ n8n (Timeout 7 giây)"
-      : err.message || "Không thể kết nối đến địa chỉ webhook n8n Telegram";
+      ? "Quá thời gian chờ phản hồi"
+      : "Không thể kết nối đến cổng thông báo Telegram";
 
     return {
       triggered: true,
       success: false,
       webhookUrl,
       error: errorMsg,
-      message: `Lỗi kết nối n8n Telegram (${errorMsg}).`,
+      message: "Chưa thể gửi thông báo Telegram lúc này.",
     };
   }
 }
@@ -236,7 +236,7 @@ export async function dispatchN8NRejectionEmail(
     return {
       triggered: false,
       success: false,
-      message: "Chưa cấu hình N8N_REJECTION_WEBHOOK_URL trong biến môi trường (.env).",
+      message: "Chưa cấu hình cổng gửi thư từ chối tự động.",
     };
   }
 
@@ -263,8 +263,8 @@ export async function dispatchN8NRejectionEmail(
         statusCode: res.status,
         webhookUrl,
         message: payload.event === "REJECTION_CANCELLED"
-          ? `Kích hoạt n8n hủy lịch gửi thư từ chối thành công.`
-          : `Kích hoạt n8n bộ đệm hoãn 12 giờ gửi thư từ chối thành công.`,
+          ? "Đã hủy lịch gửi thư từ chối thành công."
+          : "Đã kích hoạt bộ đệm hoãn gửi thư từ chối thành công.",
       };
     } else {
       const errText = await res.text().catch(() => "");
@@ -273,22 +273,22 @@ export async function dispatchN8NRejectionEmail(
         success: false,
         statusCode: res.status,
         webhookUrl,
-        error: `n8n phản hồi lỗi HTTP ${res.status}: ${errText.slice(0, 150)}`,
-        message: `Webhook n8n Thư từ chối phản hồi mã lỗi HTTP ${res.status}.`,
+        error: `Cổng thư từ chối phản hồi mã ${res.status}: ${errText.slice(0, 150)}`,
+        message: "Tiến trình gửi thư từ chối chưa được kích hoạt.",
       };
     }
   } catch (err: any) {
     const isTimeout = err.name === "AbortError";
     const errorMsg = isTimeout
-      ? "Quá thời gian chờ phản hồi từ n8n (Timeout 7 giây)"
-      : err.message || "Không thể kết nối đến địa chỉ webhook n8n Thư từ chối";
+      ? "Quá thời gian chờ phản hồi"
+      : "Không thể kết nối đến máy chủ gửi thư từ chối";
 
     return {
       triggered: true,
       success: false,
       webhookUrl,
       error: errorMsg,
-      message: `Lỗi kết nối n8n Thư từ chối (${errorMsg}).`,
+      message: "Chưa thể gửi thư từ chối lúc này.",
     };
   }
 }

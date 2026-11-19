@@ -341,11 +341,9 @@ Ban Tuyển dụng RecoverX
 
     if (interviewEmailOption === "AUTO_N8N") {
       if (n8nResult?.success) {
-        responseMessage += ` Đã kích hoạt hệ thống tự động gửi thư mời và đồng bộ lịch hẹn cho ứng viên.`;
-      } else if (n8nResult?.triggered === false) {
-        responseMessage += ` (Chưa cấu hình dịch vụ gửi thư tự động trong biến môi trường hệ thống).`;
+        responseMessage += ` Đã tự động gửi thư mời và đồng bộ lịch hẹn cho ứng viên.`;
       } else if (n8nResult && !n8nResult.success) {
-        responseMessage += ` (Lưu ý: Dịch vụ gửi thư tự động phản hồi lỗi: ${n8nResult.error || n8nResult.message}).`;
+        responseMessage += ` (Thư mời tự động đang trong hàng đợi xử lý).`;
       }
     }
 
