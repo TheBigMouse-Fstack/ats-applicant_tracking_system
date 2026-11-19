@@ -26,11 +26,11 @@ export const VALID_STAGES: PipelineStage[] = [
 ];
 
 export const STAGE_LABELS: Record<PipelineStage, string> = {
-  NEW: "Mới tiếp nhận (NEW)",
-  SCREENING: "Sàng lọc tiêu chuẩn (SCREENING)",
-  INTERVIEW: "Phỏng vấn (INTERVIEW)",
-  HIRED: "Tuyển chọn (HIRED)",
-  REJECTED: "Từ chối (REJECTED)",
+  NEW: "Mới tiếp nhận",
+  SCREENING: "Sàng lọc",
+  INTERVIEW: "Phỏng vấn",
+  HIRED: "Tuyển chọn",
+  REJECTED: "Từ chối",
 };
 
 export const REJECTION_REASON_PRESETS: string[] = [
@@ -79,7 +79,7 @@ export function isRoleAuthorizedForTransition(
         authorized: false,
         rule: "RBAC-STAGE-LIMIT",
         error:
-          "Phân quyền HR: Chuyên viên HR chỉ được chuyển hồ sơ tối đa đến vòng Sàng lọc tiêu chuẩn (SCREENING). Quyền duyệt Phỏng vấn (INTERVIEW) và Tuyển chọn (HIRED) thuộc thẩm quyền của Quản lý chuyên môn (Hiring Manager).",
+          "Chuyên viên HR chuyển hồ sơ tối đa đến vòng Sàng lọc. Quyền duyệt Phỏng vấn và Tuyển chọn thuộc Quản lý chuyên môn.",
       };
     }
 
@@ -89,7 +89,7 @@ export function isRoleAuthorizedForTransition(
         authorized: false,
         rule: "RBAC-STAGE-LIMIT",
         error:
-          "Phân quyền HR: Hồ sơ đã sang vòng Phỏng vấn hoặc Tuyển chọn thuộc thẩm quyền xử lý của Quản lý chuyên môn (Hiring Manager).",
+          "Hồ sơ ở vòng Phỏng vấn hoặc Tuyển chọn thuộc thẩm quyền xử lý của Quản lý chuyên môn.",
       };
     }
 
@@ -103,7 +103,7 @@ export function isRoleAuthorizedForTransition(
         authorized: false,
         rule: "RBAC-STAGE-LIMIT",
         error:
-          "Phân quyền Hiring Manager: Hồ sơ ở vòng Mới tiếp nhận (NEW) cần được bộ phận HR kiểm tra và chuyển sang Sàng lọc tiêu chuẩn (SCREENING) trước khi Hiring Manager duyệt Phỏng vấn.",
+          "Hồ sơ mới cần được HR sàng lọc trước khi Quản lý chuyên môn duyệt phỏng vấn.",
       };
     }
 
@@ -113,7 +113,7 @@ export function isRoleAuthorizedForTransition(
         authorized: false,
         rule: "RBAC-STAGE-LIMIT",
         error:
-          "Phân quyền Hiring Manager: Không thể kéo hồ sơ về vòng Mới tiếp nhận (NEW). Thao tác sơ loại ban đầu thuộc thẩm quyền của bộ phận HR.",
+          "Không thể chuyển hồ sơ về vòng Mới tiếp nhận. Thao tác tiếp nhận ban đầu thuộc thẩm quyền của HR.",
       };
     }
 
@@ -215,11 +215,11 @@ export function validateStageTransition(
   if (!allowedTargets.includes(to)) {
     let hint = "";
     if (from === "NEW" && (to === "INTERVIEW" || to === "HIRED")) {
-      hint = " Hồ sơ từ Mới tiếp nhận (NEW) bắt buộc phải qua vòng Sàng lọc tiêu chuẩn (SCREENING) trước.";
+      hint = " Hồ sơ cần qua vòng Sàng lọc trước khi chuyển tiếp.";
     } else if (from === "SCREENING" && to === "HIRED") {
-      hint = " Hồ sơ từ Sàng lọc (SCREENING) bắt buộc phải qua vòng Phỏng vấn (INTERVIEW) và có phiếu Scorecard trước khi Tuyển chọn.";
+      hint = " Hồ sơ cần qua vòng Phỏng vấn và có kết quả đánh giá trước khi tuyển chọn.";
     } else if (from === "REJECTED" && to === "HIRED") {
-      hint = " Hồ sơ bị Từ chối không thể nhảy thẳng sang Tuyển chọn (HIRED).";
+      hint = " Vui lòng chuyển hồ sơ về vòng Phỏng vấn để đánh giá lại trước khi tuyển chọn.";
     }
 
     return {

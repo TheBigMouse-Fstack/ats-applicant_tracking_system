@@ -12,6 +12,7 @@ import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 import RejectReasonModal from "@/components/candidate/RejectReasonModal";
 import { canRoleDragFromStage, validateStageTransition } from "@/lib/stage-rules";
 import { useLanguage } from "@/lib/i18n";
+import { useSession } from "@/contexts/SessionContext";
 import {
   Search,
   Filter,
@@ -131,7 +132,7 @@ export default function KanbanBoard() {
 
   // Drawer state
   const [selectedAppId, setSelectedAppId] = useState<number | null>(null);
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const { user: currentUser } = useSession();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Modal bắt buộc nhập Lý do từ chối khi chuyển sang REJECTED
@@ -183,10 +184,7 @@ export default function KanbanBoard() {
 
   useEffect(() => {
     setIsMounted(true);
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((d) => d.success && setCurrentUser(d.user))
-      .catch(() => {});
+    // session provided by useSession()
   }, []);
 
   // Fetch Pipeline Data
@@ -447,7 +445,7 @@ export default function KanbanBoard() {
           </div>
 
           <div className="flex items-center gap-2">
-            {currentUser?.role !== "HIRING_MANAGER" && (
+            {Boolean(currentUser && currentUser.role !== "HIRING_MANAGER") && (
               <button
                 onClick={() => setIsAddModalOpen(true)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-white bg-brand-600 hover:bg-brand-700 transition-colors cursor-pointer"
@@ -589,7 +587,7 @@ export default function KanbanBoard() {
               <AlertCircle className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-xs font-bold text-red-900">Chưa thể chuyển giai đoạn</h4>
+              <h4 className="text-xs font-bold text-red-900">{t("kanban.transitionBlocked", "Chưa thể chuyển giai đoạn")}</h4>
               <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{alertError}</p>
             </div>
             <button
@@ -608,7 +606,7 @@ export default function KanbanBoard() {
               <CheckCircle className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-xs font-bold text-emerald-900">Thông báo tuyển dụng</h4>
+              <h4 className="text-xs font-bold text-emerald-900">{t("kanban.pipelineNotice", "Thông báo tuyển dụng")}</h4>
               <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{alertSuccess}</p>
             </div>
             <button
@@ -621,26 +619,6 @@ export default function KanbanBoard() {
           </div>
         )}
       </div>
-
-      {/* Banner thông báo chế độ Hiring Manager */}
-      {currentUser?.role === "HIRING_MANAGER" && (
-        <div className="p-3.5 bg-amber-50 border border-amber-200/90 rounded-2xl flex items-center justify-between text-xs text-amber-900 shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <span className="text-lg">💼</span>
-            <div>
-              <p className="font-bold">
-                Chế độ Quản lý Chuyên môn — {currentUser.fullName}
-              </p>
-              <p className="text-[11px] text-amber-700 mt-0.5">
-                {t("kanban.hmNotice", "Chế độ đánh giá chuyên môn: Xem hồ sơ và ghi nhận đánh giá phỏng vấn.")}
-              </p>
-            </div>
-          </div>
-          <span className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 text-[11px] font-bold border border-amber-200 shrink-0">
-            Chỉ xem
-          </span>
-        </div>
-      )}
 
       {/* 3. Bảng 5 Cột Kanban Kéo thả */}
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -663,7 +641,7 @@ export default function KanbanBoard() {
                     <div className="flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${col.dotColor}`} />
                       <h3 className="font-bold text-xs text-slate-800 tracking-tight">
-                        {col.title}
+                        {t(`stage.${col.id}`, col.title)}
                       </h3>
                     </div>
                     <span
@@ -674,7 +652,7 @@ export default function KanbanBoard() {
                     </span>
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">
-                    {col.description}
+                    {t(`stageDesc.${col.id}`, col.description)}
                   </p>
                 </div>
 

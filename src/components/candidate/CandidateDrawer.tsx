@@ -50,6 +50,7 @@ import RejectReasonModal from "@/components/candidate/RejectReasonModal";
 import { getAllowedTargetStages, validateStageTransition } from "@/lib/stage-rules";
 import { getAiMatchTier } from "@/lib/match-score";
 import { useLanguage } from "@/lib/i18n";
+import { useSession } from "@/contexts/SessionContext";
 
 interface CandidateDrawerProps {
   applicationId: number | null;
@@ -68,7 +69,7 @@ export default function CandidateDrawer({
 }: CandidateDrawerProps) {
   const { t } = useLanguage();
   const [data, setData] = useState<any>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { user: currentUser } = useSession();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "overview" | "jd" | "cv" | "interview" | "evaluation" | "history"
@@ -121,10 +122,7 @@ export default function CandidateDrawer({
 
   // Tải thông tin tài khoản hiện tại để phân quyền UI (RBAC)
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((d) => d.success && setCurrentUser(d.user))
-      .catch(() => {});
+    // session provided by useSession()
   }, []);
 
   // Tải chi tiết hồ sơ
@@ -480,11 +478,11 @@ export default function CandidateDrawer({
     );
 
   const stages = [
-    { key: "NEW", label: "Mới nộp" },
-    { key: "SCREENING", label: "Sàng lọc" },
-    { key: "INTERVIEW", label: "Phỏng vấn" },
-    { key: "HIRED", label: "Tuyển chọn" },
-    { key: "REJECTED", label: "Từ chối" },
+    { key: "NEW", label: t("stage.NEW", "Mới tiếp nhận") },
+    { key: "SCREENING", label: t("stage.SCREENING", "Sàng lọc") },
+    { key: "INTERVIEW", label: t("stage.INTERVIEW", "Phỏng vấn") },
+    { key: "HIRED", label: t("stage.HIRED", "Tuyển chọn") },
+    { key: "REJECTED", label: t("stage.REJECTED", "Từ chối") },
   ];
 
   return (
@@ -2342,7 +2340,7 @@ Hội đồng Tuyển dụng RecoverX`
           {/* Footer Actions: Chuyển Stage nhanh (Áp dụng State Machine & RBAC) */}
           <div className="p-5 border-t border-slate-200 bg-slate-50/80 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-700">Chuyển vòng tuyển:</span>
+              <span className="text-xs font-bold text-slate-700">{t("drawer.moveStage", "Chuyển vòng tuyển:")}</span>
               <div className="flex flex-wrap gap-1.5">
                 {(() => {
                   const allowedTargets = getAllowedTargetStages(
@@ -2375,7 +2373,7 @@ Hội đồng Tuyển dụng RecoverX`
                         }`}
                       >
                         {!isCurrent && !isAllowed && <Lock className="w-3 h-3" />}
-                        <span>{st.key}</span>
+                        <span>{t(`stage.${st.key}`, st.label)}</span>
                       </button>
                     );
                   });

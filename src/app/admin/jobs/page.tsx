@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "@/contexts/SessionContext";
 import {
   Plus,
   RefreshCw,
@@ -17,7 +18,7 @@ import {
 } from "lucide-react";
 
 export default function AdminJobsPage() {
-  const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
+  const { user: currentUser } = useSession();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -63,12 +64,6 @@ export default function AdminJobsPage() {
   };
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((d) => {
-        if (d.success && d.user) setCurrentUser(d.user);
-      })
-      .catch(() => {});
     fetchJobs();
   }, []);
 
@@ -178,7 +173,7 @@ export default function AdminJobsPage() {
       j.department.toLowerCase().includes(search.toLowerCase())
   );
 
-  const canCreateJob = currentUser?.role !== "HIRING_MANAGER";
+  const canCreateJob = Boolean(currentUser && currentUser.role !== "HIRING_MANAGER");
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">

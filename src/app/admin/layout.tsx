@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import AdminNavbar from "@/components/admin/Navbar";
 import { getSessionUser } from "@/lib/auth";
+import { SessionProvider } from "@/contexts/SessionContext";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -27,9 +28,11 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <AdminNavbar initialUser={sessionUser} />
-      <main className="flex-1">{children}</main>
-    </div>
+    <SessionProvider initialUser={sessionUser}>
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <AdminNavbar initialUser={sessionUser} />
+        <main className="flex-1">{children}</main>
+      </div>
+    </SessionProvider>
   );
 }

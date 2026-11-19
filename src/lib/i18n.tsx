@@ -27,14 +27,34 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "nav.logout": "Đăng xuất",
 
     // Vòng tuyển dụng (Stages)
-    "stage.NEW": "Hồ sơ mới",
+    "stage.NEW": "Mới tiếp nhận",
     "stage.SCREENING": "Sàng lọc",
     "stage.INTERVIEW": "Phỏng vấn",
     "stage.HIRED": "Tuyển chọn",
     "stage.REJECTED": "Từ chối",
 
+    // Mô tả từng vòng tuyển
+    "stageDesc.NEW": "CV nộp qua cổng hoặc tải lên",
+    "stageDesc.SCREENING": "Đánh giá sơ bộ hồ sơ",
+    "stageDesc.INTERVIEW": "Đang đánh giá vòng chuyên môn",
+    "stageDesc.HIRED": "Đã hoàn thành đánh giá phỏng vấn",
+    "stageDesc.REJECTED": "Tạm lưu trữ hồ sơ chưa phù hợp",
+
+    // Menu Avatar Người Dùng (User Menu)
+    "userMenu.language": "Ngôn ngữ",
+    "userMenu.settings": "Cài đặt & Giao diện",
+    "userMenu.roleAdmin": "Quản Trị Viên",
+    "userMenu.roleHr": "Chuyên Viên Tuyển Dụng",
+    "userMenu.roleManager": "Quản Lý Chuyên Môn",
+    "userMenu.logout": "Đăng xuất tài khoản",
+
+    // Drawer Hành động
+    "drawer.moveStage": "Chuyển vòng tuyển:",
+    "drawer.loading": "Đang tải hồ sơ...",
+    "drawer.current": "Hiện tại",
+
     // Lọc & Thao tác Kanban
-    "kanban.searchPlaceholder": "Tìm kiếm ứng viên, kỹ năng, vị trí...",
+    "kanban.searchPlaceholder": "Tìm tên, email hoặc kỹ năng...",
     "kanban.allJobs": "Tất cả vị trí",
     "kanban.allSources": "Tất cả nguồn",
     "kanban.starredOnly": "Có gắn sao",
@@ -44,6 +64,8 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "kanban.loadMore": "Tải thêm hồ sơ",
     "kanban.slaWarning": "Vi phạm SLA",
     "kanban.hmNotice": "Chế độ đánh giá chuyên môn: Xem hồ sơ và ghi nhận đánh giá phỏng vấn.",
+    "kanban.transitionBlocked": "Chưa thể chuyển giai đoạn",
+    "kanban.pipelineNotice": "Thông báo tuyển dụng",
 
     // Tab trong CandidateDrawer
     "tab.overview": "Hồ sơ",
@@ -259,8 +281,28 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "stage.HIRED": "Hired",
     "stage.REJECTED": "Rejected",
 
+    // Stage Descriptions
+    "stageDesc.NEW": "Applications submitted or uploaded",
+    "stageDesc.SCREENING": "Initial resume screening",
+    "stageDesc.INTERVIEW": "Under technical interview evaluation",
+    "stageDesc.HIRED": "Completed evaluations & hired",
+    "stageDesc.REJECTED": "Archived unselected profiles",
+
+    // User Avatar Menu
+    "userMenu.language": "Language",
+    "userMenu.settings": "Settings & Preferences",
+    "userMenu.roleAdmin": "Administrator",
+    "userMenu.roleHr": "Talent Acquisition (HR)",
+    "userMenu.roleManager": "Hiring Manager (HM)",
+    "userMenu.logout": "Sign Out",
+
+    // Drawer Actions
+    "drawer.moveStage": "Move pipeline stage:",
+    "drawer.loading": "Loading candidate...",
+    "drawer.current": "Current",
+
     // Filters & Actions
-    "kanban.searchPlaceholder": "Search candidates, skills, roles...",
+    "kanban.searchPlaceholder": "Search by name, email or skill...",
     "kanban.allJobs": "All Roles",
     "kanban.allSources": "All Sources",
     "kanban.starredOnly": "Starred",
@@ -270,6 +312,8 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "kanban.loadMore": "Load More",
     "kanban.slaWarning": "SLA Breach",
     "kanban.hmNotice": "Interviewer Mode: View candidates and submit interview scorecards.",
+    "kanban.transitionBlocked": "Stage Transition Restricted",
+    "kanban.pipelineNotice": "Recruitment Notification",
 
     // CandidateDrawer Tabs
     "tab.overview": "Profile",

@@ -21,9 +21,10 @@ import {
 } from "lucide-react";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import { getAiMatchTier } from "@/lib/match-score";
+import { useSession } from "@/contexts/SessionContext";
 
 export default function TalentPoolPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { user: currentUser } = useSession();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
@@ -105,15 +106,6 @@ export default function TalentPoolPage() {
   }, [search, selectedJobId, selectedPoolStatus, sortBy, starredOnly]);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success && res.user) {
-          setCurrentUser(res.user);
-        }
-      })
-      .catch((e) => console.error(e));
-
     fetchJobs();
     fetchTalentPool();
   }, [fetchTalentPool]);

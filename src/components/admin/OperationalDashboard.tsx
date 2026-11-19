@@ -434,7 +434,7 @@ export default function OperationalDashboard() {
                   key={stage.key}
                   style={{ width: `${pct}%` }}
                   className={`${stage.barColor} transition-all duration-300 relative group`}
-                  title={`${stage.label}: ${data.funnel[stage.key]} hồ sơ (${pct.toFixed(1)}%)`}
+                  title={`${t(`stage.${stage.key}`, stage.label)}: ${data.funnel[stage.key]} hồ sơ (${pct.toFixed(1)}%)`}
                 />
               );
             })
@@ -452,7 +452,7 @@ export default function OperationalDashboard() {
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
                     <span className={`w-2 h-2 rounded-full ${stage.dotColor}`} />
-                    <span className="truncate">{stage.label}</span>
+                    <span className="truncate">{t(`stage.${stage.key}`, stage.label)}</span>
                   </span>
                   <span className="text-[10px] font-semibold text-slate-400">{pct}%</span>
                 </div>

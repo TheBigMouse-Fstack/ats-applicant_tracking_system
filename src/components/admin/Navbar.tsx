@@ -2,19 +2,18 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Briefcase,
   Kanban,
   Users,
   Database,
-  LogOut,
   UserCheck,
 } from "lucide-react";
 import { SessionUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/i18n";
-import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+import { useSession } from "@/contexts/SessionContext";
+import UserMenu from "./UserMenu";
 
 interface AdminNavbarProps {
   initialUser?: SessionUser | null;
@@ -23,27 +22,8 @@ interface AdminNavbarProps {
 export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<SessionUser | null>(initialUser);
-
-  // Lấy thông tin user hiện tại nếu chưa có initialUser và không phải trang login
-  useEffect(() => {
-    if (pathname === "/admin/login") return;
-
-    if (!currentUser) {
-      fetch("/api/auth/me")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.user) {
-            setCurrentUser(data.user);
-          } else {
-            router.push("/admin/login");
-          }
-        })
-        .catch(() => {
-          router.push("/admin/login");
-        });
-    }
-  }, [pathname, router, currentUser]);
+  const { user: currentUser, logout } = useSession();
+  const { t } = useLanguage();
 
   // Tuyệt đối không hiển thị Navbar trên trang Login
   if (pathname === "/admin/login") {
@@ -60,15 +40,9 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
     );
   }
 
-  // Đăng xuất
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    setCurrentUser(null);
-    router.push("/admin/login");
-    router.refresh();
+    await logout();
   };
-
-  const { t } = useLanguage();
 
   const navLinks = [
     { href: "/admin/dashboard", label: t("nav.dashboard", "Tổng quan"), icon: LayoutDashboard },
@@ -129,42 +103,10 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
             </nav>
           </div>
 
-          {/* User Profile, Language & Logout */}
+          {/* User Profile Avatar Menu (Gọn gàng, chuẩn Enterprise, không bị đè nút) */}
           <div className="flex items-center gap-3">
-            <LanguageSwitcher />
             {currentUser && (
-              <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs font-semibold text-slate-900 leading-none">{currentUser.fullName}</p>
-                  <div className="mt-1">
-                    {currentUser.role === "ADMIN" && (
-                      <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                        ADMIN
-                      </span>
-                    )}
-                    {currentUser.role === "HR" && (
-                      <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                        HR LEAD
-                      </span>
-                    )}
-                    {currentUser.role === "HIRING_MANAGER" && (
-                      <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800">
-                        HIRING MANAGER
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 border border-brand-200 flex items-center justify-center text-xs font-bold">
-                  {currentUser.fullName.charAt(0)}
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-1"
-                  title="Đăng xuất"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+              <UserMenu user={currentUser} onLogout={handleLogout} />
             )}
           </div>
         </div>

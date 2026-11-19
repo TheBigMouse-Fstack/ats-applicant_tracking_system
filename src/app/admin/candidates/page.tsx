@@ -14,6 +14,8 @@ import {
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 import { getAiMatchTier } from "@/lib/match-score";
+import { useSession } from "@/contexts/SessionContext";
+import { useLanguage } from "@/lib/i18n";
 
 interface JobOption {
   id: number;
@@ -40,7 +42,8 @@ const STAGE_STYLES: Record<string, { label: string; cls: string }> = {
  * Toàn bộ thông tin chi tiết (SĐT, nguồn tiếp nhận, bằng cấp, CV gốc, Scorecard, lịch sử) được gộp gọn trong Drawer khi nhấp vào dòng.
  */
 export default function CandidatesListPage() {
-  const [currentUser, setCurrentUser] = useState<{ role: string } | null>(null);
+  const { user: currentUser } = useSession();
+  const { t } = useLanguage();
   const [candidates, setCandidates] = useState<any[]>([]);
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,13 +59,6 @@ export default function CandidatesListPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((d) => {
-        if (d.success && d.user) setCurrentUser(d.user);
-      })
-      .catch(() => {});
-
     fetch("/api/jobs")
       .then((res) => res.json())
       .then((d) => {
@@ -134,7 +130,7 @@ export default function CandidatesListPage() {
     }
   };
 
-  const canUploadOrExport = currentUser?.role !== "HIRING_MANAGER";
+  const canUploadOrExport = Boolean(currentUser && currentUser.role !== "HIRING_MANAGER");
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
@@ -429,7 +425,7 @@ export default function CandidatesListPage() {
                         <span
                           className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${stageInfo.cls}`}
                         >
-                          {stageInfo.label}
+                          {t(`stage.${app.currentStage}`, stageInfo.label)}
                         </span>
                       </td>
 
