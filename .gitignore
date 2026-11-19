@@ -47,3 +47,4 @@ public/uploads/certificates/*
 # Microsoft Word temp/lock files
 ~$*.docx
 *.tmp
+.neon
