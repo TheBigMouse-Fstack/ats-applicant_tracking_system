@@ -22,6 +22,8 @@ export async function GET(req: Request) {
     const sortByParam = searchParams.get("sortBy") || "NEWEST";
     const starredOnly = searchParams.get("starred") === "true";
     const unviewedOnly = searchParams.get("unviewed") === "true";
+    const slaOnly = searchParams.get("slaOnly") === "true";
+    const highMatchOnly = searchParams.get("highMatch") === "true";
     const limitPerStageParam = searchParams.get("limitPerStage");
     const limitPerStage = limitPerStageParam ? parseInt(limitPerStageParam, 10) : undefined;
 
@@ -71,7 +73,12 @@ export async function GET(req: Request) {
       whereClause.isViewed = false;
     }
 
-    if (searchParam) {
+    if (highMatchOnly) {
+      whereClause.aiMatchScore = { gte: 75 };
+    }
+
+    // Chỉ tìm kiếm khi từ khóa có ý nghĩa (tối thiểu 2 ký tự) để tránh việc gõ 1 chữ cái lọc toàn bộ bảng
+    if (searchParam && searchParam.length >= 2) {
       whereClause.candidate = {
         OR: [
           { fullName: { contains: searchParam } },
@@ -132,6 +139,10 @@ export async function GET(req: Request) {
       } else if (stage === "SCREENING" && hoursInStage > 72) {
         isSlaBreached = true;
         slaMessage = `Sàng lọc ${Math.floor(hoursInStage)}h (Quá hạn 72h)`;
+      }
+
+      if (slaOnly && !isSlaBreached) {
+        return;
       }
 
       columns[stage].push({

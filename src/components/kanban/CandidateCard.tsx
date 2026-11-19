@@ -10,6 +10,27 @@ interface CandidateCardProps {
   onOpenDrawer: (appId: number) => void;
   onToggleStar?: (appId: number) => void;
   isDragDisabled?: boolean;
+  searchQuery?: string;
+}
+
+function highlightMatch(text: string, query: string) {
+  if (!query || query.length < 2) return text;
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const index = lowerText.indexOf(lowerQuery);
+  if (index === -1) return text;
+  const before = text.slice(0, index);
+  const match = text.slice(index, index + query.length);
+  const after = text.slice(index + query.length);
+  return (
+    <>
+      {before}
+      <span className="bg-amber-100 text-amber-950 font-bold px-0.5 rounded">
+        {match}
+      </span>
+      {after}
+    </>
+  );
 }
 
 /**
@@ -27,6 +48,7 @@ export default function CandidateCard({
   onOpenDrawer,
   onToggleStar,
   isDragDisabled = false,
+  searchQuery = "",
 }: CandidateCardProps) {
   const {
     candidate,
@@ -41,6 +63,41 @@ export default function CandidateCard({
 
   const isUnviewedNew = currentStage === "NEW" && !isViewed;
   const matchTier = getAiMatchTier(application.aiMatchScore);
+
+  // Phân tích lý do khớp từ khóa tìm kiếm (Match Explanation)
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  let matchedSkill: string | null = null;
+  let matchedEmail = false;
+  let matchedPhone = false;
+
+  if (trimmedQuery.length >= 2) {
+    try {
+      const skills: string[] =
+        typeof candidate?.parsedSkills === "string"
+          ? JSON.parse(candidate.parsedSkills)
+          : Array.isArray(candidate?.parsedSkills)
+          ? candidate.parsedSkills
+          : [];
+      const found = skills.find((s) => s.toLowerCase().includes(trimmedQuery));
+      if (found) matchedSkill = found;
+    } catch {
+      if (
+        typeof candidate?.parsedSkills === "string" &&
+        candidate.parsedSkills.toLowerCase().includes(trimmedQuery)
+      ) {
+        matchedSkill = trimmedQuery;
+      }
+    }
+
+    const nameMatches = (candidate?.fullName || "").toLowerCase().includes(trimmedQuery);
+    if (!nameMatches) {
+      if ((candidate?.email || "").toLowerCase().includes(trimmedQuery)) {
+        matchedEmail = true;
+      } else if ((candidate?.phone || "").toLowerCase().includes(trimmedQuery)) {
+        matchedPhone = true;
+      }
+    }
+  }
 
   return (
     <Draggable
@@ -78,7 +135,9 @@ export default function CandidateCard({
                     : "font-semibold text-slate-800"
                 }`}
               >
-                {candidate?.fullName || "Ứng viên chưa cập nhật"}
+                {candidate?.fullName
+                  ? highlightMatch(candidate.fullName, trimmedQuery)
+                  : "Ứng viên chưa cập nhật"}
               </h4>
             </div>
 
@@ -106,6 +165,26 @@ export default function CandidateCard({
             <Briefcase className="w-3 h-3 text-slate-400 shrink-0" />
             <span className="truncate">{job?.title || "Vị trí không xác định"}</span>
           </p>
+
+          {/* Hiển thị lý do khớp tìm kiếm nếu do Kỹ năng / Email / SĐT */}
+          {matchedSkill && (
+            <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 bg-brand-50 border border-brand-200/80 px-2 py-0.5 rounded-md">
+              <span>🎯 Khớp kỹ năng:</span>
+              <span className="font-bold underline">{matchedSkill}</span>
+            </div>
+          )}
+          {matchedEmail && (
+            <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+              <span>✉️ Khớp email:</span>
+              <span className="font-medium text-slate-900">{candidate.email}</span>
+            </div>
+          )}
+          {matchedPhone && (
+            <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+              <span>📞 Khớp SĐT:</span>
+              <span className="font-medium text-slate-900">{candidate.phone}</span>
+            </div>
+          )}
 
           {/* Cảnh báo SLA quá hạn (chỉ hiện khi thực sự vi phạm) */}
           {isSlaBreached && (

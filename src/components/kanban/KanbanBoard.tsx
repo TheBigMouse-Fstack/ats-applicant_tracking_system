@@ -18,6 +18,7 @@ import {
   Filter,
   RefreshCw,
   AlertCircle,
+  AlertTriangle,
   Briefcase,
   Users,
   CheckCircle,
@@ -110,9 +111,12 @@ export default function KanbanBoard() {
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("NEWEST");
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [showUnviewedOnly, setShowUnviewedOnly] = useState(false);
+  const [showSlaOnly, setShowSlaOnly] = useState(false);
+  const [showHighMatchOnly, setShowHighMatchOnly] = useState(false);
 
   const [columns, setColumns] = useState<Record<string, any[]>>({
     NEW: [],
@@ -171,6 +175,17 @@ export default function KanbanBoard() {
     }));
   };
 
+  // Debounce tìm kiếm 300ms và chỉ kích hoạt khi >= 2 ký tự (hoặc rỗng để xem tất cả)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const trimmed = searchQuery.trim();
+      if (trimmed.length >= 2 || trimmed.length === 0) {
+        setDebouncedSearch(trimmed);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Reset phân trang lũy tiến về mặc định khi thay đổi bộ lọc hoặc tìm kiếm
   useEffect(() => {
     setStageLimits({
@@ -180,7 +195,7 @@ export default function KanbanBoard() {
       HIRED: DEFAULT_PAGE_SIZE,
       REJECTED: DEFAULT_PAGE_SIZE,
     });
-  }, [selectedJobId, searchQuery, sortBy, showStarredOnly, showUnviewedOnly]);
+  }, [selectedJobId, debouncedSearch, sortBy, showStarredOnly, showUnviewedOnly, showSlaOnly, showHighMatchOnly]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -195,8 +210,8 @@ export default function KanbanBoard() {
       if (selectedJobId && selectedJobId !== "ALL") {
         params.append("jobId", selectedJobId);
       }
-      if (searchQuery.trim()) {
-        params.append("search", searchQuery.trim());
+      if (debouncedSearch) {
+        params.append("search", debouncedSearch);
       }
       if (sortBy !== "NEWEST") {
         params.append("sortBy", sortBy);
@@ -206,6 +221,12 @@ export default function KanbanBoard() {
       }
       if (showUnviewedOnly) {
         params.append("unviewed", "true");
+      }
+      if (showSlaOnly) {
+        params.append("slaOnly", "true");
+      }
+      if (showHighMatchOnly) {
+        params.append("highMatch", "true");
       }
 
       const res = await fetch(`/api/pipeline?${params.toString()}`);
@@ -230,7 +251,7 @@ export default function KanbanBoard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedJobId, searchQuery, sortBy, showStarredOnly, showUnviewedOnly]);
+  }, [selectedJobId, debouncedSearch, sortBy, showStarredOnly, showUnviewedOnly, showSlaOnly, showHighMatchOnly]);
 
   // Xử lý bật/tắt gắn sao nhanh (Gmail star toggle)
   const handleToggleStar = async (appId: number) => {
@@ -524,6 +545,36 @@ export default function KanbanBoard() {
               <span>Chưa xem ({columns.NEW?.filter((c: any) => !c.isViewed).length || 0})</span>
             </button>
 
+            {/* Lọc nhanh vi phạm SLA */}
+            <button
+              type="button"
+              onClick={() => setShowSlaOnly(!showSlaOnly)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium transition-colors cursor-pointer border ${
+                showSlaOnly
+                  ? "bg-rose-600 text-white border-rose-600 shadow-2xs font-semibold"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              }`}
+              title="Lọc các hồ sơ vượt quá thời hạn cam kết (NEW > 48h, SCREENING > 72h)"
+            >
+              <AlertTriangle className={`w-3.5 h-3.5 ${showSlaOnly ? "text-white" : "text-rose-500"}`} />
+              <span>Quá hạn SLA</span>
+            </button>
+
+            {/* Lọc nhanh điểm AI phù hợp cao */}
+            <button
+              type="button"
+              onClick={() => setShowHighMatchOnly(!showHighMatchOnly)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-medium transition-colors cursor-pointer border ${
+                showHighMatchOnly
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs font-semibold"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              }`}
+              title="Chỉ hiển thị các hồ sơ có điểm đối chiếu JD đạt từ 75% trở lên"
+            >
+              <span className={`w-2 h-2 rounded-full ${showHighMatchOnly ? "bg-white" : "bg-emerald-500"}`} />
+              <span>Phù hợp cao (≥75%)</span>
+            </button>
+
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
@@ -537,6 +588,65 @@ export default function KanbanBoard() {
             </select>
           </div>
         </div>
+
+        {/* Gợi ý khi người dùng mới gõ 1 ký tự */}
+        {searchQuery.trim().length === 1 && (
+          <p className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200/80 px-3 py-2 rounded-xl animate-in fade-in duration-150">
+            💡 <strong>Mẹo tìm kiếm ATS:</strong> Nhập từ 2 ký tự trở lên để tìm chính xác theo <strong>Họ tên</strong>, <strong>Email</strong>, <strong>SĐT</strong> hoặc <strong>Kỹ năng</strong> (ví dụ: <em>React, Node, QA, Python...</em>).
+          </p>
+        )}
+
+        {/* Thanh trạng thái bộ lọc đang áp dụng */}
+        {(debouncedSearch || showSlaOnly || showHighMatchOnly || showStarredOnly || showUnviewedOnly) && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 text-xs bg-slate-50/70 px-3.5 py-2 rounded-xl">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-semibold text-slate-600">Đang lọc:</span>
+              {debouncedSearch && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold border border-brand-200">
+                  Từ khóa: &quot;{debouncedSearch}&quot;
+                </span>
+              )}
+              {showSlaOnly && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-200">
+                  Quá hạn SLA
+                </span>
+              )}
+              {showHighMatchOnly && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
+                  Điểm AI ≥ 75%
+                </span>
+              )}
+              {showStarredOnly && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
+                  Gắn sao
+                </span>
+              )}
+              {showUnviewedOnly && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold border border-blue-200">
+                  Chưa xem
+                </span>
+              )}
+              <span className="text-[11px] text-slate-400 font-medium ml-1">
+                (Tìm thấy {Object.values(columns).reduce((acc, colItems) => acc + (colItems?.length || 0), 0)} hồ sơ)
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setDebouncedSearch("");
+                setShowSlaOnly(false);
+                setShowHighMatchOnly(false);
+                setShowStarredOnly(false);
+                setShowUnviewedOnly(false);
+              }}
+              className="text-slate-500 hover:text-rose-600 text-[11px] font-bold underline transition-colors cursor-pointer"
+            >
+              Đặt lại tất cả lọc
+            </button>
+          </div>
+        )}
 
         {/* Thanh tiến độ chỉ tiêu & trần phỏng vấn (chỉ hiện gọn khi đang lọc theo 1 vị trí cụ thể) */}
         {selectedJobId !== "ALL" && (() => {
@@ -671,11 +781,13 @@ export default function KanbanBoard() {
                       {displayedItems.length === 0 ? (
                         <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
                           <Users className="w-6 h-6 text-slate-300 mb-1" />
-                          <p className="text-xs font-semibold text-slate-400">
-                            Chưa có hồ sơ
+                          <p className="text-xs font-semibold text-slate-500">
+                            {debouncedSearch ? "Không có hồ sơ khớp" : "Chưa có hồ sơ"}
                           </p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            Kéo thả ứng viên vào đây
+                          <p className="text-[10px] text-slate-400 mt-0.5 max-w-[180px]">
+                            {debouncedSearch
+                              ? `Không có ứng viên nào khớp từ khóa "${debouncedSearch}" ở cột này`
+                              : "Kéo thả ứng viên vào đây"}
                           </p>
                         </div>
                       ) : (
@@ -687,6 +799,7 @@ export default function KanbanBoard() {
                             onOpenDrawer={(id) => setSelectedAppId(id)}
                             onToggleStar={handleToggleStar}
                             isDragDisabled={!canRoleDragFromStage(col.id, currentUser?.role)}
+                            searchQuery={debouncedSearch}
                           />
                         ))
                       )}
