@@ -16,6 +16,10 @@ const SESSION_SECRET =
   process.env.SESSION_SECRET ||
   "recoverx_career_ats_enterprise_security_secret_key_2026_super_safe";
 
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  console.warn("⚠️ SECURITY WARNING: SESSION_SECRET is not set in environment variables. Please set a strong SESSION_SECRET for production.");
+}
+
 /**
  * Ký số dữ liệu phiên người dùng bằng HMAC-SHA256 (Chống giả mạo Session Tampering)
  */
