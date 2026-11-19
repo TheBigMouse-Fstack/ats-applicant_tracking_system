@@ -1,8 +1,8 @@
 ---
 id: "UAT-ATS-18"
-title: "Kịch bản Kiểm thử Thực hành UAT & Đối chiếu 97 Test Tự động"
+title: "Kịch bản Kiểm thử Nghiệm thu UAT & Hướng dẫn Thử nghiệm Doanh nghiệp 1 Tuần (161 Test Cases PASS)"
 type: "test-suite"
-version: "2.1.0"
+version: "2.3.0"
 status: "approved"
 owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
@@ -11,20 +11,21 @@ tags:
   - "test-cases"
   - "qa"
   - "rtm"
+  - "enterprise-trial"
 upstream_deps:
   - "UC-ATS-05"
   - "BR-ERR-17"
   - "API-ATS-15"
 downstream_deps:
   []
-last_updated: "2026-11-18"
+last_updated: "2026-11-19"
 ---
 
 # BẢNG TÌNH HUỐNG KIỂM THỬ THỰC HÀNH TOÀN DIỆN (FULL UAT TEST SCENARIOS GUIDE)
-## Dự án: ATS — Applicant Tracking System — Hệ thống Quản trị Tuyển dụng ATS
+## Dự án: ATS — Applicant Tracking System — Hệ thống Quản trị Tuyển dụng Doanh nghiệp
 
-> **Dành cho:** Sinh viên / Chuyên viên Phân tích Nghiệp vụ (ITBA) tự kiểm tra và diễn tập thuyết trình Demo.  
-> **Mục tiêu:** Từng bước thao tác thực tế trên giao diện để kiểm chứng 100% các Use Case (UC-00 đến UC-07) và các Quy tắc Nghiệp vụ cốt lõi (**BRL-01 đến BRL-10**).
+> **Dành cho:** Bộ phận Nhân sự (HR Lead), Quản lý Chuyên môn (Hiring Manager), Ban Giám đốc và Đội ngũ Kiểm thử (QA) trong đợt thử nghiệm thực tế 1 tuần.  
+> **Mục tiêu:** Từng bước thao tác thực tế trên giao diện để kiểm chứng 100% các Use Case (UC-00 đến UC-07), các Quy tắc Nghiệp vụ cốt lõi (**BRL-01 đến BRL-14**) và bảo mật an toàn thông tin.
 
 ---
 
@@ -32,35 +33,40 @@ last_updated: "2026-11-18"
 
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
-| `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
+| `v1.0.0` | 2026-11-10 | BA Team | **Initial** | Khởi tạo kịch bản UAT thủ công ban đầu. | Product Owner |
+| `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit. | Product Owner |
+| `v2.3.0` | 2026-11-19 | ATS BA & QA Team | **Added** | Mở rộng 22 Test Suites (161 tests PASS), cập nhật kịch bản dùng thử Doanh nghiệp 1 tuần trên Vercel Cloud & Neon PostgreSQL. | Product Owner & Tech Lead |
 
 ---
 
-## I. HƯỚNG DẪN KHỞI ĐỘNG HỆ THỐNG TRONG 30 GIÂY
+## I. CỔNG TRUY CẬP VÀ VẬN HÀNH HỆ THỐNG
 
-Trước khi bắt đầu kiểm thử, bạn mở cửa sổ Terminal/PowerShell tại thư mục dự án `D:\ATS project` và thực hiện:
+1. **Truy cập trực tuyến trên Cloud (Production Vercel):**  
+   👉 **Cổng Nộp Đơn Tuyển Dụng:** [https://ats-applicant-tracking-system.vercel.app/jobs](https://ats-applicant-tracking-system.vercel.app/jobs)  
+   👉 **Cổng Tra Cứu Hồ Sơ:** [https://ats-applicant-tracking-system.vercel.app/jobs/tracker](https://ats-applicant-tracking-system.vercel.app/jobs/tracker)  
+   👉 **Cổng Quản Trị ATS Nội Bộ:** [https://ats-applicant-tracking-system.vercel.app/admin/login](https://ats-applicant-tracking-system.vercel.app/admin/login)
 
-1. **Khởi động máy chủ web:**
+2. **Khởi động và kiểm thử tại máy cục bộ (Localhost):**
    ```bash
+   # Khởi động máy chủ phát triển
    npm run dev
+   # Truy cập tại: http://localhost:3000
    ```
-2. Mở trình duyệt web (Chrome, Edge, Cốc Cốc) và truy cập:  
-   👉 **`http://localhost:3000`**
 
-3. **Chạy kiểm thử tự động 45 Test Cases backend:**
+3. **Chạy bộ kiểm thử tự động toàn diện (161 Test Cases PASS 100%):**
    ```bash
-   npm test
+   node tests/run-tests.js
    ```
 
 ---
 
-## II. DANH SÁCH TÀI KHOẢN ĐĂNG NHẬP NỘI BỘ (Xem thêm tại `ACCOUNTS.md`)
+## II. DANH SÁCH TÀI KHOẢN ĐĂNG NHẬP NỘI BỘ (Xem chi tiết tại `ACCOUNTS.md`)
 
-| Vai trò (Role) | Họ và tên | Email đăng nhập | Mật khẩu | Phạm vi quyền hạn |
-| :--- | :--- | :--- | :--- | :--- |
-| **ADMIN** | Nguyễn Văn An | `admin@recoverx.career` | `Admin@123` | Toàn quyền cấu hình User, CSDL & Pipeline |
-| **HR LEAD** | Nguyễn Thu Hà | `hr@recoverx.career` | `Hr@123456` | Quản trị Pipeline Kanban, Tạo Job, Duyệt CV |
-| **HIRING MANAGER** | Trần Trọng Nhân | `techlead@recoverx.career` | `Manager@123` | Phỏng vấn chuyên môn & Chấm Scorecard |
+| Vai trò (Role) | Họ và tên | Email đăng nhập chính | Mật khẩu mặc định | Email thay thế (Alias) | Phạm vi quyền hạn cốt lõi |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **ADMIN** | Nguyễn Văn An | `admin@ats.vn` | **`Admin@123456`** | `admin@recoverx.career` | Toàn quyền cấu hình User, xem 360 độ Dashboard & Audit Trail |
+| **HR LEAD** | Nguyễn Thu Hà | `hr@ats.vn` | **`Hr@123456`** | `hr@recoverx.career` | Tiếp nhận CV (`NEW ➔ SCREENING`), sửa 5 trường CV, quản lý Talent Pool |
+| **HIRING MANAGER** | Trần Minh Quân | `manager@ats.vn` | **`Manager@123456`** | `techlead@recoverx.career` | Quản lý Phỏng vấn (`INTERVIEW ➔ HIRED`), chấm Scorecard, từ chối BRL-11 |
 
 ---
 

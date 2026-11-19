@@ -72,6 +72,7 @@ last_updated: "2026-11-19"
 | `[[API-ATS-15]]` | `docs/dev-context/15_API_Specifications_and_Error_Codes.md` | `api-spec` | `v2.3.0` | Approved | Đặc tả 17 RESTful API Contracts (bổ sung Storage Proxy) & Hệ thống mã lỗi chuẩn. |
 | `[[SDD-PLAY-16]]` | `docs/dev-context/16_SDD_Prompt_Playbook.md` | `guide` | `v1.0.0` | Approved | Bộ 7 mẫu Prompt chuẩn Spec-Driven Development & Câu khóa an toàn. |
 | `[[BR-ERR-17]]` | `docs/dev-context/17_Business_Rules_and_Error_Matrix.md` | `srs` | `v2.1.0` | Approved | Business Rules 3 vế (`RULE-02`), Ma trận Lỗi 7 cột (`RULE-11`) & Gherkin BDD AC. |
+| `[[STAGING-GUIDE-19]]` | `docs/dev-context/STAGING_DEPLOYMENT_GUIDE.md` | `guide` | `v1.0.0` | Approved | Hướng dẫn triển khai môi trường Staging/Production Vercel & Neon Cloud. |
 
 > **Lưu ý kiểm soát phiên bản (`RULE-19`):** Tài liệu bản nháp cũ `01_BRD_Original.md` đã được loại bỏ chính thức nhằm tránh xung đột nguồn chân lý; toàn bộ lịch sử tiến hóa từ `v1.0.0` được lưu tại bảng Revision History của `[[BRD-ATS-01]]`.
 
@@ -126,3 +127,6 @@ Thực thi theo quy trình `skills/doc-drift/SKILL.md` cập nhật ngày **2026
 | **Chuẩn hóa Text & Chuyển đổi Song ngữ VI/EN** | Từ điển i18n chuẩn hóa, xóa toàn bộ câu giải thích logic kỹ thuật, gỡ bỏ thông báo trùng lặp. | `src/lib/i18n.tsx`, `LanguageSwitcher.tsx`, `Navbar.tsx`, `CandidateDrawer.tsx`, `ScorecardPanel.tsx`. | **0% (Clean)** | ✅ Đạt |
 | **Lưu trữ Neon Object Storage & Bảo mật PII Proxy** | Lưu trữ đám mây bucket `uploads` private, proxy route phân quyền, chặn Path Traversal & chống rò rỉ CV. | `src/lib/storage.ts`, `src/app/api/applications/storage/[...key]/route.ts`. | **0% (Matched)** | ✅ Đạt |
 | **Hàng rào Chống Hack, Chôm Key & Anti-Prompt-Injection** | Hardening SESSION_SECRET, cô lập thẻ XML `<candidate_cv_raw_text>`, gỡ .env khỏi Git, Rate Limit 10req/10min. | `src/lib/auth.ts`, `src/lib/ai-parser.ts`, `.gitignore`, `route.ts`. | **0% (Hardened)** | ✅ Đạt |
+| **Tách Biệt Cổng Public / Nội Bộ & Gỡ Nút Thừa Header** | Tách hẳn `/` và `/jobs` khỏi nút admin login; gỡ bỏ nút trùng lặp chức năng ở Header. | `src/app/page.tsx`, `src/app/jobs/page.tsx`, `JobsPublicClient.tsx`. | **0% (Matched)** | ✅ Đạt |
+| **Triển Khai Đám Mây Vercel Production & Live Tracking** | Triển khai live trên domain Vercel, tích hợp Tra cứu hồ sơ thời gian thực (Candidate Tracker). | `https://ats-applicant-tracking-system.vercel.app`, `/jobs/tracker`. | **0% (Live)** | ✅ Đạt |
+| **Tài Khoản Thử Nghiệm Chuẩn Hóa PBKDF2 (100k vòng)** | Tạo và mã hóa tài khoản Admin, HR Lead, Hiring Manager trên Neon PostgreSQL (Hỗ trợ @ats.vn & @recoverx.career). | `ACCOUNTS.md`, `README.md`, `prisma/seed.ts`, `scripts/sync-trial-accounts.js`. | **0% (Synced)** | ✅ Đạt |
