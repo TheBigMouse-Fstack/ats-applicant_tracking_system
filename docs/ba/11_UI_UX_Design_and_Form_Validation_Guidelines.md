@@ -44,7 +44,7 @@ last_updated: "2026-11-18"
 2. **Tách bạch Tổng quan & Chi tiết (Overview vs. Detail):**
    * **Màn hình Tổng quan** (*Dashboard, Thẻ Kanban, Bảng Ứng viên*): Chỉ hiển thị đúng các thông tin cốt lõi cần quét nhanh trong 3 giây (Họ tên, Vị trí, Kinh nghiệm, Đánh giá AI %, Trạng thái).
    * **Ngăn Chi tiết Hồ sơ (5 Tab độc lập):** Gộp toàn bộ thông tin chuyên sâu vào 5 ngăn riêng biệt để người dùng cần xem mục nào mới mở mục đó:
-     1. *Hồ sơ & AI* (5 trường cốt lõi + nút mở rộng chi tiết + Đánh giá AI % + Lịch phỏng vấn)
+     1. *Hồ sơ & AI* (5 trường cốt lõi + nút mở rộng chi tiết + Đánh giá AI %; quản lý lịch phỏng vấn tập trung tại Tab Lịch Phỏng Vấn, không đặt trùng lặp ở Tab Tổng quan)
      2. *Tiêu chuẩn vị trí (JD)* (Mở khi cần đối chiếu mô tả công việc)
      3. *CV Gốc* (Chỉ gồm khung xem trực tiếp CV và nút Tải về)
      4. *Phiếu đánh giá* (Chấm điểm trực tiếp ngay trong tab, không bật cửa sổ đè màn hình)
