@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
+  Database,
   AlertTriangle,
   Clock,
   CheckCircle2,
@@ -123,11 +124,11 @@ interface DashboardData {
 }
 
 const STAGE_META = [
-  { key: "NEW" as const, label: "Mới nộp", dotColor: "bg-blue-500", barColor: "bg-blue-500" },
-  { key: "SCREENING" as const, label: "Sàng lọc", dotColor: "bg-indigo-500", barColor: "bg-indigo-500" },
-  { key: "INTERVIEW" as const, label: "Phỏng vấn", dotColor: "bg-amber-500", barColor: "bg-amber-500" },
-  { key: "HIRED" as const, label: "Tuyển chọn", dotColor: "bg-emerald-500", barColor: "bg-emerald-500" },
-  { key: "REJECTED" as const, label: "Từ chối", dotColor: "bg-rose-400", barColor: "bg-rose-400" },
+  { key: "NEW" as const, label: "Mới nộp", dotColor: "bg-blue-500", barColor: "bg-blue-500", desc: "Chờ HR sơ loại" },
+  { key: "SCREENING" as const, label: "Sàng lọc", dotColor: "bg-indigo-500", barColor: "bg-indigo-500", desc: "Chờ duyệt PV" },
+  { key: "INTERVIEW" as const, label: "Phỏng vấn", dotColor: "bg-amber-500", barColor: "bg-amber-500", desc: "Đang đánh giá" },
+  { key: "HIRED" as const, label: "Tuyển chọn", dotColor: "bg-emerald-500", barColor: "bg-emerald-500", desc: "Đã trúng tuyển" },
+  { key: "REJECTED" as const, label: "Từ chối", dotColor: "bg-rose-400", barColor: "bg-rose-400", desc: "Lưu kho dự phòng" },
 ];
 
 const ACTION_LABELS: Record<string, string> = {
@@ -142,8 +143,8 @@ const ACTION_LABELS: Record<string, string> = {
 function getRoleMeta(role: string) {
   if (role === "ADMIN") {
     return {
-      badge: "Admin",
-      subtitle: "Giám sát tổng quan tiến độ tuyển dụng, hồ sơ chờ xử lý lâu và lịch sử thao tác.",
+      badge: "Quản trị viên (Admin)",
+      subtitle: "Bảng điều khiển vận hành: Giám sát phễu chuyển đổi tuyển dụng, kiểm soát điểm nghẽn SLA và nhật ký kiểm toán hệ thống.",
     };
   }
   if (role === "HIRING_MANAGER") {
@@ -401,14 +402,27 @@ export default function OperationalDashboard() {
         </div>
       )}
 
-      {/* TẦNG 2: THANH PHỄU 5 GIAI ĐOẠN GỌN NHẸ */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3">
-        <div className="flex items-center justify-between text-xs">
-          <h2 className="font-bold text-slate-900">Phễu Tuyển Dụng (5 Giai Đoạn)</h2>
-          <span className="text-slate-400">Tổng: {data.funnel.total} hồ sơ</span>
+      {/* TẦNG 2: PHỄU CHUYỂN ĐỔI TUYỂN DỤNG (RECRUITMENT CONVERSION FUNNEL) */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-slate-900 text-sm">Phễu Chuyển Đổi Tuyển Dụng (Funnel)</h2>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200">
+                5 Giai Đoạn
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Soi chiếu tỷ lệ rơi rụng qua từng vòng để phát hiện điểm nghẽn (bottleneck) giữa khâu lọc CV, phỏng vấn và chốt tuyển.
+            </p>
+          </div>
+          <span className="text-slate-500 font-semibold text-xs shrink-0">
+            Tổng cộng: <strong className="text-slate-900">{data.funnel.total}</strong> hồ sơ
+          </span>
         </div>
 
-        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden flex">
+        {/* Thanh phễu đa sắc trực quan */}
+        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
           {data.funnel.total > 0 ? (
             STAGE_META.map((stage) => {
               const pct = (data.funnel[stage.key] / data.funnel.total) * 100;
@@ -417,8 +431,8 @@ export default function OperationalDashboard() {
                 <div
                   key={stage.key}
                   style={{ width: `${pct}%` }}
-                  className={stage.barColor}
-                  title={`${stage.label}: ${data.funnel[stage.key]}`}
+                  className={`${stage.barColor} transition-all duration-300 relative group`}
+                  title={`${stage.label}: ${data.funnel[stage.key]} hồ sơ (${pct.toFixed(1)}%)`}
                 />
               );
             })
@@ -427,18 +441,30 @@ export default function OperationalDashboard() {
           )}
         </div>
 
-        <div className="grid grid-cols-5 gap-2 pt-1">
-          {STAGE_META.map((stage) => (
-            <div key={stage.key} className="text-center sm:text-left">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                <span className={`w-2 h-2 rounded-full ${stage.dotColor}`} />
-                <span className="truncate">{stage.label}</span>
-              </span>
-              <p className="text-lg font-bold text-slate-900 mt-0.5">
-                {data.funnel[stage.key]}
-              </p>
-            </div>
-          ))}
+        {/* 5 Hộp thống kê giai đoạn có hiển thị Tỷ lệ % và Ý nghĩa vai trò */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
+          {STAGE_META.map((stage) => {
+            const pct = data.funnel.total > 0 ? ((data.funnel[stage.key] / data.funnel.total) * 100).toFixed(1) : "0.0";
+            return (
+              <div key={stage.key} className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
+                    <span className={`w-2 h-2 rounded-full ${stage.dotColor}`} />
+                    <span className="truncate">{stage.label}</span>
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-400">{pct}%</span>
+                </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <p className="text-xl font-extrabold text-slate-900">
+                    {data.funnel[stage.key]}
+                  </p>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {stage.desc}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -562,14 +588,15 @@ export default function OperationalDashboard() {
             <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900">
-                    Hồ sơ chờ xử lý quá hạn
+                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    Cảnh Báo Điểm Nghẽn Xử Lý (Quá hạn SLA)
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Hồ sơ ở vòng Mới nộp quá 48 giờ hoặc Sàng lọc quá 72 giờ
+                    Hồ sơ bị &quot;ngâm&quot; quá 48h tại vòng Mới nộp (chờ HR) hoặc quá 72h tại vòng Sàng lọc (chờ Hiring Manager).
                   </p>
                 </div>
-                <span className="text-xs font-semibold text-rose-700">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                   {data.sla.totalBreaches} quá hạn
                 </span>
               </div>
@@ -584,10 +611,16 @@ export default function OperationalDashboard() {
             {/* Tiến độ gọn theo Vị trí */}
             <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
               <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-slate-900">
-                  Tiến độ theo Vị trí đang tuyển
-                </h2>
-                <span className="text-xs text-slate-400">
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-brand-600" />
+                    Ma Trận Phân Bổ Theo Vị Trí Đang Tuyển
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Xem nhanh phân bổ ứng viên ở từng phòng ban để biết vị trí nào đang thiếu hồ sơ hay đã tuyển đủ.
+                  </p>
+                </div>
+                <span className="text-xs text-slate-400 font-medium shrink-0">
                   {data.activeJobs.length} vị trí
                 </span>
               </div>
@@ -662,10 +695,13 @@ export default function OperationalDashboard() {
 
             {/* Nhật ký kiểm toán gần nhất */}
             <section className="bg-white border border-slate-200 rounded-2xl p-4">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-3">
+              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-0.5">
                 <History className="w-4 h-4 text-slate-400" />
-                Nhật ký gần nhất
+                Nhật Ký Kiểm Toán (Audit Trail)
               </h2>
+              <p className="text-xs text-slate-500 mb-3">
+                Lịch sử minh bạch mọi thao tác của HR và Trưởng bộ phận trên hệ thống.
+              </p>
 
               {!data.recentAuditLogs || data.recentAuditLogs.length === 0 ? (
                 <p className="text-xs text-slate-400 text-center py-4">
