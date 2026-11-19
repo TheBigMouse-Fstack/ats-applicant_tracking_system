@@ -92,6 +92,8 @@ model Application {
   stageUpdatedAt     DateTime     @default(now())
   emailScheduledAt   DateTime?    // BRL-05 Rejection delay buffer (+12h)
   isEmailSent        Boolean      @default(false)
+  isInterviewInviteSent Boolean   @default(false) // Đã gửi Thư mời PV & Lịch Google Calendar hay chưa
+  isTelegramNotified    Boolean   @default(false) // Đã bắn thông báo Telegram cho HR hay chưa
   repooledFromId     Int?
   isStarred          Boolean      @default(false) // Đánh dấu sao hồ sơ đặc biệt (như Gmail star)
   isViewed           Boolean      @default(false) // Đã được HR mở xem / xử lý hay chưa
@@ -117,6 +119,8 @@ model Application {
   @@index([candidateId])
   @@index([isStarred])
   @@index([isViewed])
+  @@index([isInterviewInviteSent])
+  @@index([isTelegramNotified])
   @@index([emailScheduledAt])
   @@map("applications")
 }

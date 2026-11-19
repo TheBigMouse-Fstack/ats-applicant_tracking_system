@@ -104,8 +104,8 @@ export default function ScorecardModal({
           technicalNotes,
           communicationNotes,
           cultureNotes,
-          hireReason: hireReason || strengths,
-          comments: comments || hireReason,
+          hireReason: hireReason.trim() || undefined,
+          comments: comments.trim() || hireReason.trim() || undefined,
         }),
       });
 

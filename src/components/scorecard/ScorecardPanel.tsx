@@ -178,8 +178,8 @@ export default function ScorecardPanel({
           technicalNotes,
           communicationNotes,
           cultureNotes,
-          hireReason: hireReason || strengths,
-          comments: hireReason || strengths,
+          hireReason: hireReason.trim() || undefined,
+          comments: hireReason.trim() || undefined,
         }),
       });
 
@@ -646,7 +646,7 @@ export default function ScorecardPanel({
                 </div>
               )}
 
-              {(ev.hireReason || ev.comments) && (
+              {(ev.hireReason || ev.comments) && (ev.hireReason || ev.comments) !== ev.strengths && (
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs">
                   <strong className="text-slate-900 block mb-0.5 font-bold">
                     Kết luận của Giám khảo:
