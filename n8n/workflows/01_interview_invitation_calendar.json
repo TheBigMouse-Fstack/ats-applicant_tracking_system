@@ -35,7 +35,9 @@
       "name": "Tạo Sự Kiện Google Calendar",
       "type": "n8n-nodes-base.googleCalendar",
       "typeVersion": 1,
-      "position": [480, 200]
+      "position": [480, 200],
+      "continueOnFail": true,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -48,7 +50,9 @@
       "name": "Gửi Gmail Thư Mời HTML",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2,
-      "position": [480, 400]
+      "position": [480, 400],
+      "continueOnFail": true,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -73,11 +77,6 @@
             "node": "Tạo Sự Kiện Google Calendar",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Gửi Gmail Thư Mời HTML",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -86,7 +85,7 @@
       "main": [
         [
           {
-            "node": "Phản Hồi Webhook HTTP 200",
+            "node": "Gửi Gmail Thư Mời HTML",
             "type": "main",
             "index": 0
           }
