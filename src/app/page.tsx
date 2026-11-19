@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n";
 import {
   Code2,
   Server,
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 
 export default function HomePage() {
+  const { t, locale } = useLanguage();
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -67,19 +69,19 @@ export default function HomePage() {
           {/* Nav Links */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
             <a href="#about" className="hover:text-brand-600 transition-colors">
-              Về RecoverX
+              {t("home.nav.about", "Về RecoverX")}
             </a>
             <a href="#solutions" className="hover:text-brand-600 transition-colors">
-              Dịch vụ & Giải pháp
+              {t("home.nav.solutions", "Dịch vụ & Giải pháp")}
             </a>
             <a href="#culture" className="hover:text-brand-600 transition-colors">
-              Văn hóa & Đãi ngộ
+              {t("home.nav.culture", "Văn hóa & Đãi ngộ")}
             </a>
             <Link href="/jobs" className="hover:text-brand-600 transition-colors">
-              Tuyển dụng
+              {t("home.nav.jobs", "Tuyển dụng")}
             </Link>
             <a href="#contact" className="hover:text-brand-600 transition-colors">
-              Liên hệ
+              {t("home.nav.contact", "Liên hệ")}
             </a>
           </nav>
 
@@ -91,7 +93,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
             >
               <Briefcase className="w-3.5 h-3.5" />
-              <span>Cơ Hội Tuyển Dụng</span>
+              <span>{t("home.nav.cta", "Cơ Hội Tuyển Dụng")}</span>
             </Link>
           </div>
         </div>
@@ -101,14 +103,14 @@ export default function HomePage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50 to-slate-100/60 pt-20 pb-24 border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 relative z-10">
           <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] max-w-5xl mx-auto">
-            Tiên Phong Kiến Tạo Phần Mềm &{" "}
+            {t("home.hero.title1", "Tiên Phong Kiến Tạo Phần Mềm &")}{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600">
-              Giải Pháp Công Nghệ Cao
+              {t("home.hero.title2", "Giải Pháp Công Nghệ Cao")}
             </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            RecoverX cung cấp dịch vụ kỹ thuật phần mềm chuẩn mực Châu Âu, hiện đại hóa Cloud, kiến trúc Microservices và đảm bảo chất lượng toàn diện (QA) cho các tập đoàn tài chính, y tế và công nghệ hàng đầu thế giới.
+            {t("home.hero.subtitle", "RecoverX cung cấp dịch vụ kỹ thuật phần mềm chuẩn mực Châu Âu, hiện đại hóa Cloud, kiến trúc Microservices và đảm bảo chất lượng toàn diện (QA) cho các tập đoàn tài chính, y tế và công nghệ hàng đầu thế giới.")}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
@@ -116,7 +118,7 @@ export default function HomePage() {
               href="/jobs"
               className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-xl shadow-brand-600/25 hover:shadow-brand-600/35 hover:-translate-y-0.5 transition-all cursor-pointer"
             >
-              <span>Gia Nhập Đội Ngũ Kỹ Sư RecoverX</span>
+              <span>{t("home.hero.ctaJobs", "Gia Nhập Đội Ngũ Kỹ Sư RecoverX")}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
 
@@ -125,7 +127,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm border border-slate-300 shadow-xs hover:border-slate-400 transition-all cursor-pointer"
             >
               <Mail className="w-4 h-4 text-brand-600" />
-              <span>Liên Hệ Hợp Tác Doanh Nghiệp</span>
+              <span>{t("home.hero.ctaContact", "Liên Hệ Hợp Tác Doanh Nghiệp")}</span>
             </a>
           </div>
 
@@ -133,19 +135,27 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto pt-10 border-t border-slate-200/80">
             <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-xs border border-slate-200/80 text-center">
               <span className="block text-3xl font-black text-slate-900">15+</span>
-              <span className="text-xs font-semibold text-slate-500 mt-1 block">Năm Kinh Nghiệm Kỹ Thuật</span>
+              <span className="text-xs font-semibold text-slate-500 mt-1 block">
+                {locale === "en" ? "Years Engineering Experience" : "Năm Kinh Nghiệm Kỹ Thuật"}
+              </span>
             </div>
             <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-xs border border-slate-200/80 text-center">
               <span className="block text-3xl font-black text-slate-900">350+</span>
-              <span className="text-xs font-semibold text-slate-500 mt-1 block">Kỹ Sư Phần Mềm Xuất Sắc</span>
+              <span className="text-xs font-semibold text-slate-500 mt-1 block">
+                {locale === "en" ? "Elite Software Engineers" : "Kỹ Sư Phần Mềm Xuất Sắc"}
+              </span>
             </div>
             <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-xs border border-slate-200/80 text-center">
               <span className="block text-3xl font-black text-slate-900">120+</span>
-              <span className="text-xs font-semibold text-slate-500 mt-1 block">Dự Án Enterprise Triển Khai</span>
+              <span className="text-xs font-semibold text-slate-500 mt-1 block">
+                {locale === "en" ? "Enterprise Projects Deployed" : "Dự Án Enterprise Triển Khai"}
+              </span>
             </div>
             <div className="p-4 rounded-2xl bg-white/70 backdrop-blur-xs border border-slate-200/80 text-center">
               <span className="block text-3xl font-black text-brand-600">99.2%</span>
-              <span className="text-xs font-semibold text-slate-500 mt-1 block">Khách Hàng Quốc Tế Hài Lòng</span>
+              <span className="text-xs font-semibold text-slate-500 mt-1 block">
+                {locale === "en" ? "Global Client Satisfaction" : "Khách Hàng Quốc Tế Hài Lòng"}
+              </span>
             </div>
           </div>
         </div>

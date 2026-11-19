@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n";
 import {
   Briefcase,
   Search,
@@ -13,8 +14,6 @@ import {
   Video,
   MapPin,
   AlertCircle,
-  FileCheck,
-  UserCheck,
   Building2,
   Mail,
   Phone,
@@ -24,6 +23,7 @@ import {
 } from "lucide-react";
 
 export default function CandidateTrackerPage() {
+  const { t, locale } = useLanguage();
   const [email, setEmail] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,12 +36,20 @@ export default function CandidateTrackerPage() {
     setResult(null);
 
     if (!email.trim()) {
-      setError("Vui lòng nhập địa chỉ Email ứng tuyển của bạn.");
+      setError(
+        locale === "en"
+          ? "Please enter your application email address."
+          : "Vui lòng nhập địa chỉ Email ứng tuyển của bạn."
+      );
       return;
     }
 
     if (!identifier.trim()) {
-      setError("Vui lòng nhập Mã đơn ứng tuyển (VD: #4 hoặc 4) hoặc Số điện thoại.");
+      setError(
+        locale === "en"
+          ? "Please enter your Application ID (e.g. #4 or 4) or Phone Number."
+          : "Vui lòng nhập Mã đơn ứng tuyển (VD: #4 hoặc 4) hoặc Số điện thoại."
+      );
       return;
     }
 
@@ -55,19 +63,28 @@ export default function CandidateTrackerPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        setError(data.error || "Không tìm thấy hồ sơ phù hợp. Vui lòng kiểm tra lại thông tin.");
+        setError(
+          data.error ||
+            (locale === "en"
+              ? "No matching application found. Please verify your details."
+              : "Không tìm thấy hồ sơ phù hợp. Vui lòng kiểm tra lại thông tin.")
+        );
       } else {
         setResult(data.data);
       }
     } catch (err: any) {
-      setError("Lỗi kết nối máy chủ khi tra cứu. Vui lòng thử lại sau.");
+      setError(
+        locale === "en"
+          ? "Network connection error. Please try again later."
+          : "Lỗi kết nối máy chủ khi tra cứu. Vui lòng thử lại sau."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -80,7 +97,7 @@ export default function CandidateTrackerPage() {
                 RecoverX
               </span>
               <span className="ml-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
-                Tra Cứu Hồ Sơ
+                {t("tracker.badge")}
               </span>
             </div>
           </Link>
@@ -92,7 +109,7 @@ export default function CandidateTrackerPage() {
               className="text-xs font-semibold text-slate-600 hover:text-brand-600 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              Xem việc làm
+              {t("tracker.backToJobs")}
             </Link>
           </div>
         </div>
@@ -104,13 +121,13 @@ export default function CandidateTrackerPage() {
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold">
             <ShieldCheck className="w-3.5 h-3.5" />
-            Minh Bạch Tuyển Dụng &bull; Không "Ghosting"
+            {locale === "en" ? "Transparent Hiring • Zero Ghosting" : "Minh Bạch Tuyển Dụng • Không Ghosting"}
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Tra Cứu Tiến Độ Hồ Sơ Ứng Tuyển
+            {t("tracker.heading")}
           </h1>
           <p className="text-slate-500 text-xs sm:text-sm max-w-xl mx-auto">
-            Nhập email và mã hồ sơ ứng tuyển của bạn để theo dõi tiến độ đánh giá, lịch phỏng vấn và phản hồi chính thức từ đội ngũ tuyển dụng.
+            {t("tracker.subheading")}
           </p>
         </div>
 
@@ -120,7 +137,7 @@ export default function CandidateTrackerPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Email Ứng Tuyển <span className="text-red-500">*</span>
+                  {t("tracker.emailLabel")} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -128,7 +145,7 @@ export default function CandidateTrackerPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nguyenvana@gmail.com"
+                    placeholder={t("tracker.emailPlaceholder")}
                     required
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-800"
                   />
@@ -137,7 +154,7 @@ export default function CandidateTrackerPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Mã Hồ Sơ (#ID) Hoặc Số Điện Thoại <span className="text-red-500">*</span>
+                  {t("tracker.idLabel")} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -145,7 +162,7 @@ export default function CandidateTrackerPage() {
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="VD: #4 hoặc 0912345678"
+                    placeholder={t("tracker.idPlaceholder")}
                     required
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-800"
                   />
@@ -168,12 +185,12 @@ export default function CandidateTrackerPage() {
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Đang tra cứu dữ liệu...</span>
+                  <span>{t("tracker.searching")}</span>
                 </>
               ) : (
                 <>
                   <Search className="w-4 h-4" />
-                  <span>Kiểm Tra Tiến Độ Hồ Sơ</span>
+                  <span>{t("tracker.searchButton")}</span>
                 </>
               )}
             </button>
@@ -189,14 +206,15 @@ export default function CandidateTrackerPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-brand-50 text-brand-700 border border-brand-200">
-                      Đơn Ứng Tuyển #{result.applicationId}
+                      {locale === "en" ? "Application #" : "Đơn Ứng Tuyển #"}{result.applicationId}
                     </span>
                     <span className="text-xs text-slate-400">
-                      Nộp ngày {new Date(result.appliedAt).toLocaleDateString("vi-VN")}
+                      {locale === "en" ? "Applied on " : "Nộp ngày "}
+                      {new Date(result.appliedAt).toLocaleDateString(locale === "en" ? "en-US" : "vi-VN")}
                     </span>
                   </div>
                   <h2 className="text-xl font-bold text-slate-900">
-                    Ứng viên: {result.candidateName}
+                    {locale === "en" ? "Candidate: " : "Ứng viên: "}{result.candidateName}
                   </h2>
                 </div>
 
@@ -220,21 +238,27 @@ export default function CandidateTrackerPage() {
               {/* Job Info Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl text-xs border border-slate-200/70">
                 <div>
-                  <span className="text-slate-400 block mb-0.5">Vị trí ứng tuyển</span>
+                  <span className="text-slate-400 block mb-0.5">
+                    {locale === "en" ? "Position Applied" : "Vị trí ứng tuyển"}
+                  </span>
                   <span className="font-bold text-slate-800 flex items-center gap-1">
                     <Briefcase className="w-3.5 h-3.5 text-slate-400" />
                     {result.jobTitle}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block mb-0.5">Phòng ban phụ trách</span>
+                  <span className="text-slate-400 block mb-0.5">
+                    {locale === "en" ? "Department" : "Phòng ban phụ trách"}
+                  </span>
                   <span className="font-semibold text-slate-800 flex items-center gap-1">
                     <Building2 className="w-3.5 h-3.5 text-slate-400" />
                     {result.jobDepartment}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block mb-0.5">Địa điểm làm việc</span>
+                  <span className="text-slate-400 block mb-0.5">
+                    {locale === "en" ? "Work Location" : "Địa điểm làm việc"}
+                  </span>
                   <span className="font-semibold text-slate-800 flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-slate-400" />
                     {result.jobLocation}
@@ -267,14 +291,16 @@ export default function CandidateTrackerPage() {
                 <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 p-4 rounded-xl space-y-2.5">
                   <div className="flex items-center gap-2 text-purple-900 font-bold text-xs uppercase tracking-wider">
                     <Calendar className="w-4 h-4 text-purple-600" />
-                    Thông Tin Lịch Phỏng Vấn Chính Thức:
+                    {locale === "en" ? "Official Interview Details:" : "Thông Tin Lịch Phỏng Vấn Chính Thức:"}
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div className="bg-white/80 p-3 rounded-lg border border-purple-100">
-                      <span className="text-slate-400 block mb-0.5">Thời gian diễn ra:</span>
+                      <span className="text-slate-400 block mb-0.5">
+                        {locale === "en" ? "Date & Time:" : "Thời gian diễn ra:"}
+                      </span>
                       <span className="font-bold text-slate-800 text-sm">
-                        {new Date(result.stageInfo.interviewDate).toLocaleString("vi-VN", {
+                        {new Date(result.stageInfo.interviewDate).toLocaleString(locale === "en" ? "en-US" : "vi-VN", {
                           weekday: "long",
                           day: "2-digit",
                           month: "2-digit",
@@ -286,11 +312,13 @@ export default function CandidateTrackerPage() {
                     </div>
 
                     <div className="bg-white/80 p-3 rounded-lg border border-purple-100">
-                      <span className="text-slate-400 block mb-0.5">Hình thức & Địa điểm:</span>
+                      <span className="text-slate-400 block mb-0.5">
+                        {locale === "en" ? "Format & Location:" : "Hình thức & Địa điểm:"}
+                      </span>
                       {result.stageInfo.interviewFormat === "ONLINE" ? (
                         <div className="flex items-center gap-1.5 font-bold text-brand-600">
                           <Video className="w-4 h-4" />
-                          <span>Họp Trực Tuyến: </span>
+                          <span>{locale === "en" ? "Online Meet: " : "Họp Trực Tuyến: "}</span>
                           <a
                             href={
                               result.stageInfo.interviewLocation.startsWith("http")
@@ -301,13 +329,13 @@ export default function CandidateTrackerPage() {
                             rel="noreferrer"
                             className="underline inline-flex items-center gap-1 hover:text-brand-800 truncate max-w-[200px]"
                           >
-                            Tham gia phòng họp <ExternalLink className="w-3 h-3" />
+                            {locale === "en" ? "Join Meeting" : "Tham gia phòng họp"} <ExternalLink className="w-3 h-3" />
                           </a>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5 font-bold text-slate-800">
                           <MapPin className="w-4 h-4 text-amber-600" />
-                          <span>Tại văn phòng: {result.stageInfo.interviewLocation}</span>
+                          <span>{locale === "en" ? "On-site: " : "Tại văn phòng: "}{result.stageInfo.interviewLocation}</span>
                         </div>
                       )}
                     </div>
@@ -316,7 +344,7 @@ export default function CandidateTrackerPage() {
                   {result.stageInfo.interviewNotes && (
                     <div className="bg-white/90 p-3 rounded-lg border border-purple-100 text-xs text-slate-700">
                       <span className="font-semibold text-purple-900 block mb-0.5">
-                        Dặn dò từ chuyên viên tuyển dụng:
+                        {locale === "en" ? "Recruiter Notes:" : "Dặn dò từ chuyên viên tuyển dụng:"}
                       </span>
                       <p>{result.stageInfo.interviewNotes}</p>
                     </div>
@@ -328,7 +356,7 @@ export default function CandidateTrackerPage() {
             {/* 4-Step Visual Timeline */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Tiến Trình Đơn Tuyển Dụng (Application Journey)
+                {locale === "en" ? "Recruitment Journey & Progress" : "Tiến Trình Đơn Tuyển Dụng (Application Journey)"}
               </h3>
 
               <div className="relative border-l-2 border-slate-200 ml-4 sm:ml-6 space-y-6 py-2">
@@ -369,16 +397,16 @@ export default function CandidateTrackerPage() {
                                   : "text-slate-400"
                               }`}
                           >
-                            Bước {item.step}: {item.title}
+                            {locale === "en" ? `Step ${item.step}: ` : `Bước ${item.step}: `}{item.title}
                           </h4>
                           {isActive && (
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-100 text-brand-700 uppercase">
-                              Hiện tại
+                              {locale === "en" ? "Current" : "Hiện tại"}
                             </span>
                           )}
                           {isDone && (
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                              Hoàn thành
+                              {locale === "en" ? "Completed" : "Hoàn thành"}
                             </span>
                           )}
                         </div>
@@ -395,7 +423,7 @@ export default function CandidateTrackerPage() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
-        &copy; 2026 RecoverX Technology Solutions Co., Ltd. Cổng thông tin ứng viên trực tuyến.
+        &copy; 2026 RecoverX Technology Solutions Co., Ltd. {locale === "en" ? "Online Candidate Tracking Portal." : "Cổng thông tin ứng viên trực tuyến."}
       </footer>
     </div>
   );
