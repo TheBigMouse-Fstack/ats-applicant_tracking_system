@@ -2,7 +2,7 @@
 id: "ERD-ATS-07"
 title: "Thiết kế Cơ sở Dữ liệu, Sơ đồ ERD & Từ điển Dữ liệu 10 Cột Chuẩn PII/Masking"
 type: "diagram"
-version: "2.1.0"
+version: "2.2.0"
 status: "approved"
 owner: "ATS BA & Backend Team"
 domain: "recruitment-ats"
@@ -33,6 +33,7 @@ last_updated: "2026-11-18"
 | `v1.0.0` | 2026-11-12 | BA Team | **Initial** | Thiết kế 6 bảng cốt lõi (`users`, `jobs`, `candidates`, `applications`, `evaluations`, `audit_logs`). | Tech Lead |
 | `v2.0.0` | 2026-11-15 | BA & Dev Team | **Added** | Bổ sung `certificates`, `isStarred`, `isViewed`, `interview*` (6 trường vòng đời phỏng vấn) và 7 trường Deep Scorecard trong `evaluations`. | Tech Lead |
 | `v2.1.0` | 2026-11-18 | BA & Dev Team | **Changed** | Bổ sung `Application.rejectionReason` (`BRL-11`) và `AuditLog.reason`; nâng cấp toàn bộ Từ điển dữ liệu lên chuẩn **10 cột (`RULE-09`)** có phân cấp bảo mật `PII`/`Restricted` và quy tắc che giấu. | Product Owner & Tech Lead |
+| `v2.2.0` | 2026-11-19 | BA & Backend Team | **Changed** | Chuyển đổi toàn diện sang PostgreSQL trên Neon Cloud; bổ sung 11 Composite B-tree Indexes tối ưu hóa truy vấn Kanban, SLA và Deduplication. | Tech Lead |
 
 ---
 
@@ -42,6 +43,7 @@ last_updated: "2026-11-18"
 2. **Tách biệt tệp tin nhị phân (File Storage Decoupling):** Tệp CV (`.pdf`, `.docx`) và ảnh chứng chỉ lưu tại thư mục lưu trữ tệp (`/public/uploads/` trên dev, Object Storage S3/R2 trên production); CSDL chỉ lưu đường dẫn `cvFileUrl` và mảng JSON `certificates`.
 3. **Khử trùng lặp bằng Composite Unique Key (`BRL-02`):** Bảng `candidates` đặt khóa duy nhất kết hợp `@@unique([email, phone])`. Một ứng viên chỉ tồn tại 1 bản ghi `Candidate` nhưng có thể liên kết nhiều `Application` ở các vị trí khác nhau (truy vết lịch sử ứng tuyển chéo).
 4. **Bảo vệ dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP & `BRL-10`):** Phân loại rõ 4 cấp độ bảo mật (`Public`, `Internal`, `Confidential - PII`, `Restricted`); `ADMIN` thực thi Hard Delete hồ sơ `REJECTED` quá 180 ngày (`onDelete: Cascade`).
+5. **Tối ưu hóa chỉ mục B-Tree chuyên sâu (PostgreSQL High-Performance Indexing):** Thiết lập 11 Composite B-tree Indexes trên PostgreSQL bao gồm `@@index([jobId, currentStage])`, `@@index([currentStage, stageUpdatedAt])`, `@@index([candidateId])`, `@@index([isStarred])`, `@@index([isViewed])`, `@@index([emailScheduledAt])` trên bảng `applications`; `@@index([fullName])`, `@@index([cvFileHash])` trên bảng `candidates`; `@@index([status])`, `@@index([creatorId])` trên `jobs`; `@@index([applicationId])`, `@@index([evaluatorId])` trên `evaluations`; và `@@index([applicationId, createdAt])`, `@@index([userId])` trên `audit_logs` giúp loại bỏ hoàn toàn Sequential Scan, chuyển sang Index Scan với thời gian phản hồi truy vấn Kanban và tính SLA < 1ms.
 
 ---
 

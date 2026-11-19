@@ -44,6 +44,8 @@ model Job {
 
   applications       Application[]
 
+  @@index([status])
+  @@index([creatorId])
   @@map("jobs")
 }
 
@@ -69,6 +71,8 @@ model Candidate {
   applications    Application[]
 
   @@unique([email, phone]) // BRL-02 Deduplication key
+  @@index([fullName])
+  @@index([cvFileHash])
   @@map("candidates")
 }
 
@@ -108,6 +112,12 @@ model Application {
   evaluations        Evaluation[]
   auditLogs          AuditLog[]
 
+  @@index([jobId, currentStage])
+  @@index([currentStage, stageUpdatedAt])
+  @@index([candidateId])
+  @@index([isStarred])
+  @@index([isViewed])
+  @@index([emailScheduledAt])
   @@map("applications")
 }
 
@@ -134,6 +144,8 @@ model Evaluation {
   comments            String?     // Ghi chú tổng hợp
   createdAt           DateTime    @default(now())
 
+  @@index([applicationId])
+  @@index([evaluatorId])
   @@map("evaluations")
 }
 
@@ -150,5 +162,7 @@ model AuditLog {
   reason        String?      // Lý do từ chối / Ghi chú chuyển trạng thái hoặc chỉnh sửa dữ liệu
   createdAt     DateTime     @default(now())
 
+  @@index([applicationId, createdAt])
+  @@index([userId])
   @@map("audit_logs")
 }
