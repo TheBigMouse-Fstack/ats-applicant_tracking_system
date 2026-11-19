@@ -18,6 +18,16 @@ export interface N8NDispatchResult {
   error?: string;
 }
 
+/**
+ * Làm sạch URL webhook: loại bỏ triệt để ký tự Byte Order Mark (\uFEFF / BOM),
+ * zero-width spaces (\u200B, \u200C, \u200D), khoảng trắng và dấu ngoặc kép thừa
+ * từ biến môi trường của Vercel hoặc Windows.
+ */
+export function sanitizeWebhookUrl(rawUrl?: string | null): string {
+  if (!rawUrl) return "";
+  return rawUrl.replace(/^[\uFEFF\u200B\u200C\u200D\s"']+|[\uFEFF\u200B\u200C\u200D\s"']+$/g, "").trim();
+}
+
 // -------------------------------------------------------------------------
 // 1. WORKFLOW 1: THƯ MỜI PHỎNG VẤN & GOOGLE CALENDAR (N8N)
 // -------------------------------------------------------------------------
@@ -52,12 +62,13 @@ export async function dispatchN8NInterviewWebhook(
   payload: N8NInterviewPayload,
   customWebhookUrl?: string
 ): Promise<N8NDispatchResult> {
-  const webhookUrl =
-    (customWebhookUrl && customWebhookUrl.trim()) ||
+  const webhookUrl = sanitizeWebhookUrl(
+    customWebhookUrl ||
     process.env.N8N_INTERVIEW_WEBHOOK_URL ||
-    process.env.N8N_WEBHOOK_URL;
+    process.env.N8N_WEBHOOK_URL
+  );
 
-  if (!webhookUrl || !webhookUrl.trim()) {
+  if (!webhookUrl) {
     return {
       triggered: false,
       success: false,
@@ -142,11 +153,12 @@ export interface N8NTelegramPayload {
 export async function dispatchN8NTelegramAlert(
   payload: N8NTelegramPayload
 ): Promise<N8NDispatchResult> {
-  const webhookUrl =
+  const webhookUrl = sanitizeWebhookUrl(
     process.env.N8N_TELEGRAM_WEBHOOK_URL ||
-    process.env.TELEGRAM_WEBHOOK_URL;
+    process.env.TELEGRAM_WEBHOOK_URL
+  );
 
-  if (!webhookUrl || !webhookUrl.trim()) {
+  if (!webhookUrl) {
     return {
       triggered: false,
       success: false,
@@ -228,11 +240,12 @@ export interface N8NRejectionPayload {
 export async function dispatchN8NRejectionEmail(
   payload: N8NRejectionPayload
 ): Promise<N8NDispatchResult> {
-  const webhookUrl =
+  const webhookUrl = sanitizeWebhookUrl(
     process.env.N8N_REJECTION_WEBHOOK_URL ||
-    process.env.REJECTION_WEBHOOK_URL;
+    process.env.REJECTION_WEBHOOK_URL
+  );
 
-  if (!webhookUrl || !webhookUrl.trim()) {
+  if (!webhookUrl) {
     return {
       triggered: false,
       success: false,
