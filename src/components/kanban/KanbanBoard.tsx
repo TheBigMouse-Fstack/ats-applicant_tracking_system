@@ -211,7 +211,7 @@ export default function KanbanBoard() {
       }
     } catch (err) {
       console.error("Error fetching pipeline:", err);
-      setAlertError("Lỗi kết nối khi tải pipeline ứng viên.");
+      setAlertError("Lỗi kết nối khi tải dữ liệu tuyển dụng.");
     } finally {
       setLoading(false);
     }
@@ -445,7 +445,7 @@ export default function KanbanBoard() {
       <div className="flex items-center justify-center min-h-[500px]">
         <div className="flex flex-col items-center gap-3 text-slate-500">
           <RefreshCw className="w-8 h-8 animate-spin text-brand-600" />
-          <p className="text-sm font-medium">Đang khởi tạo Pipeline tuyển dụng...</p>
+          <p className="text-sm font-medium">Đang tải dữ liệu tuyển dụng...</p>
         </div>
       </div>
     );
@@ -458,7 +458,7 @@ export default function KanbanBoard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Pipeline Tuyển Dụng
+              Quy Trình Tuyển Dụng
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
               {currentUser?.role === "HR"
@@ -764,7 +764,7 @@ export default function KanbanBoard() {
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={() => {
           fetchPipeline();
-          setAlertSuccess("Tiếp nhận hồ sơ ứng viên thành công vào Pipeline!");
+          setAlertSuccess("Tiếp nhận hồ sơ ứng viên thành công!");
         }}
         defaultJobId={selectedJobId !== "ALL" ? Number(selectedJobId) : null}
       />

@@ -270,7 +270,7 @@ export default function JobApplicationForm({
               Nộp Hồ Sơ Ứng Tuyển Thành Công!
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Mã hồ sơ tiếp nhận: <strong>#{successResult.applicationId}</strong> &bull; Vị trí: <strong>{jobTitle}</strong>
+              Mã hồ sơ: <strong>#{successResult.applicationId}</strong> &bull; Vị trí: <strong>{jobTitle}</strong>
             </p>
           </div>
         </div>
@@ -280,7 +280,7 @@ export default function JobApplicationForm({
           <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
             <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              Biên Nhận Tiếp Nhận Hồ Sơ Trực Tuyến
+              Xác Nhận Nộp Hồ Sơ Trực Tuyến
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
               Đã ghi nhận an toàn

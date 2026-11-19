@@ -216,10 +216,10 @@ export default function AddCandidateModal({
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900">
-                Tiếp Nhận Hồ Sơ Tuyển Dụng Mới
+                Tiếp Nhận Hồ Sơ Mới
               </h3>
               <p className="text-xs text-slate-500">
-                Nhập hồ sơ ứng viên từ nguồn Sourcing LinkedIn, Referral hoặc Đối tác săn đầu người
+                Nhập hồ sơ từ LinkedIn, giới thiệu nội bộ hoặc kênh tuyển dụng
               </p>
             </div>
           </div>
@@ -276,7 +276,7 @@ export default function AddCandidateModal({
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-brand-600" />
-                Nguồn tiếp nhận
+                Nguồn ứng viên
               </label>
               <select
                 value={source}
@@ -517,12 +517,12 @@ export default function AddCandidateModal({
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Đang tiếp nhận & Lưu trữ...</span>
+                  <span>Đang lưu hồ sơ...</span>
                 </>
               ) : (
                 <>
                   <FileUp className="w-4 h-4" />
-                  <span>Tiếp Nhận Vào Pipeline</span>
+                  <span>Tiếp Nhận Hồ Sơ</span>
                 </>
               )}
             </button>
