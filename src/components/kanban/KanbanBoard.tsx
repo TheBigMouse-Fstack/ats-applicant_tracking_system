@@ -10,6 +10,7 @@ import CandidateCard from "@/components/kanban/CandidateCard";
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 import RejectReasonModal from "@/components/candidate/RejectReasonModal";
+import { ToastNotification } from "@/components/common/Toast";
 import { canRoleDragFromStage, validateStageTransition } from "@/lib/stage-rules";
 import { useLanguage } from "@/lib/i18n";
 import { useSession } from "@/contexts/SessionContext";
@@ -326,9 +327,6 @@ export default function KanbanBoard() {
       // Chỉ hiện toast khi có sự kiện hệ thống đặc biệt (như tự động đóng tin khi đã tuyển đủ chỉ tiêu)
       if (result.jobAutoClosed) {
         setAlertSuccess(result.message);
-        setTimeout(() => {
-          setAlertSuccess(null);
-        }, 4000);
       }
 
       // Re-fetch để đồng bộ lại toàn bộ thống kê, chỉ tiêu và SLA
@@ -373,7 +371,6 @@ export default function KanbanBoard() {
 
       if (!preCheck.allowed) {
         setAlertError(preCheck.error || "Không được phép chuyển sang giai đoạn này.");
-        setTimeout(() => setAlertError(null), 5000);
         return;
       }
     }
@@ -702,44 +699,32 @@ export default function KanbanBoard() {
         })()}
       </div>
 
-      {/* Toast Thông báo Nổi góc màn hình (Zero Layout Shift - Chuẩn UI/UX Enterprise) */}
+      {/* Toast Thông báo Nổi góc màn hình (Có thanh đếm ngược thời gian tự đóng - Chuẩn UX Enterprise) */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 max-w-sm sm:max-w-md pointer-events-none">
         {alertError && (
-          <div className="pointer-events-auto bg-white border border-red-200 rounded-2xl p-4 text-slate-800 shadow-xl shadow-red-500/10 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
-            <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-              <AlertCircle className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-xs font-bold text-red-900">{t("kanban.transitionBlocked", "Chưa thể chuyển giai đoạn")}</h4>
-              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{alertError}</p>
-            </div>
-            <button
-              onClick={() => setAlertError(null)}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              title="Đóng thông báo"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <ToastNotification
+            key={`error-${alertError}`}
+            type="error"
+            title={
+              alertError.includes("kết nối") || alertError.includes("dữ liệu")
+                ? t("kanban.systemError", "Thông báo hệ thống")
+                : t("kanban.transitionBlocked", "Chưa thể chuyển giai đoạn")
+            }
+            message={alertError}
+            duration={5000}
+            onClose={() => setAlertError(null)}
+          />
         )}
 
         {alertSuccess && (
-          <div className="pointer-events-auto bg-white border border-emerald-200 rounded-2xl p-4 text-slate-800 shadow-xl shadow-emerald-500/10 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-              <CheckCircle className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-xs font-bold text-emerald-900">{t("kanban.pipelineNotice", "Thông báo tuyển dụng")}</h4>
-              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{alertSuccess}</p>
-            </div>
-            <button
-              onClick={() => setAlertSuccess(null)}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-              title="Đóng thông báo"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <ToastNotification
+            key={`success-${alertSuccess}`}
+            type="success"
+            title={t("kanban.pipelineNotice", "Thông báo tuyển dụng")}
+            message={alertSuccess}
+            duration={4000}
+            onClose={() => setAlertSuccess(null)}
+          />
         )}
       </div>
 

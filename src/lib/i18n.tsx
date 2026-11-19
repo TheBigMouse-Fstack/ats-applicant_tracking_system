@@ -66,6 +66,7 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "kanban.hmNotice": "Chế độ đánh giá chuyên môn: Xem hồ sơ và ghi nhận đánh giá phỏng vấn.",
     "kanban.transitionBlocked": "Chưa thể chuyển giai đoạn",
     "kanban.pipelineNotice": "Thông báo tuyển dụng",
+    "kanban.systemError": "Thông báo hệ thống",
 
     // Tab trong CandidateDrawer
     "tab.overview": "Hồ sơ",
@@ -314,6 +315,7 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "kanban.hmNotice": "Interviewer Mode: View candidates and submit interview scorecards.",
     "kanban.transitionBlocked": "Stage Transition Restricted",
     "kanban.pipelineNotice": "Recruitment Notification",
+    "kanban.systemError": "System Notice",
 
     // CandidateDrawer Tabs
     "tab.overview": "Profile",
