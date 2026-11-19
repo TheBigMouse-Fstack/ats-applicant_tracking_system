@@ -51,6 +51,7 @@ import { getAllowedTargetStages, validateStageTransition } from "@/lib/stage-rul
 import { getAiMatchTier } from "@/lib/match-score";
 import { useLanguage } from "@/lib/i18n";
 import { useSession } from "@/contexts/SessionContext";
+import { ToastNotification } from "@/components/common/Toast";
 
 interface CandidateDrawerProps {
   applicationId: number | null;
@@ -115,6 +116,17 @@ export default function CandidateDrawer({
   const [interviewError, setInterviewError] = useState<string | null>(null);
   const [interviewCapOverridePrompt, setInterviewCapOverridePrompt] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
+
+  // Toast Notification có thanh đếm ngược trong Drawer
+  const [drawerToast, setDrawerToast] = useState<{
+    type: "error" | "success" | "warning" | "info";
+    title: string;
+    message: string;
+  } | null>(null);
+
+  // Kích hoạt webhook n8n thủ công / Kiểm tra trạng thái n8n
+  const [isTriggeringN8N, setIsTriggeringN8N] = useState(false);
+  const [customN8NWebhookUrl, setCustomN8NWebhookUrl] = useState("");
 
   // Lightbox xem ảnh Bằng cấp / Chứng chỉ phóng to
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -369,16 +381,87 @@ export default function CandidateDrawer({
       }
       if (!res.ok || !resData.success) {
         setInterviewError(resData.error || "Không thể lưu lịch phỏng vấn");
+        setDrawerToast({
+          type: "error",
+          title: "Chưa thể lưu lịch phỏng vấn",
+          message: resData.error || "Không thể lưu lịch phỏng vấn",
+        });
       } else {
         setInterviewSuccessEmail(resData.emailTemplate || resData.data?.emailTemplate || "Đã lưu lịch phỏng vấn");
         setData(resData.data?.application || resData.data);
         setReparseNotice(resData.message || "Đã lưu lịch phỏng vấn thành công!");
         setTimeout(() => setReparseNotice(null), 5000);
+
+        const toastType =
+          resData.n8nResult?.success
+            ? "success"
+            : resData.n8nResult?.triggered === false
+            ? "warning"
+            : "success";
+
+        setDrawerToast({
+          type: toastType,
+          title: resData.n8nResult?.success
+            ? "Lên lịch & Kích hoạt n8n thành công"
+            : "Lưu lịch phỏng vấn thành công",
+          message: resData.message || "Đã lưu lịch phỏng vấn cho ứng viên thành công!",
+        });
+
+        // Đồng bộ cột trạng thái với Kanban nếu ứng viên được chuyển sang INTERVIEW
+        if (applicationId && data?.currentStage !== "INTERVIEW") {
+          onStageChange(applicationId, "INTERVIEW");
+        }
       }
     } catch (err: any) {
       setInterviewError("Lỗi kết nối khi xếp lịch: " + err.message);
+      setDrawerToast({
+        type: "error",
+        title: "Lỗi kết nối",
+        message: "Không thể kết nối đến máy chủ: " + err.message,
+      });
     } finally {
       setInterviewLoading(false);
+    }
+  };
+
+  // Kích hoạt n8n thủ công (gửi webhook kiểm thử hoặc gửi lại cho ứng viên)
+  const handleTriggerN8N = async () => {
+    if (!applicationId) return;
+    setIsTriggeringN8N(true);
+    try {
+      const res = await fetch("/api/interviews/trigger-n8n", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          applicationId,
+          customWebhookUrl: customN8NWebhookUrl || undefined,
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        if (result.data) {
+          setData(result.data);
+        }
+        setDrawerToast({
+          type: "success",
+          title: "Kích hoạt n8n thành công",
+          message: result.message || "n8n đã nhận webhook gửi thư mời và đồng bộ lịch!",
+        });
+      } else {
+        setDrawerToast({
+          type: "warning",
+          title: "Webhook n8n chưa phản hồi",
+          message: result.message || result.error || "Vui lòng kiểm tra lại địa chỉ webhook n8n.",
+        });
+      }
+    } catch (err: any) {
+      setDrawerToast({
+        type: "error",
+        title: "Lỗi kết nối n8n",
+        message: "Không thể gửi yêu cầu đến n8n: " + err.message,
+      });
+    } finally {
+      setIsTriggeringN8N(false);
     }
   };
 
@@ -1503,7 +1586,11 @@ export default function CandidateDrawer({
                                 type="button"
                                 onClick={() => {
                                   navigator.clipboard.writeText(interviewSuccessEmail);
-                                  alert("Đã sao chép nội dung thư mời vào bộ nhớ tạm!");
+                                  setDrawerToast({
+                                    type: "info",
+                                    title: "Đã sao chép",
+                                    message: "Đã sao chép nội dung thư mời vào bộ nhớ tạm!",
+                                  });
                                 }}
                                 className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-slate-200 transition-colors cursor-pointer"
                               >
@@ -1515,6 +1602,82 @@ export default function CandidateDrawer({
                             </pre>
                           </div>
                         )}
+
+                        {/* KHỐI TỰ ĐỘNG HÓA N8N & GỬI THƯ MỜI */}
+                        <div className="bg-gradient-to-r from-emerald-50/70 to-teal-50/50 rounded-2xl border border-emerald-200 p-4.5 space-y-3 shadow-2xs">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                              <div
+                                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                                  data?.isInterviewInviteSent
+                                    ? "bg-emerald-600 text-white"
+                                    : "bg-amber-100 text-amber-700 border border-amber-300"
+                                }`}
+                              >
+                                <Sparkles className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                    Tự Động Hóa n8n (Gmail &amp; Google Calendar)
+                                  </h4>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      data?.isInterviewInviteSent
+                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                        : "bg-amber-100 text-amber-900 border border-amber-300"
+                                    }`}
+                                  >
+                                    {data?.isInterviewInviteSent
+                                      ? "✓ n8n đã gửi thư mời"
+                                      : "⏳ Chờ kích hoạt n8n / Chưa gửi"}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                                  {data?.isInterviewInviteSent
+                                    ? "n8n đã nhận webhook và hoàn tất gửi thư mời HTML kèm lịch hẹn cho ứng viên."
+                                    : "Lịch hẹn đã được xếp nhưng n8n chưa nhận được webhook gửi thư tự động."}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Nút kích hoạt lại n8n ngay */}
+                            {canManageInterview && (
+                              <button
+                                type="button"
+                                onClick={handleTriggerN8N}
+                                disabled={isTriggeringN8N}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 transition-all shadow-xs cursor-pointer shrink-0"
+                              >
+                                {isTriggeringN8N ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <span>Đang gửi n8n...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Send className="w-3.5 h-3.5" />
+                                    <span>Kích hoạt n8n gửi thư ngay</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Nhập Webhook URL tùy chọn nếu người dùng chưa cài .env */}
+                          <div className="pt-2 border-t border-emerald-200/60 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 text-xs">
+                            <span className="text-slate-500 text-[11px] font-semibold shrink-0">
+                              Webhook n8n:
+                            </span>
+                            <input
+                              type="url"
+                              value={customN8NWebhookUrl}
+                              onChange={(e) => setCustomN8NWebhookUrl(e.target.value)}
+                              placeholder="Nhập URL n8n webhook (VD: http://localhost:5678/webhook/interview-schedule) hoặc để trống lấy từ .env"
+                              className="flex-1 px-2.5 py-1.5 rounded-lg border border-emerald-200 bg-white text-[11px] font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                            />
+                          </div>
+                        </div>
                       </div>
                     ) : null}
 
@@ -2605,6 +2768,19 @@ Hội đồng Tuyển dụng RecoverX`
               />
             </div>
           </div>
+        </div>
+      )}
+      {/* Toast Notification nổi với đường chạy ngang đếm ngược thời gian trong Drawer */}
+      {drawerToast && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm sm:max-w-md pointer-events-none">
+          <ToastNotification
+            key={`${drawerToast.title}-${drawerToast.message}`}
+            type={drawerToast.type}
+            title={drawerToast.title}
+            message={drawerToast.message}
+            duration={5000}
+            onClose={() => setDrawerToast(null)}
+          />
         </div>
       )}
     </div>

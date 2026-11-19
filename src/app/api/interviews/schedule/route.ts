@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
 import { evaluateHeadcountGate } from "@/lib/headcount-rules";
+import { dispatchN8NInterviewWebhook, N8NInterviewPayload, N8NDispatchResult } from "@/lib/n8n";
 
 export const dynamic = "force-dynamic";
 
@@ -294,11 +295,64 @@ Trân trọng,
 Ban Tuyển dụng RecoverX
     `.trim();
 
+    // Tự động kích hoạt n8n nếu chọn AUTO_N8N
+    let n8nResult: N8NDispatchResult | null = null;
+    if (interviewEmailOption === "AUTO_N8N") {
+      const payload: N8NInterviewPayload = {
+        event: isRescheduling ? "INTERVIEW_RESCHEDULED" : "INTERVIEW_SCHEDULED",
+        applicationId: app.id,
+        candidate: {
+          fullName: app.candidate.fullName,
+          email: app.candidate.email,
+          phone: app.candidate.phone,
+        },
+        job: {
+          title: app.job.title,
+          department: app.job.department,
+        },
+        interview: {
+          date: parsedDate.toISOString(),
+          formattedTime,
+          format,
+          location,
+          notes,
+        },
+        interviewer: {
+          name: sessionUser.fullName,
+          email: sessionUser.email,
+        },
+        emailOption: interviewEmailOption,
+        timestamp: new Date().toISOString(),
+      };
+
+      n8nResult = await dispatchN8NInterviewWebhook(payload);
+      if (n8nResult.success) {
+        await prisma.application.update({
+          where: { id: app.id },
+          data: { isInterviewInviteSent: true },
+        });
+        (updatedApp as any).isInterviewInviteSent = true;
+      }
+    }
+
+    let responseMessage = isRescheduling
+      ? `Đã cập nhật lịch phỏng vấn cho ứng viên ${app.candidate.fullName} thành công!`
+      : `Đã lên lịch phỏng vấn cho ứng viên ${app.candidate.fullName} thành công!`;
+
+    if (interviewEmailOption === "AUTO_N8N") {
+      if (n8nResult?.success) {
+        responseMessage += ` Đã kích hoạt n8n tự động gửi thư mời và đồng bộ Google Calendar.`;
+      } else if (n8nResult?.triggered === false) {
+        responseMessage += ` (Chưa cấu hình N8N_WEBHOOK_URL trong biến môi trường nên n8n chưa được kích hoạt tự động).`;
+      } else if (n8nResult && !n8nResult.success) {
+        responseMessage += ` (Lưu ý: n8n webhook phản hồi lỗi: ${n8nResult.error || n8nResult.message}).`;
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: isRescheduling
-        ? `Đã cập nhật lịch phỏng vấn cho ứng viên ${app.candidate.fullName} thành công!`
-        : `Đã lên lịch phỏng vấn cho ứng viên ${app.candidate.fullName} thành công!`,
+      message: responseMessage,
+      n8nResult,
       data: {
         application: updatedApp,
         formattedTime,
