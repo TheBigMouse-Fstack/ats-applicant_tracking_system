@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { X, XCircle, Loader2 } from "lucide-react";
 import { REJECTION_REASON_PRESETS } from "@/lib/stage-rules";
 
 interface RejectReasonModalProps {
@@ -90,13 +90,6 @@ export default function RejectReasonModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <p className="leading-relaxed">
-              Mọi thao tác chuyển sang <strong>Từ chối</strong> từ giai đoạn{" "}
-              <strong className="uppercase">{currentStage}</strong> đều bắt buộc ghi nhận lý do rõ ràng để lưu vết lịch sử và phục vụ đối soát. Email phản hồi sẽ được hoãn gửi tự động sau 12 giờ.
-            </p>
-          </div>
 
           {/* Gợi ý nhanh các lý do chuẩn */}
           <div className="space-y-2">

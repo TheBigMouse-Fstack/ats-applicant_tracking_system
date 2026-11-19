@@ -255,12 +255,6 @@ export default function CandidateDrawer({
   const minExpRequired = data?.job?.minExperienceYears || 0;
   const candidateExp = data?.candidate?.experienceYears || 0;
 
-  const isUnderQualified = Boolean(
-    data &&
-      ((data.aiMatchScore != null && data.aiMatchScore < 60) ||
-        missingSkillsList.length >= 2 ||
-        (minExpRequired > 0 && candidateExp < minExpRequired))
-  );
 
   // Xử lý chuyển trạng thái nhanh từ trong Drawer
   const executeQuickMove = async (toStage: string, rejectionReason?: string) => {
@@ -1761,27 +1755,6 @@ export default function CandidateDrawer({
               </button>
             </div>
 
-            {isUnderQualified && (
-              <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3.5 text-xs text-amber-900 space-y-1.5 animate-in fade-in">
-                <div className="flex items-center gap-2 font-bold text-amber-950">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Lưu ý: Hồ sơ ứng viên chưa đạt đầy đủ tiêu chuẩn yêu cầu</span>
-                </div>
-                {missingSkillsList.length > 0 && (
-                  <div className="flex flex-wrap gap-1 text-[11px]">
-                    <span className="font-semibold text-amber-800">Thiếu:</span>
-                    {missingSkillsList.map((sk, i) => (
-                      <span key={i} className="px-1.5 py-0.5 rounded bg-white text-red-700 text-[10px] font-bold border border-red-200">
-                        ✖ {sk}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <p className="text-[11px] text-amber-800 leading-relaxed">
-                  Bạn đang thực hiện xếp lịch phỏng vấn đặc cách cho ứng viên này. Vui lòng kiểm tra kỹ trước khi bấm xác nhận để tránh gửi nhầm thư mời.
-                </p>
-              </div>
-            )}
 
             <form onSubmit={handleScheduleInterview} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
