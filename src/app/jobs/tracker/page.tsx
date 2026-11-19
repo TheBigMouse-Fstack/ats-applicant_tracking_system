@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import {
   Briefcase,
   Search,
@@ -85,6 +86,7 @@ export default function CandidateTrackerPage() {
           </Link>
 
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <Link
               href="/jobs"
               className="text-xs font-semibold text-slate-600 hover:text-brand-600 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100"

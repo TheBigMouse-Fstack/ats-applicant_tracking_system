@@ -129,6 +129,11 @@ erDiagram
         string interviewNotes
         string interviewInterviewerNotes
         string interviewPostNotes
+        boolean isInterviewInviteSent "True if interview invite was sent via n8n"
+        boolean isTelegramNotified "True if new applicant alert sent to HR via Telegram"
+        string interviewEmailOption "AUTO_N8N | MANUAL_CUSTOM | NONE"
+        string customEmailSubject "Custom draft email subject"
+        string customEmailBody "Custom draft email body archived in database"
         string rejectionReason "BRL-11 Mandatory when REJECTED"
         string contactMismatchLevel "NONE | MINOR | CRITICAL | UNREADABLE (BRL-12)"
         string contactMismatchNote "Note explaining Form vs CV contact diff"

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, XCircle, Loader2 } from "lucide-react";
 import { REJECTION_REASON_PRESETS } from "@/lib/stage-rules";
+import { useLanguage } from "@/lib/i18n";
 
 interface RejectReasonModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export default function RejectReasonModal({
   jobTitle,
   currentStage,
 }: RejectReasonModalProps) {
+  const { t, locale } = useLanguage();
   const [selectedPreset, setSelectedPreset] = useState<string>("");
   const [customReason, setCustomReason] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export default function RejectReasonModal({
     e.preventDefault();
     const finalReason = customReason.trim();
     if (finalReason.length < 5) {
-      setError("Vui lòng chọn hoặc nhập lý do từ chối cụ thể (tối thiểu 5 ký tự).");
+      setError(t("reject.minError", "Vui lòng nhập lý do cụ thể (tối thiểu 5 ký tự)."));
       return;
     }
 
@@ -71,10 +73,10 @@ export default function RejectReasonModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">
-                Xác Nhận Từ Chối Hồ Sơ
+                {t("reject.title", "Xác Nhận Từ Chối Hồ Sơ")}
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Ứng viên: <strong className="text-slate-800">{candidateName}</strong> &bull; {jobTitle}
+                {candidateName} &bull; {jobTitle}
               </p>
             </div>
           </div>
@@ -90,11 +92,10 @@ export default function RejectReasonModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-
           {/* Gợi ý nhanh các lý do chuẩn */}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Chọn nhanh lý do phổ biến
+              {t("reject.quickReasons", "Chọn nhanh lý do phổ biến")}
             </label>
             <div className="flex flex-wrap gap-1.5">
               {REJECTION_REASON_PRESETS.map((preset) => {
@@ -120,7 +121,7 @@ export default function RejectReasonModal({
           {/* Chi tiết lý do từ chối */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Lý do từ chối chi tiết <span className="text-rose-500">*</span>
+              {t("reject.detailReason", "Lý do từ chối chi tiết")} <span className="text-rose-500">*</span>
             </label>
             <textarea
               rows={3}
@@ -129,7 +130,7 @@ export default function RejectReasonModal({
                 setCustomReason(e.target.value);
                 if (error) setError(null);
               }}
-              placeholder="Nhập lý do cụ thể (ví dụ: Thiếu kinh nghiệm thực chiến về Node.js và thiết kế cơ sở dữ liệu theo yêu cầu vị trí)..."
+              placeholder={t("reject.placeholder", "Nhập lý do cụ thể (tối thiểu 5 ký tự)...")}
               className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all"
               required
             />
@@ -144,7 +145,7 @@ export default function RejectReasonModal({
               disabled={submitting}
               className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
             >
-              Hủy bỏ
+              {t("reject.cancelBtn", "Hủy bỏ")}
             </button>
             <button
               type="submit"
@@ -154,12 +155,12 @@ export default function RejectReasonModal({
               {submitting ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Đang xử lý...</span>
+                  <span>{t("common.loading", "Đang xử lý...")}</span>
                 </>
               ) : (
                 <>
                   <XCircle className="w-3.5 h-3.5" />
-                  <span>Xác Nhận Từ Chối</span>
+                  <span>{t("reject.confirmBtn", "Xác Nhận Từ Chối")}</span>
                 </>
               )}
             </button>

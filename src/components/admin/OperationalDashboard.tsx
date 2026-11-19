@@ -25,6 +25,7 @@ import {
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import { formatDateTime } from "@/lib/utils";
 import { getAiMatchTier } from "@/lib/match-score";
+import { useLanguage } from "@/lib/i18n";
 
 interface QueueCandidateItem {
   id: number;
@@ -165,6 +166,7 @@ function getRoleMeta(role: string) {
  * - Mỗi dòng danh sách chỉ hiển thị đúng 4 tín hiệu tổng quan (Tên, Vị trí, AI %, SLA) — nhấp vào để mở Drawer Chi tiết.
  */
 export default function OperationalDashboard() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -359,7 +361,7 @@ export default function OperationalDashboard() {
           <KpiCard
             label="Thiếu Scorecard"
             value={data.summary.pendingScorecardCount}
-            subtext="Cần đủ phiếu mới chốt Hired"
+            subtext="Chưa có phiếu đánh giá"
             icon={<ClipboardCheck className="w-4 h-4 text-slate-500" />}
             highlight={data.summary.pendingScorecardCount > 0 ? "danger" : "neutral"}
           />
@@ -407,13 +409,13 @@ export default function OperationalDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-slate-900 text-sm">Phễu Chuyển Đổi Tuyển Dụng (Funnel)</h2>
+              <h2 className="font-bold text-slate-900 text-sm">{t("dashboard.funnelTitle", "Phễu Chuyển Đổi Tuyển Dụng")}</h2>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200">
                 5 Giai Đoạn
               </span>
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Soi chiếu tỷ lệ rơi rụng qua từng vòng để phát hiện điểm nghẽn (bottleneck) giữa khâu lọc CV, phỏng vấn và chốt tuyển.
+              {t("dashboard.funnelDesc", "Tỷ lệ chuyển đổi và phân bổ hồ sơ qua từng vòng tuyển dụng.")}
             </p>
           </div>
           <span className="text-slate-500 font-semibold text-xs shrink-0">

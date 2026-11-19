@@ -13,6 +13,8 @@ import {
   UserCheck,
 } from "lucide-react";
 import { SessionUser } from "@/lib/auth";
+import { useLanguage } from "@/lib/i18n";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
 interface AdminNavbarProps {
   initialUser?: SessionUser | null;
@@ -66,13 +68,15 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
     router.refresh();
   };
 
+  const { t } = useLanguage();
+
   const navLinks = [
-    { href: "/admin/dashboard", label: "Tổng quan", icon: LayoutDashboard },
-    { href: "/admin/pipeline", label: "Pipeline", icon: Kanban },
-    { href: "/admin/candidates", label: "Ứng viên", icon: UserCheck },
-    { href: "/admin/jobs", label: "Tin tuyển dụng", icon: Briefcase },
-    { href: "/admin/talent-pool", label: "Kho nhân tài", icon: Database, hideForManager: true },
-    { href: "/admin/users", label: "Người dùng", icon: Users, adminOnly: true },
+    { href: "/admin/dashboard", label: t("nav.dashboard", "Tổng quan"), icon: LayoutDashboard },
+    { href: "/admin/pipeline", label: t("nav.pipeline", "Pipeline"), icon: Kanban },
+    { href: "/admin/candidates", label: t("nav.candidates", "Ứng viên"), icon: UserCheck },
+    { href: "/admin/jobs", label: t("nav.jobs", "Tin tuyển dụng"), icon: Briefcase },
+    { href: "/admin/talent-pool", label: t("nav.talentPool", "Kho nhân tài"), icon: Database, hideForManager: true },
+    { href: "/admin/users", label: t("nav.users", "Người dùng"), icon: Users, adminOnly: true },
   ];
 
   return (
@@ -125,8 +129,9 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
             </nav>
           </div>
 
-          {/* User Profile & Logout */}
+          {/* User Profile, Language & Logout */}
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             {currentUser && (
               <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
                 <div className="text-right hidden sm:block">

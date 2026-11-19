@@ -49,6 +49,7 @@ import ScorecardPanel from "@/components/scorecard/ScorecardPanel";
 import RejectReasonModal from "@/components/candidate/RejectReasonModal";
 import { getAllowedTargetStages, validateStageTransition } from "@/lib/stage-rules";
 import { getAiMatchTier } from "@/lib/match-score";
+import { useLanguage } from "@/lib/i18n";
 
 interface CandidateDrawerProps {
   applicationId: number | null;
@@ -65,6 +66,7 @@ export default function CandidateDrawer({
   onClose,
   onStageChange,
 }: CandidateDrawerProps) {
+  const { t } = useLanguage();
   const [data, setData] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -542,7 +544,7 @@ export default function CandidateDrawer({
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              Hồ sơ
+              {t("tab.overview", "Hồ sơ")}
             </button>
 
             <button
@@ -554,7 +556,7 @@ export default function CandidateDrawer({
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              Tiêu chuẩn vị trí (JD)
+              {t("tab.jd", "Tiêu chuẩn JD")}
             </button>
 
             <button
@@ -566,7 +568,7 @@ export default function CandidateDrawer({
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              CV Gốc
+              {t("tab.cv", "CV Gốc")}
             </button>
 
             <button
@@ -578,7 +580,7 @@ export default function CandidateDrawer({
               }`}
             >
               <Calendar className="w-3.5 h-3.5" />
-              <span>Lịch phỏng vấn</span>
+              <span>{t("tab.interview", "Lịch phỏng vấn")}</span>
               {data?.interviewDate && (
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   data.interviewFormat === "ONLINE"
@@ -599,7 +601,7 @@ export default function CandidateDrawer({
               }`}
             >
               <Star className="w-3.5 h-3.5" />
-              Phiếu đánh giá ({data?.evaluations?.length || 0})
+              {t("tab.evaluation", "Phiếu đánh giá")} ({data?.evaluations?.length || 0})
             </button>
 
             <button
@@ -611,7 +613,7 @@ export default function CandidateDrawer({
               }`}
             >
               <History className="w-3.5 h-3.5" />
-              Nhật ký ({data?.auditLogs?.length || 0})
+              {t("tab.history", "Nhật ký")} ({data?.auditLogs?.length || 0})
             </button>
           </div>
 
@@ -1305,7 +1307,7 @@ export default function CandidateDrawer({
                                 {data.interviewLocation}
                               </span>
                             ) : (
-                              "Chưa xếp lịch phỏng vấn cụ thể cho ứng viên này"
+                              t("interview.noSchedule", "Chưa xếp lịch phỏng vấn")
                             )}
                           </p>
                         </div>
@@ -1587,21 +1589,7 @@ export default function CandidateDrawer({
                           </div>
                         )}
                       </div>
-                    ) : (
-                      <div className="bg-purple-50/60 rounded-2xl border border-purple-200 p-4.5 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-                          <Calendar className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h4 className="text-xs font-bold text-purple-950 uppercase tracking-wider">
-                            Hồ Sơ Chưa Có Lịch Phỏng Vấn
-                          </h4>
-                          <p className="text-xs text-purple-700 mt-0.5">
-                            Vui lòng chọn hình thức Trực tuyến (Online) hoặc Trực tiếp tại văn phòng ở biểu mẫu bên dưới để xếp lịch.
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                    ) : null}
 
                     {/* KHỐI 2: BIỂU MẪU LÊN LỊCH & CHIA RÕ ONLINE vs OFFLINE TẠI VĂN PHÒNG */}
                     <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-5">

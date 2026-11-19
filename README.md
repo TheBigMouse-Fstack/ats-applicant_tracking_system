@@ -18,10 +18,10 @@ D:\ATS project/
 │   ├── README.md                                   # Hướng dẫn phân loại 2 thư mục tài liệu
 │   │
 │   ├── ba/                                         # 📘 TÀI LIỆU BA (Dành cho Doanh nghiệp / Khách hàng / Non-Tech)
-│   │   ├── 00_BA_Documentation_Index_and_RTM.md    # Chỉ mục tổng thể & Ma trận Truy vết (RTM)
+│   │   ├── 00_BA_Documentation_Index_and_RTM.md    # Chỉ mục tổng thể & Ma trận Truy vết (RTM v2.3.0)
 │   │   ├── 02_BRD_Updated_Full.md                  # Tài liệu Yêu cầu Nghiệp vụ (BRD)
 │   │   ├── 03_BPMN_As_Is_and_To_Be.md              # Quy trình Tuyển dụng Hiện tại (As-Is) & Đề xuất (To-Be)
-│   │   ├── 04_FDD_and_Use_Case_List.md             # Cây phân rã chức năng & Danh mục 7 Use Case cốt lõi
+│   │   ├── 04_FDD_and_Use_Case_List.md             # Cây phân rã chức năng & Danh mục Use Case cốt lõi
 │   │   ├── 05_Use_Case_Specifications.md           # Đặc tả chi tiết từng nghiệp vụ sử dụng
 │   │   ├── 06_Dynamic_Models_Activity_Sequence_State.md # Vòng đời hồ sơ & Luồng phối hợp giữa các vai trò
 │   │   ├── 08_NonFunctional_and_Permissions.md     # Ma trận Phân quyền & Yêu cầu chất lượng hệ thống
@@ -40,45 +40,41 @@ D:\ATS project/
 │       ├── 16_SDD_Prompt_Playbook.md               # Bộ Prompt chuẩn Spec-Driven Development cho AI Agent
 │       └── 17_Business_Rules_and_Error_Matrix.md   # Quy tắc nghiệp vụ 3 vế, Ma trận lỗi & Tiêu chí chấp nhận Gherkin
 │
-├── src/                                            # Mã nguồn Next.js Fullstack (App Router + TypeScript)
-├── prisma/                                         # Schema CSDL & Seed data
-└── tests/                                          # Bộ kiểm thử nghiệp vụ tự động (112 test cases)
+├── src/                                            # Mã nguồn Next.js Fullstack (App Router + TypeScript + i18n)
+├── prisma/                                         # Schema CSDL (SQLite dev / PostgreSQL prod) & Seed data
+└── tests/                                          # Bộ kiểm thử nghiệp vụ tự động (136/136 test cases PASS 100%)
 ```
 
 ---
 
-## 📌 Tóm tắt Các Quyết định Trọng yếu của Hệ thống ATS
+## 📌 Tóm tắt Các Tính năng & Quyết định Trọng yếu của Hệ thống ATS
 
 ### 1. Phạm vi & Điểm mới trong BRD
-- **Cổng Ứng viên (Candidate Portal):** Ứng viên trực tiếp nộp CV qua giao diện Web, hệ thống tự động khử trùng lặp (Deduplication) dựa trên Email và Số điện thoại.
-- **Bóc tách hồ sơ tự động (AI Parsing):** Trích xuất thông tin học vấn, kỹ năng, kinh nghiệm từ file PDF/Docx.
-- **Sàng lọc tự động bằng AI (AI Automated Screening):** Chấm điểm độ phù hợp (Match Score % và Rationale) đối chiếu với mô tả công việc (JD).
-- **Gửi Email từ chối tự động có cơ chế Delay:** Tự động gửi thư từ chối sau khoảng thời gian hoãn (Delay Buffer 12 - 24 giờ) để tạo trải nghiệm ứng tuyển nhân văn.
+- **Cổng Ứng viên (Candidate Portal):** Ứng viên trực tiếp nộp CV qua giao diện Web, hệ thống tự động khử trùng lặp (Deduplication) 2 lớp dựa trên Email, Số điện thoại và mã băm SHA-256 (`BRL-02`, `BRL-12`).
+- **Bóc tách hồ sơ tự động (AI Parsing):** Trích xuất thông tin học vấn, kỹ năng, kinh nghiệm từ file PDF/Docx với bộ đệm fallback regex NLP cục bộ.
+- **Sàng lọc tự động bằng AI (AI Automated Screening):** Chấm điểm độ phù hợp (Match Score % và Rationale) đối chiếu với mô tả công việc (JD) theo phân tầng 3 mức màu: Xanh (≥75%), Vàng (50-74%), Đỏ (<50%).
+- **Gửi Email từ chối tự động có cơ chế Delay:** Tự động gửi thư từ chối sau khoảng thời gian hoãn (Delay Buffer 12 - 24 giờ) qua n8n webhook kết nối Neon PostgreSQL (`BRL-05`).
+- **Thông báo Ứng viên mới qua Telegram Bot:** Tự động bắn thông báo đẩy về kênh Telegram cho HR (`@Rec_Hr_rBot`) ngay khi có hồ sơ mới.
+- **Tự động hóa Lịch phỏng vấn & Đồng bộ Google Calendar:** Phân tách thẻ Online (Meet/Zoom/Teams) vs Offline (Văn phòng), hỗ trợ 3 tùy chọn gửi thư mời (`AUTO_N8N`, `MANUAL_CUSTOM`, `NONE`) và tự động tạo sự kiện Google Calendar.
+- **Phân trang Lũy tiến Từng Cột Kanban:** Quản lý hiển thị mặc định 15 hồ sơ / cột kèm nút tải thêm lũy tiến độc lập (`BRL-14`).
+- **Khống chế Chỉ tiêu Tuyển dụng & Giới hạn Phỏng vấn cùng lúc:** Tự động chốt đóng tin khi tuyển đủ chỉ tiêu (`BRL-13`).
+- **Chuẩn hóa Văn bản & Chuyển đổi Song ngữ VI/EN:** Loại bỏ hoàn toàn các câu giải thích logic kỹ thuật rườm rà, hỗ trợ nút gạt song ngữ `[ 🇻🇳 VI | 🇬🇧 EN ]` trên toàn bộ hệ thống.
 
-### 2. Danh mục 7 Use Case Cốt lõi (In-Scope)
+### 2. Danh mục Use Case Cốt lõi
 | Mã UC | Tên Use Case | Tác nhân chính (Actors) |
 | :--- | :--- | :--- |
-| **UC-01** | Tạo & Quản lý Tin tuyển dụng (Job Posting) | HR, Hiring Manager |
-| **UC-02** | Nộp hồ sơ Trực tuyến & Thu thập CV Đa nguồn | Ứng viên, HR |
-| **UC-03** | Bóc tách & Sàng lọc CV Tự động bằng AI | Hệ thống AI, HR |
-| **UC-04** | Đặt lịch Phỏng vấn & Đánh giá bằng Scorecard | HR, Hiring Manager, Ứng viên |
-| **UC-05** | Phê duyệt Tuyển chọn, Phát hành Offer & Onboarding | Hiring Manager, HR, Giám đốc, Ứng viên |
-| **UC-06** | Quản lý Kho Dữ liệu Tài năng (Talent Pool & CRM) | HR |
+| **UC-01** | Tạo & Quản lý Tin tuyển dụng (Job Posting, Quota & WIP Cap) | HR, Hiring Manager |
+| **UC-02** | Nộp hồ sơ Trực tuyến & Khử trùng lặp 2 lớp (Deduplication) | Ứng viên, HR |
+| **UC-03** | Bóc tách & Sàng lọc CV Tự động bằng AI (3-Tier Match) | Hệ thống AI, HR |
+| **UC-04** | Vận hành Kanban 5 cột, Cảnh báo SLA & Phân trang lũy tiến | HR, Hiring Manager |
+| **UC-05A**| Lên lịch Phỏng vấn Online/Offline & Đồng bộ Calendar | Hiring Manager, Admin, Ứng viên |
+| **UC-05** | Đánh giá Scorecard 3 tiêu chí trọng số & Stage Gate Hired | Hiring Manager, HR, Giám đốc |
+| **UC-06** | Quản lý Kho Dữ liệu Tài năng (Talent Pool & CRM 180 ngày) | HR |
 | **UC-07** | Báo cáo Phân tích Tuyển dụng (Recruitment Analytics) | HR Manager, Ban Giám đốc |
 
-### 3. Kiến trúc Dữ liệu Đề xuất (PostgreSQL)
-- `users`: Tài khoản nội bộ và phân quyền RBAC.
-- `jobs`: Tin tuyển dụng và tiêu chí chấm điểm của JD.
-- `candidates`: Hồ sơ ứng viên cơ bản (Email, Phone, Deduplication key).
-- `applications`: Đơn ứng tuyển theo từng Job, lưu trạng thái Kanban.
-- `ai_parse_results`: Dữ liệu JSON bóc tách từ CV.
-- `ai_match_scores`: Điểm % match và giải trình AI.
-- `interviews`: Lịch phỏng vấn đa vòng.
-- `evaluation_scorecards`: Phiếu đánh giá có trọng số của người phỏng vấn.
-
-### 4. Môi trường Máy chủ & Công nghệ Sẵn sàng
-- **Node.js:** `v24.16.0`
-- **NPM:** `11.5.1`
-- **Git:** `2.50.1`
-- **Chiến lược Frontend:** Tận dụng Dashboard UI mã nguồn mở hiện đại (Next.js / Tailwind CSS / shadcn/ui / Lucide Icons).
-- **Quy trình Antigravity:** Sử dụng AI Assistant để sinh mã, kiểm thử và thiết lập quy tắc dự án tự động.
+### 3. Công nghệ & Tự Động Hóa Vận Hành
+- **Fullstack:** Next.js 14+ (App Router) + TypeScript + Tailwind CSS.
+- **Database & ORM:** Prisma ORM (SQLite `dev.db` cho môi trường cục bộ; Neon Serverless PostgreSQL cho môi trường đám mây).
+- **Tự động hóa Workflow:** n8n Workflow Automation (Gmail API + Telegram Bot API + Google Calendar API).
+- **Đa ngôn ngữ (i18n):** Ngữ cảnh React `LanguageProvider` với bộ từ điển tuyển dụng chuẩn hóa `vi` & `en`.
+- **Kiểm thử Nghiệp vụ Tự động:** **136/136 test cases PASS (100%)** (`node tests/run-tests.js`).

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import { prisma } from "@/lib/prisma";
 import {
   Briefcase,
@@ -53,6 +54,7 @@ export default async function JobsPublicPage() {
           </Link>
 
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <Link
               href="/jobs/tracker"
               className="text-xs font-bold text-brand-700 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-xl border border-brand-200 transition-colors flex items-center gap-1.5"

@@ -403,9 +403,16 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
     "interviewLocation": "https://meet.google.com/xyz-recoverx-meet",
     "interviewNotes": "Vui lòng chuẩn bị slide giới thiệu dự án tiêu biểu.",
     "interviewInterviewerNotes": "Lưu ý kiểm tra sâu phần tối ưu cơ sở dữ liệu.",
-    "moveToInterviewStage": true
+    "moveToInterviewStage": true,
+    "interviewEmailOption": "AUTO_N8N",
+    "customEmailSubject": "Thư mời phỏng vấn vị trí Senior Fullstack Developer",
+    "customEmailBody": "Kính gửi ứng viên... Trân trọng!"
   }
   ```
+* **Cơ chế 3 tùy chọn gửi thư mời (`interviewEmailOption`):**
+  - `AUTO_N8N`: Đánh dấu `isInterviewInviteSent = false` để n8n workflow tự động gửi Gmail HTML và tạo sự kiện Google Calendar.
+  - `MANUAL_CUSTOM`: Lưu trữ tiêu đề `customEmailSubject` và nội dung `customEmailBody` vào database để lưu vết hồ sơ; đánh dấu `isInterviewInviteSent = true` để n8n không gửi đè.
+  - `NONE`: Đã liên hệ trực tiếp (điện thoại/tin nhắn); đánh dấu `isInterviewInviteSent = true` và không kích hoạt email.
 * **Success Response (HTTP 200):**
   ```json
   {

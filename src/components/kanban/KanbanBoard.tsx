@@ -11,6 +11,7 @@ import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import AddCandidateModal from "@/components/candidate/AddCandidateModal";
 import RejectReasonModal from "@/components/candidate/RejectReasonModal";
 import { canRoleDragFromStage, validateStageTransition } from "@/lib/stage-rules";
+import { useLanguage } from "@/lib/i18n";
 import {
   Search,
   Filter,
@@ -102,6 +103,7 @@ const COLUMNS_CONFIG: ColumnConfig[] = [
 ];
 
 export default function KanbanBoard() {
+  const { t } = useLanguage();
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<JobOption[]>([]);
@@ -630,7 +632,7 @@ export default function KanbanBoard() {
                 Chế độ Quản lý Chuyên môn — {currentUser.fullName}
               </p>
               <p className="text-[11px] text-amber-700 mt-0.5">
-                Quyền luân chuyển trạng thái do Bộ phận Tuyển dụng quản lý. Bạn có quyền xem hồ sơ và nhập phiếu đánh giá phỏng vấn.
+                {t("kanban.hmNotice", "Chế độ đánh giá chuyên môn: Xem hồ sơ và ghi nhận đánh giá phỏng vấn.")}
               </p>
             </div>
           </div>
