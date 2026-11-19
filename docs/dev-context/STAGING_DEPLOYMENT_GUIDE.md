@@ -86,10 +86,10 @@ Khi thiết lập trên Vercel, Railway, hoặc máy chủ Linux Docker, cấu h
 
 ```bash
 # 1. Cơ sở dữ liệu Neon PostgreSQL (Có Connection Pool qua PgBouncer)
-DATABASE_URL="postgresql://neondb_owner:npg_1K3OetWriwXN@ep-mute-rice-binm2tpc-pooler.c-5.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+DATABASE_URL="postgresql://username:your_password@ep-sample-pooler.c-5.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 
 # 2. Cơ sở dữ liệu trực tiếp (dùng cho Prisma db push / migrate deploy)
-DATABASE_URL_UNPOOLED="postgresql://neondb_owner:npg_1K3OetWriwXN@ep-mute-rice-binm2tpc.c-5.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+DATABASE_URL_UNPOOLED="postgresql://username:your_password@ep-sample.c-5.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 
 # 3. Khóa Google Gemini API (Lớp 2 AI Matching & Semantic Analysis)
 GEMINI_API_KEY="AIzaSy...Your_Production_Or_Staging_Key..."
