@@ -493,21 +493,21 @@ export default function KanbanBoard() {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                Quy Trình Tuyển Dụng
+                {t("pipeline.title")}
               </h1>
               {loading && (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-semibold border border-brand-200 animate-pulse">
                   <RefreshCw className="w-3 h-3 animate-spin text-brand-600" />
-                  <span>Đang tải dữ liệu...</span>
+                  <span>{t("pipeline.loading")}</span>
                 </span>
               )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               {currentUser?.role === "HR"
-                ? "Phạm vi HR: Sơ loại hồ sơ mới và chuyển tối đa đến Sàng lọc tiêu chuẩn."
+                ? t("pipeline.descHr")
                 : currentUser?.role === "HIRING_MANAGER"
-                ? "Phạm vi Hiring Manager: Duyệt Phỏng vấn từ vòng Sàng lọc, đánh giá và quyết định Tuyển chọn."
-                : "Theo dõi và luân chuyển hồ sơ ứng viên qua 5 giai đoạn."}
+                ? t("pipeline.descHm")
+                : t("pipeline.descAdmin")}
             </p>
           </div>
 
@@ -518,7 +518,7 @@ export default function KanbanBoard() {
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl text-white bg-brand-600 hover:bg-brand-700 transition-colors cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>Tiếp nhận CV</span>
+                <span>{t("pipeline.addCandidate")}</span>
               </button>
             )}
           </div>
@@ -532,7 +532,7 @@ export default function KanbanBoard() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm tên, email hoặc kỹ năng..."
+              placeholder={t("kanban.searchPlaceholder")}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2 pl-8 pr-8 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all"
             />
             {searchQuery && (
@@ -550,7 +550,7 @@ export default function KanbanBoard() {
             onChange={(e) => setSelectedJobId(e.target.value)}
             className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all lg:w-64"
           >
-            <option value="ALL">Tất cả vị trí ({jobs.length})</option>
+            <option value="ALL">{t("kanban.allJobs")} ({jobs.length})</option>
             {jobs.map((job) => (
               <option key={job.id} value={String(job.id)}>
                 {job.title} ({job._count.applications})
@@ -572,7 +572,7 @@ export default function KanbanBoard() {
               }`}
             >
               <Star className={`w-3.5 h-3.5 ${showStarredOnly ? "fill-amber-400 text-amber-400" : "text-slate-400"}`} />
-              <span>Gắn sao</span>
+              <span>{t("pipeline.starredOnly")}</span>
             </button>
 
             <button
@@ -589,7 +589,7 @@ export default function KanbanBoard() {
             >
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               <span>
-                Chưa xem{" "}
+                {t("pipeline.unviewedOnly")}{" "}
                 {loading
                   ? "(...)"
                   : `(${columns.NEW?.filter((c: any) => !c.isViewed).length || 0})`}
@@ -608,7 +608,7 @@ export default function KanbanBoard() {
               title="Lọc các hồ sơ vượt quá thời hạn cam kết (NEW > 48h, SCREENING > 72h)"
             >
               <AlertTriangle className={`w-3.5 h-3.5 ${showSlaOnly ? "text-white" : "text-rose-500"}`} />
-              <span>Quá hạn SLA</span>
+              <span>{t("pipeline.slaBreach")}</span>
             </button>
 
             {/* Lọc nhanh điểm AI phù hợp cao */}
@@ -623,7 +623,7 @@ export default function KanbanBoard() {
               title="Chỉ hiển thị các hồ sơ có điểm đối chiếu JD đạt từ 75% trở lên"
             >
               <span className={`w-2 h-2 rounded-full ${showHighMatchOnly ? "bg-white" : "bg-emerald-500"}`} />
-              <span>Phù hợp cao (≥75%)</span>
+              <span>{t("pipeline.highMatch")}</span>
             </button>
 
             <select
@@ -631,11 +631,10 @@ export default function KanbanBoard() {
               onChange={(e) => setSortBy(e.target.value)}
               className="rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all cursor-pointer"
             >
-              <option value="NEWEST">Mới nhất</option>
-              <option value="OLDEST">Cũ nhất</option>
-              <option value="UNVIEWED_FIRST">Chưa xem trước</option>
-              <option value="STARRED_FIRST">Gắn sao trước</option>
-              <option value="UNEVALUATED_FIRST">Chưa đánh giá</option>
+              <option value="NEWEST">{t("candidates.sortNewest")}</option>
+              <option value="OLDEST">{t("candidates.sortOldest")}</option>
+              <option value="UNVIEWED_FIRST">{t("candidates.sortUnviewed")}</option>
+              <option value="STARRED_FIRST">{t("candidates.sortStarred")}</option>
             </select>
           </div>
         </div>

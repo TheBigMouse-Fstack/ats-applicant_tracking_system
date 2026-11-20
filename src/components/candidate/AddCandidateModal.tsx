@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useLanguage } from "@/lib/i18n";
 import {
   X,
   UploadCloud,
@@ -38,6 +39,7 @@ export default function AddCandidateModal({
   onSuccess,
   defaultJobId = null,
 }: AddCandidateModalProps) {
+  const { t } = useLanguage();
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>(
     defaultJobId ? String(defaultJobId) : ""
@@ -216,10 +218,10 @@ export default function AddCandidateModal({
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900">
-                Tiếp Nhận Hồ Sơ Mới
+                {t("intake.modalTitle")}
               </h3>
               <p className="text-xs text-slate-500">
-                Nhập hồ sơ từ LinkedIn, giới thiệu nội bộ hoặc kênh tuyển dụng
+                {t("intake.modalSubtitle")}
               </p>
             </div>
           </div>
@@ -245,7 +247,7 @@ export default function AddCandidateModal({
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                 <Briefcase className="w-3.5 h-3.5 text-brand-600" />
-                Vị trí tuyển dụng <span className="text-red-500">*</span>
+                {t("intake.jobLabel")}
               </label>
               <select
                 value={selectedJobId}
@@ -261,7 +263,7 @@ export default function AddCandidateModal({
                   fieldErrors.jobId ? "border-red-400 bg-red-50/20" : "border-slate-200"
                 }`}
               >
-                <option value="">-- Chọn vị trí tuyển dụng --</option>
+                <option value="">-- {t("kanban.allJobs")} --</option>
                 {jobs.map((job) => (
                   <option key={job.id} value={String(job.id)}>
                     {job.title} ({job.department})
@@ -276,7 +278,7 @@ export default function AddCandidateModal({
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-brand-600" />
-                Nguồn ứng viên
+                {t("intake.sourceLabel")}
               </label>
               <select
                 value={source}
@@ -284,11 +286,11 @@ export default function AddCandidateModal({
                 className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
               >
                 <option value="LINKEDIN">LinkedIn Sourcing</option>
-                <option value="REFERRAL">Giới thiệu nội bộ</option>
+                <option value="REFERRAL">Giới thiệu nội bộ (Referral)</option>
                 <option value="HEADHUNTER">Agency / Headhunter</option>
-                <option value="DIRECT_EMAIL">Email trực tiếp</option>
-                <option value="CAREER_SITE">Cổng tuyển dụng</option>
-                <option value="OTHER">Nguồn khác</option>
+                <option value="DIRECT_EMAIL">Email trực tiếp (Direct Email)</option>
+                <option value="CAREER_SITE">Cổng tuyển dụng (Careers Portal)</option>
+                <option value="OTHER">Nguồn khác (Other)</option>
               </select>
             </div>
           </div>
@@ -296,8 +298,8 @@ export default function AddCandidateModal({
           {/* Tải CV gốc */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
-              <span>Hồ sơ CV (.pdf, .docx) <span className="text-red-500">*</span></span>
-              {cvFile && <span className="text-[11px] text-emerald-600 font-bold">Đã chọn tệp</span>}
+              <span>{t("intake.cvLabel")}</span>
+              {cvFile && <span className="text-[11px] text-emerald-600 font-bold">✓ Selected</span>}
             </label>
 
             <input
@@ -346,10 +348,10 @@ export default function AddCandidateModal({
                 <div className="flex flex-col items-center gap-1.5 py-1">
                   <UploadCloud className="w-6 h-6 text-brand-600" />
                   <p className="text-xs font-bold text-slate-800">
-                    Bấm để tải lên hoặc kéo thả tệp CV vào đây
+                    {t("intake.uploadPrompt")}
                   </p>
                   <p className="text-[11px] text-slate-400">
-                    Hỗ trợ PDF, DOCX (Tối đa 10MB)
+                    {t("intake.uploadSub")}
                   </p>
                 </div>
               )}
@@ -364,7 +366,7 @@ export default function AddCandidateModal({
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
                 <User className="w-3.5 h-3.5 text-slate-400" />
-                Họ và Tên <span className="text-red-500">*</span>
+                {t("intake.nameLabel")}
               </label>
               <input
                 type="text"
@@ -384,7 +386,7 @@ export default function AddCandidateModal({
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
-                Email Liên Hệ <span className="text-red-500">*</span>
+                {t("intake.emailLabel")}
               </label>
               <input
                 type="email"
@@ -404,7 +406,7 @@ export default function AddCandidateModal({
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
                 <Phone className="w-3.5 h-3.5 text-slate-400" />
-                Số Điện Thoại <span className="text-red-500">*</span>
+                {t("intake.phoneLabel")}
               </label>
               <input
                 type="tel"
@@ -427,9 +429,9 @@ export default function AddCandidateModal({
             <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Award className="w-3.5 h-3.5 text-purple-600" />
-                <span>Bằng Cấp & Chứng Chỉ Đính Kèm</span>
+                <span>{t("intake.certLabel")}</span>
               </label>
-              <span className="text-[11px] text-slate-400">Tùy chọn • Tối đa 5 ảnh/tệp</span>
+              <span className="text-[11px] text-slate-400">{t("intake.certOptional")}</span>
             </div>
 
             <input
@@ -483,7 +485,7 @@ export default function AddCandidateModal({
                     className="w-full py-2 px-3 rounded-xl border border-dashed border-slate-300 hover:border-purple-500 hover:bg-purple-50/40 text-slate-600 hover:text-purple-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm ảnh chứng chỉ khác</span>
+                    <span>+ {t("intake.certUpload")}</span>
                   </button>
                 )}
               </div>
@@ -494,7 +496,7 @@ export default function AddCandidateModal({
                 className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-200 hover:border-purple-400 hover:bg-slate-50 text-slate-500 hover:text-purple-700 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <ImageIcon className="w-4 h-4 text-slate-400" />
-                <span>Đính kèm ảnh bằng cấp, chứng chỉ (PNG, JPG, PDF)</span>
+                <span>{t("intake.certUpload")}</span>
               </button>
             )}
           </div>
@@ -507,7 +509,7 @@ export default function AddCandidateModal({
               disabled={loading}
               className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
             >
-              Hủy bỏ
+              {t("intake.cancelBtn")}
             </button>
             <button
               type="submit"
@@ -517,12 +519,12 @@ export default function AddCandidateModal({
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Đang lưu hồ sơ...</span>
+                  <span>{t("intake.submitting")}</span>
                 </>
               ) : (
                 <>
                   <FileUp className="w-4 h-4" />
-                  <span>Tiếp Nhận Hồ Sơ</span>
+                  <span>{t("intake.submitBtn")}</span>
                 </>
               )}
             </button>

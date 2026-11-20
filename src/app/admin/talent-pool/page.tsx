@@ -22,10 +22,12 @@ import {
 import CandidateDrawer from "@/components/candidate/CandidateDrawer";
 import { getAiMatchTier } from "@/lib/match-score";
 import { useSession } from "@/contexts/SessionContext";
+import { useLanguage } from "@/lib/i18n";
 import { clientCache } from "@/lib/client-cache";
 
 export default function TalentPoolPage() {
   const { user: currentUser } = useSession();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
@@ -223,10 +225,10 @@ export default function TalentPoolPage() {
       <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Kho Nhân Tài
+            {t("talentPool.title")}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {data.length} hồ sơ dự phòng sẵn sàng tái tuyển dụng
+            {data.length} {t("candidates.countSubtitle")}
           </p>
         </div>
 

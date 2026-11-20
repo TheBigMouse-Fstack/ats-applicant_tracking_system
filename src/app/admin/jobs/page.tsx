@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "@/contexts/SessionContext";
+import { useLanguage } from "@/lib/i18n";
 import { clientCache } from "@/lib/client-cache";
 import {
   Plus,
@@ -20,6 +21,7 @@ import {
 
 export default function AdminJobsPage() {
   const { user: currentUser } = useSession();
+  const { t } = useLanguage();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -201,10 +203,10 @@ export default function AdminJobsPage() {
       <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Tin Tuyển Dụng
+            {t("jobsAdmin.title")}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {filteredJobs.length} vị trí đang mở tuyển
+            {filteredJobs.length} {t("dashboard.activeJobs")}
           </p>
         </div>
 
@@ -214,7 +216,7 @@ export default function AdminJobsPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
-            <span>Tạo tin mới</span>
+            <span>{t("jobsAdmin.createBtn")}</span>
           </button>
         )}
       </div>
@@ -239,7 +241,7 @@ export default function AdminJobsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo tên vị trí hoặc phòng ban..."
+            placeholder={t("candidates.searchPlaceholder")}
             className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-9 pr-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
         </div>

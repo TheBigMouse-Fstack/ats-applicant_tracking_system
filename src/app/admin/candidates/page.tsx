@@ -166,16 +166,16 @@ export default function CandidatesListPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Danh Sách Ứng Viên
+              {t("candidates.title")}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
               {loading ? (
                 <span className="inline-flex items-center gap-1.5 text-brand-600 font-medium animate-pulse">
                   <RefreshCw className="w-3 h-3 animate-spin" />
-                  <span>Đang tải danh sách ứng viên...</span>
+                  <span>{t("pipeline.loading")}</span>
                 </span>
               ) : (
-                `${candidates.length} hồ sơ ứng viên`
+                `${candidates.length} ${t("candidates.countSubtitle")}`
               )}
             </p>
           </div>
@@ -188,14 +188,14 @@ export default function CandidatesListPage() {
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
               >
                 <Download className="w-3.5 h-3.5 text-slate-500" />
-                <span>Xuất CSV</span>
+                <span>{t("kanban.exportCsv")}</span>
               </a>
               <button
                 onClick={() => setIsAddModalOpen(true)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>Tiếp nhận CV</span>
+                <span>{t("candidates.addBtn")}</span>
               </button>
             </div>
           )}
@@ -209,7 +209,7 @@ export default function CandidatesListPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm tên, email hoặc kỹ năng (VD: Java, React, BA)..."
+              placeholder={t("candidates.searchPlaceholder")}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2 pl-8 pr-8 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all"
             />
             {search && (
@@ -227,7 +227,7 @@ export default function CandidatesListPage() {
             onChange={(e) => setSelectedJobId(e.target.value)}
             className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all lg:w-56"
           >
-            <option value="ALL">Tất cả vị trí ({jobs.length})</option>
+            <option value="ALL">{t("candidates.allJobs")} ({jobs.length})</option>
             {jobs.map((job) => (
               <option key={job.id} value={String(job.id)}>
                 {job.title}
@@ -240,12 +240,12 @@ export default function CandidatesListPage() {
             onChange={(e) => setSelectedStage(e.target.value)}
             className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all lg:w-40"
           >
-            <option value="ALL">Tất cả giai đoạn</option>
-            <option value="NEW">Mới nộp</option>
-            <option value="SCREENING">Sàng lọc</option>
-            <option value="INTERVIEW">Phỏng vấn</option>
-            <option value="HIRED">Tuyển chọn</option>
-            <option value="REJECTED">Từ chối</option>
+            <option value="ALL">{t("candidates.allStages")}</option>
+            <option value="NEW">{t("stage.NEW")}</option>
+            <option value="SCREENING">{t("stage.SCREENING")}</option>
+            <option value="INTERVIEW">{t("stage.INTERVIEW")}</option>
+            <option value="HIRED">{t("stage.HIRED")}</option>
+            <option value="REJECTED">{t("stage.REJECTED")}</option>
           </select>
 
           <div className="flex flex-wrap items-center gap-1.5">
@@ -267,7 +267,7 @@ export default function CandidatesListPage() {
                     : "text-slate-400"
                 }`}
               />
-              <span>Gắn sao</span>
+              <span>{t("candidates.starred")}</span>
             </button>
 
             <button
@@ -282,7 +282,7 @@ export default function CandidatesListPage() {
               }`}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              <span>Chưa xem</span>
+              <span>{t("candidates.unviewed")}</span>
             </button>
 
             <select
@@ -290,11 +290,11 @@ export default function CandidatesListPage() {
               onChange={(e) => setSortBy(e.target.value)}
               className="rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all cursor-pointer"
             >
-              <option value="NEWEST">Mới nhất</option>
-              <option value="OLDEST">Cũ nhất</option>
-              <option value="UNVIEWED_FIRST">Chưa xem trước</option>
-              <option value="STARRED_FIRST">Gắn sao trước</option>
-              <option value="NAME_ASC">Tên (A - Z)</option>
+              <option value="NEWEST">{t("candidates.sortNewest")}</option>
+              <option value="OLDEST">{t("candidates.sortOldest")}</option>
+              <option value="UNVIEWED_FIRST">{t("candidates.sortUnviewed")}</option>
+              <option value="STARRED_FIRST">{t("candidates.sortStarred")}</option>
+              <option value="NAME_ASC">{t("candidates.sortName")}</option>
             </select>
           </div>
         </div>
@@ -323,11 +323,11 @@ export default function CandidatesListPage() {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-3 w-10 text-center" />
-                <th className="py-3 px-4">Ứng viên</th>
-                <th className="py-3 px-4">Vị trí &amp; Kinh nghiệm</th>
-                <th className="py-3 px-4">Kỹ năng trích xuất</th>
-                <th className="py-3 px-4 text-center">Độ phù hợp</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
+                <th className="py-3 px-4">{t("candidates.thCandidate")}</th>
+                <th className="py-3 px-4">{t("candidates.thPositionExp")}</th>
+                <th className="py-3 px-4">{t("candidates.thSkills")}</th>
+                <th className="py-3 px-4 text-center">{t("candidates.thMatch")}</th>
+                <th className="py-3 px-4 text-center">{t("candidates.thStatus")}</th>
                 <th className="py-3 px-3 w-8" />
               </tr>
             </thead>
@@ -371,7 +371,7 @@ export default function CandidatesListPage() {
               ) : candidates.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
-                    Không tìm thấy ứng viên phù hợp với bộ lọc hiện tại.
+                    {t("candidates.empty")}
                   </td>
                 </tr>
               ) : (
@@ -384,8 +384,9 @@ export default function CandidatesListPage() {
                     skills = [];
                   }
 
+                  const stageLabel = t(`stage.${app.currentStage}`, app.currentStage);
                   const stageInfo = STAGE_STYLES[app.currentStage] || {
-                    label: app.currentStage,
+                    label: stageLabel,
                     cls: "bg-slate-100 text-slate-700 border-slate-200",
                   };
                   const matchTier = getAiMatchTier(app.aiMatchScore);
@@ -402,7 +403,7 @@ export default function CandidatesListPage() {
                         <button
                           type="button"
                           onClick={(e) => handleToggleStar(app.id, e)}
-                          title={app.isStarred ? "Bỏ gắn sao" : "Gắn sao ưu tiên"}
+                          title={app.isStarred ? t("kanban.starredOnly") : t("candidates.starred")}
                           className="p-1 rounded text-slate-300 hover:text-amber-400 transition-colors cursor-pointer"
                         >
                           <Star
@@ -421,7 +422,7 @@ export default function CandidatesListPage() {
                           {isUnviewedNew && (
                             <span
                               className="w-2 h-2 rounded-full bg-blue-600 shrink-0"
-                              title="Hồ sơ mới chưa xem"
+                              title={t("candidates.unviewed")}
                             />
                           )}
                           <span
@@ -444,8 +445,8 @@ export default function CandidatesListPage() {
                         <p className="font-semibold text-slate-900">{app.job?.title}</p>
                         <p className="text-[11px] text-slate-500 mt-0.5">
                           {candidate?.experienceYears > 0
-                            ? `${candidate.experienceYears} năm kinh nghiệm`
-                            : "Dưới 1 năm kinh nghiệm"}
+                            ? `${candidate.experienceYears} ${t("candidates.yearsExp")}`
+                            : `< 1 ${t("candidates.yearsExp")}`}
                         </p>
                       </td>
 

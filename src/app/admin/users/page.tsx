@@ -15,6 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 import { clientCache } from "@/lib/client-cache";
 
 interface UserItem {
@@ -31,6 +32,7 @@ interface UserItem {
 }
 
 export default function UserManagementPage() {
+  const { t } = useLanguage();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -154,13 +156,13 @@ export default function UserManagementPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold mb-1.5">
             <ShieldCheck className="w-3.5 h-3.5" />
-            Quản trị hệ thống & Phân quyền
+            {t("usersAdmin.title")}
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Quản trị Người dùng & Phân quyền Nội bộ
+            {t("usersAdmin.title")}
           </h1>
           <p className="text-sm text-slate-500">
-            Quản lý tài khoản quản trị, tuyển dụng và hội đồng chuyên môn
+            {t("usersAdmin.subtitle")}
           </p>
         </div>
 
@@ -174,7 +176,7 @@ export default function UserManagementPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 transition-all self-start sm:self-auto cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
-          + Thêm Tài khoản Mới
+          {t("usersAdmin.createBtn")}
         </button>
       </div>
 
