@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   DragDropContext,
   Droppable,
@@ -201,17 +201,31 @@ export default function KanbanBoard() {
 
   const cacheKey = `pipeline_${selectedJobId}_${debouncedSearch}_${sortBy}_${showStarredOnly}_${showUnviewedOnly}_${showSlaOnly}_${showHighMatchOnly}`;
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const latestRequestIdRef = useRef<number>(0);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Fetch Pipeline Data (Hỗ trợ Silent Background Refresh để không bị giật Skeleton)
+  // Fetch Pipeline Data (Hỗ trợ Silent Background Refresh & Chống Race Condition)
   const fetchPipeline = useCallback(async (isSilent = false) => {
+    // 1. Hủy bỏ ngay lập tức request đang chạy trước đó nếu người dùng đổi bộ lọc nhanh
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const currentRequestId = ++latestRequestIdRef.current;
+
     try {
       if (!isSilent) {
         setColumns((prev) => {
           const hasExistingCards = Object.values(prev).some((arr) => arr && arr.length > 0);
-          if (!hasExistingCards) setLoading(true);
+          // Chỉ hiện Skeleton nếu trên màn hình chưa có bất kỳ thẻ nào VÀ chưa có cache
+          if (!hasExistingCards && !clientCache.getStale(cacheKey)) {
+            setLoading(true);
+          }
           return prev;
         });
       }
@@ -238,8 +252,15 @@ export default function KanbanBoard() {
         params.append("highMatch", "true");
       }
 
-      const res = await fetch(`/api/pipeline?${params.toString()}`);
+      const res = await fetch(`/api/pipeline?${params.toString()}`, {
+        signal: controller.signal,
+      });
       const data = await res.json();
+
+      // Kiểm soát Race Condition: Nếu có thao tác lọc mới hơn đã phát đi thì bỏ qua kết quả cũ này
+      if (currentRequestId !== latestRequestIdRef.current) {
+        return;
+      }
 
       if (data.success) {
         const newJobs = data.jobs || [];
@@ -264,11 +285,18 @@ export default function KanbanBoard() {
       } else {
         setAlertError(data.error || "Không thể tải dữ liệu tuyển dụng.");
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        // Request cũ bị hủy vì người dùng bấm lọc mới -> an toàn bỏ qua
+        return;
+      }
+      if (currentRequestId !== latestRequestIdRef.current) return;
       console.error("Error fetching pipeline:", err);
       setAlertError("Lỗi kết nối khi tải dữ liệu tuyển dụng.");
     } finally {
-      setLoading(false);
+      if (currentRequestId === latestRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [selectedJobId, debouncedSearch, sortBy, showStarredOnly, showUnviewedOnly, showSlaOnly, showHighMatchOnly, cacheKey]);
 
@@ -590,7 +618,7 @@ export default function KanbanBoard() {
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               <span>
                 {t("pipeline.unviewedOnly")}{" "}
-                {loading
+                {loading && (!columns.NEW || columns.NEW.length === 0)
                   ? "(...)"
                   : `(${columns.NEW?.filter((c: any) => !c.isViewed).length || 0})`}
               </span>

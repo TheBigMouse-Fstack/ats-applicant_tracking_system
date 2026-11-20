@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   Download,
@@ -69,12 +69,24 @@ export default function CandidatesListPage() {
   }, []);
 
   const cacheKey = `candidates_${search.trim()}_${selectedJobId}_${selectedStage}_${sortBy}_${quickFilter}`;
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const latestRequestIdRef = useRef<number>(0);
 
   const fetchCandidates = useCallback(async (isSilent = false) => {
+    // Hủy bỏ request đang chạy dở trước đó
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const currentRequestId = ++latestRequestIdRef.current;
+
     try {
       if (!isSilent) {
         setCandidates((prev) => {
-          if (!prev || prev.length === 0) setLoading(true);
+          if ((!prev || prev.length === 0) && !clientCache.getStale(cacheKey)) {
+            setLoading(true);
+          }
           return prev;
         });
       }
@@ -86,24 +98,34 @@ export default function CandidatesListPage() {
       if (quickFilter === "STARRED") params.append("starred", "true");
       if (quickFilter === "UNVIEWED") params.append("unviewed", "true");
 
-      const res = await fetch(`/api/applications?${params.toString()}`);
+      const res = await fetch(`/api/applications?${params.toString()}`, {
+        signal: controller.signal,
+      });
       const data = await res.json();
+
+      // Chống Race Condition: Bỏ qua nếu có request mới hơn
+      if (currentRequestId !== latestRequestIdRef.current) return;
+
       if (data.success) {
         const list = data.data || [];
         setCandidates(list);
         clientCache.set(cacheKey, list);
       }
-    } catch (e) {
+    } catch (e: any) {
+      if (e.name === "AbortError") return;
+      if (currentRequestId !== latestRequestIdRef.current) return;
       console.error(e);
     } finally {
-      setLoading(false);
+      if (currentRequestId === latestRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [search, selectedJobId, selectedStage, sortBy, quickFilter, cacheKey]);
 
   useEffect(() => {
     // Kiểm tra cache: hiển thị ngay lập tức nếu có, sau đó revalidate ngầm
     const cached = clientCache.getStale<any[]>(cacheKey);
-    if (cached && cached.length > 0) {
+    if (cached) {
       setCandidates(cached);
       setLoading(false);
       fetchCandidates(true);
