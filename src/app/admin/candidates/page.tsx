@@ -207,14 +207,14 @@ export default function CandidatesListPage() {
               <a
                 href="/api/export"
                 download
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors active:scale-[0.98]"
               >
                 <Download className="w-3.5 h-3.5 text-slate-500" />
                 <span>{t("kanban.exportCsv")}</span>
               </a>
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors cursor-pointer active:scale-[0.98]"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>{t("candidates.addBtn")}</span>
@@ -343,7 +343,7 @@ export default function CandidatesListPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
                 <th className="py-3 px-3 w-10 text-center" />
                 <th className="py-3 px-4">{t("candidates.thCandidate")}</th>
                 <th className="py-3 px-4">{t("candidates.thPositionExp")}</th>

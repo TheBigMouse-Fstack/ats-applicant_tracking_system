@@ -338,7 +338,7 @@ export default function TalentPoolPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
                 <th className="py-3 px-3 text-center w-10" />
                 <th className="py-3 px-4">Ứng viên</th>
                 <th className="py-3 px-4">Vị trí &amp; Kinh nghiệm</th>

@@ -245,8 +245,8 @@ export default function AddCandidateModal({
           {/* Cặp trường 1: Vị trí Tuyển dụng & Nguồn Ứng viên */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-brand-600" />
+              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
                 {t("intake.jobLabel")}
               </label>
               <select
@@ -259,7 +259,7 @@ export default function AddCandidateModal({
                     setFieldErrors(next);
                   }
                 }}
-                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
                   fieldErrors.jobId ? "border-red-400 bg-red-50/20" : "border-slate-200"
                 }`}
               >
@@ -276,14 +276,14 @@ export default function AddCandidateModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-brand-600" />
+              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-indigo-600" />
                 {t("intake.sourceLabel")}
               </label>
               <select
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
-                className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               >
                 <option value="LINKEDIN">LinkedIn Sourcing</option>
                 <option value="REFERRAL">Giới thiệu nội bộ (Referral)</option>
@@ -297,9 +297,9 @@ export default function AddCandidateModal({
 
           {/* Tải CV gốc */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
               <span>{t("intake.cvLabel")}</span>
-              {cvFile && <span className="text-[11px] text-emerald-600 font-bold">✓ Selected</span>}
+              {cvFile && <span className="text-[11px] text-emerald-600 font-semibold">✓ Selected</span>}
             </label>
 
             <input
@@ -321,14 +321,14 @@ export default function AddCandidateModal({
                   ? "border-red-400 bg-red-50/20"
                   : cvFile
                   ? "border-emerald-400 bg-emerald-50/20"
-                  : "border-slate-300 bg-slate-50/50 hover:bg-slate-100 hover:border-brand-400"
+                  : "border-slate-300 bg-slate-50/50 hover:bg-slate-100 hover:border-indigo-400"
               }`}
             >
               {cvFile ? (
                 <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-emerald-200 text-xs">
                   <div className="flex items-center gap-2 truncate">
                     <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <span className="font-bold text-slate-900 truncate">{cvFile.name}</span>
+                    <span className="font-semibold text-slate-900 truncate">{cvFile.name}</span>
                     <span className="text-[11px] text-slate-400 shrink-0">
                       ({(cvFile.size / (1024 * 1024)).toFixed(2)} MB)
                     </span>
@@ -346,8 +346,8 @@ export default function AddCandidateModal({
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-1.5 py-1">
-                  <UploadCloud className="w-6 h-6 text-brand-600" />
-                  <p className="text-xs font-bold text-slate-800">
+                  <UploadCloud className="w-6 h-6 text-indigo-600" />
+                  <p className="text-xs font-semibold text-slate-800">
                     {t("intake.uploadPrompt")}
                   </p>
                   <p className="text-[11px] text-slate-400">
@@ -364,7 +364,7 @@ export default function AddCandidateModal({
           {/* Thông tin ứng viên: Họ tên, Email, SĐT */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
                 <User className="w-3.5 h-3.5 text-slate-400" />
                 {t("intake.nameLabel")}
               </label>
@@ -374,7 +374,7 @@ export default function AddCandidateModal({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Nguyễn Văn A"
-                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
                   fieldErrors.fullName ? "border-red-400 bg-red-50/20" : "border-slate-200"
                 }`}
               />
@@ -384,7 +384,7 @@ export default function AddCandidateModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
                 {t("intake.emailLabel")}
               </label>
@@ -394,7 +394,7 @@ export default function AddCandidateModal({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="a.nguyen@email.com"
-                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
                   fieldErrors.email ? "border-red-400 bg-red-50/20" : "border-slate-200"
                 }`}
               />
@@ -404,7 +404,7 @@ export default function AddCandidateModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
                 <Phone className="w-3.5 h-3.5 text-slate-400" />
                 {t("intake.phoneLabel")}
               </label>
@@ -414,7 +414,7 @@ export default function AddCandidateModal({
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="0901234567"
-                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
                   fieldErrors.phone ? "border-red-400 bg-red-50/20" : "border-slate-200"
                 }`}
               />
@@ -427,8 +427,8 @@ export default function AddCandidateModal({
           {/* Đính kèm Bằng cấp / Chứng chỉ dạng Ảnh hoặc PDF */}
           <div className="space-y-2 pt-1 border-t border-slate-100">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Award className="w-3.5 h-3.5 text-purple-600" />
+              <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-indigo-600" />
                 <span>{t("intake.certLabel")}</span>
               </label>
               <span className="text-[11px] text-slate-400">{t("intake.certOptional")}</span>
@@ -507,14 +507,14 @@ export default function AddCandidateModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+              className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer active:scale-[0.98] transition-all"
             >
               {t("intake.cancelBtn")}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 rounded-xl shadow-md shadow-brand-500/20 flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 rounded-xl shadow-sm flex items-center gap-2 cursor-pointer active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
             >
               {loading ? (
                 <>

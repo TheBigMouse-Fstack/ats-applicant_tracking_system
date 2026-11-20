@@ -114,10 +114,10 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         aria-haspopup="true"
-        className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full border border-slate-200/90 hover:border-brand-300 hover:bg-slate-50 transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+        className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20 active:scale-[0.98]"
         title={`${user.fullName} (${roleConfig.label})`}
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs group-hover:scale-105 transition-transform">
+        <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs group-hover:bg-indigo-700 transition-colors">
           {initials}
         </div>
         <ChevronDown
@@ -129,11 +129,11 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
 
       {/* Menu Thả Xuống (Dropdown Popover) */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200/90 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl border border-slate-200 py-2.5 z-50 animate-in fade-in zoom-in-95 duration-150">
           {/* Header: Thông tin Người Dùng & Vai Trò */}
           <div className="px-4 py-3 border-b border-slate-100">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
                 {initials}
               </div>
               <div className="min-w-0 flex-1">

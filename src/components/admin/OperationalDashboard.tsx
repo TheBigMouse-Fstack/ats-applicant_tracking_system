@@ -320,7 +320,7 @@ export default function OperationalDashboard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              Tổng Quan Tuyển Dụng
+              {t("dashboard.title", "Tổng Quan Tuyển Dụng")}
             </h1>
             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
               {roleMeta.badge}
@@ -484,7 +484,7 @@ export default function OperationalDashboard() {
                     {data.funnel[stage.key]}
                   </p>
                   <span className="text-[10px] text-slate-500 font-medium">
-                    {stage.desc}
+                    {t(`stageDesc.${stage.key}`, stage.desc)}
                   </span>
                 </div>
               </div>

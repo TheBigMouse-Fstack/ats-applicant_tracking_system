@@ -672,7 +672,7 @@ export default function JobApplicationForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 text-white font-bold text-xs shadow-md shadow-brand-500/20 hover:shadow-lg transition-all flex items-center justify-center gap-2"
+        className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] disabled:bg-indigo-400 text-white font-semibold text-xs shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
       >
         {loading ? (
           <>

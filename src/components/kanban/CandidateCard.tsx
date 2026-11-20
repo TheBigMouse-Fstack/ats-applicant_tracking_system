@@ -1,8 +1,9 @@
 "use client";
 
 import { Draggable } from "@hello-pangea/dnd";
-import { Briefcase, Star, AlertTriangle, Clock } from "lucide-react";
+import { Briefcase, Star, AlertTriangle, Clock, Sparkles, Mail, Phone } from "lucide-react";
 import { getAiMatchTier } from "@/lib/match-score";
+import { useLanguage } from "@/lib/i18n";
 
 interface CandidateCardProps {
   application: any;
@@ -50,6 +51,7 @@ export default function CandidateCard({
   isDragDisabled = false,
   searchQuery = "",
 }: CandidateCardProps) {
+  const { t } = useLanguage();
   const {
     candidate,
     job,
@@ -111,9 +113,9 @@ export default function CandidateCard({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={() => onOpenDrawer(application.id)}
-          className={`group rounded-xl border p-3.5 mb-2.5 bg-white transition-all cursor-pointer ${
+          className={`group rounded-xl border p-3.5 mb-2.5 bg-white transition-all cursor-pointer active:scale-[0.99] select-none ${
             snapshot.isDragging
-              ? "shadow-xl border-brand-500 ring-2 ring-brand-500/15"
+              ? "shadow-lg border-indigo-500 ring-2 ring-indigo-500/15"
               : isSlaBreached
               ? "border-rose-200 hover:border-rose-300 shadow-2xs"
               : "border-slate-200 hover:border-slate-300 hover:shadow-xs"
@@ -125,11 +127,11 @@ export default function CandidateCard({
               {isUnviewedNew && (
                 <span
                   className="w-2 h-2 rounded-full bg-blue-600 shrink-0"
-                  title="Hồ sơ mới chưa xem"
+                  title={t("card.unviewedTooltip", "Hồ sơ mới chưa xem")}
                 />
               )}
               <h4
-                className={`text-sm truncate group-hover:text-brand-600 transition-colors ${
+                className={`text-sm truncate group-hover:text-indigo-600 transition-colors ${
                   isUnviewedNew
                     ? "font-bold text-slate-900"
                     : "font-semibold text-slate-800"
@@ -137,7 +139,7 @@ export default function CandidateCard({
               >
                 {candidate?.fullName
                   ? highlightMatch(candidate.fullName, trimmedQuery)
-                  : "Ứng viên chưa cập nhật"}
+                  : "—"}
               </h4>
             </div>
 
@@ -163,25 +165,28 @@ export default function CandidateCard({
           {/* Hàng 2: Vị trí ứng tuyển (1 dòng gọn) */}
           <p className="text-xs text-slate-500 truncate mt-1 flex items-center gap-1.5">
             <Briefcase className="w-3 h-3 text-slate-400 shrink-0" />
-            <span className="truncate">{job?.title || "Vị trí không xác định"}</span>
+            <span className="truncate">{job?.title || "—"}</span>
           </p>
 
-          {/* Hiển thị lý do khớp tìm kiếm nếu do Kỹ năng / Email / SĐT */}
+          {/* Hiển thị lý do khớp tìm kiếm nếu do Kỹ năng / Email / SĐT (Clean Lucide Icons, No Emojis) */}
           {matchedSkill && (
-            <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 bg-brand-50 border border-brand-200/80 px-2 py-0.5 rounded-md">
-              <span>🎯 Khớp kỹ năng:</span>
+            <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
+              <Sparkles className="w-3 h-3 text-indigo-500 shrink-0" />
+              <span>{t("card.matchedSkill", "Khớp kỹ năng:")}</span>
               <span className="font-bold underline">{matchedSkill}</span>
             </div>
           )}
           {matchedEmail && (
-            <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
-              <span>✉️ Khớp email:</span>
-              <span className="font-medium text-slate-900">{candidate.email}</span>
+            <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+              <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+              <span>{t("card.matchedEmail", "Khớp email:")}</span>
+              <span className="font-medium text-slate-900 truncate max-w-[140px]">{candidate.email}</span>
             </div>
           )}
           {matchedPhone && (
-            <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
-              <span>📞 Khớp SĐT:</span>
+            <div className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+              <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+              <span>{t("card.matchedPhone", "Khớp SĐT:")}</span>
               <span className="font-medium text-slate-900">{candidate.phone}</span>
             </div>
           )}
@@ -201,8 +206,8 @@ export default function CandidateCard({
               <AlertTriangle className="w-3 h-3 shrink-0 text-amber-600" />
               <span className="truncate">
                 {application.duplicateWarningAppId
-                  ? `Nghi trùng hồ sơ #${application.duplicateWarningAppId}`
-                  : "Thông tin CV không khớp"}
+                  ? `${t("card.suspectedDuplicate", "Nghi trùng hồ sơ")} #${application.duplicateWarningAppId}`
+                  : t("card.mismatchWarning", "Thông tin CV không khớp")}
               </span>
             </div>
           )}
@@ -213,7 +218,7 @@ export default function CandidateCard({
               {matchTier.score !== null && (
                 <span
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold border ${matchTier.badgeClass}`}
-                  title={`Mức độ phù hợp: ${matchTier.score}% (${matchTier.label})`}
+                  title={`${matchTier.score}% (${matchTier.label})`}
                 >
                   <span className={`w-1.5 h-1.5 rounded-full ${matchTier.dotClass}`} />
                   {matchTier.score}%
@@ -224,8 +229,8 @@ export default function CandidateCard({
                 <span className="inline-flex items-center gap-1 text-slate-500 font-medium">
                   <Clock className="w-3 h-3 text-slate-400" />
                   {candidate.experienceYears > 0
-                    ? `${candidate.experienceYears} năm`
-                    : "< 1 năm"}
+                    ? `${candidate.experienceYears} ${t("candidates.yearsExp")}`
+                    : `< 1 ${t("candidates.yearsExp")}`}
                 </span>
               )}
             </div>

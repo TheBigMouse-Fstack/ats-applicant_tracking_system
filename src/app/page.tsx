@@ -95,9 +95,9 @@ export default function HomePage() {
       {/* 2. Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50 to-slate-100/60 pt-20 pb-24 border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 relative z-10">
-          <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] max-w-5xl mx-auto">
+          <h1 className="text-4xl sm:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] max-w-5xl mx-auto">
             {t("home.hero.title1", "Tiên Phong Kiến Tạo Phần Mềm &")}{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600">
+            <span className="text-indigo-600">
               {t("home.hero.title2", "Giải Pháp Công Nghệ Cao")}
             </span>
           </h1>
@@ -109,7 +109,7 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link
               href="/jobs"
-              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-xl shadow-brand-600/25 hover:shadow-brand-600/35 hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-semibold text-sm shadow-sm transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
             >
               <span>{t("home.hero.ctaJobs", "Gia Nhập Đội Ngũ Kỹ Sư RecoverX")}</span>
               <ArrowRight className="w-4 h-4" />

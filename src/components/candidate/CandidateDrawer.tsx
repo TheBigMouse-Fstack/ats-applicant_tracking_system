@@ -751,8 +751,8 @@ export default function CandidateDrawer({
                       <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start gap-3">
                         <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                         <div className="space-y-1">
-                          <p className="font-bold text-rose-900 uppercase tracking-wider text-[11px]">
-                            Lý Do Từ Chối Hồ Sơ
+                          <p className="font-semibold text-rose-900 text-xs">
+                            {t("reject.title", "Lý Do Từ Chối Hồ Sơ")}
                           </p>
                           <p className="font-medium leading-relaxed">{data.rejectionReason}</p>
                         </div>
@@ -1011,7 +1011,7 @@ export default function CandidateDrawer({
 
                           {/* Kỹ năng */}
                           <div className="space-y-2">
-                            <h4 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                            <h4 className="text-xs font-semibold text-slate-700">
                               Kỹ năng ({parsedSkills.length})
                             </h4>
                             <div className="flex flex-wrap gap-1.5">
@@ -1051,9 +1051,9 @@ export default function CandidateDrawer({
 
                           {/* Học vấn & Bằng cấp */}
                           <div className="space-y-2">
-                            <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
-                              <GraduationCap className="w-4 h-4 text-brand-600" />
-                              Học Vấn & Bằng Cấp:
+                            <h4 className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                              <GraduationCap className="w-4 h-4 text-indigo-600" />
+                              Học vấn & bằng cấp
                             </h4>
                             {parsedEducation.length === 0 ? (
                               <div className="p-3 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
@@ -1085,9 +1085,9 @@ export default function CandidateDrawer({
 
                           {/* Kinh nghiệm làm việc chi tiết */}
                           <div className="space-y-2">
-                            <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
-                              <Briefcase className="w-4 h-4 text-brand-600" />
-                              Lịch Sử Kinh Nghiệm Làm Việc Chi Tiết:
+                            <h4 className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                              <Briefcase className="w-4 h-4 text-indigo-600" />
+                              Lịch sử kinh nghiệm chi tiết
                             </h4>
                             {parsedExperience.length === 0 ? (
                               <div className="p-3 rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
@@ -1127,9 +1127,9 @@ export default function CandidateDrawer({
                           {/* Bằng cấp & Chứng chỉ đính kèm (Ảnh / PDF) */}
                           <div className="space-y-2.5 pt-2 border-t border-slate-100">
                             <div className="flex items-center justify-between">
-                              <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
-                                <Award className="w-4 h-4 text-purple-600" />
-                                Bằng Cấp & Chứng Chỉ Đính Kèm ({certificates.length}):
+                              <h4 className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                                <Award className="w-4 h-4 text-indigo-600" />
+                                Bằng cấp & chứng chỉ đính kèm ({certificates.length})
                               </h4>
                               <span className="text-[11px] text-slate-400">Xem trực tiếp trên web</span>
                             </div>
@@ -1227,7 +1227,7 @@ export default function CandidateDrawer({
                     {/* KHỐI ĐÁNH GIÁ MỨC ĐỘ PHÙ HỢP AI */}
                     <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                        <h3 className="text-xs font-semibold text-slate-800">
                           Mức độ phù hợp với vị trí
                         </h3>
 
@@ -1376,7 +1376,7 @@ export default function CandidateDrawer({
                     {/* Kỹ năng bắt buộc trong JD (highlight ứng viên đã đáp ứng vs chưa có) */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        <span className="text-xs font-semibold text-slate-800">
                           Kỹ năng bắt buộc ({jobRequiredSkills.length}):
                         </span>
                         <span className="text-[11px] font-semibold text-slate-500">
@@ -1407,8 +1407,8 @@ export default function CandidateDrawer({
 
                     {/* Mô tả công việc đầy đủ (không bị bóp hẹp) */}
                     <div className="space-y-2">
-                      <span className="text-xs font-bold text-slate-700 block uppercase tracking-wider">
-                        Mô tả công việc &amp; Quyền lợi chi tiết:
+                      <span className="text-xs font-semibold text-slate-800 block">
+                        Mô tả công việc &amp; quyền lợi chi tiết:
                       </span>
                       <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed whitespace-pre-line font-medium">
                         {data?.job?.requirementsJd}
@@ -1878,9 +1878,9 @@ export default function CandidateDrawer({
                     {/* 1. Lịch sử ứng tuyển các vị trí khác tại công ty */}
                     <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                          <Building2 className="w-4 h-4 text-purple-600" />
-                          Lịch sử hồ sơ tại công ty:
+                        <h4 className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
+                          <Building2 className="w-4 h-4 text-indigo-600" />
+                          Lịch sử hồ sơ tại công ty
                         </h4>
                         <span className="text-[11px] font-semibold text-slate-500">
                           Mã ứng viên: #{data?.candidate?.id}
@@ -1906,7 +1906,7 @@ export default function CandidateDrawer({
                                     {otherApp.job?.department} &bull; Nộp ngày: {new Date(otherApp.createdAt).toLocaleDateString("vi-VN")}
                                   </span>
                                 </div>
-                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
                                   otherApp.currentStage === "HIRED"
                                     ? "bg-emerald-100 text-emerald-800"
                                     : otherApp.currentStage === "REJECTED"
@@ -1929,9 +1929,9 @@ export default function CandidateDrawer({
 
                     {/* 2. Timeline Audit Logs */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <h4 className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
                         <History className="w-4 h-4 text-slate-500" />
-                        Nhật ký luân chuyển & Thao tác kiểm toán ({data?.auditLogs?.length || 0}):
+                        Nhật ký luân chuyển &amp; kiểm toán ({data?.auditLogs?.length || 0}):
                       </h4>
 
                       <div className="space-y-2">

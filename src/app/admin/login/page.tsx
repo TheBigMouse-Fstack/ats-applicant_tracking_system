@@ -57,28 +57,28 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-brand-50/20 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Brand & Heading */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="inline-flex items-center gap-2.5 mb-4">
-          <div className="w-12 h-12 rounded-2xl bg-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/25">
-            <Briefcase className="w-6 h-6" />
+          <div className="w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm">
+            <Briefcase className="w-5 h-5" />
           </div>
           <span className="text-2xl font-bold text-slate-900 tracking-tight">
             ATS
           </span>
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+        <h2 className="text-xl font-bold text-slate-900 tracking-tight">
           Applicant Tracking System
         </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Hệ thống Quản lý &amp; Theo dõi Hồ sơ Ứng viên Nội bộ
+        <p className="mt-1 text-xs text-slate-500">
+          Cổng Đăng Nhập Hệ Thống Tuyển Dụng Nội Bộ
         </p>
       </div>
 
       {/* Login Card */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 shadow-xl shadow-slate-200/50 sm:rounded-2xl sm:px-10 border border-slate-200/80">
+        <div className="bg-white py-8 px-6 shadow-sm sm:rounded-2xl sm:px-8 border border-slate-200">
           {/* Lỗi chung nếu có */}
           {generalError && (
             <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 flex items-center gap-2.5 text-xs text-red-700">
@@ -174,7 +174,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-semibold text-sm shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
             >
               {loading ? (
                 <>

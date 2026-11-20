@@ -207,7 +207,7 @@ export default function UserManagementPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs font-semibold">
                   <th className="py-3.5 px-4">Thành viên</th>
                   <th className="py-3.5 px-4">Email</th>
                   <th className="py-3.5 px-4">Vai trò</th>

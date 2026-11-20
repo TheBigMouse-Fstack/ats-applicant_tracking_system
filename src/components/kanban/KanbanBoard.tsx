@@ -31,6 +31,7 @@ import {
   UserPlus,
   Star,
   ArrowUpDown,
+  Info,
 } from "lucide-react";
 
 interface JobOption {
@@ -669,43 +670,44 @@ export default function KanbanBoard() {
 
         {/* Gợi ý khi người dùng mới gõ 1 ký tự */}
         {searchQuery.trim().length === 1 && (
-          <p className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200/80 px-3 py-2 rounded-xl animate-in fade-in duration-150">
-            💡 <strong>Mẹo tìm kiếm ATS:</strong> Nhập từ 2 ký tự trở lên để tìm chính xác theo <strong>Họ tên</strong>, <strong>Email</strong>, <strong>SĐT</strong> hoặc <strong>Kỹ năng</strong> (ví dụ: <em>React, Node, QA, Python...</em>).
-          </p>
+          <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+            <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+            <span>{t("pipeline.searchTip")}</span>
+          </div>
         )}
 
         {/* Thanh trạng thái bộ lọc đang áp dụng */}
         {(debouncedSearch || showSlaOnly || showHighMatchOnly || showStarredOnly || showUnviewedOnly) && (
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 text-xs bg-slate-50/70 px-3.5 py-2 rounded-xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 text-xs bg-slate-50 px-3.5 py-2 rounded-xl">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-semibold text-slate-600">Đang lọc:</span>
+              <span className="font-semibold text-slate-600">{t("pipeline.filteringBy")}</span>
               {debouncedSearch && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-bold border border-brand-200">
-                  Từ khóa: &quot;{debouncedSearch}&quot;
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-semibold border border-indigo-200">
+                  {t("pipeline.keyword")} &quot;{debouncedSearch}&quot;
                 </span>
               )}
               {showSlaOnly && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-200">
-                  Quá hạn SLA
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[11px] font-semibold border border-rose-200">
+                  {t("pipeline.slaBreach")}
                 </span>
               )}
               {showHighMatchOnly && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
-                  Điểm AI ≥ 75%
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold border border-emerald-200">
+                  {t("pipeline.highMatch")}
                 </span>
               )}
               {showStarredOnly && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200">
-                  Gắn sao
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold border border-amber-200">
+                  {t("pipeline.starredOnly")}
                 </span>
               )}
               {showUnviewedOnly && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold border border-blue-200">
-                  Chưa xem
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold border border-blue-200">
+                  {t("pipeline.unviewedOnly")}
                 </span>
               )}
               <span className="text-[11px] text-slate-400 font-medium ml-1">
-                (Tìm thấy {Object.values(columns).reduce((acc, colItems) => acc + (colItems?.length || 0), 0)} hồ sơ)
+                ({t("pipeline.foundCandidates").replace("{count}", String(Object.values(columns).reduce((acc, colItems) => acc + (colItems?.length || 0), 0)))})
               </span>
             </div>
 
@@ -719,9 +721,9 @@ export default function KanbanBoard() {
                 setShowStarredOnly(false);
                 setShowUnviewedOnly(false);
               }}
-              className="text-slate-500 hover:text-rose-600 text-[11px] font-bold underline transition-colors cursor-pointer"
+              className="text-slate-500 hover:text-rose-600 text-[11px] font-semibold underline transition-colors cursor-pointer"
             >
-              Đặt lại tất cả lọc
+              {t("pipeline.resetFilters")}
             </button>
           </div>
         )}
@@ -741,7 +743,9 @@ export default function KanbanBoard() {
                       : "bg-slate-50 text-slate-700 border-slate-200"
                   }`}
                 >
-                  Chỉ tiêu: {hm.hiredCount}/{hm.targetHeadcount} đã tuyển
+                  {t("pipeline.targetHeadcount")
+                    .replace("{hired}", String(hm.hiredCount))
+                    .replace("{target}", String(hm.targetHeadcount))}
                 </span>
                 <span
                   className={`px-2.5 py-1 rounded-lg font-semibold border ${
@@ -750,16 +754,18 @@ export default function KanbanBoard() {
                       : "bg-slate-50 text-slate-600 border-slate-200"
                   }`}
                 >
-                  Đang phỏng vấn: {hm.activeInterviewCount}/{hm.effectiveInterviewCap}
+                  {t("pipeline.activeInterviews")
+                    .replace("{active}", String(hm.activeInterviewCount))
+                    .replace("{cap}", String(hm.effectiveInterviewCap))}
                 </span>
               </div>
               {hm.isHeadcountFull ? (
                 <span className="text-[11px] font-medium text-emerald-700">
-                  Đã tuyển đủ chỉ tiêu — tin tuyển dụng đã tự đóng nhận hồ sơ mới
+                  {t("pipeline.headcountFull")}
                 </span>
               ) : hm.isInterviewAtCap ? (
                 <span className="text-[11px] font-medium text-amber-700">
-                  Đã đủ hạn mức phỏng vấn cùng lúc — nên đánh giá xong đợt hiện tại trước khi mời thêm
+                  {t("pipeline.interviewCapReached")}
                 </span>
               ) : null}
             </div>
@@ -873,12 +879,12 @@ export default function KanbanBoard() {
                         <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-4 text-center">
                           <Users className="w-6 h-6 text-slate-300 mb-1" />
                           <p className="text-xs font-semibold text-slate-500">
-                            {debouncedSearch ? "Không có hồ sơ khớp" : "Chưa có hồ sơ"}
+                            {debouncedSearch ? t("pipeline.noMatch") : t("pipeline.emptyColumn")}
                           </p>
                           <p className="text-[10px] text-slate-400 mt-0.5 max-w-[180px]">
                             {debouncedSearch
-                              ? `Không có ứng viên nào khớp từ khóa "${debouncedSearch}" ở cột này`
-                              : "Kéo thả ứng viên vào đây"}
+                              ? t("pipeline.noKeywordMatch")
+                              : t("pipeline.emptyColumnDesc")}
                           </p>
                         </div>
                       ) : (
