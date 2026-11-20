@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Users,
   Search,
@@ -85,9 +85,9 @@ export default function TalentPoolPage() {
     }
   };
 
-  const cacheKey = `talent_pool_${search.trim()}_${selectedJobId}_${selectedPoolStatus}_${sortBy}_${starredOnly}`;
+  const cacheKey = `talent_pool_${selectedJobId}`;
 
-  // Fetch Talent Pool candidates
+  // Fetch Talent Pool candidates: Chỉ fetch theo Job từ server, bộ lọc poolStatus, search, sort, starred chạy in-memory 0ms
   const fetchTalentPool = useCallback(async (isSilent = false) => {
     try {
       if (!isSilent) {
@@ -97,11 +97,7 @@ export default function TalentPoolPage() {
         });
       }
       const params = new URLSearchParams();
-      if (search.trim()) params.append("search", search.trim());
       if (selectedJobId !== "ALL") params.append("jobId", selectedJobId);
-      if (selectedPoolStatus !== "ALL") params.append("poolStatus", selectedPoolStatus);
-      if (sortBy) params.append("sortBy", sortBy);
-      if (starredOnly) params.append("starred", "true");
 
       const res = await fetch(`/api/talent-pool?${params.toString()}`);
       const resData = await res.json();
@@ -115,7 +111,54 @@ export default function TalentPoolPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, selectedJobId, selectedPoolStatus, sortBy, starredOnly, cacheKey]);
+  }, [selectedJobId, cacheKey]);
+
+  // Bộ lọc tức thời 0ms trong bộ nhớ (Zero Network Lag, Zero Skeleton Flickering)
+  const filteredData = useMemo(() => {
+    let list = data || [];
+
+    if (selectedPoolStatus !== "ALL") {
+      list = list.filter((item) => item.poolStatus === selectedPoolStatus);
+    }
+
+    if (starredOnly) {
+      list = list.filter((item) => Boolean(item.isStarred));
+    }
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter((item) => {
+        const name = (item.candidate?.fullName || "").toLowerCase();
+        const email = (item.candidate?.email || "").toLowerCase();
+        const phone = (item.candidate?.phone || "").toLowerCase();
+        const title = (item.job?.title || "").toLowerCase();
+        const skillsStr = Array.isArray(item.candidate?.skills)
+          ? item.candidate.skills.join(" ").toLowerCase()
+          : typeof item.candidate?.skills === "string"
+          ? item.candidate.skills.toLowerCase()
+          : "";
+        return (
+          name.includes(q) ||
+          email.includes(q) ||
+          phone.includes(q) ||
+          title.includes(q) ||
+          skillsStr.includes(q)
+        );
+      });
+    }
+
+    if (sortBy === "MATCH_DESC") {
+      list = [...list].sort((a, b) => (b.aiMatchScore ?? 0) - (a.aiMatchScore ?? 0));
+    } else if (sortBy === "NEWEST") {
+      list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortBy === "OLDEST") {
+      list = [...list].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else if (sortBy === "STARRED_FIRST") {
+      list = [...list].sort((a, b) => (a.isStarred === b.isStarred ? 0 : a.isStarred ? -1 : 1));
+    }
+
+    return list;
+  }, [data, selectedPoolStatus, starredOnly, search, sortBy]);
 
   useEffect(() => {
     fetchJobs();
@@ -228,7 +271,7 @@ export default function TalentPoolPage() {
             {t("talentPool.title")}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {data.length} {t("candidates.countSubtitle")}
+            {filteredData.length} {t("candidates.countSubtitle")}
           </p>
         </div>
 
@@ -281,7 +324,7 @@ export default function TalentPoolPage() {
             onChange={(e) => setSelectedPoolStatus(e.target.value)}
             className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white lg:w-56"
           >
-            <option value="ALL">Tất cả nhóm nhân tài ({data.length})</option>
+            <option value="ALL">Tất cả nhóm nhân tài ({filteredData.length})</option>
             <option value="SILVER_MEDALIST">Tiềm năng / Dự bị (Đánh giá tốt)</option>
             <option value="IN_PIPELINE_WATCH">Đang chờ ở đợt tuyển khác</option>
             <option value="ARCHIVED_RESERVE">Lưu trữ dự phòng (Hạn 180 ngày)</option>
@@ -356,14 +399,14 @@ export default function TalentPoolPage() {
                     Đang tải dữ liệu kho nhân tài...
                   </td>
                 </tr>
-              ) : data.length === 0 ? (
+              ) : filteredData.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
                     Không tìm thấy ứng viên nào phù hợp với bộ lọc hiện tại.
                   </td>
                 </tr>
               ) : (
-                data.map((app) => {
+                filteredData.map((app) => {
                   let skills: string[] = [];
                   try {
                     skills = JSON.parse(app.candidate?.parsedSkills || "[]");

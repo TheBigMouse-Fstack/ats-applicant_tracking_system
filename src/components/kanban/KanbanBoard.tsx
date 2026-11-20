@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   DragDropContext,
   Droppable,
@@ -200,7 +200,7 @@ export default function KanbanBoard() {
     });
   }, [selectedJobId, debouncedSearch, sortBy, showStarredOnly, showUnviewedOnly, showSlaOnly, showHighMatchOnly]);
 
-  const cacheKey = `pipeline_${selectedJobId}_${debouncedSearch}_${sortBy}_${showStarredOnly}_${showUnviewedOnly}_${showSlaOnly}_${showHighMatchOnly}`;
+  const cacheKey = `pipeline_${selectedJobId}`;
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const latestRequestIdRef = useRef<number>(0);
@@ -209,9 +209,8 @@ export default function KanbanBoard() {
     setIsMounted(true);
   }, []);
 
-  // Fetch Pipeline Data (Hỗ trợ Silent Background Refresh & Chống Race Condition)
+  // Fetch Pipeline Data (Chỉ fetch lại từ server khi đổi Job hoặc Realtime event; lọc nhanh chạy 100% in-memory)
   const fetchPipeline = useCallback(async (isSilent = false) => {
-    // 1. Hủy bỏ ngay lập tức request đang chạy trước đó nếu người dùng đổi bộ lọc nhanh
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -223,7 +222,6 @@ export default function KanbanBoard() {
       if (!isSilent) {
         setColumns((prev) => {
           const hasExistingCards = Object.values(prev).some((arr) => arr && arr.length > 0);
-          // Chỉ hiện Skeleton nếu trên màn hình chưa có bất kỳ thẻ nào VÀ chưa có cache
           if (!hasExistingCards && !clientCache.getStale(cacheKey)) {
             setLoading(true);
           }
@@ -234,31 +232,12 @@ export default function KanbanBoard() {
       if (selectedJobId && selectedJobId !== "ALL") {
         params.append("jobId", selectedJobId);
       }
-      if (debouncedSearch) {
-        params.append("search", debouncedSearch);
-      }
-      if (sortBy !== "NEWEST") {
-        params.append("sortBy", sortBy);
-      }
-      if (showStarredOnly) {
-        params.append("starred", "true");
-      }
-      if (showUnviewedOnly) {
-        params.append("unviewed", "true");
-      }
-      if (showSlaOnly) {
-        params.append("slaOnly", "true");
-      }
-      if (showHighMatchOnly) {
-        params.append("highMatch", "true");
-      }
 
       const res = await fetch(`/api/pipeline?${params.toString()}`, {
         signal: controller.signal,
       });
       const data = await res.json();
 
-      // Kiểm soát Race Condition: Nếu có thao tác lọc mới hơn đã phát đi thì bỏ qua kết quả cũ này
       if (currentRequestId !== latestRequestIdRef.current) {
         return;
       }
@@ -288,7 +267,6 @@ export default function KanbanBoard() {
       }
     } catch (err: any) {
       if (err.name === "AbortError") {
-        // Request cũ bị hủy vì người dùng bấm lọc mới -> an toàn bỏ qua
         return;
       }
       if (currentRequestId !== latestRequestIdRef.current) return;
@@ -299,7 +277,75 @@ export default function KanbanBoard() {
         setLoading(false);
       }
     }
-  }, [selectedJobId, debouncedSearch, sortBy, showStarredOnly, showUnviewedOnly, showSlaOnly, showHighMatchOnly, cacheKey]);
+  }, [selectedJobId, cacheKey]);
+
+  // Bộ lọc tức thời 0ms trong bộ nhớ (Zero Network Lag, Zero Skeleton Flickering, 100% mượt mà)
+  const filteredColumns = useMemo(() => {
+    const result: Record<string, any[]> = {
+      NEW: [],
+      SCREENING: [],
+      INTERVIEW: [],
+      HIRED: [],
+      REJECTED: [],
+    };
+
+    const query = debouncedSearch.trim().toLowerCase();
+
+    Object.keys(columns).forEach((stage) => {
+      let items = columns[stage] || [];
+
+      if (showStarredOnly) {
+        items = items.filter((item) => Boolean(item.isStarred));
+      }
+
+      if (showUnviewedOnly) {
+        items = items.filter((item) => !item.isViewed);
+      }
+
+      if (showSlaOnly) {
+        items = items.filter((item) => Boolean(item.slaBreached));
+      }
+
+      if (showHighMatchOnly) {
+        items = items.filter((item) => (item.matchScore ?? 0) >= 75);
+      }
+
+      if (query && query.length >= 2) {
+        items = items.filter((item) => {
+          const name = (item.candidate?.fullName || "").toLowerCase();
+          const email = (item.candidate?.email || "").toLowerCase();
+          const phone = (item.candidate?.phone || "").toLowerCase();
+          const jobTitle = (item.job?.title || "").toLowerCase();
+          const skillsStr = Array.isArray(item.candidate?.skills)
+            ? item.candidate.skills.join(" ").toLowerCase()
+            : typeof item.candidate?.skills === "string"
+            ? item.candidate.skills.toLowerCase()
+            : "";
+          return (
+            name.includes(query) ||
+            email.includes(query) ||
+            phone.includes(query) ||
+            jobTitle.includes(query) ||
+            skillsStr.includes(query)
+          );
+        });
+      }
+
+      if (sortBy === "NEWEST") {
+        items = [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      } else if (sortBy === "OLDEST") {
+        items = [...items].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      } else if (sortBy === "UNVIEWED_FIRST") {
+        items = [...items].sort((a, b) => (a.isViewed === b.isViewed ? 0 : a.isViewed ? 1 : -1));
+      } else if (sortBy === "STARRED_FIRST") {
+        items = [...items].sort((a, b) => (a.isStarred === b.isStarred ? 0 : a.isStarred ? -1 : 1));
+      }
+
+      result[stage] = items;
+    });
+
+    return result;
+  }, [columns, showStarredOnly, showUnviewedOnly, showSlaOnly, showHighMatchOnly, debouncedSearch, sortBy]);
 
   // Xử lý bật/tắt gắn sao nhanh (Gmail star toggle)
   const handleToggleStar = async (appId: number) => {
@@ -307,7 +353,7 @@ export default function KanbanBoard() {
     setColumns((prev) => {
       const next: Record<string, any[]> = {};
       Object.keys(prev).forEach((stage) => {
-        next[stage] = prev[stage].map((item) =>
+        next[stage] = (prev[stage] || []).map((item) =>
           item.id === appId ? { ...item, isStarred: !item.isStarred } : item
         );
       });
@@ -327,14 +373,13 @@ export default function KanbanBoard() {
 
   useEffect(() => {
     if (isMounted) {
-      // 1. Kiểm tra Cache trước: nếu có dữ liệu lưu tạm, hiển thị ngay lập tức (0ms)!
+      // Kiểm tra Cache: hiển thị ngay lập tức nếu có, sau đó revalidate ngầm
       const cached = clientCache.getStale<any>(cacheKey);
       if (cached) {
         if (cached.jobs) setJobs(cached.jobs);
         if (cached.columns) setColumns(cached.columns);
         if (cached.stats) setStats(cached.stats);
         setLoading(false);
-        // Tải ngầm cập nhật lại trong nền
         fetchPipeline(true);
       } else {
         fetchPipeline(false);
@@ -427,7 +472,16 @@ export default function KanbanBoard() {
     const destColId = destination.droppableId;
     const appId = Number(draggableId);
 
-    const movedCandidate = (columns[sourceColId] || [])[source.index];
+    // Tìm hồ sơ ứng viên đang thao tác từ danh sách master columns
+    let movedCandidate: any = null;
+    for (const stage of Object.keys(columns)) {
+      const found = (columns[stage] || []).find((c: any) => c.id === appId);
+      if (found) {
+        movedCandidate = found;
+        break;
+      }
+    }
+    if (!movedCandidate) return;
 
     // 1. KIỂM TRA SƠ BỘ QUYỀN VAI TRÒ & TRÌNH TỰ STATE MACHINE TRƯỚC KHI MỞ MODAL HAY OPTIMISTIC UPDATE
     if (sourceColId !== destColId && currentUser?.role) {
@@ -446,7 +500,7 @@ export default function KanbanBoard() {
     }
 
     // 2. BẮT BUỘC NHẬP LÝ DO TỪ CHỐI KHI KÉO SANG CỘT REJECTED (BRL-11)
-    if (sourceColId !== destColId && destColId === "REJECTED" && movedCandidate) {
+    if (sourceColId !== destColId && destColId === "REJECTED") {
       setAlertError(null);
       setPendingRejectMove({
         applicationId: appId,
@@ -467,7 +521,9 @@ export default function KanbanBoard() {
         ? sourceItems
         : Array.from(columns[destColId] || []);
 
-    const [movedItem] = sourceItems.splice(source.index, 1);
+    const fromIndex = sourceItems.findIndex((c) => c.id === appId);
+    if (fromIndex === -1) return;
+    const [movedItem] = sourceItems.splice(fromIndex, 1);
     if (!movedItem) return;
 
     // Cập nhật tạm thời stage của item
@@ -707,7 +763,7 @@ export default function KanbanBoard() {
                 </span>
               )}
               <span className="text-[11px] text-slate-400 font-medium ml-1">
-                ({t("pipeline.foundCandidates").replace("{count}", String(Object.values(columns).reduce((acc, colItems) => acc + (colItems?.length || 0), 0)))})
+                ({t("pipeline.foundCandidates").replace("{count}", String(Object.values(filteredColumns).reduce((acc, colItems) => acc + (colItems?.length || 0), 0)))})
               </span>
             </div>
 
@@ -806,7 +862,7 @@ export default function KanbanBoard() {
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start pb-6">
           {COLUMNS_CONFIG.map((col) => {
-            const allColumnItems = columns[col.id] || [];
+            const allColumnItems = filteredColumns[col.id] || [];
             const count = allColumnItems.length;
             const currentLimit = stageLimits[col.id] || DEFAULT_PAGE_SIZE;
             const displayedItems = allColumnItems.slice(0, currentLimit);

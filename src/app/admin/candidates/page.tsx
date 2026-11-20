@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   Search,
   Download,
@@ -68,12 +68,12 @@ export default function CandidatesListPage() {
       .catch(() => {});
   }, []);
 
-  const cacheKey = `candidates_${search.trim()}_${selectedJobId}_${selectedStage}_${sortBy}_${quickFilter}`;
+  const cacheKey = `candidates_${selectedJobId}`;
   const abortControllerRef = useRef<AbortController | null>(null);
   const latestRequestIdRef = useRef<number>(0);
 
+  // Fetch Candidates: Chỉ fetch theo Job từ server; toàn bộ bộ lọc stage, quickFilter, search, sort chạy 100% in-memory tức thời 0ms
   const fetchCandidates = useCallback(async (isSilent = false) => {
-    // Hủy bỏ request đang chạy dở trước đó
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -91,19 +91,13 @@ export default function CandidatesListPage() {
         });
       }
       const params = new URLSearchParams();
-      if (search.trim()) params.append("search", search.trim());
       if (selectedJobId !== "ALL") params.append("jobId", selectedJobId);
-      if (selectedStage !== "ALL") params.append("stage", selectedStage);
-      if (sortBy !== "NEWEST") params.append("sortBy", sortBy);
-      if (quickFilter === "STARRED") params.append("starred", "true");
-      if (quickFilter === "UNVIEWED") params.append("unviewed", "true");
 
       const res = await fetch(`/api/applications?${params.toString()}`, {
         signal: controller.signal,
       });
       const data = await res.json();
 
-      // Chống Race Condition: Bỏ qua nếu có request mới hơn
       if (currentRequestId !== latestRequestIdRef.current) return;
 
       if (data.success) {
@@ -120,7 +114,58 @@ export default function CandidatesListPage() {
         setLoading(false);
       }
     }
-  }, [search, selectedJobId, selectedStage, sortBy, quickFilter, cacheKey]);
+  }, [selectedJobId, cacheKey]);
+
+  // Bộ lọc tức thời 0ms trong bộ nhớ (Zero Network Lag, Zero Skeleton Flickering, 100% mượt mà)
+  const filteredCandidates = useMemo(() => {
+    let list = candidates || [];
+
+    if (selectedStage !== "ALL") {
+      list = list.filter((c) => c.currentStage === selectedStage);
+    }
+
+    if (quickFilter === "STARRED") {
+      list = list.filter((c) => Boolean(c.isStarred));
+    } else if (quickFilter === "UNVIEWED") {
+      list = list.filter((c) => !c.isViewed);
+    }
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter((c) => {
+        const name = (c.candidate?.fullName || "").toLowerCase();
+        const email = (c.candidate?.email || "").toLowerCase();
+        const phone = (c.candidate?.phone || "").toLowerCase();
+        const title = (c.job?.title || "").toLowerCase();
+        const skillsStr = Array.isArray(c.candidate?.skills)
+          ? c.candidate.skills.join(" ").toLowerCase()
+          : typeof c.candidate?.skills === "string"
+          ? c.candidate.skills.toLowerCase()
+          : "";
+        return (
+          name.includes(q) ||
+          email.includes(q) ||
+          phone.includes(q) ||
+          title.includes(q) ||
+          skillsStr.includes(q)
+        );
+      });
+    }
+
+    if (sortBy === "NEWEST") {
+      list = [...list].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortBy === "OLDEST") {
+      list = [...list].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else if (sortBy === "UNVIEWED_FIRST") {
+      list = [...list].sort((a, b) => (a.isViewed === b.isViewed ? 0 : a.isViewed ? 1 : -1));
+    } else if (sortBy === "STARRED_FIRST") {
+      list = [...list].sort((a, b) => (a.isStarred === b.isStarred ? 0 : a.isStarred ? -1 : 1));
+    } else if (sortBy === "NAME_ASC") {
+      list = [...list].sort((a, b) => (a.candidate?.fullName || "").localeCompare(b.candidate?.fullName || ""));
+    }
+
+    return list;
+  }, [candidates, selectedStage, quickFilter, search, sortBy]);
 
   useEffect(() => {
     // Kiểm tra cache: hiển thị ngay lập tức nếu có, sau đó revalidate ngầm
@@ -151,9 +196,9 @@ export default function CandidatesListPage() {
     try {
       const res = await fetch(`/api/applications/${appId}/star`, { method: "POST" });
       const data = await res.json();
-      if (!data.success) fetchCandidates();
+      if (!data.success) fetchCandidates(true);
     } catch {
-      fetchCandidates();
+      fetchCandidates(true);
     }
   };
 
@@ -172,7 +217,7 @@ export default function CandidatesListPage() {
       if (!res.ok || !result.success) {
         return result.error || "Không thể cập nhật trạng thái";
       }
-      await fetchCandidates();
+      await fetchCandidates(true);
       return true;
     } catch {
       return "Lỗi kết nối máy chủ khi cập nhật trạng thái";
@@ -197,7 +242,7 @@ export default function CandidatesListPage() {
                   <span>{t("pipeline.loading")}</span>
                 </span>
               ) : (
-                `${candidates.length} ${t("candidates.countSubtitle")}`
+                `${filteredCandidates.length} ${t("candidates.countSubtitle")}`
               )}
             </p>
           </div>
@@ -390,14 +435,14 @@ export default function CandidatesListPage() {
                     </td>
                   </tr>
                 ))
-              ) : candidates.length === 0 ? (
+              ) : filteredCandidates.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
                     {t("candidates.empty")}
                   </td>
                 </tr>
               ) : (
-                candidates.map((app) => {
+                filteredCandidates.map((app) => {
                   const candidate = app.candidate;
                   let skills: string[] = [];
                   try {
