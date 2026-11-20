@@ -93,6 +93,21 @@ export async function dispatchN8NInterviewWebhook(
     clearTimeout(timeoutId);
 
     if (res.ok) {
+      const resJson = await res.json().catch(() => null);
+      if (resJson && (resJson.error || resJson.success === false)) {
+        const detailErr = typeof resJson.error === "string" ? resJson.error : JSON.stringify(resJson.error);
+        return {
+          triggered: true,
+          success: false,
+          statusCode: res.status,
+          webhookUrl,
+          error: detailErr || "Tiến trình gửi thư trong n8n gặp sự cố",
+          message: detailErr?.includes("access token")
+            ? "Tài khoản Gmail/Google Calendar trong n8n chưa được đăng nhập cấp quyền (thiếu access token)."
+            : "Hệ thống tự động n8n đã tiếp nhận nhưng tiến trình gửi thư bị lỗi.",
+        };
+      }
+
       return {
         triggered: true,
         success: true,
@@ -183,6 +198,19 @@ export async function dispatchN8NTelegramAlert(
     clearTimeout(timeoutId);
 
     if (res.ok) {
+      const resJson = await res.json().catch(() => null);
+      if (resJson && (resJson.error || resJson.success === false)) {
+        const detailErr = typeof resJson.error === "string" ? resJson.error : JSON.stringify(resJson.error);
+        return {
+          triggered: true,
+          success: false,
+          statusCode: res.status,
+          webhookUrl,
+          error: detailErr,
+          message: "Tiến trình gửi thông báo Telegram bị lỗi trong n8n.",
+        };
+      }
+
       return {
         triggered: true,
         success: true,
@@ -270,6 +298,19 @@ export async function dispatchN8NRejectionEmail(
     clearTimeout(timeoutId);
 
     if (res.ok) {
+      const resJson = await res.json().catch(() => null);
+      if (resJson && (resJson.error || resJson.success === false)) {
+        const detailErr = typeof resJson.error === "string" ? resJson.error : JSON.stringify(resJson.error);
+        return {
+          triggered: true,
+          success: false,
+          statusCode: res.status,
+          webhookUrl,
+          error: detailErr,
+          message: "Tiến trình đệm hoãn thư từ chối bị lỗi trong n8n.",
+        };
+      }
+
       return {
         triggered: true,
         success: true,

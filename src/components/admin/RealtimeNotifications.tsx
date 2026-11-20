@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Sparkles, X, ChevronRight, UserPlus, BellRing } from "lucide-react";
 import { clientCache } from "@/lib/client-cache";
+import { getAiMatchTier } from "@/lib/match-score";
 
 interface NewApplicationAlert {
   id: number;
@@ -154,12 +155,15 @@ export default function RealtimeNotifications() {
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            {item.aiScore !== null ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <Sparkles className="w-3 h-3 text-emerald-500" />
-                Khớp {Math.round(item.aiScore)}%
-              </span>
-            ) : (
+            {item.aiScore !== null ? (() => {
+              const matchTier = getAiMatchTier(item.aiScore);
+              return (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${matchTier.badgeClass}`}>
+                  <Sparkles className="w-3 h-3 text-current" />
+                  Khớp {Math.round(item.aiScore)}%
+                </span>
+              );
+            })() : (
               <span className="text-[11px] text-slate-400">Đã tiếp nhận vào cột Mới</span>
             )}
 
