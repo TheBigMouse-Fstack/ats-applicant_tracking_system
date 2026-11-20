@@ -759,9 +759,11 @@ async function runTests() {
     const moveApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/pipeline/move/route.ts"), "utf8");
     const jobsPageSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/jobs/page.tsx"), "utf8");
     const applyFormSrc = fs.readFileSync(path.join(process.cwd(), "src/components/candidate/JobApplicationForm.tsx"), "utf8");
+    const dedupSrc = fs.readFileSync(path.join(process.cwd(), "src/lib/dedup-and-contact.ts"), "utf8");
 
     assert(appsApiSrc.includes("computeCvFileHash") && appsApiSrc.includes("detectContactMismatch") && appsApiSrc.includes("duplicateWarningAppId"), "API nộp đơn đã tích hợp Source of Truth, SHA-256 CV hash và Chống trùng 2 lớp");
     assert(previewApiSrc.includes("extractContactsFromCvText") && applyFormSrc.includes("/api/applications/preview-cv") && applyFormSrc.includes("confirmMismatch"), "Cổng nộp hồ sơ hỗ trợ tải CV trước để tự điền (Auto-fill) và hộp xác nhận 1 bước khi lệch CV");
+    assert(dedupSrc.includes("sectionKeywords") && dedupSrc.includes("isSectionHeader") && dedupSrc.includes("nameCandidates"), "Thuật toán bóc tách CV hỗ trợ đa bố cục, chống chọn nhầm tiêu đề WORK EXPERIENCE và hỗ trợ tên ngắt 2 dòng Canva");
     assert(moveApiSrc.includes("evaluateHeadcountGate") && moveApiSrc.includes("jobAutoClosed"), "API chuyển vòng Kanban đã gắn chốt kiểm soát chỉ tiêu, trần PV cùng lúc và tự đóng tin");
     assert(jobsPageSrc.includes("targetHeadcount") && jobsPageSrc.includes("maxActiveInterviews"), "Trang Quản lý Tin tuyển dụng cho phép HR khai báo rõ Số lượng cần tuyển và Giới hạn PV cùng lúc");
 
