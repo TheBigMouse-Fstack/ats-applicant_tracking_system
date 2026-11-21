@@ -1,0 +1,46 @@
+%% =========================================================================
+%% ATS — MF-03 DETAILED USE CASE DIAGRAM (DIAG-03-MF03)
+%% Subsystem: Phỏng Vấn, Đánh Giá Scorecard & Quyết Định Tuyển Dụng
+%% Syntax: Mermaid Native Use Case (usecase-beta)
+%% Reference: https://mermaid.js.org/syntax/usecase.html
+%% =========================================================================
+
+usecase-beta
+    direction LR
+
+    %% 1. ACTORS SPECIFICATION
+    actor HiringMgr("🎯 Hiring Manager (Chuyên Môn)")
+    actor Recruiter("👔 HR Lead (Phối Hợp Tuyển)")
+    actor AutoService("⚡ n8n Automation Engine (GCal / Gmail)")
+
+    %% 2. SUBSYSTEM BOUNDARY: MF-03
+    systemBoundary "MF-03: PHỎNG VẤN, ĐÁNH GIÁ SCORECARD & CHỐT TUYỂN"
+        UC_Schedule("UC-13: Lên lịch phỏng vấn Online / Offline")
+        UC_SyncCalendar("UC-14: Đồng bộ Google Calendar & Tạo link Meet")
+        UC_Scorecard("UC-15: Chấm điểm Phiếu đánh giá Scorecard 3 tiêu chí")
+        UC_Hire("UC-16: Phê duyệt trúng tuyển (Chuyển sang HIRED)")
+        UC_GateCheck("UC-16a: Thẩm định điều kiện Scorecard hợp lệ (BRL-06)")
+        UC_Reject("UC-12: Từ chối hồ sơ sau phỏng vấn (BRL-11)")
+        UC_BufferReject("UC-20: Đệm gửi thư từ chối sau 12 giờ (BRL-05)")
+        UC_AutoClose("UC-22: Tự động đóng tin tuyển dụng khi đủ chỉ tiêu (BRL-13)")
+    end
+
+    %% 3. HIRING MANAGER ASSOCIATIONS
+    HiringMgr --> UC_Schedule
+    HiringMgr --> UC_Scorecard
+    HiringMgr --> UC_Hire
+    HiringMgr --> UC_Reject
+
+    %% 4. HR LEAD ASSOCIATIONS
+    Recruiter --> UC_Schedule
+    Recruiter --> UC_Reject
+
+    %% 5. AUTOMATION SERVICE ASSOCIATIONS
+    AutoService --> UC_SyncCalendar
+    AutoService --> UC_BufferReject
+
+    %% 6. RELATIONSHIPS (INCLUDE & EXTEND)
+    UC_Schedule ..> : include UC_SyncCalendar
+    UC_Hire ..> : include UC_GateCheck
+    UC_Hire ..> : extend UC_AutoClose
+    UC_Reject ..> : include UC_BufferReject

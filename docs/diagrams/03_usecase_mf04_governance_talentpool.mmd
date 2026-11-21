@@ -1,0 +1,38 @@
+%% =========================================================================
+%% ATS — MF-04 DETAILED USE CASE DIAGRAM (DIAG-03-MF04)
+%% Subsystem: Quản Trị Vận Hành, Báo Cáo Phễu & Kho Nhân Tài (Governance & Talent Pool)
+%% Syntax: Mermaid Native Use Case (usecase-beta)
+%% Reference: https://mermaid.js.org/syntax/usecase.html
+%% =========================================================================
+
+usecase-beta
+    direction LR
+
+    %% 1. ACTORS SPECIFICATION
+    actor Admin("🛡️ Quản Trị Viên (System Administrator)")
+    actor Recruiter("👔 HR Lead (Vận Hành & Khai Thác)")
+
+    %% 2. SUBSYSTEM BOUNDARY: MF-04
+    systemBoundary "MF-04: QUẢN TRỊ VẬN HÀNH, BÁO CÁO & KHO NHÂN TÀI"
+        UC_Dashboard("UC-23: Xem Dashboard trực quan hóa phễu 360°")
+        UC_ManageJobs("UC-24: Quản lý tin tuyển dụng & Chỉ tiêu Headcount")
+        UC_Users("UC-18: Quản lý tài khoản & Phân quyền RBAC")
+        UC_TalentPool("UC-17: Tra cứu & Tái kích hoạt ứng viên Kho Nhân Tài")
+        UC_PurgePool("UC-17a: Dọn dẹp hồ sơ lưu trữ quá 180 ngày (BRL-10)")
+        UC_Export("UC-19: Xuất dữ liệu báo cáo phễu (CSV / Excel)")
+    end
+
+    %% 3. ADMINISTRATOR ASSOCIATIONS
+    Admin --> UC_Dashboard
+    Admin --> UC_ManageJobs
+    Admin --> UC_Users
+    Admin --> UC_TalentPool
+    Admin --> UC_Export
+
+    %% 4. RECRUITER (HR LEAD) ASSOCIATIONS
+    Recruiter --> UC_Dashboard
+    Recruiter --> UC_TalentPool
+    Recruiter --> UC_Export
+
+    %% 5. RELATIONSHIPS (INCLUDE & EXTEND)
+    UC_TalentPool ..> : extend UC_PurgePool

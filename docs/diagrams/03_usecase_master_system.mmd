@@ -1,0 +1,72 @@
+%% =========================================================================
+%% ATS — MASTER SYSTEM-LEVEL USE CASE DIAGRAM (DIAG-03-MASTER)
+%% Syntax: Mermaid Native Use Case (usecase-beta)
+%% Reference: https://mermaid.js.org/syntax/usecase.html
+%% =========================================================================
+
+usecase-beta
+    direction LR
+
+    %% 1. ACTORS DECLARATION
+    actor Candidate("👤 Ứng Viên (Candidate)")
+    actor Recruiter("👔 HR Lead (Tuyển Dụng)")
+    actor HiringMgr("🎯 Hiring Manager (Chuyên Môn)")
+    actor Admin("🛡️ Quản Trị Viên (Admin)")
+    actor AIEngine("🤖 Google Gemini AI")
+    actor Automation("⚡ n8n Automation Engine")
+
+    %% 2. SYSTEM BOUNDARY & MAJOR FEATURES (MF)
+    systemBoundary "HỆ THỐNG QUẢN TRỊ TUYỂN DỤNG (ATS SYSTEM BOUNDARY)"
+        %% MF-01: Cổng Tuyển Dụng Công Khai & Tiếp Nhận
+        UC_Browse("Xem danh sách & chi tiết việc làm")
+        UC_Apply("Nộp hồ sơ ứng tuyển trực tuyến")
+        UC_Track("Tra cứu tiến độ hồ sơ thời gian thực")
+
+        %% MF-02: Sàng Lọc & Điều Phối Kanban
+        UC_Screen("Sàng lọc hồ sơ đầu phễu (NEW -> SCREENING)")
+        UC_EditCV("Chỉnh sửa 5 trường thông tin CV trích xuất")
+        UC_Kanban("Điều phối hồ sơ trên bảng Kanban 5 cột")
+
+        %% MF-03: Phỏng Vấn, Đánh Giá & Quyết Định
+        UC_Schedule("Lên lịch phỏng vấn Online/Offline")
+        UC_Scorecard("Chấm điểm Phiếu đánh giá Scorecard")
+        UC_Hire("Duyệt trúng tuyển (Chốt chỉ tiêu)")
+        UC_Reject("Từ chối hồ sơ (Ghi nhận lý do)")
+
+        %% MF-04: Quản Trị Vận Hành & Kho Nhân Tài
+        UC_Dashboard("Xem Dashboard phân tích phễu 360°")
+        UC_ManageJobs("Quản lý vị trí & Thiết lập chỉ tiêu")
+        UC_TalentPool("Quản lý & Tái khai thác Kho Nhân Tài")
+        UC_Users("Quản lý người dùng & Phân quyền RBAC")
+    end
+
+    %% 3. ASSOCIATIONS — CANDIDATE
+    Candidate --> UC_Browse
+    Candidate --> UC_Apply
+    Candidate --> UC_Track
+
+    %% 4. ASSOCIATIONS — HR LEAD
+    Recruiter --> UC_Screen
+    Recruiter --> UC_EditCV
+    Recruiter --> UC_Kanban
+    Recruiter --> UC_Reject
+    Recruiter --> UC_TalentPool
+
+    %% 5. ASSOCIATIONS — HIRING MANAGER
+    HiringMgr --> UC_Kanban
+    HiringMgr --> UC_Schedule
+    HiringMgr --> UC_Scorecard
+    HiringMgr --> UC_Hire
+    HiringMgr --> UC_Reject
+
+    %% 6. ASSOCIATIONS — ADMIN
+    Admin --> UC_Dashboard
+    Admin --> UC_ManageJobs
+    Admin --> UC_Users
+    Admin --> UC_TalentPool
+
+    %% 7. SYSTEM ACTORS ASSOCIATIONS
+    AIEngine --> UC_Apply
+    AIEngine --> UC_Screen
+    Automation --> UC_Schedule
+    Automation --> UC_Reject
