@@ -2,11 +2,11 @@
 id: "DOC-MASTER-SRS"
 title: "Software Requirements Specification (SRS) — Enterprise Applicant Tracking System"
 type: "software-requirements-specification"
-version: "2.2.0"
+version: "2.3.0"
 status: "approved"
 owner: "ATS Enterprise Business Analysis & Architecture Team"
 language: "en-US"
-last_updated: "2026-11-19"
+last_updated: "2026-11-21"
 ---
 
 # SOFTWARE REQUIREMENTS SPECIFICATION (SRS)

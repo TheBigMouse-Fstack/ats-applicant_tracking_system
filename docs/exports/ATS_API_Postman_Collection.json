@@ -1,0 +1,331 @@
+{
+  "info": {
+    "_postman_id": "c1f7b8a2-9e2e-4b42-a8c3-8a3b5a7e109f",
+    "name": "ATS - Applicant Tracking System API Collection",
+    "description": "Comprehensive REST API Collection for ATS (Applicant Tracking System) platform. Contains all authentication, job requisition, candidate intake, Kanban pipeline, scorecard evaluation, and dashboard analytics endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.3.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://ats-applicant-tracking-system.vercel.app",
+      "type": "string"
+    },
+    {
+      "key": "localUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Authentication & Session",
+      "item": [
+        {
+          "name": "Login (Staff Session)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hr@recoverx.com\",\n  \"password\": \"HrSecure2026!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authenticates corporate staff (Admin, HR, Hiring Manager) and sets an HTTP-only HMAC-SHA256 session cookie."
+          }
+        },
+        {
+          "name": "Get Current Session Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Returns authenticated staff identity, assigned role, and permissions."
+          }
+        },
+        {
+          "name": "Logout Session",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Revokes current session cookie and clears server session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Job Requisitions (HR & Admin)",
+      "item": [
+        {
+          "name": "List Active Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs?status=ACTIVE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "jobs"],
+              "query": [
+                { "key": "status", "value": "ACTIVE" }
+              ]
+            },
+            "description": "Retrieves published vacancies for public careers portal or internal management."
+          }
+        },
+        {
+          "name": "Create Job Opening (BRL-13 Quotas)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior Frontend Engineer\",\n  \"department\": \"Engineering\",\n  \"location\": \"Ho Chi Minh\",\n  \"employmentType\": \"Full-time\",\n  \"requirementsJd\": \"Experience with Next.js App Router, TypeScript, and Tailwind CSS. Understanding of web performance and accessibility.\",\n  \"minExperienceYears\": 4,\n  \"requiredSkills\": [\"React\", \"TypeScript\", \"Next.js\", \"Tailwind CSS\"],\n  \"targetHeadcount\": 2,\n  \"maxActiveInterviews\": 6\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "jobs"]
+            },
+            "description": "Provisions a new job opening with target headcount quota and concurrent interview ceiling (BRL-13)."
+          }
+        },
+        {
+          "name": "Get Job Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "jobs", "1"]
+            },
+            "description": "Fetches detailed job description, required skills, and headcount status."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Candidate Application Intake",
+      "item": [
+        {
+          "name": "Submit Application with Resume (Public)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "jobId", "value": "1", "type": "text" },
+                { "key": "fullName", "value": "Nguyen Van An", "type": "text" },
+                { "key": "email", "value": "an.nguyen@example.com", "type": "text" },
+                { "key": "phone", "value": "0912345678", "type": "text" },
+                { "key": "source", "value": "CAREER_SITE", "type": "text" },
+                { "key": "cvFile", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications"]
+            },
+            "description": "Public applicant intake endpoint. Performs magic byte file validation (BRL-01), 30-day deduplication (BRL-02), rate limit check (BRL-04), and triggers Layer 1/2 Hybrid AI parsing and scoring."
+          }
+        },
+        {
+          "name": "Track Application Progress (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tracker?email=an.nguyen@example.com&token=trk_a1b2c3d4",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tracker"],
+              "query": [
+                { "key": "email", "value": "an.nguyen@example.com" },
+                { "key": "token", "value": "trk_a1b2c3d4" }
+              ]
+            },
+            "description": "Allows candidates to check their real-time application stage progress without exposing confidential internal notes."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Kanban Pipeline & Review",
+      "item": [
+        {
+          "name": "Get Pipeline Board Cards (BRL-14 Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pipeline?jobId=1&limitPerStage=15",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pipeline"],
+              "query": [
+                { "key": "jobId", "value": "1" },
+                { "key": "limitPerStage", "value": "15" }
+              ]
+            },
+            "description": "Returns candidate cards grouped into 5 Kanban columns with independent per-column pagination (BRL-14)."
+          }
+        },
+        {
+          "name": "Move Kanban Stage (Stage Gate & Guards)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": 10,\n  \"toStage\": \"SCREENING\",\n  \"reason\": \"Candidate matches core React requirements\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pipeline/move",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "pipeline", "move"]
+            },
+            "description": "Transitions candidate stage across Kanban columns. Enforces RBAC limits (HR up to SCREENING, HM for INTERVIEW/HIRED), Scorecard gatekeeper (BRL-06), mandatory rejection reason (BRL-11), and interview quota ceilings (BRL-13)."
+          }
+        },
+        {
+          "name": "Edit 5 Core CV Fields (HR Only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Nguyen Van An\",\n  \"email\": \"an.nguyen@example.com\",\n  \"phone\": \"0912345678\",\n  \"experienceYears\": 5,\n  \"parsedSkills\": [\"React\", \"TypeScript\", \"Next.js\", \"Tailwind CSS\", \"Redux\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/10/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "applications", "10", "profile"]
+            },
+            "description": "Allows HR personnel to correct parsing variances across the 5 core candidate profile fields."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Interviews & Scorecard Evaluations",
+      "item": [
+        {
+          "name": "Schedule Interview Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": 10,\n  \"interviewDate\": \"2026-11-25T14:30:00Z\",\n  \"interviewFormat\": \"ONLINE\",\n  \"interviewLocation\": \"https://meet.google.com/abc-defg-hij\",\n  \"interviewEmailOption\": \"AUTO_N8N\",\n  \"interviewNotes\": \"Prepare live coding exercise in TypeScript\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/interviews/schedule",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "interviews", "schedule"]
+            },
+            "description": "Schedules interview event, triggers n8n Google Calendar & Meet dispatch workflow."
+          }
+        },
+        {
+          "name": "Submit Weighted Scorecard (BRL-08)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationId\": 10,\n  \"round\": \"Round 1 - Technical Architecture\",\n  \"technicalScore\": 5,\n  \"communicationScore\": 4,\n  \"culturalFitScore\": 4,\n  \"recommendation\": \"STRONG_HIRE\",\n  \"levelRecommendation\": \"SENIOR\",\n  \"strengths\": \"Exceptional understanding of Next.js 14 App Router and high-concurrency state management.\",\n  \"weaknesses\": \"Limited exposure to Kubernetes deployment topologies.\",\n  \"hireReason\": \"Outstanding technical interview performance and calibrated ownership mindset.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/scorecards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scorecards"]
+            },
+            "description": "Submits structured interview evaluation with 3 weighted criteria (40% Tech, 30% Comm, 30% Culture Fit) fulfilling BRL-08 and unlocking the BRL-06 hiring gate."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Talent Pool CRM & Governance",
+      "item": [
+        {
+          "name": "Query Talent Pool (3 Tiers)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/talent-pool?tier=SILVER_MEDALIST",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "talent-pool"],
+              "query": [
+                { "key": "tier", "value": "SILVER_MEDALIST" }
+              ]
+            },
+            "description": "Queries archived disqualified applicants categorized by potential tiers with 180-day lifecycle countdown."
+          }
+        },
+        {
+          "name": "Re-pool Candidate into New Vacancy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"candidateId\": 5,\n  \"targetJobId\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/talent-pool",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "talent-pool"]
+            },
+            "description": "Reactivates an archived candidate directly into a new job pipeline without requiring re-application."
+          }
+        },
+        {
+          "name": "Export Analytics Report (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export?format=csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export"],
+              "query": [
+                { "key": "format", "value": "csv" }
+              ]
+            },
+            "description": "Downloads complete recruitment funnel metrics and audit data in CSV format."
+          }
+        }
+      ]
+    }
+  ]
+}
