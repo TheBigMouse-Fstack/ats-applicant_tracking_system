@@ -1,7 +1,7 @@
 %% =========================================================================
-%% ATS — MF-01 DETAILED USE CASE DIAGRAM (DIAG-03-MF01)
-%% Subsystem: Cổng Tuyển Dụng Công Khai & Thu Nhận Hồ Sơ (Public Careers & Intake)
-%% Syntax: Mermaid Native Use Case (usecase-beta)
+%% ATS - MF-01 DETAILED USE CASE DIAGRAM (DIAG-03-MF01)
+%% Subsystem: Public Careers and Intake Portal
+%% Specification: UML 2.5 Standard (Verb-Noun Naming, No Icons, Strict Semantics)
 %% Reference: https://mermaid.js.org/syntax/usecase.html
 %% =========================================================================
 
@@ -9,32 +9,34 @@ usecase-beta
     direction LR
 
     %% 1. ACTORS SPECIFICATION
-    actor Candidate("👤 Ứng Viên (Job Seeker / Guest)")
-    actor AIEngine("🤖 Hybrid AI Engine (pdf-parse / Gemini)")
+    actor Candidate("Candidate")
+    actor AIEngine("Hybrid AI Engine")
 
     %% 2. SUBSYSTEM BOUNDARY: MF-01
-    systemBoundary "MF-01: CỔNG TUYỂN DỤNG CÔNG KHAI & THU NHẬN HỒ SƠ"
-        UC_Browse("UC-01: Tìm kiếm & Xem chi tiết việc làm")
-        UC_Apply("UC-02: Nộp hồ sơ ứng tuyển trực tuyến")
-        UC_Track("UC-03: Tra cứu tiến độ hồ sơ thời gian thực")
-        UC_AutoFill("UC-04: Tự động trích xuất CV & Điền form")
-        UC_RateLimit("UC-05: Kiểm soát giới hạn nộp (BRL-04: 3 việc/90 ngày)")
-        UC_Deduplicate("UC-09: Tự động kiểm tra trùng lặp (BRL-02: 30 ngày)")
-        UC_SemanticMatch("UC-10: Tính điểm đối chiếu JD 3 mức màu")
+    systemBoundary "Subsystem MF-01: Public Careers and Intake Portal"
+        UC_BrowseJobs("Browse Job Openings")
+        UC_SubmitApplication("Submit Online Application")
+        UC_TrackApplication("Track Application Status")
+        UC_AutoFillForm("Auto-Fill Form from Resume")
+        UC_EnforceRateLimit("Enforce Application Rate Limit")
+        UC_DeduplicateApplicant("Deduplicate Applicant Records")
+        UC_ComputeMatchScore("Compute Semantic Match Score")
     end
 
     %% 3. PRIMARY ASSOCIATIONS
-    Candidate --> UC_Browse
-    Candidate --> UC_Apply
-    Candidate --> UC_Track
+    Candidate --> UC_BrowseJobs
+    Candidate --> UC_SubmitApplication
+    Candidate --> UC_TrackApplication
 
-    %% 4. SYSTEM ACTOR ASSOCIATIONS
-    AIEngine --> UC_AutoFill
-    AIEngine --> UC_Deduplicate
-    AIEngine --> UC_SemanticMatch
+    %% 4. SUPPORTING SYSTEM ASSOCIATIONS
+    AIEngine --> UC_AutoFillForm
+    AIEngine --> UC_DeduplicateApplicant
+    AIEngine --> UC_ComputeMatchScore
 
-    %% 5. RELATIONSHIPS (INCLUDE & EXTEND)
-    UC_Apply ..> : include UC_RateLimit
-    UC_Apply ..> : include UC_Deduplicate
-    UC_Apply ..> : include UC_SemanticMatch
-    UC_Apply ..> : extend UC_AutoFill
+    %% 5. MANDATORY INCLUSIONS (<<include>>)
+    UC_SubmitApplication ..> : include UC_EnforceRateLimit
+    UC_SubmitApplication ..> : include UC_DeduplicateApplicant
+    UC_SubmitApplication ..> : include UC_ComputeMatchScore
+
+    %% 6. CONDITIONAL EXTENSIONS (<<extend>>)
+    UC_AutoFillForm ..> : extend UC_SubmitApplication

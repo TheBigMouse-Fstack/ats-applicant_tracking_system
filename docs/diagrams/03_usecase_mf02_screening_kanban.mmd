@@ -1,7 +1,7 @@
 %% =========================================================================
-%% ATS — MF-02 DETAILED USE CASE DIAGRAM (DIAG-03-MF02)
-%% Subsystem: Sàng Lọc & Điều Phối Pipeline Kanban (Screening & Pipeline Operations)
-%% Syntax: Mermaid Native Use Case (usecase-beta)
+%% ATS - MF-02 DETAILED USE CASE DIAGRAM (DIAG-03-MF02)
+%% Subsystem: Screening and Pipeline Operations
+%% Specification: UML 2.5 Standard (Verb-Noun Naming, No Icons, Strict Semantics)
 %% Reference: https://mermaid.js.org/syntax/usecase.html
 %% =========================================================================
 
@@ -9,39 +9,41 @@ usecase-beta
     direction LR
 
     %% 1. ACTORS SPECIFICATION
-    actor Recruiter("👔 HR Lead (Tuyển Dụng)")
-    actor HiringMgr("🎯 Hiring Manager (Chuyên Môn)")
-    actor TelegramBot("📢 Telegram Notification Bot")
+    actor Recruiter("HR Recruiter")
+    actor HiringManager("Hiring Manager")
+    actor TelegramService("Telegram Notification Service")
 
     %% 2. SUBSYSTEM BOUNDARY: MF-02
-    systemBoundary "MF-02: SÀNG LỌC HỒ SƠ & ĐIỀU PHỐI KANBAN"
-        UC_Auth("UC-06: Đăng nhập & Xác thực phiên RBAC")
-        UC_Inspect("UC-07: Lọc 0ms & Soi chiếu Drawer chi tiết")
-        UC_Kanban("UC-08: Điều phối kéo thả Kanban 5 cột")
-        UC_Screen("UC-08a: Sàng lọc đầu phễu (NEW -> SCREENING)")
-        UC_EditCV("UC-11: Chỉnh sửa 5 trường CV trích xuất")
-        UC_Reject("UC-12: Từ chối hồ sơ (Bắt buộc lý do BRL-11)")
-        UC_AlertTelegram("UC-21: Bắn cảnh báo ứng viên mới qua Telegram")
+    systemBoundary "Subsystem MF-02: Screening and Pipeline Operations"
+        UC_AuthenticateUser("Authenticate User Session")
+        UC_FilterProfiles("Filter and Inspect Candidate Profiles")
+        UC_TransitionStage("Transition Stage on Kanban Board")
+        UC_ScreenTopFunnel("Screen Top-of-Funnel Profile")
+        UC_EditExtractedFields("Edit Extracted CV Fields")
+        UC_RejectCandidate("Reject Candidate Application")
+        UC_DispatchAlert("Dispatch Telegram Intake Alert")
     end
 
-    %% 3. RECRUITER (HR LEAD) ASSOCIATIONS
-    Recruiter --> UC_Auth
-    Recruiter --> UC_Inspect
-    Recruiter --> UC_Kanban
-    Recruiter --> UC_Screen
-    Recruiter --> UC_EditCV
-    Recruiter --> UC_Reject
+    %% 3. PRIMARY ASSOCIATIONS - HR RECRUITER
+    Recruiter --> UC_AuthenticateUser
+    Recruiter --> UC_FilterProfiles
+    Recruiter --> UC_TransitionStage
+    Recruiter --> UC_ScreenTopFunnel
+    Recruiter --> UC_EditExtractedFields
+    Recruiter --> UC_RejectCandidate
 
-    %% 4. HIRING MANAGER ASSOCIATIONS (Chỉ xem và thao tác từ SCREENING trở đi)
-    HiringMgr --> UC_Auth
-    HiringMgr --> UC_Inspect
-    HiringMgr --> UC_Kanban
-    HiringMgr --> UC_Reject
+    %% 4. PRIMARY ASSOCIATIONS - HIRING MANAGER
+    HiringManager --> UC_AuthenticateUser
+    HiringManager --> UC_FilterProfiles
+    HiringManager --> UC_TransitionStage
+    HiringManager --> UC_RejectCandidate
 
-    %% 5. SYSTEM ACTOR ASSOCIATIONS
-    TelegramBot --> UC_AlertTelegram
+    %% 5. SUPPORTING SYSTEM ASSOCIATIONS
+    TelegramService --> UC_DispatchAlert
 
-    %% 6. RELATIONSHIPS (INCLUDE & EXTEND)
-    UC_Kanban ..> : extend UC_Reject
-    UC_Screen ..> : extend UC_EditCV
-    UC_Kanban ..> : include UC_Inspect
+    %% 6. MANDATORY INCLUSIONS (<<include>>)
+    UC_TransitionStage ..> : include UC_FilterProfiles
+
+    %% 7. CONDITIONAL EXTENSIONS (<<extend>>)
+    UC_RejectCandidate ..> : extend UC_TransitionStage
+    UC_EditExtractedFields ..> : extend UC_ScreenTopFunnel

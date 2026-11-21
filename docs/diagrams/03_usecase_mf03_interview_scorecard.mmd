@@ -1,7 +1,7 @@
 %% =========================================================================
-%% ATS — MF-03 DETAILED USE CASE DIAGRAM (DIAG-03-MF03)
-%% Subsystem: Phỏng Vấn, Đánh Giá Scorecard & Quyết Định Tuyển Dụng
-%% Syntax: Mermaid Native Use Case (usecase-beta)
+%% ATS - MF-03 DETAILED USE CASE DIAGRAM (DIAG-03-MF03)
+%% Subsystem: Interview, Scorecard and Hiring Decision
+%% Specification: UML 2.5 Standard (Verb-Noun Naming, No Icons, Strict Semantics)
 %% Reference: https://mermaid.js.org/syntax/usecase.html
 %% =========================================================================
 
@@ -9,38 +9,40 @@ usecase-beta
     direction LR
 
     %% 1. ACTORS SPECIFICATION
-    actor HiringMgr("🎯 Hiring Manager (Chuyên Môn)")
-    actor Recruiter("👔 HR Lead (Phối Hợp Tuyển)")
-    actor AutoService("⚡ n8n Automation Engine (GCal / Gmail)")
+    actor HiringManager("Hiring Manager")
+    actor Recruiter("HR Recruiter")
+    actor AutomationService("Automation Service")
 
     %% 2. SUBSYSTEM BOUNDARY: MF-03
-    systemBoundary "MF-03: PHỎNG VẤN, ĐÁNH GIÁ SCORECARD & CHỐT TUYỂN"
-        UC_Schedule("UC-13: Lên lịch phỏng vấn Online / Offline")
-        UC_SyncCalendar("UC-14: Đồng bộ Google Calendar & Tạo link Meet")
-        UC_Scorecard("UC-15: Chấm điểm Phiếu đánh giá Scorecard 3 tiêu chí")
-        UC_Hire("UC-16: Phê duyệt trúng tuyển (Chuyển sang HIRED)")
-        UC_GateCheck("UC-16a: Thẩm định điều kiện Scorecard hợp lệ (BRL-06)")
-        UC_Reject("UC-12: Từ chối hồ sơ sau phỏng vấn (BRL-11)")
-        UC_BufferReject("UC-20: Đệm gửi thư từ chối sau 12 giờ (BRL-05)")
-        UC_AutoClose("UC-22: Tự động đóng tin tuyển dụng khi đủ chỉ tiêu (BRL-13)")
+    systemBoundary "Subsystem MF-03: Interview, Scorecard and Hiring Decision"
+        UC_ScheduleInterview("Schedule Interview Session")
+        UC_SynchronizeCalendar("Synchronize Calendar and Meeting")
+        UC_EvaluateScorecard("Submit Evaluation Scorecard")
+        UC_ApproveHiring("Approve Final Hiring Decision")
+        UC_ValidateScorecardGate("Validate Scorecard Prerequisite")
+        UC_RejectCandidate("Reject Candidate Application")
+        UC_DispatchDelayedNotice("Dispatch Delayed Rejection Notice")
+        UC_AutoCloseJob("Auto-Close Filled Job Opening")
     end
 
-    %% 3. HIRING MANAGER ASSOCIATIONS
-    HiringMgr --> UC_Schedule
-    HiringMgr --> UC_Scorecard
-    HiringMgr --> UC_Hire
-    HiringMgr --> UC_Reject
+    %% 3. PRIMARY ASSOCIATIONS - HIRING MANAGER
+    HiringManager --> UC_ScheduleInterview
+    HiringManager --> UC_EvaluateScorecard
+    HiringManager --> UC_ApproveHiring
+    HiringManager --> UC_RejectCandidate
 
-    %% 4. HR LEAD ASSOCIATIONS
-    Recruiter --> UC_Schedule
-    Recruiter --> UC_Reject
+    %% 4. PRIMARY ASSOCIATIONS - HR RECRUITER
+    Recruiter --> UC_ScheduleInterview
+    Recruiter --> UC_RejectCandidate
 
-    %% 5. AUTOMATION SERVICE ASSOCIATIONS
-    AutoService --> UC_SyncCalendar
-    AutoService --> UC_BufferReject
+    %% 5. SUPPORTING SYSTEM ASSOCIATIONS
+    AutomationService --> UC_SynchronizeCalendar
+    AutomationService --> UC_DispatchDelayedNotice
 
-    %% 6. RELATIONSHIPS (INCLUDE & EXTEND)
-    UC_Schedule ..> : include UC_SyncCalendar
-    UC_Hire ..> : include UC_GateCheck
-    UC_Hire ..> : extend UC_AutoClose
-    UC_Reject ..> : include UC_BufferReject
+    %% 6. MANDATORY INCLUSIONS (<<include>>)
+    UC_ScheduleInterview ..> : include UC_SynchronizeCalendar
+    UC_ApproveHiring ..> : include UC_ValidateScorecardGate
+    UC_RejectCandidate ..> : include UC_DispatchDelayedNotice
+
+    %% 7. CONDITIONAL EXTENSIONS (<<extend>>)
+    UC_AutoCloseJob ..> : extend UC_ApproveHiring
