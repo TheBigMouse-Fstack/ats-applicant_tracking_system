@@ -12,7 +12,10 @@
       "name": "Webhook Tiếp Nhận Trạng Thái Từ Chối",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "rejection-buffer"
     },
     {
@@ -24,7 +27,10 @@
       "name": "Bộ Đệm Chờ 12 Giờ (BRL-05 Buffer)",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1,
-      "position": [480, 200]
+      "position": [
+        480,
+        200
+      ]
     },
     {
       "parameters": {
@@ -37,7 +43,10 @@
       "name": "Gửi Gmail Từ Chối Lịch Sự",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2,
-      "position": [720, 200]
+      "position": [
+        720,
+        200
+      ]
     },
     {
       "parameters": {
@@ -51,7 +60,10 @@
       "name": "Phản Hồi Webhook Tiếp Nhận Thành Công",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [480, 400]
+      "position": [
+        480,
+        400
+      ]
     }
   ],
   "connections": {
@@ -59,12 +71,18 @@
       "main": [
         [
           {
-            "node": "Bộ Đệm Chờ 12 Giờ (BRL-05 Buffer)",
+            "node": "Phản Hồi Webhook Tiếp Nhận Thành Công",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "Phản Hồi Webhook Tiếp Nhận Thành Công": {
+      "main": [
+        [
           {
-            "node": "Phản Hồi Webhook Tiếp Nhận Thành Công",
+            "node": "Bộ Đệm Chờ 12 Giờ (BRL-05 Buffer)",
             "type": "main",
             "index": 0
           }

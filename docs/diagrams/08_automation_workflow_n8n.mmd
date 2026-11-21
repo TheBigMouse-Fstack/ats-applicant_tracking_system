@@ -1,0 +1,91 @@
+%% =========================================================================
+%% ATS — AUTOMATION WORKFLOW & N8N EVENT-DRIVEN TOPOLOGY (DIAG-08)
+%% =========================================================================
+
+flowchart TD
+    classDef client fill:#f8fafc,stroke:#64748b,stroke-width:2px,color:#0f172a;
+    classDef edgeGw fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a;
+    classDef appCore fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#14532d;
+    classDef n8nEngine fill:#fff7ed,stroke:#f97316,stroke-width:2px,color:#7c2d12;
+    classDef service fill:#faf5ff,stroke:#a855f7,stroke-width:2px,color:#581c87;
+    classDef queue fill:#fefce8,stroke:#eab308,stroke-width:2px,color:#713f12;
+
+    subgraph CLIENT_TIER ["1. ATS Application Trigger (HR & Hiring Manager)"]
+        UI_SCHEDULE["Schedule Interview Modal<br>(Candidate Drawer)"]:::client
+        UI_NEW_APP["Public Careers Intake<br>(New CV Submission)"]:::client
+        UI_REJECT["Kanban Drag to Rejected<br>(BRL-05 Buffer Gate)"]:::client
+    end
+
+    subgraph ATS_DISPATCHER ["2. ATS Core Dispatcher (Resilient & Non-blocking)"]
+        N8N_LIB["src/lib/n8n.ts<br>(dispatchN8nWebhook)"]:::appCore
+        TIMEOUT_GUARD["Strict 7s AbortController<br>(Fail-Safe Non-Blocking)"]:::appCore
+        ENV_ROUTER{{"Environment Routing<br>(N8N_*_WEBHOOK_URL)"}}:::edgeGw
+    end
+
+    subgraph INGRESS_TUNNEL ["3. Ingress & Tunnel Layer"]
+        CF_TUNNEL["Cloudflare Tunnel Daemon<br>(cloudflared / trycloudflare)"]:::edgeGw
+        N8N_LOCAL["Local n8n Engine<br>(http://localhost:5678)"]:::n8nEngine
+    end
+
+    subgraph WORKFLOWS ["4. Production n8n Orchestration Workflows"]
+        subgraph WF1 ["Workflow 1: Interview Invitation & Calendar Sync"]
+            WH_INTERVIEW["Webhook: POST /webhook/interview-schedule"]:::n8nEngine
+            VALIDATE_INT["Validate Candidate, Job & Time Data"]:::n8nEngine
+            GCAL_NODE["Google Calendar Node<br>(googleCalendarOAuth2Api)"]:::service
+            GMAIL_NODE["Gmail Node<br>(gmailOAuth2Api)"]:::service
+        end
+
+        subgraph WF2 ["Workflow 2: Telegram HR Alerts"]
+            WH_TELEGRAM["Webhook: POST /webhook/telegram-alert"]:::n8nEngine
+            FORMAT_MSG["Format Markdown Message<br>(Name, Score, Match Tier)"]:::n8nEngine
+            TG_NODE["Telegram Bot Node<br>(@Rec_Hr_rBot / telegramApi)"]:::service
+        end
+
+        subgraph WF3 ["Workflow 3: 12-Hour Polite Rejection Buffer (BRL-05)"]
+            WH_REJECT["Webhook: POST /webhook/rejection-buffer"]:::n8nEngine
+            WAIT_NODE["Wait Node<br>(12 Hours Buffer Timer)"]:::queue
+            CHECK_STATE["Check ATS Database State<br>(Cancel if Candidate Recovered)"]:::n8nEngine
+            SMTP_REJECT["Send Polite Rejection Email<br>(SMTP / Gmail)"]:::service
+        end
+    end
+
+    subgraph EXTERNAL_SERVICES ["5. External Ecosystem & Third-Party APIs"]
+        EXT_GCAL["Google Calendar<br>(Event Created with Meet Link)"]:::service
+        EXT_CANDIDATE["Candidate Mailbox<br>(Interview Invitation with ICS)"]:::service
+        EXT_TG_CHANNEL["HR Telegram Channel<br>(Instant Notification Card)"]:::service
+        EXT_REJECT_CAND["Candidate Mailbox<br>(Respectful Rejection Feedback)"]:::service
+    end
+
+    %% Data flow connections
+    UI_SCHEDULE -->|Trigger| N8N_LIB
+    UI_NEW_APP -->|Trigger| N8N_LIB
+    UI_REJECT -->|Trigger| N8N_LIB
+
+    N8N_LIB --> TIMEOUT_GUARD
+    TIMEOUT_GUARD --> ENV_ROUTER
+
+    ENV_ROUTER -->|HTTPS POST| CF_TUNNEL
+    CF_TUNNEL -->|Forward Port 5678| N8N_LOCAL
+
+    N8N_LOCAL --> WH_INTERVIEW
+    N8N_LOCAL --> WH_TELEGRAM
+    N8N_LOCAL --> WH_REJECT
+
+    %% WF1 Flow
+    WH_INTERVIEW --> VALIDATE_INT
+    VALIDATE_INT --> GCAL_NODE
+    GCAL_NODE -->|Event ID & Meet Link| GMAIL_NODE
+    GCAL_NODE -.-> EXT_GCAL
+    GMAIL_NODE -.-> EXT_CANDIDATE
+
+    %% WF2 Flow
+    WH_TELEGRAM --> FORMAT_MSG
+    FORMAT_MSG --> TG_NODE
+    TG_NODE -.-> EXT_TG_CHANNEL
+
+    %% WF3 Flow
+    WH_REJECT --> WAIT_NODE
+    WAIT_NODE --> CHECK_STATE
+    CHECK_STATE -->|If Still REJECTED| SMTP_REJECT
+    CHECK_STATE -.->|If Recovered to Kanban| CANCEL_DISCARD["Discard Execution<br>(Silent Exit)"]:::queue
+    SMTP_REJECT -.-> EXT_REJECT_CAND

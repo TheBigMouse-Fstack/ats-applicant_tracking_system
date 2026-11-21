@@ -16,6 +16,7 @@ import {
   Plus,
   Trash2,
   Award,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -45,9 +46,31 @@ export default function JobApplicationForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [successResult, setSuccessResult] = useState<any | null>(null);
+  const [sampleLoading, setSampleLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const certInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleLoadSampleCv = async () => {
+    try {
+      setSampleLoading(true);
+      const res = await fetch("/sample-cv.pdf");
+      if (!res.ok) throw new Error("Không thể tải file mẫu");
+      const blob = await res.blob();
+      const sampleFile = new File([blob], "CV_NguyenQuocKhanh_Senior_Dev.pdf", {
+        type: "application/pdf",
+      });
+      await handleFileSelect(sampleFile);
+    } catch (err) {
+      console.error(err);
+      setFullName("Nguyễn Quốc Khánh");
+      setEmail("khanhnqse19@gmail.com");
+      setPhone("0708462865");
+      setAutoFillNotice("Đã nạp sẵn thông tin ứng viên mẫu. Vui lòng tải CV để hoàn tất hồ sơ.");
+    } finally {
+      setSampleLoading(false);
+    }
+  };
 
   const handleAddCertificates = (files: FileList | null) => {
     if (!files) return;
@@ -361,6 +384,42 @@ export default function JobApplicationForm({
         <p className="text-xs text-slate-500 mt-1">
           Tải CV lên trước để hệ thống tự điền thông tin liên hệ, sau đó bạn kiểm tra lại trước khi nộp.
         </p>
+      </div>
+
+      {/* Thử nghiệm nhanh 1-chạm dành cho Nhà tuyển dụng / Tech Senior */}
+      <div className="bg-gradient-to-r from-indigo-50/90 via-sky-50/70 to-purple-50/90 rounded-2xl p-4 border border-indigo-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-900">
+                Thử Nghiệm Nhanh (Dành cho Reviewer)
+              </span>
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                1-Chạm
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Nạp sẵn CV mẫu để test tính năng trích xuất AI &amp; đối chiếu điểm JD Match Score
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          disabled={loading || previewLoading || sampleLoading}
+          onClick={handleLoadSampleCv}
+          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap active:scale-95 disabled:opacity-60"
+        >
+          {sampleLoading || previewLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <FileText className="w-3.5 h-3.5" />
+          )}
+          <span>Nạp CV Mẫu Ngay</span>
+        </button>
       </div>
 
       {/* Banner báo lỗi tổng thể */}

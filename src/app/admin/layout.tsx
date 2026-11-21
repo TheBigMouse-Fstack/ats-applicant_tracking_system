@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import AdminNavbar from "@/components/admin/Navbar";
 import RealtimeNotifications from "@/components/admin/RealtimeNotifications";
+import DemoRoleBar from "@/components/admin/DemoRoleBar";
 import { getSessionUser } from "@/lib/auth";
 import { SessionProvider } from "@/contexts/SessionContext";
 import { headers } from "next/headers";
@@ -34,6 +35,7 @@ export default function AdminLayout({
         <AdminNavbar initialUser={sessionUser} />
         <RealtimeNotifications />
         <main className="flex-1">{children}</main>
+        <DemoRoleBar currentRole={sessionUser?.role} currentUser={sessionUser?.fullName} />
       </div>
     </SessionProvider>
   );
