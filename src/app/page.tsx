@@ -88,6 +88,14 @@ export default function HomePage() {
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-brand-600 text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all hover:scale-[1.02]"
+              title={locale === "en" ? "Internal ATS Recruitment Console (Live Demo)" : "Cổng Bảng điều khiển Tuyển dụng Nội bộ (Live Demo)"}
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>{locale === "en" ? "Recruiter Portal" : "Cổng Nhà Tuyển Dụng"}</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -115,12 +123,20 @@ export default function HomePage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
 
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-sm hover:shadow-md transition-all cursor-pointer border border-slate-700"
+            >
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>{locale === "en" ? "Recruiter Portal (Live Demo)" : "Cổng Nhà Tuyển Dụng (Demo Live)"}</span>
+            </Link>
+
             <a
               href="#contact"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm border border-slate-300 shadow-xs hover:border-slate-400 transition-all cursor-pointer"
             >
               <Mail className="w-4 h-4 text-brand-600" />
-              <span>{t("home.hero.ctaContact", "Liên Hệ Hợp Tác Doanh Nghiệp")}</span>
+              <span>{t("home.hero.ctaContact", "Liên Hệ Hợp Tác Kỹ Thuật")}</span>
             </a>
           </div>
 
@@ -426,13 +442,22 @@ export default function HomePage() {
               </p>
             </div>
 
-            <Link
-              href="/jobs"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md transition-all self-start md:self-auto"
-            >
-              <span>Xem Tất Cả 8+ Vị Trí</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+              <Link
+                href="/admin/login"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all"
+              >
+                <ShieldCheck className="w-4 h-4 text-amber-400" />
+                <span>Cổng Quản Trị Tuyển Dụng (Demo Live)</span>
+              </Link>
+              <Link
+                href="/jobs"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-md transition-all"
+              >
+                <span>Xem Tất Cả 8+ Vị Trí</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -741,6 +766,10 @@ export default function HomePage() {
               <a href="#solutions" className="hover:text-brand-600 transition-colors">Dịch Vụ & Giải Pháp</a>
               <Link href="/jobs" className="hover:text-brand-600 transition-colors">Cơ Hội Việc Làm</Link>
               <Link href="/jobs/tracker" className="hover:text-brand-600 transition-colors">Tra Cứu Hồ Sơ</Link>
+              <Link href="/admin/login" className="text-brand-700 hover:text-brand-800 font-bold flex items-center gap-1 bg-brand-50 px-2.5 py-1 rounded-md border border-brand-200">
+                <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
+                <span>Cổng Nhà Tuyển Dụng (ATS Console)</span>
+              </Link>
               <a href="#contact" className="hover:text-brand-600 transition-colors">Liên Hệ Doanh Nghiệp</a>
             </div>
           </div>

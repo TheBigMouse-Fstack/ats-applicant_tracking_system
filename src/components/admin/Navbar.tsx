@@ -9,6 +9,7 @@ import {
   Users,
   Database,
   UserCheck,
+  Globe,
 } from "lucide-react";
 import { SessionUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/i18n";
@@ -103,8 +104,17 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
             </nav>
           </div>
 
-          {/* User Profile Avatar Menu (Gọn gàng, chuẩn Enterprise, không bị đè nút) */}
-          <div className="flex items-center gap-3">
+          {/* User Profile Avatar Menu & Public Portal Switcher */}
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/jobs"
+              target="_blank"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:text-brand-700 hover:border-brand-200 hover:bg-brand-50 transition-all"
+              title="Xem Cổng Tuyển Dụng Dành Cho Ứng Viên (Mở tab mới)"
+            >
+              <Globe className="w-3.5 h-3.5 text-slate-400" />
+              <span>Cổng Ứng Viên</span>
+            </Link>
             {currentUser && (
               <UserMenu user={currentUser} onLogout={handleLogout} />
             )}

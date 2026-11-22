@@ -88,8 +88,16 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
 
           <div className="flex items-center gap-3">
             <Link
+              href="/admin/login"
+              className="text-xs font-bold text-white bg-slate-900 hover:bg-brand-600 px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs hover:scale-[1.02]"
+              title="Cổng Nhà Tuyển Dụng (Live Demo)"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>Cổng Nhà Tuyển Dụng</span>
+            </Link>
+            <Link
               href="/jobs"
-              className="text-xs font-semibold text-slate-600 hover:text-brand-600 transition-colors flex items-center gap-1"
+              className="text-xs font-semibold text-slate-600 hover:text-brand-600 transition-colors flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-slate-100"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               Tất cả vị trí

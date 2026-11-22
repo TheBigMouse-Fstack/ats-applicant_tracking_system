@@ -105,6 +105,14 @@ export default function CandidateTrackerPage() {
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
             <Link
+              href="/admin/login"
+              className="text-xs font-bold text-white bg-slate-900 hover:bg-brand-600 px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs hover:scale-[1.02]"
+              title={locale === "en" ? "Recruiter Portal (Live Demo)" : "Cổng Nhà Tuyển Dụng (Live Demo)"}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>{locale === "en" ? "Recruiter Portal" : "Cổng Nhà Tuyển Dụng"}</span>
+            </Link>
+            <Link
               href="/jobs"
               className="text-xs font-semibold text-slate-600 hover:text-brand-600 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100"
             >

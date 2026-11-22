@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Search,
   ArrowRight,
+  ShieldCheck,
 } from "lucide-react";
 
 interface JobItem {
@@ -57,7 +58,7 @@ export default function JobsPublicClient({
             </div>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <LanguageSwitcher />
             <Link
               href="/jobs/tracker"
@@ -65,6 +66,14 @@ export default function JobsPublicClient({
             >
               <Clock className="w-3.5 h-3.5" />
               <span>{t("public.track", "Tra cứu hồ sơ")}</span>
+            </Link>
+            <Link
+              href="/admin/login"
+              className="text-xs font-bold text-white bg-slate-900 hover:bg-brand-600 px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs hover:scale-[1.02]"
+              title={locale === "en" ? "Recruiter Portal (Live Demo)" : "Cổng Nhà Tuyển Dụng (Live Demo)"}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>{locale === "en" ? "Recruiter Portal" : "Cổng Nhà Tuyển Dụng"}</span>
             </Link>
             <Link
               href="/"
@@ -247,7 +256,16 @@ export default function JobsPublicClient({
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs text-slate-500">
+      <footer className="bg-white border-t border-slate-200 py-8 mt-12 text-center text-xs text-slate-500 space-y-2">
+        <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-slate-600 mb-2">
+          <Link href="/" className="hover:text-brand-600">Trang chủ</Link>
+          <Link href="/jobs" className="hover:text-brand-600">Tuyển dụng</Link>
+          <Link href="/jobs/tracker" className="hover:text-brand-600">Tra cứu hồ sơ</Link>
+          <Link href="/admin/login" className="text-brand-700 hover:text-brand-800 font-bold flex items-center gap-1 bg-brand-50 px-2.5 py-1 rounded-md border border-brand-200">
+            <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
+            <span>Cổng Nhà Tuyển Dụng (Demo Live)</span>
+          </Link>
+        </div>
         <p>© 2026 RecoverX Technology Solutions Co., Ltd. {locale === "en" ? "All rights reserved." : "Bảo lưu mọi quyền."}</p>
         <p className="mt-1 text-slate-400">
           {locale === "en"
