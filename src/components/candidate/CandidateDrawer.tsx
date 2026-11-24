@@ -316,15 +316,19 @@ export default function CandidateDrawer({
 
     // Kiểm tra sơ bộ quy tắc vai trò & trình tự State Machine
     if (data?.currentStage && currentUser?.role) {
-      const hasPassing = (data?.evaluations || []).some(
-        (ev: any) => ev.recommendation === "HIRE" || ev.recommendation === "STRONG_HIRE"
-      );
+      const evalCount = data?.totalEvaluationsCount ?? data?.evaluations?.length ?? 0;
+      const hasPassing =
+        typeof data?.hasPassingScorecard === "boolean"
+          ? data.hasPassingScorecard
+          : (data?.evaluations || []).some(
+              (ev: any) => ev.recommendation === "HIRE" || ev.recommendation === "STRONG_HIRE"
+            );
       const check = validateStageTransition({
         fromStage: data.currentStage,
         toStage,
         role: currentUser.role,
-        evaluationsCount: data?.evaluations?.length || 0,
-        hasPassingEvaluation: (data?.evaluations?.length || 0) > 0 ? hasPassing : undefined,
+        evaluationsCount: evalCount,
+        hasPassingEvaluation: evalCount > 0 ? hasPassing : undefined,
         rejectionReason: toStage === "REJECTED" ? "placeholder-for-precheck" : undefined,
       });
 
@@ -582,6 +586,7 @@ export default function CandidateDrawer({
     { key: "NEW", label: t("stage.NEW", "Mới tiếp nhận") },
     { key: "SCREENING", label: t("stage.SCREENING", "Sàng lọc") },
     { key: "INTERVIEW", label: t("stage.INTERVIEW", "Phỏng vấn") },
+    { key: "OFFER", label: t("stage.OFFER", "Đề nghị") },
     { key: "HIRED", label: t("stage.HIRED", "Tuyển chọn") },
     { key: "REJECTED", label: t("stage.REJECTED", "Từ chối") },
   ];
@@ -691,7 +696,7 @@ export default function CandidateDrawer({
                   : "border-transparent text-zinc-500 hover:text-zinc-900 font-medium"
               }`}
             >
-              {t("tab.evaluation", "Phiếu đánh giá")} ({data?.evaluations?.length || 0})
+              {t("tab.evaluation", "Phiếu đánh giá")} ({data?.totalEvaluationsCount ?? data?.evaluations?.length ?? 0})
             </button>
 
             <button
@@ -1357,6 +1362,49 @@ export default function CandidateDrawer({
                           <p className="text-zinc-700">{data.aiMatchRationale}</p>
                         </div>
                       )}
+
+                      {/* BRL-16: Kết quả Câu hỏi sàng lọc (Knock-out Questions) */}
+                      {(() => {
+                        const sqAnswers = safeParseJSON(data?.screeningAnswers, []);
+                        if (!Array.isArray(sqAnswers) || sqAnswers.length === 0) return null;
+                        return (
+                          <div className="pt-4 border-t border-zinc-100 text-xs space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-zinc-400">
+                                {isEn ? "Screening Questions" : "Câu hỏi sàng lọc"}
+                              </span>
+                              {data?.knockoutFailed && (
+                                <span className="text-brand-600 font-semibold">
+                                  {isEn ? "Knock-out criteria not met" : "Chưa đạt tiêu chí cứng"}
+                                </span>
+                              )}
+                            </div>
+                            <div className="divide-y divide-zinc-100">
+                              {sqAnswers.map((item: any, idx: number) => (
+                                <div key={idx} className="py-1.5 flex items-baseline justify-between gap-3">
+                                  <span className="text-zinc-700">{item.question}</span>
+                                  <span
+                                    className={`font-semibold shrink-0 whitespace-nowrap ${
+                                      item.passed ? "text-emerald-700" : "text-brand-600"
+                                    }`}
+                                  >
+                                    {item.answer === "YES"
+                                      ? isEn
+                                        ? "Yes"
+                                        : "Có"
+                                      : item.answer === "NO"
+                                      ? isEn
+                                        ? "No"
+                                        : "Không"
+                                      : item.answer}{" "}
+                                    · {item.passed ? (isEn ? "Pass" : "Đạt") : (isEn ? "Fail" : "Chưa đạt")}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
@@ -1365,35 +1413,47 @@ export default function CandidateDrawer({
                 {/* TAB 2: TIÊU CHUẨN YÊU CẦU VỊ TRÍ (JD) */}
                 {/* ========================================================================= */}
                 {activeTab === "jd" && (
-                  <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200/80 text-xs">
+                  <div className="bg-white rounded-lg border border-zinc-200 p-5 space-y-5 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-4 border-b border-zinc-100">
                       <div>
-                        <span className="text-slate-400 block mb-0.5">Vị trí tuyển dụng</span>
-                        <span className="font-bold text-slate-900 text-sm">{data?.job?.title}</span>
+                        <span className="text-zinc-400 block mb-0.5">
+                          {isEn ? "Position" : "Vị trí tuyển dụng"}
+                        </span>
+                        <span className="font-semibold text-zinc-900 text-sm">{data?.job?.title}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block mb-0.5">Phòng ban</span>
-                        <span className="font-semibold text-slate-800">{data?.job?.department}</span>
+                        <span className="text-zinc-400 block mb-0.5">
+                          {isEn ? "Department" : "Phòng ban"}
+                        </span>
+                        <span className="font-medium text-zinc-800">{data?.job?.department}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block mb-0.5">Yêu cầu kinh nghiệm</span>
-                        <span className="font-bold text-amber-700">
-                          Tối thiểu {data?.job?.minExperienceYears || 0} năm
+                        <span className="text-zinc-400 block mb-0.5">
+                          {isEn ? "Minimum Experience" : "Yêu cầu kinh nghiệm"}
+                        </span>
+                        <span className="font-semibold text-zinc-900">
+                          {isEn
+                            ? `${data?.job?.minExperienceYears || 0}+ years`
+                            : `Tối thiểu ${data?.job?.minExperienceYears || 0} năm`}
                         </span>
                       </div>
                     </div>
 
-                    {/* Kỹ năng bắt buộc trong JD (highlight ứng viên đã đáp ứng vs chưa có) */}
+                    {/* Kỹ năng bắt buộc trong JD (chữ màu gọn, không viền pill) */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-800">
-                          Kỹ năng bắt buộc ({jobRequiredSkills.length}):
+                        <span className="font-semibold text-zinc-900">
+                          {isEn
+                            ? `Required Skills (${jobRequiredSkills.length})`
+                            : `Kỹ năng bắt buộc (${jobRequiredSkills.length})`}
                         </span>
-                        <span className="text-[11px] font-semibold text-slate-500">
-                          Ứng viên đáp ứng {aiMatchedSkills.length}/{jobRequiredSkills.length} kỹ năng
+                        <span className="text-[11px] text-zinc-500 tabular-nums">
+                          {isEn
+                            ? `Matched ${aiMatchedSkills.length}/${jobRequiredSkills.length}`
+                            : `Đáp ứng ${aiMatchedSkills.length}/${jobRequiredSkills.length} kỹ năng`}
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                         {jobRequiredSkills.map((sk: string, idx: number) => {
                           const isMatched = aiMatchedSkills.some(
                             (m: string) => m.toLowerCase() === sk.toLowerCase()
@@ -1401,13 +1461,10 @@ export default function CandidateDrawer({
                           return (
                             <span
                               key={idx}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold border inline-flex items-center gap-1 ${
-                                isMatched
-                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                  : "bg-amber-50 text-amber-800 border-amber-200"
+                              className={`text-xs font-medium ${
+                                isMatched ? "text-emerald-700" : "text-zinc-500"
                               }`}
                             >
-                              {isMatched && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
                               {sk}
                             </span>
                           );
@@ -1415,12 +1472,12 @@ export default function CandidateDrawer({
                       </div>
                     </div>
 
-                    {/* Mô tả công việc đầy đủ (không bị bóp hẹp) */}
-                    <div className="space-y-2">
-                      <span className="text-xs font-semibold text-slate-800 block">
-                        Mô tả công việc &amp; quyền lợi chi tiết:
+                    {/* Mô tả công việc đầy đủ */}
+                    <div className="space-y-2 pt-2 border-t border-zinc-100">
+                      <span className="font-semibold text-zinc-900 block">
+                        {isEn ? "Job Description & Requirements" : "Mô tả công việc & yêu cầu chi tiết"}
                       </span>
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed whitespace-pre-line font-medium">
+                      <div className="p-4 rounded-lg bg-zinc-50/70 border border-zinc-200 text-xs text-zinc-700 leading-relaxed whitespace-pre-line">
                         {data?.job?.requirementsJd}
                       </div>
                     </div>
@@ -1432,28 +1489,18 @@ export default function CandidateDrawer({
                 {/* ========================================================================= */}
                 {activeTab === "cv" && (
                   <div className="space-y-4">
-                    {/* Thanh công cụ tối giản: Tên file + Nút Tải về */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-red-100 text-red-700 flex items-center justify-center font-bold shrink-0">
-                          <FileText className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-900 truncate max-w-xs sm:max-w-md">
-                            {data?.candidate?.cvFileUrl?.split("/").pop() || "Tệp CV gốc"}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-50 p-4 rounded-lg border border-zinc-200 text-xs">
+                      <p className="font-semibold text-zinc-900 truncate max-w-xs sm:max-w-md">
+                        {data?.candidate?.cvFileUrl?.split("/").pop() || (isEn ? "Original CV" : "Tệp CV gốc")}
+                      </p>
 
                       {data?.candidate?.cvFileUrl && (
                         <a
                           href={data.candidate.cvFileUrl}
                           download
-                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-xs transition-colors shrink-0"
-                          title="Tải tệp CV gốc về máy tính"
+                          className="px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium transition-colors shrink-0 whitespace-nowrap"
                         >
-                          <Download className="w-4 h-4" />
-                          <span>Tải về CV</span>
+                          {isEn ? "Download CV" : "Tải về CV"}
                         </a>
                       )}
                     </div>
@@ -1484,80 +1531,75 @@ export default function CandidateDrawer({
                     {/* CHẾ ĐỘ 1: XEM LỊCH PHỎNG VẤN ĐÃ XẾP (VIEW MODE) */}
                     {data?.interviewDate && !isEditingSchedule && (
                       <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs space-y-4">
-                        {/* Header: Thông tin chung & Nút tác vụ */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-slate-100 gap-3">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                                data.interviewFormat === "ONLINE"
-                                  ? "bg-brand-50 text-brand-600 border border-brand-100"
-                                  : "bg-purple-50 text-purple-600 border border-purple-100"
-                              }`}
-                            >
-                              {data.interviewFormat === "ONLINE" ? (
-                                <Video className="w-5 h-5" />
-                              ) : (
-                                <Building2 className="w-5 h-5" />
-                              )}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-zinc-100 gap-3">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <h3 className="text-sm font-semibold text-zinc-900">
+                                {isEn ? "Interview Schedule" : "Lịch phỏng vấn"}
+                              </h3>
+                              <span className="text-xs font-medium text-zinc-600">
+                                {data.interviewFormat === "ONLINE"
+                                  ? isEn
+                                    ? "Online"
+                                    : "Trực tuyến"
+                                  : isEn
+                                  ? "Onsite"
+                                  : "Tại văn phòng"}
+                              </span>
+                              <span
+                                className={`text-xs font-medium ${
+                                  data?.isInterviewInviteSent ? "text-emerald-700" : "text-amber-700"
+                                }`}
+                              >
+                                {data?.isInterviewInviteSent
+                                  ? isEn
+                                    ? "Invite sent"
+                                    : "Đã gửi thư mời"
+                                  : isEn
+                                  ? "Invite not sent"
+                                  : "Chưa gửi thư mời"}
+                              </span>
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-sm font-bold text-slate-900">Lịch Phỏng Vấn</h3>
-                                <span
-                                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                                    data.interviewFormat === "ONLINE"
-                                      ? "bg-brand-50 text-brand-700 border border-brand-200/60"
-                                      : "bg-purple-50 text-purple-700 border border-purple-200/60"
-                                  }`}
-                                >
-                                  {data.interviewFormat === "ONLINE" ? "Trực tuyến" : "Tại văn phòng"}
-                                </span>
-                                <span
-                                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                                    data?.isInterviewInviteSent
-                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                                      : "bg-amber-50 text-amber-700 border border-amber-200/60"
-                                  }`}
-                                >
-                                  {data?.isInterviewInviteSent ? "Đã gửi thư mời" : "Chưa gửi thư mời"}
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-500 mt-0.5">
-                                Ứng viên: <strong className="text-slate-700">{data?.candidate?.fullName}</strong> &bull; {data?.job?.title}
-                              </p>
-                            </div>
+                            <p className="text-xs text-zinc-500 mt-0.5">
+                              {data?.candidate?.fullName} · {data?.job?.title}
+                            </p>
                           </div>
 
                           {canManageInterview && (
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-4 shrink-0 text-xs">
                               <button
                                 type="button"
                                 onClick={() => setIsEditingSchedule(true)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                                className="font-medium text-zinc-700 hover:text-zinc-900 cursor-pointer whitespace-nowrap"
                               >
-                                <Edit3 className="w-3.5 h-3.5 text-slate-500" />
-                                <span>Chỉnh sửa</span>
+                                {isEn ? "Edit" : "Chỉnh sửa"}
                               </button>
                               <button
                                 type="button"
                                 onClick={handleCancelInterview}
                                 disabled={isCancellingInterview}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/80 transition-colors cursor-pointer"
+                                className="font-medium text-brand-600 hover:text-brand-700 cursor-pointer whitespace-nowrap"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>{isCancellingInterview ? "Đang hủy..." : "Hủy lịch"}</span>
+                                {isCancellingInterview
+                                  ? isEn
+                                    ? "Cancelling..."
+                                    : "Đang hủy..."
+                                  : isEn
+                                  ? "Cancel"
+                                  : "Hủy lịch"}
                               </button>
                             </div>
                           )}
                         </div>
 
                         {/* 2 Cột: Thời gian & Địa điểm */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                          <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100">
-                            <span className="text-slate-500 block mb-1 text-[11px] font-medium">Thời gian phỏng vấn:</span>
-                            <span className="font-semibold text-slate-900 flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-purple-600 shrink-0" />
-                              {new Date(data.interviewDate).toLocaleString("vi-VN", {
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                          <div>
+                            <span className="text-zinc-400 block mb-1">
+                              {isEn ? "Interview Time" : "Thời gian phỏng vấn"}
+                            </span>
+                            <span className="font-semibold text-zinc-900">
+                              {new Date(data.interviewDate).toLocaleString(isEn ? "en-US" : "vi-VN", {
                                 weekday: "long",
                                 day: "2-digit",
                                 month: "2-digit",
@@ -1867,9 +1909,12 @@ export default function CandidateDrawer({
                 {activeTab === "evaluation" && (
                   <ScorecardPanel
                     applicationId={applicationId}
-                    candidateName={data?.candidate?.fullName || "Ứng viên"}
-                    jobTitle={data?.job?.title || "Vị trí tuyển dụng"}
+                    candidateName={data?.candidate?.fullName || (isEn ? "Candidate" : "Ứng viên")}
+                    jobTitle={data?.job?.title || (isEn ? "Position" : "Vị trí tuyển dụng")}
                     evaluations={data?.evaluations || []}
+                    blindScorecardLocked={Boolean(data?.blindScorecardLocked)}
+                    hiddenEvaluationsCount={data?.hiddenEvaluationsCount || 0}
+                    hasPassingOverride={data?.hasPassingScorecard}
                     defaultFormOpen={openEvaluationForm}
                     onSuccess={() => {
                       setOpenEvaluationForm(false);
@@ -1888,12 +1933,11 @@ export default function CandidateDrawer({
                     {/* 1. Lịch sử ứng tuyển các vị trí khác tại công ty */}
                     <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                          <Building2 className="w-4 h-4 text-indigo-600" />
-                          Lịch sử hồ sơ tại công ty
+                        <h4 className="text-xs font-semibold text-zinc-900">
+                          {isEn ? "Application History" : "Lịch sử hồ sơ tại công ty"}
                         </h4>
-                        <span className="text-[11px] font-semibold text-slate-500">
-                          Mã ứng viên: #{data?.candidate?.id}
+                        <span className="text-[11px] font-medium text-zinc-500 tabular-nums">
+                          {isEn ? `Candidate #${data?.candidate?.id}` : `Mã ứng viên: #${data?.candidate?.id}`}
                         </span>
                       </div>
 
@@ -1930,18 +1974,20 @@ export default function CandidateDrawer({
                           </div>
                         </div>
                       ) : (
-                        <div className="p-3 bg-slate-50/70 rounded-xl border border-slate-100 text-xs text-slate-600 flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>Đây là đợt ứng tuyển đầu tiên của ứng viên tại công ty. Chưa có lịch sử ứng tuyển vị trí khác.</span>
+                        <div className="p-3 bg-zinc-50/70 rounded-lg border border-zinc-100 text-xs text-zinc-600">
+                          {isEn
+                            ? "This is the candidate's first application at the company."
+                            : "Đây là đợt ứng tuyển đầu tiên của ứng viên tại công ty."}
                         </div>
                       )}
                     </div>
 
                     {/* 2. Timeline Audit Logs */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                        <History className="w-4 h-4 text-slate-500" />
-                        Nhật ký luân chuyển &amp; kiểm toán ({data?.auditLogs?.length || 0}):
+                      <h4 className="text-xs font-semibold text-zinc-900">
+                        {isEn
+                          ? `Activity History (${data?.auditLogs?.length || 0})`
+                          : `Nhật ký hoạt động (${data?.auditLogs?.length || 0})`}
                       </h4>
 
                       <div className="space-y-2">
@@ -1986,8 +2032,9 @@ export default function CandidateDrawer({
                                   {log.reason}
                                 </p>
                               )}
-                              <p className="text-[11px] text-slate-400 mt-0.5">
-                                Thực hiện bởi: {log.user?.fullName || "Hệ thống"} &bull; {log.user?.role || "SYSTEM"}
+                              <p className="text-[11px] text-zinc-400 mt-0.5">
+                                {isEn ? "By:" : "Thực hiện bởi:"}{" "}
+                                {log.user?.fullName || (isEn ? "System" : "Hệ thống")} · {log.user?.role || "SYSTEM"}
                               </p>
                             </div>
                             <span className="text-[10px] text-slate-400 font-mono shrink-0">

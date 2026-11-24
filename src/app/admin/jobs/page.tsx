@@ -26,6 +26,8 @@ export default function AdminJobsPage() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [approvingId, setApprovingId] = useState<number | null>(null);
 
   // Modal create job
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,6 +40,12 @@ export default function AdminJobsPage() {
   const [maxActiveInterviews, setMaxActiveInterviews] = useState("3");
   const [skillsText, setSkillsText] = useState("React, TypeScript, Tailwind");
   const [requirementsJd, setRequirementsJd] = useState("");
+  const [screeningQuestions, setScreeningQuestions] = useState<
+    Array<{ id: string; question: string; expectedAnswer: "YES" | "NO"; isKnockout: boolean }>
+  >([]);
+  const [newQuestionText, setNewQuestionText] = useState("");
+  const [newQuestionExpected, setNewQuestionExpected] = useState<"YES" | "NO">("YES");
+  const [newQuestionKnockout, setNewQuestionKnockout] = useState(true);
 
   // Modal quick-edit headcount & status
   const [editingJob, setEditingJob] = useState<any | null>(null);
@@ -125,6 +133,7 @@ export default function AdminJobsPage() {
           maxActiveInterviews: parsedCap,
           requiredSkills: skillsText,
           requirementsJd,
+          screeningQuestions,
         }),
       });
 
@@ -139,6 +148,8 @@ export default function AdminJobsPage() {
         setTargetHeadcount("1");
         setMaxActiveInterviews("3");
         setRequirementsJd("");
+        setScreeningQuestions([]);
+        setNewQuestionText("");
         clientCache.invalidate("admin_jobs_list");
         clientCache.invalidate("pipeline_");
         fetchJobs(true);
@@ -190,13 +201,48 @@ export default function AdminJobsPage() {
     }
   };
 
-  const filteredJobs = jobs.filter(
-    (j) =>
+  const handleApproveJob = async (jobId: number, action: "APPROVE" | "REJECT") => {
+    let approvalNote = "";
+    if (action === "REJECT") {
+      const note = prompt(
+        isEn
+          ? "Enter revision note (min 5 characters):"
+          : "Nhập ghi chú yêu cầu chỉnh sửa (tối thiểu 5 ký tự):"
+      );
+      if (!note || note.trim().length < 5) return;
+      approvalNote = note.trim();
+    }
+    setApprovingId(jobId);
+    try {
+      const res = await fetch(`/api/jobs/${jobId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, approvalNote }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setNotice(data.message);
+        clientCache.invalidate("admin_jobs_list");
+        fetchJobs(true);
+      }
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const filteredJobs = jobs.filter((j) => {
+    const matchSearch =
       j.title.toLowerCase().includes(search.toLowerCase()) ||
-      j.department.toLowerCase().includes(search.toLowerCase())
-  );
+      j.department.toLowerCase().includes(search.toLowerCase());
+    if (!matchSearch) return false;
+    if (statusFilter === "ALL") return true;
+    return j.status === statusFilter;
+  });
 
   const canCreateJob = Boolean(currentUser && currentUser.role !== "HIRING_MANAGER");
+  const canApproveJob = Boolean(
+    currentUser && (currentUser.role === "ADMIN" || currentUser.role === "HIRING_MANAGER")
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
@@ -234,17 +280,40 @@ export default function AdminJobsPage() {
         </div>
       )}
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs">
-        <div className="relative max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+      {/* Search & Status Tabs */}
+      <div className="bg-white rounded-xl border border-zinc-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("candidates.searchPlaceholder")}
-            className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-9 pr-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full text-xs rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-zinc-800 focus:outline-none focus:border-zinc-400"
           />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 text-xs">
+          {[
+            { key: "ALL", label: isEn ? "All" : "Tất cả" },
+            { key: "PENDING_APPROVAL", label: isEn ? "Pending Approval" : "Chờ duyệt" },
+            { key: "ACTIVE", label: isEn ? "Active" : "Đang tuyển" },
+            { key: "DRAFT", label: isEn ? "Draft" : "Bản nháp" },
+            { key: "CLOSED", label: isEn ? "Closed" : "Đã đóng" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setStatusFilter(tab.key)}
+              className={`pb-1 border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+                statusFilter === tab.key
+                  ? "border-brand-600 text-zinc-900 font-semibold"
+                  : "border-transparent text-zinc-500 hover:text-zinc-900"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -280,12 +349,24 @@ export default function AdminJobsPage() {
                     </span>
                     <span
                       className={`text-xs font-medium whitespace-nowrap ${
-                        job.status === "ACTIVE" && !job.headcountMetrics?.isHeadcountFull
+                        job.status === "PENDING_APPROVAL"
+                          ? "text-amber-700"
+                          : job.status === "DRAFT"
+                          ? "text-zinc-500"
+                          : job.status === "ACTIVE" && !job.headcountMetrics?.isHeadcountFull
                           ? "text-emerald-700"
                           : "text-zinc-400"
                       }`}
                     >
-                      {job.status === "ACTIVE" && !job.headcountMetrics?.isHeadcountFull
+                      {job.status === "PENDING_APPROVAL"
+                        ? isEn
+                          ? "Pending Approval"
+                          : "Chờ phê duyệt"
+                        : job.status === "DRAFT"
+                        ? isEn
+                          ? "Draft"
+                          : "Bản nháp"
+                        : job.status === "ACTIVE" && !job.headcountMetrics?.isHeadcountFull
                         ? isEn
                           ? "Active"
                           : "Đang tuyển"
@@ -356,6 +437,28 @@ export default function AdminJobsPage() {
                   </span>
 
                   <div className="flex items-center gap-4">
+                    {canApproveJob && (job.status === "PENDING_APPROVAL" || job.status === "DRAFT") && (
+                      <>
+                        <button
+                          type="button"
+                          disabled={approvingId === job.id}
+                          onClick={() => handleApproveJob(job.id, "APPROVE")}
+                          className="text-emerald-700 hover:text-emerald-800 font-semibold cursor-pointer whitespace-nowrap"
+                        >
+                          {isEn ? "Approve" : "Duyệt đăng"}
+                        </button>
+                        {job.status === "PENDING_APPROVAL" && (
+                          <button
+                            type="button"
+                            disabled={approvingId === job.id}
+                            onClick={() => handleApproveJob(job.id, "REJECT")}
+                            className="text-brand-600 hover:text-brand-700 font-medium cursor-pointer whitespace-nowrap"
+                          >
+                            {isEn ? "Return" : "Trả sửa"}
+                          </button>
+                        )}
+                      </>
+                    )}
                     {canCreateJob && (
                       <button
                         type="button"
@@ -365,13 +468,15 @@ export default function AdminJobsPage() {
                         {isEn ? "Edit quota" : "Chỉnh chỉ tiêu"}
                       </button>
                     )}
-                    <Link
-                      href={`/jobs/${job.id}`}
-                      target="_blank"
-                      className="text-zinc-600 hover:text-brand-600 font-medium whitespace-nowrap"
-                    >
-                      {isEn ? "Apply page" : "Trang nộp CV"}
-                    </Link>
+                    {job.status === "ACTIVE" && (
+                      <Link
+                        href={`/jobs/${job.id}`}
+                        target="_blank"
+                        className="text-zinc-600 hover:text-brand-600 font-medium whitespace-nowrap"
+                      >
+                        {isEn ? "Apply page" : "Trang nộp CV"}
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
@@ -560,21 +665,137 @@ export default function AdminJobsPage() {
                 )}
               </div>
 
+              {/* BRL-16: Câu hỏi sàng lọc (Knock-out Questions) */}
+              <div className="space-y-2 pt-2 border-t border-zinc-100">
+                <label className="block font-semibold text-zinc-700">
+                  {isEn ? "Screening Questions (Optional, max 5)" : "Câu hỏi sàng lọc ứng viên (Tùy chọn, tối đa 5)"}
+                </label>
+
+                {screeningQuestions.length > 0 && (
+                  <div className="space-y-1.5">
+                    {screeningQuestions.map((q) => (
+                      <div
+                        key={q.id}
+                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-zinc-50 border border-zinc-200 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-zinc-900 font-medium truncate">{q.question}</p>
+                          <p className="text-[11px] text-zinc-500">
+                            {isEn ? "Expected:" : "Đáp án đạt:"}{" "}
+                            <strong className="text-zinc-800">{q.expectedAnswer === "YES" ? (isEn ? "Yes" : "Có") : (isEn ? "No" : "Không")}</strong>
+                            {q.isKnockout && (
+                              <span className="ml-2 text-brand-600 font-medium">
+                                · {isEn ? "Knock-out" : "Tiêu chí cứng"}
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setScreeningQuestions((prev) => prev.filter((item) => item.id !== q.id))
+                          }
+                          className="text-zinc-400 hover:text-brand-600 font-medium cursor-pointer shrink-0"
+                        >
+                          {isEn ? "Remove" : "Xóa"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {screeningQuestions.length < 5 && (
+                  <div className="space-y-2 bg-zinc-50/70 p-3 rounded-lg border border-zinc-200">
+                    <input
+                      type="text"
+                      value={newQuestionText}
+                      onChange={(e) => setNewQuestionText(e.target.value)}
+                      placeholder={
+                        isEn
+                          ? "e.g., Are you able to work onsite in Ho Chi Minh City?"
+                          : "VD: Bạn có thể làm việc toàn thời gian tại TP. Hồ Chí Minh không?"
+                      }
+                      className="w-full rounded-md border border-zinc-200 bg-white py-1.5 px-2.5 text-xs text-zinc-800"
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-1.5 text-zinc-600">
+                          <span>{isEn ? "Expected:" : "Đáp án đạt:"}</span>
+                          <select
+                            value={newQuestionExpected}
+                            onChange={(e) => setNewQuestionExpected(e.target.value as "YES" | "NO")}
+                            className="rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-zinc-800"
+                          >
+                            <option value="YES">{isEn ? "Yes" : "Có"}</option>
+                            <option value="NO">{isEn ? "No" : "Không"}</option>
+                          </select>
+                        </label>
+                        <label className="flex items-center gap-1.5 text-zinc-600 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={newQuestionKnockout}
+                            onChange={(e) => setNewQuestionKnockout(e.target.checked)}
+                          />
+                          <span>{isEn ? "Must-have (Knock-out)" : "Tiêu chí cứng"}</span>
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newQuestionText.trim()) return;
+                          setScreeningQuestions((prev) => [
+                            ...prev,
+                            {
+                              id: `q_${Date.now()}`,
+                              question: newQuestionText.trim(),
+                              expectedAnswer: newQuestionExpected,
+                              isKnockout: newQuestionKnockout,
+                            },
+                          ]);
+                          setNewQuestionText("");
+                        }}
+                        className="text-brand-600 hover:text-brand-700 font-semibold cursor-pointer whitespace-nowrap"
+                      >
+                        + {isEn ? "Add question" : "Thêm câu hỏi"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {currentUser?.role === "HR" && (
+                <p className="text-[11px] text-amber-700">
+                  {isEn
+                    ? "Note: New positions created by HR will be submitted for Hiring Manager / Admin approval before publishing."
+                    : "Lưu ý: Tin tuyển dụng do HR tạo sẽ chuyển sang trạng thái Chờ phê duyệt trước khi hiển thị công khai."}
+                </p>
+              )}
+
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   disabled={formLoading}
-                  className="px-4 py-2 font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2 font-medium text-zinc-600 hover:text-zinc-900 cursor-pointer"
                 >
-                  Hủy
+                  {isEn ? "Cancel" : "Hủy"}
                 </button>
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="px-5 py-2 font-bold text-white bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 rounded-xl shadow-md shadow-brand-500/20"
+                  className="px-5 py-2 font-semibold text-white bg-brand-600 hover:bg-brand-700 disabled:bg-brand-400 rounded-lg cursor-pointer"
                 >
-                  {formLoading ? "Đang tạo..." : "Tạo tin tuyển dụng"}
+                  {formLoading
+                    ? isEn
+                      ? "Saving..."
+                      : "Đang tạo..."
+                    : currentUser?.role === "HR"
+                    ? isEn
+                      ? "Submit for Approval"
+                      : "Gửi duyệt tin"
+                    : isEn
+                    ? "Publish Job"
+                    : "Tạo tin tuyển dụng"}
                 </button>
               </div>
             </form>

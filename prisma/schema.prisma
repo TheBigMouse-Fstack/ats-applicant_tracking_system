@@ -40,7 +40,11 @@ model Job {
   requiredSkills      String        @default("[]") // JSON string: ["React", "TypeScript"]
   targetHeadcount     Int           @default(1) // Số lượng nhân sự cần tuyển (BRL-13)
   maxActiveInterviews Int           @default(3) // Trần số ứng viên phỏng vấn cùng lúc (mặc định 3x chỉ tiêu)
-  status              String        @default("ACTIVE") // ACTIVE, CLOSED
+  screeningQuestions  String?       @default("[]") // BRL-16: JSON array [{ id, question, expectedAnswer, isKnockout }]
+  status              String        @default("ACTIVE") // DRAFT, PENDING_APPROVAL, ACTIVE, CLOSED (BRL-17)
+  approvedById        Int?          // BRL-17: ID người duyệt tin tuyển dụng (HM / Admin)
+  approvedAt          DateTime?     // BRL-17: Thời điểm phê duyệt tin tuyển dụng
+  approvalNote        String?       // BRL-17: Ghi chú phê duyệt hoặc lý do yêu cầu sửa
   createdAt           DateTime      @default(now())
 
   applications       Application[]
@@ -85,7 +89,9 @@ model Application {
   jobId              Int
   job                Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
   source             String       @default("CAREER_SITE") // CAREER_SITE, LINKEDIN, REFERRAL, HEADHUNTER, DIRECT_EMAIL, OTHER
-  currentStage       String       @default("NEW") // NEW, SCREENING, INTERVIEW, HIRED, REJECTED
+  currentStage       String       @default("NEW") // NEW, SCREENING, INTERVIEW, OFFER, HIRED, REJECTED
+  screeningAnswers   String?      @default("[]") // BRL-16: JSON array [{ questionId, question, answer, passed }]
+  knockoutFailed     Boolean      @default(false) // BRL-16: Cờ cảnh báo chưa đạt câu hỏi sàng lọc cứng (Human-in-the-Loop)
   aiMatchScore       Float?       // 0.0 - 100.0%
   aiMatchRationale   String?      // Explanation why scored this %
   aiMatchedSkills    String?      @default("[]") // JSON string

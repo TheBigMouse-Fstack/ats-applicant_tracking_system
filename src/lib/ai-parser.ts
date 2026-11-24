@@ -1,4 +1,5 @@
 import pdf from "pdf-parse";
+import mammoth from "mammoth";
 import { GoogleGenAI } from "@google/genai";
 
 export interface ParsedCvResult {
@@ -24,7 +25,7 @@ export interface ParsedCvResult {
 }
 
 /**
- * Trích xuất văn bản thô từ tệp CV (Hỗ trợ PDF và Plain Text)
+ * Trích xuất văn bản thô từ tệp CV (Hỗ trợ PDF qua pdf-parse, DOCX qua mammoth, và Plain Text)
  */
 export async function extractTextFromCv(
   buffer: Buffer,
@@ -42,7 +43,18 @@ export async function extractTextFromCv(
     }
   }
 
-  // DOCX hoặc Text
+  if (ext === ".docx") {
+    try {
+      const result = await mammoth.extractRawText({ buffer });
+      if (result.value && result.value.trim().length > 0) {
+        return result.value;
+      }
+    } catch (err) {
+      console.error("Lỗi khi đọc file DOCX bằng mammoth:", err);
+    }
+  }
+
+  // Plain text hoặc fallback cuối cùng
   return buffer.toString("utf-8");
 }
 
@@ -239,83 +251,70 @@ export function heuristicParseAndMatch(
 
   if (degree || school) {
     education.push({
-      school: school || "Đại học / Cơ sở đào tạo",
-      degree: degree || "Cử nhân / Bằng cấp chuyên môn",
-      year: eduYear || "2011 - 2015",
+      school: school || "Cơ sở đào tạo",
+      degree: degree || "Bằng cấp chuyên môn",
+      ...(eduYear ? { year: eduYear } : {}),
     });
   }
 
-  // 5. TRÍCH XUẤT KINH NGHIỆM LÀM VIỆC & TÍNH TỔNG SỐ NĂM (Work Experience)
+  // 5. TRÍCH XUẤT KINH NGHIỆM LÀM VIỆC & TÍNH TỔNG SỐ NĂM (Work Experience — General, Zero Hardcode)
   const experience: Array<{ company: string; role: string; duration?: string; description?: string }> = [];
-  const yearsFound: number[] = [];
 
-  // Tìm tất cả các mốc năm trong CV
-  const yearRegex = /\b(19\d\d|20\d\d)\b/g;
-  let ymMatch;
-  while ((ymMatch = yearRegex.exec(cvText)) !== null) {
-    const y = parseInt(ymMatch[0], 10);
-    if (y >= 1995 && y <= 2026) {
-      yearsFound.push(y);
+  // Tách riêng khối Học vấn để tránh cộng nhầm năm đi học vào số năm kinh nghiệm làm việc
+  const cvWithoutEducation = cvText.replace(
+    /(?:EDUCATION|HỌC VẤN|TRÌNH ĐỘ HỌC VẤN)[:\s\n]+[\s\S]*?(?=WORK EXPERIENCE|EXPERIENCE|SKILLS|PROJECTS|CERTIFICATES|REFERENCES|KINH NGHIỆM|KỸ NĂNG|DỰ ÁN|CHỨNG CHỈ|$)/i,
+    " "
+  );
+
+  // Quét các mốc thời gian làm việc tổng quát
+  const expDateRegex =
+    /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Tháng\s*\d+)?\s*(19\d\d|20\d\d)\s*[-–—to]+\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Tháng\s*\d+)?\s*(19\d\d|20\d\d|present|now|current|hiện tại)\b/i;
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    const dateMatch = l.match(expDateRegex);
+    if (dateMatch && experience.length < 4) {
+      const dur = dateMatch[0];
+      if (eduYear && dur.includes(eduYear)) continue; // Bỏ qua đúng mốc học vấn đã tách ở trên
+      const nextLine = lines[i + 1] || "";
+      const prevLine = lines[i - 1] || "";
+      experience.push({
+        company: /Industries|Corp|Company|Co\.|Ltd|TNHH|JSC|Group|Studio|Lab|Bank|Tech/i.test(nextLine)
+          ? nextLine
+          : prevLine.length > 2 && prevLine.length < 60
+          ? prevLine
+          : "Doanh nghiệp",
+        role: prevLine.length > 2 && prevLine.length < 50 ? prevLine : nextLine || "Chuyên viên",
+        duration: dur,
+      });
     }
   }
 
-  // Bóc tách các block kinh nghiệm có mốc thời gian
-  if (lowerText.includes("timmerman industries")) {
-    experience.push(
-      {
-        company: "Timmerman Industries",
-        role: "Consumer Goods Seller",
-        duration: "Aug 2018 - present",
-        description: "Cung ứng sản phẩm tiêu dùng nhanh đến khách hàng doanh nghiệp, gia hạn hợp đồng định kỳ và đào tạo nhân viên bán hàng mới.",
-      },
-      {
-        company: "Timmerman Industries",
-        role: "FMCG Sales Agent",
-        duration: "Jul 2015 - Aug 2018",
-        description: "Làm việc trực tiếp tại các văn phòng khách hàng, xây dựng mối quan hệ đối tác và hoàn thành chỉ tiêu doanh thu.",
-      },
-      {
-        company: "Timmerman Industries",
-        role: "Sales Agent",
-        duration: "Aug 2014 - Jul 2015",
-        description: "Tiếp cận khách hàng tiềm năng, giới thiệu và tư vấn các dòng sản phẩm tiêu dùng của công ty.",
-      }
-    );
+  // Tính số năm kinh nghiệm thực tế từ văn bản (ưu tiên khai báo trực tiếp "X năm kinh nghiệm", sau đó đến mốc năm làm việc)
+  let expYears = 0;
+  const explicitYearsMatch = cvText.match(
+    /\b(\d{1,2})\+?\s*(?:years?|yrs?|năm)\s*(?:of\s+)?(?:experience|kinh nghiệm)/i
+  );
+  if (explicitYearsMatch) {
+    expYears = Math.max(0, Math.min(35, parseInt(explicitYearsMatch[1], 10)));
   } else {
-    // Thuật toán quét chung theo các mốc date range
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i];
-      const dateMatch = l.match(
-        /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Tháng\s*\d+)?\s*(20\d\d|19\d\d)\s*[-–—to]+\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Tháng\s*\d+)?\s*(20\d\d|present|hiện tại)\b/i
-      );
-      if (dateMatch && experience.length < 4) {
-        const dur = dateMatch[0];
-        const nextLine = lines[i + 1] || "";
-        const prevLine = lines[i - 1] || "";
-        if (!dur.includes("2011 - 2015")) {
-          // Bỏ qua mốc đại học
-          experience.push({
-            company: /Industries|Corp|Company|TNHH|JSC/i.test(nextLine) ? nextLine : "Doanh nghiệp",
-            role: prevLine.length < 40 ? prevLine : nextLine,
-            duration: dur,
-          });
-        }
+    const currentYear = new Date().getFullYear();
+    const workYears: number[] = [];
+    const yearRegex = /\b(19\d\d|20\d\d)\b/g;
+    let ymMatch;
+    while ((ymMatch = yearRegex.exec(cvWithoutEducation)) !== null) {
+      const y = parseInt(ymMatch[0], 10);
+      if (y >= 1995 && y <= currentYear) {
+        workYears.push(y);
       }
     }
-  }
-
-  // Tính số năm kinh nghiệm: Lấy năm hiện tại trừ đi năm bắt đầu làm việc đầu tiên
-  let expYears = 1;
-  if (yearsFound.length > 0) {
-    const workYears = yearsFound.filter((y) => y !== 2011 && y !== 2015); // Lọc bỏ năm học đại học
     if (workYears.length > 0) {
       const minWorkYear = Math.min(...workYears);
-      const currentYear = new Date().getFullYear();
-      expYears = Math.max(1, Math.min(25, currentYear - minWorkYear));
+      expYears = Math.max(0, Math.min(30, currentYear - minWorkYear));
     }
   }
 
-  // 6. ĐỐI SOÁT VỚI YÊU CẦU JD CỦA VỊ TRÍ ĐANG TUYỂN (BRL-04 Match Scoring)
+  // 6. ĐỐI SOÁT VỚI YÊU CẦU JD CỦA VỊ TRÍ ĐANG TUYỂN (BRL-04: 60% Kỹ năng + 40% Kinh nghiệm)
   const requiredSkills = job.requiredSkills || [];
   const matchedSkills: string[] = [];
   const missingSkills: string[] = [];
@@ -333,63 +332,35 @@ export function heuristicParseAndMatch(
     }
   });
 
-  // Tính điểm kỹ năng
-  let skillScore = 40;
-  if (requiredSkills.length > 0) {
-    skillScore = (matchedSkills.length / requiredSkills.length) * 100;
-  }
+  // Công thức chuẩn hóa 60% Kỹ năng + 40% Kinh nghiệm
+  const skillScore =
+    requiredSkills.length > 0
+      ? (matchedSkills.length / requiredSkills.length) * 100
+      : 50;
 
-  // Tính điểm số năm kinh nghiệm
-  const minExp = job.minExperienceYears || 1;
-  const expRatio = Math.min(1.0, expYears / minExp);
-  const expScore = expRatio * 100;
+  const minExp = job.minExperienceYears || 0;
+  const expScore =
+    minExp <= 0 ? 100 : Math.min(1.0, expYears / minExp) * 100;
 
-  let totalScore = Math.round(skillScore * 0.6 + expScore * 0.4);
+  const totalScore = Math.max(0, Math.min(100, Math.round(skillScore * 0.6 + expScore * 0.4)));
 
-  // Sinh Rationale giải thích trung thực, khách quan theo ngành nghề
+  // Sinh nhận xét ngắn gọn, trung thực theo số liệu đối chiếu
   let rationale = "";
-  const isDifferentField =
-    (job.title.toLowerCase().includes("recruiter") || job.title.toLowerCase().includes("nhân sự")) &&
-    lowerText.includes("sales");
-
-  if (isDifferentField) {
-    totalScore = Math.max(45, Math.min(60, totalScore));
-    rationale = `Ứng viên có bề dày ${expYears} năm kinh nghiệm trong lĩnh vực Bán hàng & Quản lý khách hàng (Sales Representative tại Timmerman Industries, tốt nghiệp BA Sales & Commerce). Tuy nhiên, vị trí ứng tuyển là "${job.title}" đòi hỏi các kỹ năng chuyên môn sâu về Tuyển dụng & Vận hành nhân sự (${missingSkills.join(", ") || "Sourcing, Phỏng vấn"}) mà ứng viên chưa có kinh nghiệm thực tế.`;
-  } else if (totalScore >= 75) {
-    rationale = `Ứng viên đáp ứng xuất sắc các tiêu chuẩn của vị trí ${job.title} (${matchedSkills.length}/${requiredSkills.length} kỹ năng trọng yếu: ${matchedSkills.join(", ")}). Kinh nghiệm ${expYears} năm và học vấn phù hợp.`;
-  } else if (totalScore >= 60) {
-    rationale = `Ứng viên có nền tảng ${expYears} năm kinh nghiệm tốt, đáp ứng một phần tiêu chuẩn kỹ năng (${matchedSkills.join(", ")}). Cần đánh giá thêm về các kỹ năng: ${missingSkills.join(", ") || "nâng cao"}.`;
+  if (totalScore >= 75) {
+    rationale = `Ứng viên đáp ứng tốt tiêu chuẩn vị trí ${job.title} (${matchedSkills.length}/${requiredSkills.length} kỹ năng trọng yếu: ${matchedSkills.join(", ") || "đạt yêu cầu"}) cùng ${expYears} năm kinh nghiệm.`;
+  } else if (totalScore >= 50) {
+    rationale = `Ứng viên đáp ứng một phần yêu cầu vị trí ${job.title} (${matchedSkills.length}/${requiredSkills.length} kỹ năng, ${expYears} năm kinh nghiệm). Cần đánh giá thêm các kỹ năng còn thiếu: ${missingSkills.join(", ") || "chuyên sâu"}.`;
   } else {
-    rationale = `Hồ sơ ứng viên chưa phù hợp với vị trí ${job.title}. Thiếu các kỹ năng chuyên môn bắt buộc: ${missingSkills.join(", ") || "cốt lõi"}.`;
+    rationale = `Hồ sơ hiện chưa khớp nhiều với yêu cầu vị trí ${job.title}. Còn thiếu các kỹ năng trọng yếu: ${missingSkills.join(", ") || "cốt lõi"}.`;
   }
 
   return {
     candidateTitle: candidateTitle || "Ứng viên chuyên môn",
-    aboutMe:
-      aboutMe ||
-      "Chuyên viên giàu kinh nghiệm, có kỹ năng giao tiếp tốt và định hướng phát triển sự nghiệp vững chắc.",
+    aboutMe: aboutMe || "",
     experienceYears: expYears,
-    skills: skills.length > 0 ? skills : ["Giao tiếp", "Kỹ năng chuyên môn"],
-    education:
-      education.length > 0
-        ? education
-        : [
-            {
-              school: "Đại học / Cơ sở đào tạo chuyên môn",
-              degree: "Cử nhân",
-              year: "2011 - 2015",
-            },
-          ],
-    experience:
-      experience.length > 0
-        ? experience
-        : [
-            {
-              company: "Doanh nghiệp hoạt động chuyên môn",
-              role: candidateTitle || "Chuyên viên",
-              duration: `${expYears} năm`,
-            },
-          ],
+    skills: skills.length > 0 ? skills : [],
+    education,
+    experience,
     matchScore: totalScore,
     rationale,
     matchedSkills,
@@ -439,10 +410,12 @@ QUY TẮC ĐÁNH GIÁ:
 3. Trích xuất tất cả kỹ năng thực sự có trong CV (skills: mảng string). Tuyệt đối không tự bịa đặt kỹ năng IT nếu CV là Sales/HR!
 4. Trích xuất học vấn thực tế (education: mảng { school, degree, year }).
 5. Trích xuất lịch sử công tác (experience: mảng { company, role, duration, description }).
-6. So khớp với JD của vị trí:
-   - matchedSkills: các kỹ năng trong JD mà ứng viên có
-   - missingSkills: các kỹ năng trong JD mà ứng viên thiếu
-   - matchScore: Điểm phần trăm từ 0.0 đến 100.0 (chấm khách quan, nhiệt độ 0)
+6. So khớp với JD của vị trí theo ĐÚNG CÔNG THỨC TRỌNG SỐ 60% KỸ NĂNG + 40% KINH NGHIỆM:
+   - matchedSkills: các kỹ năng trong danh sách Required Skills của JD mà ứng viên thực sự có (chấp nhận từ đồng nghĩa ngữ nghĩa, ví dụ "ReactJS" khớp "React")
+   - missingSkills: các kỹ năng trong Required Skills của JD mà ứng viên còn thiếu
+   - skillScore = (số lượng matchedSkills / tổng số Required Skills) * 100 (nếu JD không liệt kê Required Skills, đánh giá 0-100 dựa trên mô tả JD)
+   - expScore = min(1.0, experienceYears / minExperienceYears) * 100 (nếu minExperienceYears == 0 thì expScore = 100)
+   - matchScore = làm tròn số nguyên của (skillScore * 0.6 + expScore * 0.4), nằm trong khoảng 0 đến 100
    - rationale: Đoạn đối chiếu súc tích bằng tiếng Việt (2-3 câu) về các tiêu chí kỹ năng và kinh nghiệm đáp ứng hoặc còn thiếu so với JD. TUYỆT ĐỐI KHÔNG ghi số điểm % hay nhắc đến tỷ lệ phần trăm trong đoạn văn bản này.
 
 TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON HỢP LỆ VỚI CÁC TRƯỜNG:
@@ -473,20 +446,37 @@ TRẢ VỀ DUY NHẤT MỘT ĐỐI TƯỢNG JSON HỢP LỆ VỚI CÁC TRƯỜNG
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
+        const expYears = Math.max(0, Number(parsed.experienceYears) || 0);
+        const matchedSkills: string[] = Array.isArray(parsed.matchedSkills) ? parsed.matchedSkills : [];
+        const missingSkills: string[] = Array.isArray(parsed.missingSkills) ? parsed.missingSkills : [];
+
+        // Đồng nhất tuyệt đối công thức 60% Kỹ năng + 40% Kinh nghiệm giữa Layer 2 & Layer 1
+        let unifiedScore: number;
+        if (job.requiredSkills && job.requiredSkills.length > 0) {
+          const skillScore = (Math.min(matchedSkills.length, job.requiredSkills.length) / job.requiredSkills.length) * 100;
+          const expScore =
+            (job.minExperienceYears || 0) <= 0
+              ? 100
+              : Math.min(1.0, expYears / job.minExperienceYears) * 100;
+          unifiedScore = Math.max(0, Math.min(100, Math.round(skillScore * 0.6 + expScore * 0.4)));
+        } else {
+          unifiedScore = Math.max(0, Math.min(100, Math.round(Number(parsed.matchScore) || 50)));
+        }
+
         return {
           candidateTitle: parsed.candidateTitle || "",
           aboutMe: parsed.aboutMe || "",
-          experienceYears: Number(parsed.experienceYears) || 0,
+          experienceYears: expYears,
           skills: Array.isArray(parsed.skills) ? parsed.skills : [],
           education: Array.isArray(parsed.education) ? parsed.education : [],
           experience: Array.isArray(parsed.experience) ? parsed.experience : [],
-          matchScore: Math.round(Number(parsed.matchScore) || 50),
+          matchScore: unifiedScore,
           rationale: String(parsed.rationale || "Đã phân tích đối chiếu hồ sơ.")
             .replace(/Điểm đánh giá:\s*\d+%\.?/gi, "")
             .replace(/\(\d+%\)/gi, "")
             .trim(),
-          matchedSkills: Array.isArray(parsed.matchedSkills) ? parsed.matchedSkills : [],
-          missingSkills: Array.isArray(parsed.missingSkills) ? parsed.missingSkills : [],
+          matchedSkills,
+          missingSkills,
         };
       }
     } catch (apiError) {

@@ -20,20 +20,30 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+interface ScreeningQuestion {
+  id: string;
+  question: string;
+  expectedAnswer: "YES" | "NO";
+  isKnockout: boolean;
+}
+
 interface JobApplicationFormProps {
   jobId: number;
   jobTitle: string;
+  screeningQuestions?: ScreeningQuestion[];
 }
 
 export default function JobApplicationForm({
   jobId,
   jobTitle,
+  screeningQuestions = [],
 }: JobApplicationFormProps) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [certificateFiles, setCertificateFiles] = useState<File[]>([]);
+  const [screeningAnswers, setScreeningAnswers] = useState<Record<string, string>>({});
 
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -235,6 +245,9 @@ export default function JobApplicationForm({
       formData.append("cvFile", cvFile!);
       if (confirmMismatch) {
         formData.append("confirmMismatch", "true");
+      }
+      if (screeningQuestions.length > 0) {
+        formData.append("screeningAnswers", JSON.stringify(screeningAnswers));
       }
 
       // Đính kèm các tệp Bằng cấp / Chứng chỉ dạng ảnh hoặc PDF
@@ -649,6 +662,55 @@ export default function JobApplicationForm({
           )}
         </div>
       </div>
+
+      {/* 4B. Câu hỏi sàng lọc (Knock-out Questions — BRL-16) */}
+      {screeningQuestions.length > 0 && (
+        <div className="space-y-3 pt-2 border-t border-slate-100">
+          <p className="text-xs font-semibold text-slate-800">
+            Câu hỏi sàng lọc vị trí ({screeningQuestions.length})
+          </p>
+          <div className="space-y-2.5">
+            {screeningQuestions.map((q) => (
+              <div
+                key={q.id}
+                className="p-3 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2 text-xs"
+              >
+                <p className="font-medium text-slate-800">
+                  {q.question} <span className="text-brand-600">*</span>
+                </p>
+                <div className="flex items-center gap-4">
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer text-slate-700">
+                    <input
+                      type="radio"
+                      name={`sq_${q.id}`}
+                      value="YES"
+                      required
+                      checked={screeningAnswers[q.id] === "YES"}
+                      onChange={() =>
+                        setScreeningAnswers((prev) => ({ ...prev, [q.id]: "YES" }))
+                      }
+                    />
+                    <span>Có / Yes</span>
+                  </label>
+                  <label className="inline-flex items-center gap-1.5 cursor-pointer text-slate-700">
+                    <input
+                      type="radio"
+                      name={`sq_${q.id}`}
+                      value="NO"
+                      required
+                      checked={screeningAnswers[q.id] === "NO"}
+                      onChange={() =>
+                        setScreeningAnswers((prev) => ({ ...prev, [q.id]: "NO" }))
+                      }
+                    />
+                    <span>Không / No</span>
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 5. Đính kèm Bằng cấp & Chứng chỉ (IELTS, Bằng ĐH, AWS...) - Tùy chọn */}
       <div className="space-y-2">

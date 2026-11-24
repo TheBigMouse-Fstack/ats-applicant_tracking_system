@@ -104,12 +104,13 @@ export async function GET() {
       }),
     ]);
 
-    // 2. Tính phễu 5 trạng thái & cảnh báo SLA (BRL-07)
+    // 2. Tính phễu 6 trạng thái & cảnh báo SLA (BRL-07)
     const funnel = {
       total: applications.length,
       NEW: 0,
       SCREENING: 0,
       INTERVIEW: 0,
+      OFFER: 0,
       HIRED: 0,
       REJECTED: 0,
     };

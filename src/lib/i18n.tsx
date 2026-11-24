@@ -30,6 +30,7 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "stage.NEW": "Mới tiếp nhận",
     "stage.SCREENING": "Sàng lọc",
     "stage.INTERVIEW": "Phỏng vấn",
+    "stage.OFFER": "Đề nghị",
     "stage.HIRED": "Tuyển chọn",
     "stage.REJECTED": "Từ chối",
 
@@ -37,6 +38,7 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "stageDesc.NEW": "CV nộp qua cổng hoặc tải lên",
     "stageDesc.SCREENING": "Đánh giá sơ bộ hồ sơ",
     "stageDesc.INTERVIEW": "Đang đánh giá vòng chuyên môn",
+    "stageDesc.OFFER": "Gửi thư mời & thương lượng đãi ngộ",
     "stageDesc.HIRED": "Đã hoàn thành đánh giá phỏng vấn",
     "stageDesc.REJECTED": "Tạm lưu trữ hồ sơ chưa phù hợp",
 
@@ -383,6 +385,7 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "stage.NEW": "New",
     "stage.SCREENING": "Screening",
     "stage.INTERVIEW": "Interview",
+    "stage.OFFER": "Offer",
     "stage.HIRED": "Hired",
     "stage.REJECTED": "Rejected",
 
@@ -390,6 +393,7 @@ export const dictionary: Record<Locale, Record<string, string>> = {
     "stageDesc.NEW": "Applications submitted or uploaded",
     "stageDesc.SCREENING": "Initial resume screening",
     "stageDesc.INTERVIEW": "Under technical interview evaluation",
+    "stageDesc.OFFER": "Offer letter & compensation review",
     "stageDesc.HIRED": "Completed evaluations & hired",
     "stageDesc.REJECTED": "Archived unselected profiles",
 

@@ -88,6 +88,7 @@ interface DashboardData {
     NEW: number;
     SCREENING: number;
     INTERVIEW: number;
+    OFFER?: number;
     HIRED: number;
     REJECTED: number;
   };
@@ -129,18 +130,36 @@ const STAGE_META = [
   { key: "NEW" as const, label: "Mới tiếp nhận", barColor: "bg-zinc-400", textColor: "text-zinc-700" },
   { key: "SCREENING" as const, label: "Sàng lọc", barColor: "bg-zinc-600", textColor: "text-zinc-800" },
   { key: "INTERVIEW" as const, label: "Phỏng vấn", barColor: "bg-zinc-900", textColor: "text-zinc-900" },
+  { key: "OFFER" as const, label: "Đề nghị", barColor: "bg-teal-600", textColor: "text-teal-700" },
   { key: "HIRED" as const, label: "Tuyển chọn", barColor: "bg-brand-600", textColor: "text-brand-600" },
   { key: "REJECTED" as const, label: "Từ chối", barColor: "bg-zinc-300", textColor: "text-zinc-500" },
 ];
 
-const ACTION_LABELS: Record<string, string> = {
-  STAGE_CHANGE: "Chuyển vòng",
-  CV_UPLOAD: "Nộp hồ sơ",
-  SCORECARD_EVALUATE: "Chấm Scorecard",
-  PROFILE_EDITED: "Sửa dữ liệu CV",
-  INTERVIEW_SCHEDULED: "Xếp lịch PV",
-  INTERVIEW_CANCELLED: "Hủy lịch PV",
-};
+function formatAuditActionLabel(action: string, isEn: boolean): string {
+  const map: Record<string, { vi: string; en: string }> = {
+    STAGE_CHANGE: { vi: "Chuyển vòng tuyển", en: "Stage updated" },
+    CV_UPLOAD: { vi: "Tiếp nhận hồ sơ", en: "Application received" },
+    SCORECARD_EVALUATE: { vi: "Nộp phiếu đánh giá", en: "Scorecard submitted" },
+    PROFILE_EDITED: { vi: "Cập nhật hồ sơ", en: "Profile updated" },
+    INTERVIEW_SCHEDULED: { vi: "Lên lịch phỏng vấn", en: "Interview scheduled" },
+    INTERVIEW_SCHEDULED_AUTO_EMAIL: { vi: "Lên lịch phỏng vấn & gửi thư mời", en: "Interview scheduled & invite sent" },
+    INTERVIEW_SCHEDULED_MANUAL_EMAIL: { vi: "Lên lịch phỏng vấn (thư thủ công)", en: "Interview scheduled (manual invite)" },
+    INTERVIEW_INVITE_SENT_AUTO: { vi: "Gửi thư mời phỏng vấn tự động", en: "Interview invite sent" },
+    INTERVIEW_RESCHEDULED: { vi: "Dời lịch phỏng vấn", en: "Interview rescheduled" },
+    INTERVIEW_UPDATED: { vi: "Cập nhật lịch phỏng vấn", en: "Interview updated" },
+    INTERVIEW_CANCELLED: { vi: "Hủy lịch phỏng vấn", en: "Interview cancelled" },
+    INTERVIEW_NOTES_UPDATED: { vi: "Cập nhật ghi chú phỏng vấn", en: "Interview notes updated" },
+    STARRED: { vi: "Đánh dấu ưu tiên", en: "Marked as priority" },
+    UNSTARRED: { vi: "Bỏ đánh dấu ưu tiên", en: "Removed priority" },
+    REPARSED: { vi: "Phân tích lại hồ sơ", en: "Profile re-analyzed" },
+  };
+  if (map[action]) return isEn ? map[action].en : map[action].vi;
+  return action
+    .toLowerCase()
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 function getRoleMeta(role: string, isEn: boolean) {
   if (role === "ADMIN") {
@@ -467,7 +486,7 @@ export default function OperationalDashboard() {
 
         <div className="space-y-3">
           {STAGE_META.map((stage) => {
-            const count = data.funnel[stage.key];
+            const count = data.funnel[stage.key] || 0;
             const pct = data.funnel.total > 0 ? (count / data.funnel.total) * 100 : 0;
             const barWidth = count > 0 ? Math.max(pct, 3) : 0;
 
@@ -613,55 +632,65 @@ export default function OperationalDashboard() {
       {data.role === "ADMIN" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 space-y-5">
-            <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <section className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-rose-600" />
-                    Cảnh Báo Điểm Nghẽn Xử Lý (Quá hạn SLA)
+                  <h2 className="text-sm font-semibold text-zinc-900">
+                    {isEn ? "Overdue Applications (SLA)" : "Hồ sơ quá hạn xử lý (SLA)"}
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Hồ sơ bị &quot;ngâm&quot; quá 48h tại vòng Mới nộp (chờ HR) hoặc quá 72h tại vòng Sàng lọc (chờ Hiring Manager).
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    {isEn
+                      ? "Waiting over 48h in New (HR) or over 72h in Screening (Hiring Manager)."
+                      : "Chờ quá 48h ở Mới tiếp nhận (HR) hoặc quá 72h ở Sàng lọc (Quản lý chuyên môn)."}
                   </p>
                 </div>
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                  {data.sla.totalBreaches} quá hạn
+                <span
+                  className={`text-xs font-semibold shrink-0 whitespace-nowrap ${
+                    data.sla.totalBreaches > 0 ? "text-brand-600" : "text-emerald-700"
+                  }`}
+                >
+                  {data.sla.totalBreaches} {isEn ? "overdue" : "quá hạn"}
                 </span>
               </div>
 
               <MinimalQueueList
                 items={data.slaBreachQueue || []}
-                emptyMessage="Chưa ghi nhận hồ sơ nào bị chờ xử lý quá hạn."
+                emptyMessage={
+                  isEn
+                    ? "No overdue applications."
+                    : "Chưa ghi nhận hồ sơ nào quá hạn xử lý."
+                }
                 onSelect={(id) => setSelectedAppId(id)}
               />
             </section>
 
             {/* Tiến độ gọn theo Vị trí */}
-            <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
+            <section className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-zinc-100 flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-brand-600" />
-                    Ma Trận Phân Bổ Theo Vị Trí Đang Tuyển
+                  <h2 className="text-sm font-semibold text-zinc-900">
+                    {isEn ? "Pipeline by Open Position" : "Phân bổ hồ sơ theo vị trí"}
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Xem nhanh phân bổ ứng viên ở từng phòng ban để biết vị trí nào đang thiếu hồ sơ hay đã tuyển đủ.
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    {isEn
+                      ? "Application distribution across active roles."
+                      : "Tổng quan số lượng hồ sơ ở từng vị trí đang tuyển."}
                   </p>
                 </div>
-                <span className="text-xs text-slate-400 font-medium shrink-0">
-                  {data.activeJobs.length} vị trí
+                <span className="text-xs text-zinc-400 font-medium shrink-0 whitespace-nowrap">
+                  {data.activeJobs.length} {isEn ? "positions" : "vị trí"}
                 </span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-500 border-b border-slate-100">
-                      <th className="py-2.5 px-4 font-semibold">Vị trí</th>
-                      <th className="py-2.5 px-2 font-semibold text-center">New</th>
-                      <th className="py-2.5 px-2 font-semibold text-center">Screen</th>
-                      <th className="py-2.5 px-2 font-semibold text-center">PV</th>
-                      <th className="py-2.5 px-2 font-semibold text-center">Hired</th>
-                      <th className="py-2.5 px-4 font-semibold text-right">Tổng</th>
+                    <tr className="bg-zinc-50 text-zinc-500 border-b border-zinc-100">
+                      <th className="py-2.5 px-4 font-semibold">{isEn ? "Position" : "Vị trí"}</th>
+                      <th className="py-2.5 px-2 font-semibold text-center">{isEn ? "New" : "Mới"}</th>
+                      <th className="py-2.5 px-2 font-semibold text-center">{isEn ? "Screen" : "Sàng lọc"}</th>
+                      <th className="py-2.5 px-2 font-semibold text-center">{isEn ? "Interview" : "Phỏng vấn"}</th>
+                      <th className="py-2.5 px-2 font-semibold text-center">{isEn ? "Hired" : "Tuyển"}</th>
+                      <th className="py-2.5 px-4 font-semibold text-right">{isEn ? "Total" : "Tổng"}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -692,8 +721,8 @@ export default function OperationalDashboard() {
             {data.adminStats && (
               <section className="bg-white border border-slate-200 rounded-2xl p-4 text-xs space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900">
-                    Thời hạn lưu trữ hồ sơ (180 ngày)
+                  <span className="font-semibold text-zinc-900">
+                    {isEn ? "Data Retention (180 Days)" : "Thời hạn lưu trữ hồ sơ (180 ngày)"}
                   </span>
                   <span
                     className={`font-semibold ${
@@ -702,12 +731,17 @@ export default function OperationalDashboard() {
                         : "text-emerald-700"
                     }`}
                   >
-                    {data.adminStats.purgeEligibleCount} hồ sơ
+                    {data.adminStats.purgeEligibleCount}{" "}
+                    {isEn ? "applications" : "hồ sơ"}
                   </span>
                 </div>
-                <p className="text-slate-500">
+                <p className="text-zinc-500">
                   {data.adminStats.purgeEligibleCount > 0
-                    ? "Có hồ sơ đã từ chối lưu quá 180 ngày cần rà soát dọn dẹp tại Kho nhân tài."
+                    ? isEn
+                      ? "Rejected applications older than 180 days are ready for review in Talent Pool."
+                      : "Có hồ sơ đã từ chối lưu quá 180 ngày cần rà soát dọn dẹp tại Kho nhân tài."
+                    : isEn
+                    ? "No rejected applications have exceeded the 180-day retention window."
                     : "Chưa có hồ sơ bị từ chối nào vượt quá thời hạn 180 ngày."}
                 </p>
                 {data.adminStats.purgeEligibleCount > 0 && (
@@ -715,25 +749,26 @@ export default function OperationalDashboard() {
                     href="/admin/talent-pool"
                     className="inline-block text-brand-600 font-semibold hover:underline"
                   >
-                    Kiểm tra tại Kho nhân tài →
+                    {isEn ? "Review in Talent Pool →" : "Kiểm tra tại Kho nhân tài →"}
                   </Link>
                 )}
               </section>
             )}
 
-            {/* Nhật ký kiểm toán gần nhất */}
-            <section className="bg-white border border-slate-200 rounded-2xl p-4">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-0.5">
-                <History className="w-4 h-4 text-slate-400" />
-                Nhật Ký Kiểm Toán (Audit Trail)
+            {/* Nhật ký hoạt động gần nhất (Icon-free, Human-readable, Bilingual) */}
+            <section className="bg-white border border-zinc-200 rounded-xl p-4">
+              <h2 className="text-sm font-semibold text-zinc-900 mb-0.5">
+                {isEn ? "Recent Activity" : "Hoạt động gần đây"}
               </h2>
-              <p className="text-xs text-slate-500 mb-3">
-                Lịch sử minh bạch mọi thao tác của HR và Trưởng bộ phận trên hệ thống.
+              <p className="text-xs text-zinc-500 mb-3">
+                {isEn
+                  ? "Latest recruitment actions across the team."
+                  : "Lịch sử thao tác gần nhất của bộ phận tuyển dụng."}
               </p>
 
               {!data.recentAuditLogs || data.recentAuditLogs.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-4">
-                  Chưa có hoạt động nào.
+                <p className="text-xs text-zinc-400 text-center py-4">
+                  {isEn ? "No recent activity." : "Chưa có hoạt động nào."}
                 </p>
               ) : (
                 <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
@@ -741,19 +776,19 @@ export default function OperationalDashboard() {
                     <div
                       key={log.id}
                       onClick={() => setSelectedAppId(log.applicationId)}
-                      className="pb-2.5 border-b border-slate-100 last:border-b-0 last:pb-0 text-xs cursor-pointer hover:bg-slate-50 rounded-lg p-1.5 -mx-1.5 transition-colors"
+                      className="pb-2.5 border-b border-zinc-100 last:border-b-0 last:pb-0 text-xs cursor-pointer hover:bg-zinc-50 rounded-md p-1.5 -mx-1.5 transition-colors"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-slate-800 truncate">
-                          {log.actorName}
+                        <span className="font-semibold text-zinc-900 truncate">
+                          {isEn && log.actorName === "Hệ thống tự động" ? "System" : log.actorName}
                         </span>
-                        <span className="text-[10px] text-slate-400 shrink-0">
+                        <span className="text-[11px] text-zinc-400 shrink-0 tabular-nums">
                           {formatDateTime(log.createdAt)}
                         </span>
                       </div>
-                      <p className="text-slate-600 mt-0.5 truncate">
-                        {ACTION_LABELS[log.action] || log.action} •{" "}
-                        <strong className="text-slate-800">{log.candidateName}</strong>
+                      <p className="text-zinc-600 mt-0.5 truncate">
+                        {formatAuditActionLabel(log.action, isEn)} ·{" "}
+                        <strong className="text-zinc-900">{log.candidateName}</strong>
                       </p>
                     </div>
                   ))}

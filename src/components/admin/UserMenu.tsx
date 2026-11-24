@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { SessionUser } from "@/lib/auth";
 import { useLanguage } from "@/lib/i18n";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 interface UserMenuProps {
   user: SessionUser;
@@ -100,33 +100,31 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
             </p>
           </div>
 
-          {/* Language Switch */}
+          {/* Language Switch — Colored text only, zero icons or pill backgrounds */}
           <div className="px-4 py-2.5 border-b border-zinc-100">
             <p className="text-xs text-zinc-400 mb-1.5">{t("userMenu.language", "Ngôn ngữ")}</p>
-            <div className="grid grid-cols-2 gap-1">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setLocale("vi")}
-                className={`flex items-center justify-center gap-1 py-1 rounded text-xs transition-colors cursor-pointer ${
+                className={`py-1 text-left text-xs transition-colors cursor-pointer ${
                   locale === "vi"
-                    ? "bg-zinc-100 text-zinc-900 font-semibold"
+                    ? "text-brand-600 font-semibold"
                     : "text-zinc-500 hover:text-zinc-900"
                 }`}
               >
-                <span>Tiếng Việt</span>
-                {locale === "vi" && <Check className="w-3 h-3 text-brand-600" />}
+                Tiếng Việt
               </button>
               <button
                 type="button"
                 onClick={() => setLocale("en")}
-                className={`flex items-center justify-center gap-1 py-1 rounded text-xs transition-colors cursor-pointer ${
+                className={`py-1 text-left text-xs transition-colors cursor-pointer ${
                   locale === "en"
-                    ? "bg-zinc-100 text-zinc-900 font-semibold"
+                    ? "text-brand-600 font-semibold"
                     : "text-zinc-500 hover:text-zinc-900"
                 }`}
               >
-                <span>English</span>
-                {locale === "en" && <Check className="w-3 h-3 text-brand-600" />}
+                English
               </button>
             </div>
           </div>

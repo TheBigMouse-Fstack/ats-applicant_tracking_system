@@ -282,11 +282,9 @@ export default function TalentPoolPage() {
               setIsPurgeModalOpen(true);
               handleSimulatePurge(purgeDays);
             }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold border border-rose-200 transition-colors cursor-pointer shrink-0"
-            title="Dọn dẹp các hồ sơ đã từ chối lưu trữ quá 180 ngày"
+            className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
           >
-            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-            <span>Dọn dẹp hồ sơ quá hạn</span>
+            {isEn ? "Clean up expired profiles" : "Dọn dẹp hồ sơ quá hạn"}
           </button>
         )}
       </div>
@@ -314,7 +312,7 @@ export default function TalentPoolPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm tên, email hoặc kỹ năng..."
+              placeholder={isEn ? "Search name, email, or skills..." : "Tìm tên, email hoặc kỹ năng..."}
               className="w-full rounded-xl border border-slate-200 bg-slate-50/70 py-2 pl-8 pr-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all"
             />
           </div>
@@ -325,10 +323,18 @@ export default function TalentPoolPage() {
             onChange={(e) => setSelectedPoolStatus(e.target.value)}
             className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white lg:w-56"
           >
-            <option value="ALL">Tất cả nhóm nhân tài ({filteredData.length})</option>
-            <option value="SILVER_MEDALIST">Tiềm năng / Dự bị (Đánh giá tốt)</option>
-            <option value="IN_PIPELINE_WATCH">Đang chờ ở đợt tuyển khác</option>
-            <option value="ARCHIVED_RESERVE">Lưu trữ dự phòng (Hạn 180 ngày)</option>
+            <option value="ALL">
+              {isEn ? `All talent groups (${filteredData.length})` : `Tất cả nhóm nhân tài (${filteredData.length})`}
+            </option>
+            <option value="SILVER_MEDALIST">
+              {isEn ? "Silver Medalist (Strong)" : "Tiềm năng / Dự bị (Đánh giá tốt)"}
+            </option>
+            <option value="IN_PIPELINE_WATCH">
+              {isEn ? "Pending Next Opening" : "Đang chờ ở đợt tuyển khác"}
+            </option>
+            <option value="ARCHIVED_RESERVE">
+              {isEn ? "Archived Reserve (180d)" : "Lưu trữ dự phòng (Hạn 180 ngày)"}
+            </option>
           </select>
 
           {/* Lọc theo vị trí từng ứng tuyển */}
@@ -337,7 +343,7 @@ export default function TalentPoolPage() {
             onChange={(e) => setSelectedJobId(e.target.value)}
             className="rounded-xl border border-slate-200 bg-slate-50/70 py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white lg:w-52"
           >
-            <option value="ALL">Tất cả vị trí</option>
+            <option value="ALL">{isEn ? "All positions" : "Tất cả vị trí"}</option>
             {jobs.map((j) => (
               <option key={j.id} value={String(j.id)}>
                 {j.title}

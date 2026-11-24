@@ -84,9 +84,30 @@ export async function GET(
       application.viewedAt = new Date();
     }
 
+    // BRL-15: Blind Scorecard (Chống thiên kiến mỏ neo)
+    // Giám khảo (HM / HR) chưa tự nộp phiếu đánh giá sẽ không thấy chi tiết phiếu của người khác
+    const totalEvaluationsCount = application.evaluations.length;
+    const hasPassingScorecard = application.evaluations.some(
+      (ev) => ev.recommendation === "HIRE" || ev.recommendation === "STRONG_HIRE"
+    );
+    const hasSubmittedOwnScorecard = application.evaluations.some(
+      (ev) => ev.evaluatorId === sessionUser.id
+    );
+    const blindScorecardLocked =
+      sessionUser.role !== "ADMIN" &&
+      totalEvaluationsCount > 0 &&
+      !hasSubmittedOwnScorecard;
+
     return NextResponse.json({
       success: true,
-      data: application,
+      data: {
+        ...application,
+        evaluations: blindScorecardLocked ? [] : application.evaluations,
+        blindScorecardLocked,
+        hiddenEvaluationsCount: blindScorecardLocked ? totalEvaluationsCount : 0,
+        totalEvaluationsCount,
+        hasPassingScorecard,
+      },
     });
   } catch (error) {
     console.error("Fetch application detail error:", error);

@@ -123,12 +123,13 @@ export async function GET(req: Request) {
       orderBy: { stageUpdatedAt: "desc" },
     });
 
-    // 4. Phân loại theo 5 cột chuẩn Kanban (BRL-07 tính SLA)
+    // 4. Phân loại theo 6 cột chuẩn Kanban (BRL-07 tính SLA)
     const now = new Date().getTime();
     const columns: Record<string, any[]> = {
       NEW: [],
       SCREENING: [],
       INTERVIEW: [],
+      OFFER: [],
       HIRED: [],
       REJECTED: [],
     };
@@ -194,6 +195,7 @@ export async function GET(req: Request) {
       new: columns.NEW.length,
       screening: columns.SCREENING.length,
       interview: columns.INTERVIEW.length,
+      offer: columns.OFFER.length,
       hired: columns.HIRED.length,
       rejected: columns.REJECTED.length,
     };

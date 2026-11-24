@@ -929,6 +929,23 @@ async function runTests() {
     assert(i18nSrc.includes('"scorecard.strengths"') && i18nSrc.includes('"scorecard.conclusion"'), "Hệ thống song ngữ chuẩn hóa thẻ Điểm mạnh nổi bật và Kết luận chung");
     assert(i18nSrc.includes('"interview.title"') && i18nSrc.includes('"interview.online"'), "Hệ thống song ngữ chuẩn hóa các thông điệp quản lý Lịch phỏng vấn");
 
+    // ---------------------------------------------------------
+    // 23. ENTERPRISE UPGRADES (MAMMOTH, 60/40, BRL-15/16/17, OFFER)
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}23. Enterprise Upgrades (Mammoth DOCX, Unified 60/40, Blind Scorecard, OFFER, Knock-out & Approval):${colors.reset}`);
+    const stageRulesSrc = fs.readFileSync(path.join(process.cwd(), "src/lib/stage-rules.ts"), "utf8");
+    const appDetailApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/applications/[id]/route.ts"), "utf8");
+    const jobsApproveApiExists = fs.existsSync(path.join(process.cwd(), "src/app/api/jobs/[id]/approve/route.ts"));
+    const schemaSrc = fs.readFileSync(path.join(process.cwd(), "prisma/schema.prisma"), "utf8");
+
+    assert(aiParserSrc.includes('import mammoth from "mammoth"') && aiParserSrc.includes("mammoth.extractRawText"), "Tích hợp thư viện mammoth để bóc tách văn bản tệp .docx thực tế");
+    assert(!aiParserSrc.toLowerCase().includes("timmerman industries") && !aiParserSrc.includes("2011 - 2015"), "Dọn sạch hoàn toàn dữ liệu mẫu hardcode (Timmerman Industries, 2011 - 2015) trong Layer 1 Heuristic");
+    assert(aiParserSrc.includes("60% KỸ NĂNG + 40% KINH NGHIỆM") && aiParserSrc.includes("skillScore * 0.6 + expScore * 0.4"), "Đồng nhất công thức trọng số 60% Kỹ năng + 40% Kinh nghiệm giữa Layer 2 Gemini và Layer 1 Heuristic");
+    assert(appDetailApiSrc.includes("blindScorecardLocked") && appDetailApiSrc.includes("hiddenEvaluationsCount"), "Kích hoạt chốt chặn Blind Scorecard (BRL-15) ở tầng API chống thiên kiến mỏ neo");
+    assert(stageRulesSrc.includes('"OFFER"') && stageRulesSrc.includes('OFFER: ["INTERVIEW", "HIRED", "REJECTED"]'), "Mở rộng Pipeline lên 6 giai đoạn với vòng OFFER riêng biệt");
+    assert(schemaSrc.includes("screeningQuestions") && schemaSrc.includes("screeningAnswers") && schemaSrc.includes("knockoutFailed"), "Schema CSDL hỗ trợ Câu hỏi sàng lọc cứng (Knock-out Questions — BRL-16)");
+    assert(jobsApproveApiExists && schemaSrc.includes("approvedById") && schemaSrc.includes("PENDING_APPROVAL"), "Hỗ trợ luồng Phê duyệt tin tuyển dụng (Requisition Approval — BRL-17)");
+
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
   } finally {

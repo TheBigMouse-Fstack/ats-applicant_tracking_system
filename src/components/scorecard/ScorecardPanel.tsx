@@ -33,6 +33,9 @@ interface ScorecardPanelProps {
   candidateName: string;
   jobTitle: string;
   evaluations: EvaluationItem[];
+  blindScorecardLocked?: boolean;
+  hiddenEvaluationsCount?: number;
+  hasPassingOverride?: boolean;
   defaultFormOpen?: boolean;
   onSuccess: () => void;
 }
@@ -44,6 +47,9 @@ export default function ScorecardPanel({
   candidateName,
   jobTitle,
   evaluations,
+  blindScorecardLocked = false,
+  hiddenEvaluationsCount = 0,
+  hasPassingOverride,
   defaultFormOpen = false,
   onSuccess,
 }: ScorecardPanelProps) {
@@ -102,9 +108,12 @@ export default function ScorecardPanel({
         ).toFixed(2)
       : null;
 
-  const hasPassingScorecard = evaluations.some(
-    (ev) => ev.recommendation === "HIRE" || ev.recommendation === "STRONG_HIRE"
-  );
+  const hasPassingScorecard =
+    typeof hasPassingOverride === "boolean"
+      ? hasPassingOverride
+      : evaluations.some(
+          (ev) => ev.recommendation === "HIRE" || ev.recommendation === "STRONG_HIRE"
+        );
 
   const scoreLabels: Record<number, string> = isEn
     ? { 1: "Poor", 2: "Fair", 3: "Meets", 4: "Strong", 5: "Exceptional" }
@@ -635,11 +644,24 @@ export default function ScorecardPanel({
       <div className="space-y-3">
         <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
           {isEn
-            ? `Submitted Scorecards (${evaluations.length})`
-            : `Phiếu đánh giá đã nộp (${evaluations.length})`}
+            ? `Submitted Scorecards (${blindScorecardLocked ? hiddenEvaluationsCount : evaluations.length})`
+            : `Phiếu đánh giá đã nộp (${blindScorecardLocked ? hiddenEvaluationsCount : evaluations.length})`}
         </h4>
 
-        {evaluations.length === 0 ? (
+        {blindScorecardLocked ? (
+          <div className="px-4 py-4 rounded-lg border border-zinc-200 border-l-2 border-l-brand-600 bg-zinc-50/70 text-xs space-y-1">
+            <p className="font-semibold text-zinc-900">
+              {isEn
+                ? `Blind Evaluation Active (${hiddenEvaluationsCount} submitted)`
+                : `Đánh giá độc lập đang bật (${hiddenEvaluationsCount} phiếu đã nộp)`}
+            </p>
+            <p className="text-zinc-600 leading-relaxed">
+              {isEn
+                ? "To prevent anchoring bias, other interviewers' scores remain hidden until you submit your own scorecard above."
+                : "Để tránh thiên kiến mỏ neo, điểm số và nhận xét của các giám khảo khác sẽ hiển thị ngay sau khi bạn hoàn tất và nộp phiếu đánh giá của mình."}
+            </p>
+          </div>
+        ) : evaluations.length === 0 ? (
           <div className="py-8 px-4 rounded-lg border border-dashed border-zinc-200 text-center text-xs text-zinc-500">
             {isEn
               ? "No scorecards submitted yet."

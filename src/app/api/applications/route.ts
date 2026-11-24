@@ -176,6 +176,7 @@ export async function POST(req: Request) {
     const file = formData.get("cvFile") as File | null;
     const source = (formData.get("source") as string)?.trim() || "CAREER_SITE";
     const confirmMismatch = formData.get("confirmMismatch") === "true";
+    const rawScreeningAnswers = formData.get("screeningAnswers") as string | null;
 
     const fieldErrors: Record<string, string> = {};
 
@@ -571,6 +572,35 @@ export async function POST(req: Request) {
       });
     }
 
+    // BRL-16: Đánh giá câu hỏi sàng lọc cứng (Knock-out Questions — Human-in-the-Loop soft flag)
+    let evaluatedAnswers: Array<{ questionId: string; question: string; answer: string; passed: boolean; isKnockout: boolean }> = [];
+    let knockoutFailed = false;
+    try {
+      const jobQuestionsRaw = (job as any).screeningQuestions;
+      const jobQuestions = typeof jobQuestionsRaw === "string" ? JSON.parse(jobQuestionsRaw) : [];
+      const submittedMap: Record<string, string> = rawScreeningAnswers ? JSON.parse(rawScreeningAnswers) : {};
+      if (Array.isArray(jobQuestions) && jobQuestions.length > 0) {
+        evaluatedAnswers = jobQuestions.map((q: any) => {
+          const ans = String(submittedMap[q.id] || "").toUpperCase();
+          const expected = String(q.expectedAnswer || "YES").toUpperCase();
+          const passed = ans === expected;
+          if (q.isKnockout && !passed) {
+            knockoutFailed = true;
+          }
+          return {
+            questionId: String(q.id),
+            question: String(q.question),
+            answer: ans || "N/A",
+            passed,
+            isKnockout: Boolean(q.isKnockout),
+          };
+        });
+      }
+    } catch {
+      evaluatedAnswers = [];
+      knockoutFailed = false;
+    }
+
     // 10. Tạo đơn ứng tuyển Application mới (Kanban cột NEW)
     const application = await prisma.application.create({
       data: {
@@ -586,7 +616,9 @@ export async function POST(req: Request) {
         contactMismatchNote: mismatch.note,
         duplicateWarningAppId,
         duplicateWarningNote,
-      },
+        screeningAnswers: JSON.stringify(evaluatedAnswers),
+        knockoutFailed,
+      } as any,
     });
 
     // 11. Ghi nhận AuditLog hành động nộp CV

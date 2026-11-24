@@ -1,4 +1,4 @@
-export type PipelineStage = "NEW" | "SCREENING" | "INTERVIEW" | "HIRED" | "REJECTED";
+export type PipelineStage = "NEW" | "SCREENING" | "INTERVIEW" | "OFFER" | "HIRED" | "REJECTED";
 export type InternalRole = "ADMIN" | "HR" | "HIRING_MANAGER";
 
 export interface StageTransitionContext {
@@ -21,6 +21,7 @@ export const VALID_STAGES: PipelineStage[] = [
   "NEW",
   "SCREENING",
   "INTERVIEW",
+  "OFFER",
   "HIRED",
   "REJECTED",
 ];
@@ -29,6 +30,7 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   NEW: "Mới tiếp nhận",
   SCREENING: "Sàng lọc",
   INTERVIEW: "Phỏng vấn",
+  OFFER: "Đề nghị",
   HIRED: "Tuyển chọn",
   REJECTED: "Từ chối",
 };
@@ -49,18 +51,18 @@ export const REJECTION_REASON_PRESETS: string[] = [
 export const ALLOWED_STAGE_FLOW: Record<PipelineStage, PipelineStage[]> = {
   NEW: ["SCREENING", "REJECTED"],
   SCREENING: ["NEW", "INTERVIEW", "REJECTED"],
-  INTERVIEW: ["SCREENING", "HIRED", "REJECTED"],
+  INTERVIEW: ["SCREENING", "OFFER", "REJECTED"],
+  OFFER: ["INTERVIEW", "HIRED", "REJECTED"],
   HIRED: [], // Terminal State — Trạng thái kết thúc, không cho kéo ngược tùy tiện
-  REJECTED: ["NEW", "SCREENING", "INTERVIEW"],
+  REJECTED: ["NEW", "SCREENING", "INTERVIEW", "OFFER"],
 };
 
 /**
  * Kiểm tra quyền hạn chuyển trạng thái theo vai trò (RBAC Stage Authority)
- * - HR: Chuyển tối đa đến SCREENING (NEW <-> SCREENING, NEW/SCREENING -> REJECTED, REJECTED -> NEW/SCREENING).
- *       KHÔNG được phép chuyển sang INTERVIEW, HIRED hoặc thao tác hồ sơ đang ở INTERVIEW/HIRED.
- * - HIRING_MANAGER: Phụ trách từ SCREENING trở đi (SCREENING -> INTERVIEW, SCREENING/INTERVIEW -> REJECTED,
- *       INTERVIEW -> HIRED, INTERVIEW -> SCREENING, REJECTED -> INTERVIEW).
- *       KHÔNG được chuyển hồ sơ ở vòng NEW (vòng sơ loại thuộc trách nhiệm HR).
+ * - HR: Chuyển tối đa đến SCREENING (NEW <-> SCREENING, NEW/SCREENING -> REJECTED, REJECTED -> NEW/SCREENING)
+ *       VÀ hỗ trợ hoàn tất OFFER -> HIRED / REJECTED sau khi Hiring Manager đã duyệt sang OFFER.
+ * - HIRING_MANAGER: Phụ trách từ SCREENING trở đi (SCREENING -> INTERVIEW -> OFFER -> HIRED, hoặc REJECTED).
+ *       KHÔNG được chuyển hồ sơ ở vòng NEW.
  * - ADMIN: Toàn quyền thực thi mọi chuyển đổi hợp lệ theo State Machine.
  */
 export function isRoleAuthorizedForTransition(
@@ -73,18 +75,23 @@ export function isRoleAuthorizedForTransition(
   }
 
   if (role === "HR") {
-    // HR tuyệt đối không được chuyển hồ sơ sang Phỏng vấn hoặc Tuyển chọn
-    if (toStage === "INTERVIEW" || toStage === "HIRED") {
+    // Cho phép HR hoàn tất OFFER -> HIRED / REJECTED sau khi HM đã duyệt sang OFFER
+    if (fromStage === "OFFER" && (toStage === "HIRED" || toStage === "REJECTED")) {
+      return { authorized: true };
+    }
+
+    // HR tuyệt đối không được duyệt hồ sơ sang Phỏng vấn, Đề nghị hoặc tự nhảy sang Tuyển chọn
+    if (toStage === "INTERVIEW" || toStage === "OFFER" || toStage === "HIRED") {
       return {
         authorized: false,
         rule: "RBAC-STAGE-LIMIT",
         error:
-          "Chuyên viên HR chuyển hồ sơ tối đa đến vòng Sàng lọc. Quyền duyệt Phỏng vấn và Tuyển chọn thuộc Quản lý chuyên môn.",
+          "Chuyên viên HR chuyển hồ sơ tối đa đến vòng Sàng lọc. Quyền duyệt Phỏng vấn và Đề nghị (Offer) thuộc Quản lý chuyên môn.",
       };
     }
 
-    // HR không được tác động/từ chối hồ sơ đã bàn giao sang vòng Phỏng vấn hoặc Tuyển chọn
-    if (fromStage === "INTERVIEW" || fromStage === "HIRED") {
+    // HR không được tác động/từ chối hồ sơ đang ở vòng Phỏng vấn hoặc đã Tuyển chọn
+    if (fromStage === "INTERVIEW" || fromStage === "OFFER" || fromStage === "HIRED") {
       return {
         authorized: false,
         rule: "RBAC-STAGE-LIMIT",
@@ -136,10 +143,10 @@ export function canRoleDragFromStage(fromStage: string, role?: string | null): b
 
   if (role === "ADMIN") return true;
   if (role === "HR") {
-    return fromStage === "NEW" || fromStage === "SCREENING" || fromStage === "REJECTED";
+    return fromStage === "NEW" || fromStage === "SCREENING" || fromStage === "OFFER" || fromStage === "REJECTED";
   }
   if (role === "HIRING_MANAGER") {
-    return fromStage === "SCREENING" || fromStage === "INTERVIEW" || fromStage === "REJECTED";
+    return fromStage === "SCREENING" || fromStage === "INTERVIEW" || fromStage === "OFFER" || fromStage === "REJECTED";
   }
   return false;
 }
@@ -214,12 +221,14 @@ export function validateStageTransition(
   const allowedTargets = ALLOWED_STAGE_FLOW[from];
   if (!allowedTargets.includes(to)) {
     let hint = "";
-    if (from === "NEW" && (to === "INTERVIEW" || to === "HIRED")) {
+    if (from === "NEW" && (to === "INTERVIEW" || to === "OFFER" || to === "HIRED")) {
       hint = " Hồ sơ cần qua vòng Sàng lọc trước khi chuyển tiếp.";
-    } else if (from === "SCREENING" && to === "HIRED") {
-      hint = " Hồ sơ cần qua vòng Phỏng vấn và có kết quả đánh giá trước khi tuyển chọn.";
+    } else if (from === "SCREENING" && (to === "OFFER" || to === "HIRED")) {
+      hint = " Hồ sơ cần qua vòng Phỏng vấn và có phiếu đánh giá trước khi gửi đề nghị hoặc tuyển chọn.";
+    } else if (from === "INTERVIEW" && to === "HIRED") {
+      hint = " Hồ sơ cần chuyển qua vòng Đề nghị (Offer) để thương lượng trước khi xác nhận Tuyển chọn.";
     } else if (from === "REJECTED" && to === "HIRED") {
-      hint = " Vui lòng chuyển hồ sơ về vòng Phỏng vấn để đánh giá lại trước khi tuyển chọn.";
+      hint = " Vui lòng chuyển hồ sơ về vòng Phỏng vấn hoặc Đề nghị trước khi tuyển chọn.";
     }
 
     return {
@@ -244,15 +253,15 @@ export function validateStageTransition(
     }
   }
 
-  // RULE 5: Stage Gate Rule trước khi HIRED (BRL-06)
-  if (to === "HIRED") {
+  // RULE 5: Stage Gate Rule trước khi OFFER hoặc HIRED (BRL-06)
+  if (to === "OFFER" || to === "HIRED") {
+    const targetLabel = to === "OFFER" ? "gửi Đề nghị (Offer)" : "xác nhận Tuyển chọn";
     if (evaluationsCount === 0) {
       return {
         allowed: false,
         statusCode: 400,
         rule: "BRL-06",
-        error:
-          "Chưa thể tuyển chọn: Cần có ít nhất 01 phiếu đánh giá phỏng vấn hoàn tất từ chuyên môn trước khi xác nhận Tuyển chọn.",
+        error: `Chưa thể ${targetLabel}: Cần có ít nhất 01 phiếu đánh giá phỏng vấn hoàn tất từ chuyên môn.`,
       };
     }
 
@@ -261,8 +270,7 @@ export function validateStageTransition(
         allowed: false,
         statusCode: 400,
         rule: "BRL-06",
-        error:
-          "Chưa thể tuyển chọn: Hồ sơ cần có ít nhất 01 phiếu đánh giá với khuyến nghị đạt chuẩn (Đề xuất tuyển dụng / Tuyển dụng ngay).",
+        error: `Chưa thể ${targetLabel}: Hồ sơ cần có ít nhất 01 phiếu đánh giá đạt chuẩn (Đề xuất tuyển / Tuyển ngay).`,
       };
     }
   }

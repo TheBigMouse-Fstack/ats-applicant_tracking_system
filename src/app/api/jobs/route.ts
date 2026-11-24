@@ -77,6 +77,8 @@ export async function POST(req: Request) {
       requirementsJd,
       targetHeadcount,
       maxActiveInterviews,
+      screeningQuestions,
+      initialStatus,
     } = body;
 
     const fieldErrors: Record<string, string> = {};
@@ -144,6 +146,30 @@ export async function POST(req: Request) {
       formattedSkills = JSON.stringify(parsed);
     }
 
+    // BRL-16: Chuẩn hóa danh sách câu hỏi sàng lọc (Knock-out Questions)
+    let formattedQuestions = "[]";
+    if (Array.isArray(screeningQuestions)) {
+      const cleaned = screeningQuestions
+        .filter((q: any) => q && typeof q.question === "string" && q.question.trim().length > 0)
+        .slice(0, 5)
+        .map((q: any, idx: number) => ({
+          id: String(q.id || `q_${idx + 1}`),
+          question: String(q.question).trim(),
+          expectedAnswer: q.expectedAnswer === "NO" ? "NO" : "YES",
+          isKnockout: Boolean(q.isKnockout),
+        }));
+      formattedQuestions = JSON.stringify(cleaned);
+    }
+
+    // BRL-17: Phê duyệt tin tuyển dụng (Requisition Approval)
+    // HR tạo tin -> mặc định PENDING_APPROVAL (hoặc DRAFT); Admin có thể mở ACTIVE trực tiếp
+    let resolvedStatus = "ACTIVE";
+    if (sessionUser?.role === "HR") {
+      resolvedStatus = initialStatus === "DRAFT" ? "DRAFT" : "PENDING_APPROVAL";
+    } else if (initialStatus === "DRAFT" || initialStatus === "PENDING_APPROVAL") {
+      resolvedStatus = initialStatus;
+    }
+
     const job = await prisma.job.create({
       data: {
         creatorId,
@@ -156,13 +182,22 @@ export async function POST(req: Request) {
         requirementsJd: requirementsJd.trim(),
         targetHeadcount: parsedHeadcount,
         maxActiveInterviews: parsedMaxInterviews,
-        status: "ACTIVE",
-      },
+        screeningQuestions: formattedQuestions,
+        status: resolvedStatus,
+        ...(resolvedStatus === "ACTIVE" && sessionUser
+          ? { approvedById: sessionUser.id, approvedAt: new Date() }
+          : {}),
+      } as any,
     });
 
     return NextResponse.json({
       success: true,
-      message: `Tạo tin tuyển dụng "${job.title}" thành công!`,
+      message:
+        resolvedStatus === "PENDING_APPROVAL"
+          ? `Đã gửi yêu cầu phê duyệt tin tuyển dụng "${job.title}".`
+          : resolvedStatus === "DRAFT"
+          ? `Đã lưu bản nháp tin tuyển dụng "${job.title}".`
+          : `Tạo tin tuyển dụng "${job.title}" thành công!`,
       data: job,
     });
   } catch (error: any) {

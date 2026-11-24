@@ -39,7 +39,25 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ success: true, data: evaluations });
+    // BRL-15: Blind Scorecard — Ẩn chi tiết phiếu của giám khảo khác nếu người xem (không phải Admin) chưa tự nộp
+    if (applicationId && sessionUser.role !== "ADMIN") {
+      const hasSubmittedOwn = evaluations.some((ev) => ev.evaluatorId === sessionUser.id);
+      if (!hasSubmittedOwn && evaluations.length > 0) {
+        return NextResponse.json({
+          success: true,
+          data: [],
+          blindScorecardLocked: true,
+          hiddenEvaluationsCount: evaluations.length,
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: evaluations,
+      blindScorecardLocked: false,
+      hiddenEvaluationsCount: 0,
+    });
   } catch (error: any) {
     console.error("GET /api/scorecards error:", error);
     return NextResponse.json(

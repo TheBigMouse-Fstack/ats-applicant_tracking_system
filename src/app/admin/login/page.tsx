@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { useSession } from "@/contexts/SessionContext";
+import { useLanguage } from "@/lib/i18n";
 import BrandLogo from "@/components/common/BrandLogo";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const { setUser } = useSession();
+  const { locale } = useLanguage();
+  const isEn = locale === "en";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -87,7 +90,9 @@ export default function AdminLoginPage() {
         <div className="bg-white p-6 sm:p-8 rounded-lg border border-zinc-200 space-y-6">
           {/* Quick 1-click Demo Access */}
           <div className="space-y-2.5">
-            <p className="text-xs font-medium text-zinc-500">Đăng nhập nhanh theo vai trò</p>
+            <p className="text-xs font-medium text-zinc-500">
+              {isEn ? "Quick role sign-in" : "Đăng nhập nhanh theo vai trò"}
+            </p>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
@@ -133,7 +138,9 @@ export default function AdminLoginPage() {
               <div className="w-full border-t border-zinc-200" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-2.5 text-zinc-400">hoặc đăng nhập thủ công</span>
+              <span className="bg-white px-2.5 text-zinc-400">
+                {isEn ? "or sign in manually" : "hoặc đăng nhập thủ công"}
+              </span>
             </div>
           </div>
 
@@ -171,7 +178,9 @@ export default function AdminLoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-700 mb-1.5">Mật khẩu</label>
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+                {isEn ? "Password" : "Mật khẩu"}
+              </label>
               <input
                 type="password"
                 required

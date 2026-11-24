@@ -210,7 +210,17 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           {/* CỘT PHẢI (5 Cột): Form ứng tuyển */}
           <div className="lg:col-span-5 sticky top-24">
             {isJobOpen ? (
-              <JobApplicationForm jobId={job.id} jobTitle={job.title} />
+              <JobApplicationForm
+                jobId={job.id}
+                jobTitle={job.title}
+                screeningQuestions={(() => {
+                  try {
+                    return JSON.parse((job as any).screeningQuestions || "[]");
+                  } catch {
+                    return [];
+                  }
+                })()}
+              />
             ) : (
               <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 text-center space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">

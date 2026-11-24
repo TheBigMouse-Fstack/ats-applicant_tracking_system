@@ -380,7 +380,7 @@ export default function UserManagementPage() {
           <div className="bg-white rounded-lg max-w-md w-full shadow-xl border border-zinc-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
               <h3 className="font-semibold text-zinc-900 text-sm">
-                Chỉnh sửa tài khoản
+                {isEn ? "Edit Account" : "Chỉnh sửa tài khoản"}
               </h3>
               <button
                 onClick={() => setEditingUser(null)}
@@ -399,7 +399,9 @@ export default function UserManagementPage() {
               )}
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 mb-1">Họ và tên</label>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">
+                  {isEn ? "Full Name" : "Họ và tên"}
+                </label>
                 <input
                   type="text"
                   required
@@ -448,7 +450,7 @@ export default function UserManagementPage() {
 
               <div>
                 <label className="block text-xs font-medium text-zinc-700 mb-1">
-                  Số điện thoại
+                  {isEn ? "Phone Number" : "Số điện thoại"}
                 </label>
                 <input
                   type="text"
@@ -473,7 +475,9 @@ export default function UserManagementPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 mb-1">Vai trò</label>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">
+                  {isEn ? "Role" : "Vai trò"}
+                </label>
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value)}
@@ -487,7 +491,7 @@ export default function UserManagementPage() {
 
               <div className="pt-2 border-t border-zinc-100">
                 <label className="block text-xs font-medium text-zinc-700 mb-1">
-                  Đặt lại mật khẩu mới (tuỳ chọn)
+                  {isEn ? "Reset Password (optional)" : "Đặt lại mật khẩu mới (tuỳ chọn)"}
                 </label>
                 <input
                   type="password"
@@ -499,7 +503,11 @@ export default function UserManagementPage() {
                       setEditFieldErrorMsg("");
                     }
                   }}
-                  placeholder="Để trống nếu giữ mật khẩu cũ (tối thiểu 8 ký tự)"
+                  placeholder={
+                    isEn
+                      ? "Leave blank to keep current password (min 8 chars)"
+                      : "Để trống nếu giữ mật khẩu cũ (tối thiểu 8 ký tự)"
+                  }
                   className={`w-full px-3 py-2 border rounded-md text-sm text-zinc-900 ${
                     editErrorField === "newPassword"
                       ? "border-red-500 focus:outline-none"
@@ -517,7 +525,7 @@ export default function UserManagementPage() {
                   onClick={() => setEditingUser(null)}
                   className="px-4 py-2 border border-zinc-200 text-zinc-700 text-xs font-medium rounded-md hover:bg-zinc-50 transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  Hủy
+                  {isEn ? "Cancel" : "Hủy"}
                 </button>
                 <button
                   type="submit"
@@ -525,7 +533,7 @@ export default function UserManagementPage() {
                   className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-60 cursor-pointer whitespace-nowrap"
                 >
                   {editSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Lưu thay đổi</span>
+                  <span>{isEn ? "Save Changes" : "Lưu thay đổi"}</span>
                 </button>
               </div>
             </form>
@@ -556,7 +564,9 @@ export default function UserManagementPage() {
               )}
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 mb-1">Họ và tên</label>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">
+                  {isEn ? "Full Name" : "Họ và tên"}
+                </label>
                 <input
                   type="text"
                   required
@@ -640,7 +650,9 @@ export default function UserManagementPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-zinc-700 mb-1">Vai trò</label>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">
+                  {isEn ? "Role" : "Vai trò"}
+                </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}

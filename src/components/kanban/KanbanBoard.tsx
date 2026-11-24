@@ -90,6 +90,14 @@ const COLUMNS_CONFIG: ColumnConfig[] = [
     description: "Đang đánh giá vòng chuyên môn",
   },
   {
+    id: "OFFER",
+    title: "Đề nghị",
+    badgeColor: "bg-teal-100 text-teal-700 border-teal-200",
+    headerBg: "bg-teal-50/70 border-b border-teal-100",
+    dotColor: "bg-teal-500",
+    description: "Gửi thư mời & thương lượng đãi ngộ",
+  },
+  {
     id: "HIRED",
     title: "Tuyển chọn",
     badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -125,6 +133,7 @@ export default function KanbanBoard() {
     NEW: [],
     SCREENING: [],
     INTERVIEW: [],
+    OFFER: [],
     HIRED: [],
     REJECTED: [],
   });
@@ -133,6 +142,7 @@ export default function KanbanBoard() {
     new: 0,
     screening: 0,
     interview: 0,
+    offer: 0,
     hired: 0,
     rejected: 0,
   });
@@ -167,6 +177,7 @@ export default function KanbanBoard() {
     NEW: DEFAULT_PAGE_SIZE,
     SCREENING: DEFAULT_PAGE_SIZE,
     INTERVIEW: DEFAULT_PAGE_SIZE,
+    OFFER: DEFAULT_PAGE_SIZE,
     HIRED: DEFAULT_PAGE_SIZE,
     REJECTED: DEFAULT_PAGE_SIZE,
   });
@@ -860,7 +871,7 @@ export default function KanbanBoard() {
 
       {/* 3. Bảng 5 Cột Kanban Kéo thả */}
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start pb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-start pb-6">
           {COLUMNS_CONFIG.map((col) => {
             const allColumnItems = filteredColumns[col.id] || [];
             const count = allColumnItems.length;
