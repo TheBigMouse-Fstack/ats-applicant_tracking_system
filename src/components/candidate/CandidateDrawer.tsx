@@ -83,6 +83,7 @@ export default function CandidateDrawer({
 
   // Progressive Disclosure: Mặc định chỉ hiển thị 5 trường cốt lõi theo JD; bấm để xem chi tiết
   const [showDetailedProfile, setShowDetailedProfile] = useState(false);
+  const [showNotices, setShowNotices] = useState(false);
 
   // Chỉnh sửa thủ công hồ sơ cho HR/Admin (khắc phục bóc tách text sai)
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -183,6 +184,7 @@ export default function CandidateDrawer({
     setInterviewSuccessEmail(null);
     setInterviewError(null);
     setShowDetailedProfile(false);
+    setShowNotices(false);
     setIsEditingProfile(false);
     setIsRejectModalOpen(false);
 
@@ -713,22 +715,37 @@ export default function CandidateDrawer({
               </div>
             ) : (
               <>
-                {/* Lỗi nếu thao tác thất bại (VD vi phạm BRL-06) */}
+                {/* Lỗi thao tác / Thông báo nhanh (gọn 1 dòng, viền trái) */}
                 {actionError && (
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
-                    <ShieldAlert className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <div className="px-4 py-3 rounded-lg bg-rose-50/70 border border-rose-200 border-l-2 border-l-brand-600 text-xs text-rose-800 flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-bold">Thao tác bị chặn:</p>
-                      <p className="mt-0.5">{actionError}</p>
+                      <span className="font-semibold text-rose-900">
+                        {isEn ? "Action blocked: " : "Thao tác bị chặn: "}
+                      </span>
+                      <span>{actionError}</span>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setActionError("")}
+                      className="text-rose-500 hover:text-rose-800 shrink-0 cursor-pointer"
+                      aria-label="Close"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 )}
 
-                {/* Thông báo reparse */}
                 {reparseNotice && (
-                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div className="px-4 py-2.5 rounded-lg bg-emerald-50/70 border border-emerald-200 border-l-2 border-l-emerald-600 text-xs text-emerald-900 flex items-center justify-between gap-2">
                     <span>{reparseNotice}</span>
+                    <button
+                      type="button"
+                      onClick={() => setReparseNotice(null)}
+                      className="text-emerald-600 hover:text-emerald-900 shrink-0 cursor-pointer"
+                      aria-label="Close"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 )}
 
@@ -736,65 +753,100 @@ export default function CandidateDrawer({
                 {/* TAB 1: HỒ SƠ & ĐỐI CHIẾU TIÊU CHUẨN */}
                 {/* ========================================================================= */}
                 {activeTab === "overview" && (
-                  <div className="space-y-6">
-                    {/* BANNER LÝ DO TỪ CHỐI (Nếu đang ở trạng thái REJECTED) */}
+                  <div className="space-y-5">
+                    {/* TRẠNG THÁI TỪ CHỐI (Chỉ 1 dòng mảnh với thanh trái đỏ — tách biệt khỏi cảnh báo) */}
                     {data?.currentStage === "REJECTED" && data?.rejectionReason && (
-                      <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start gap-3">
-                        <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                          <p className="font-semibold text-rose-900 text-xs">
-                            {t("reject.title", "Lý Do Từ Chối Hồ Sơ")}
-                          </p>
-                          <p className="font-medium leading-relaxed">{data.rejectionReason}</p>
-                        </div>
+                      <div className="px-4 py-3 rounded-lg bg-zinc-50 border border-zinc-200 border-l-2 border-l-brand-600 text-xs flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <span className="font-semibold text-brand-600 shrink-0">
+                          {isEn ? "Rejected:" : "Lý do từ chối:"}
+                        </span>
+                        <span className="text-zinc-800 leading-relaxed">{data.rejectionReason}</span>
                       </div>
                     )}
 
-                    {/* CẢNH BÁO NGHI NGỜ TRÙNG HỒ SƠ (Lớp 2 Soft Flag) */}
-                    {data?.duplicateWarningNote && (
-                      <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 flex items-start gap-2.5">
-                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-amber-900">
-                            Cảnh báo nghi ngờ trùng hồ sơ
-                          </p>
-                          <p className="text-amber-800 leading-relaxed">
-                            {data.duplicateWarningNote}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* LƯU Ý SAI KHÁC THÔNG TIN GIỮA ĐĂNG KÝ (CHÍNH) VÀ TỆP CV (PHỤ) */}
-                    {data?.contactMismatchLevel &&
-                      data.contactMismatchLevel !== "NONE" &&
-                      data?.contactMismatchNote && (
-                        <div
-                          className={`p-3.5 rounded-2xl border text-xs flex items-start gap-2.5 ${
+                    {/* KHỐI LƯU Ý HỆ THỐNG HỢP NHẤT (Gom toàn bộ cảnh báo trùng / lệch CV vào 1 thanh gọn có thể mở rộng) */}
+                    {(() => {
+                      const notices: Array<{ id: string; label: string; detail: string; severity: "warn" | "info" }> = [];
+                      if (data?.duplicateWarningNote) {
+                        notices.push({
+                          id: "dup",
+                          label: isEn ? "Possible duplicate" : "Nghi ngờ trùng hồ sơ",
+                          detail: data.duplicateWarningNote,
+                          severity: "warn",
+                        });
+                      }
+                      if (
+                        data?.contactMismatchLevel &&
+                        data.contactMismatchLevel !== "NONE" &&
+                        data?.contactMismatchNote
+                      ) {
+                        notices.push({
+                          id: "mismatch",
+                          label:
                             data.contactMismatchLevel === "CRITICAL"
-                              ? "bg-amber-50 border-amber-300 text-amber-950"
-                              : "bg-slate-50 border-slate-200 text-slate-700"
-                          }`}
-                        >
-                          <AlertTriangle
-                            className={`w-4 h-4 shrink-0 mt-0.5 ${
-                              data.contactMismatchLevel === "CRITICAL"
-                                ? "text-amber-600"
-                                : "text-slate-500"
-                            }`}
-                          />
-                          <div className="space-y-1">
-                            <p className="font-bold text-slate-900">
-                              {data.contactMismatchLevel === "CRITICAL"
-                                ? "Thông tin trên CV khác với người đăng ký"
-                                : data.contactMismatchLevel === "UNREADABLE"
-                                ? "Tệp CV chưa đọc được văn bản"
-                                : "Thông tin phụ trên tệp CV có khác biệt"}
-                            </p>
-                            <p className="leading-relaxed">{data.contactMismatchNote}</p>
-                          </div>
+                              ? isEn
+                                ? "CV contact mismatch"
+                                : "Thông tin CV khác đăng ký"
+                              : data.contactMismatchLevel === "UNREADABLE"
+                              ? isEn
+                                ? "Unreadable CV text"
+                                : "CV chưa đọc được văn bản"
+                              : isEn
+                              ? "Minor CV discrepancy"
+                              : "Thông tin phụ trên CV khác biệt",
+                          detail: data.contactMismatchNote,
+                          severity: data.contactMismatchLevel === "CRITICAL" ? "warn" : "info",
+                        });
+                      }
+
+                      if (notices.length === 0) return null;
+
+                      return (
+                        <div className="rounded-lg border border-amber-200/90 bg-amber-50/40 text-xs overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setShowNotices((prev) => !prev)}
+                            className="w-full px-4 py-2.5 flex items-center justify-between gap-3 text-left hover:bg-amber-50/70 transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                              <span className="font-semibold text-zinc-900 shrink-0">
+                                {notices.length === 1
+                                  ? notices[0].label
+                                  : isEn
+                                  ? `${notices.length} notices to review`
+                                  : `${notices.length} lưu ý cần kiểm tra`}
+                              </span>
+                              {notices.length > 1 && (
+                                <span className="text-zinc-500 truncate">
+                                  · {notices.map((n) => n.label).join(" · ")}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs font-medium text-amber-800 shrink-0 whitespace-nowrap">
+                              {showNotices
+                                ? isEn
+                                  ? "Hide"
+                                  : "Thu gọn"
+                                : isEn
+                                ? "Details"
+                                : "Chi tiết"}
+                            </span>
+                          </button>
+
+                          {showNotices && (
+                            <div className="px-4 pb-3 pt-1 border-t border-amber-200/60 divide-y divide-amber-200/50">
+                              {notices.map((item) => (
+                                <div key={item.id} className="py-2 first:pt-1.5 last:pb-0 space-y-0.5">
+                                  <p className="font-semibold text-zinc-900">{item.label}</p>
+                                  <p className="text-zinc-600 leading-relaxed">{item.detail}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      );
+                    })()}
 
                     {/* KHỐI HỒ SƠ CỐT LÕI (Avatar-free, Flat, No Nested Boxes) */}
                     <div className="bg-white rounded-lg border border-zinc-200 p-5 space-y-5">
@@ -1787,7 +1839,7 @@ export default function CandidateDrawer({
                               <button
                                 type="submit"
                                 disabled={interviewLoading}
-                                className="px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
+                                className="px-4 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 disabled:bg-brand-300 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                               >
                                 {interviewLoading ? (
                                   <>
@@ -1901,19 +1953,31 @@ export default function CandidateDrawer({
                             <div className="space-y-0.5">
                               <p className="font-semibold text-slate-800">
                                 {log.action === "SCORECARD_EVALUATE" ? (
-                                  <span className="text-purple-700 font-bold">★ Đánh giá Scorecard phỏng vấn</span>
+                                  <span className="text-zinc-900 font-semibold">
+                                    {isEn ? "Interview scorecard submitted" : "Đã nộp phiếu đánh giá phỏng vấn"}
+                                  </span>
                                 ) : log.action === "INTERVIEW_CANCELLED" ? (
-                                  <span className="text-red-600 font-bold">✕ Hủy lịch hẹn phỏng vấn</span>
+                                  <span className="text-brand-600 font-semibold">
+                                    {isEn ? "Interview cancelled" : "Đã hủy lịch phỏng vấn"}
+                                  </span>
                                 ) : log.action === "PROFILE_EDITED" ? (
-                                  <span className="text-blue-700 font-bold">✎ Chỉnh sửa thủ công hồ sơ</span>
+                                  <span className="text-zinc-900 font-semibold">
+                                    {isEn ? "Profile updated" : "Cập nhật thông tin hồ sơ"}
+                                  </span>
                                 ) : log.action === "STARRED" ? (
-                                  <span className="text-amber-600 font-bold">⭐ Gắn sao ưu tiên hồ sơ</span>
+                                  <span className="text-amber-700 font-semibold">
+                                    {isEn ? "Marked as priority" : "Gắn sao ưu tiên hồ sơ"}
+                                  </span>
                                 ) : log.action === "UNSTARRED" ? (
-                                  <span className="text-slate-500 font-medium">Bỏ gắn sao ưu tiên</span>
+                                  <span className="text-zinc-500 font-medium">
+                                    {isEn ? "Removed priority star" : "Bỏ gắn sao ưu tiên"}
+                                  </span>
                                 ) : (
                                   <>
-                                    Chuyển từ <span className="text-slate-500">{log.fromStage || "N/A"}</span>{" "}
-                                    ➔ <span className="text-brand-600 font-bold">{log.toStage}</span>
+                                    {isEn ? "Moved from " : "Chuyển từ "}
+                                    <span className="text-zinc-500">{log.fromStage || "N/A"}</span>
+                                    {" → "}
+                                    <span className="text-brand-600 font-semibold">{log.toStage}</span>
                                   </>
                                 )}
                               </p>

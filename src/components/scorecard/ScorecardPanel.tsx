@@ -1,20 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Star,
-  Award,
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  ThumbsUp,
-  AlertTriangle,
-  Layers,
-  FileText,
-  Plus,
-  ChevronUp,
-  ShieldCheck,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
 
@@ -50,6 +37,8 @@ interface ScorecardPanelProps {
   onSuccess: () => void;
 }
 
+const LEVELS = ["TRAINEE", "JUNIOR", "MIDDLE", "SENIOR", "LEAD"] as const;
+
 export default function ScorecardPanel({
   applicationId,
   candidateName,
@@ -58,7 +47,9 @@ export default function ScorecardPanel({
   defaultFormOpen = false,
   onSuccess,
 }: ScorecardPanelProps) {
-  const { t } = useLanguage();
+  const { locale } = useLanguage();
+  const isEn = locale === "en";
+
   const [showForm, setShowForm] = useState<boolean>(
     defaultFormOpen || evaluations.length === 0
   );
@@ -69,9 +60,13 @@ export default function ScorecardPanel({
     }
   }, [defaultFormOpen]);
 
+  const defaultRound = isEn
+    ? "Round 1 — Technical & Domain Assessment"
+    : "Vòng 1 — Đánh giá Kỹ thuật & Chuyên môn";
+
   // Form states (BRL-08)
-  const [round, setRound] = useState("Vòng 1 — Đánh giá Kỹ thuật & Chuyên môn");
-  const [levelRecommendation, setLevelRecommendation] = useState("MIDDLE");
+  const [round, setRound] = useState(defaultRound);
+  const [levelRecommendation, setLevelRecommendation] = useState<string>("MIDDLE");
   const [techScore, setTechScore] = useState<number>(4);
   const [commScore, setCommScore] = useState<number>(4);
   const [cultScore, setCultScore] = useState<number>(4);
@@ -89,10 +84,9 @@ export default function ScorecardPanel({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // Tính điểm tổng hợp có trọng số: Chuyên môn 40%, Giao tiếp 30%, Văn hóa 30% (BRL-08)
+  // Weighted overall score: Technical 40%, Communication 30%, Culture 30% (BRL-08)
   const overallScore = (techScore * 0.4 + commScore * 0.3 + cultScore * 0.3).toFixed(2);
 
-  // Thống kê tổng hợp các phiếu đã nộp
   const avgScore =
     evaluations.length > 0
       ? (
@@ -112,8 +106,60 @@ export default function ScorecardPanel({
     (ev) => ev.recommendation === "HIRE" || ev.recommendation === "STRONG_HIRE"
   );
 
+  const scoreLabels: Record<number, string> = isEn
+    ? { 1: "Poor", 2: "Fair", 3: "Meets", 4: "Strong", 5: "Exceptional" }
+    : { 1: "Yếu", 2: "Trung bình", 3: "Đạt", 4: "Tốt", 5: "Xuất sắc" };
+
+  const recommendationOptions = [
+    {
+      value: "STRONG_HIRE",
+      label: isEn ? "Strong Hire" : "Tuyển ngay",
+      activeClass: "border-emerald-600 bg-emerald-50/70 text-emerald-800",
+    },
+    {
+      value: "HIRE",
+      label: isEn ? "Hire" : "Đề xuất tuyển",
+      activeClass: "border-emerald-500 bg-emerald-50/50 text-emerald-700",
+    },
+    {
+      value: "NO_HIRE",
+      label: isEn ? "No Hire" : "Chưa đạt",
+      activeClass: "border-amber-500 bg-amber-50/60 text-amber-800",
+    },
+    {
+      value: "STRONG_NO_HIRE",
+      label: isEn ? "Strong No Hire" : "Không phù hợp",
+      activeClass: "border-brand-600 bg-rose-50/60 text-brand-700",
+    },
+  ];
+
+  const getRecommendationDisplay = (rec: string) => {
+    switch (rec) {
+      case "STRONG_HIRE":
+        return {
+          label: isEn ? "Strong Hire" : "Tuyển ngay",
+          colorClass: "text-emerald-700",
+        };
+      case "HIRE":
+        return {
+          label: isEn ? "Hire" : "Đề xuất tuyển",
+          colorClass: "text-emerald-600",
+        };
+      case "NO_HIRE":
+        return {
+          label: isEn ? "No Hire" : "Chưa đạt",
+          colorClass: "text-amber-700",
+        };
+      default:
+        return {
+          label: isEn ? "Strong No Hire" : "Không phù hợp",
+          colorClass: "text-brand-600",
+        };
+    }
+  };
+
   const resetForm = () => {
-    setRound("Vòng 1 — Đánh giá Kỹ thuật & Chuyên môn");
+    setRound(defaultRound);
     setLevelRecommendation("MIDDLE");
     setTechScore(4);
     setCommScore(4);
@@ -137,28 +183,33 @@ export default function ScorecardPanel({
 
     const errors: Record<string, string> = {};
     if (!techScore || techScore < 1 || techScore > 5) {
-      errors.techScore = "Vui lòng cho điểm chuyên môn từ 1 đến 5 sao";
+      errors.techScore = isEn ? "Select a score from 1 to 5" : "Chọn điểm từ 1 đến 5";
     }
     if (!commScore || commScore < 1 || commScore > 5) {
-      errors.commScore = "Vui lòng cho điểm giao tiếp từ 1 đến 5 sao";
+      errors.commScore = isEn ? "Select a score from 1 to 5" : "Chọn điểm từ 1 đến 5";
     }
     if (!cultScore || cultScore < 1 || cultScore > 5) {
-      errors.cultScore = "Vui lòng cho điểm văn hóa từ 1 đến 5 sao";
+      errors.cultScore = isEn ? "Select a score from 1 to 5" : "Chọn điểm từ 1 đến 5";
     }
     if (!recommendation) {
-      errors.recommendation = "Vui lòng chọn khuyến nghị tuyển dụng";
+      errors.recommendation = isEn ? "Select a recommendation" : "Chọn khuyến nghị tuyển dụng";
     }
     if (
       !strengths.trim() &&
       (recommendation === "HIRE" || recommendation === "STRONG_HIRE")
     ) {
-      errors.strengths =
-        "Vui lòng nêu ít nhất 1 điểm mạnh làm căn cứ tuyển dụng ứng viên này";
+      errors.strengths = isEn
+        ? "Please note at least one key strength to support a Hire decision."
+        : "Vui lòng nêu ít nhất 1 điểm mạnh làm căn cứ đề xuất tuyển.";
     }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
-      setError("Vui lòng hoàn thiện các tiêu chí đánh giá bắt buộc.");
+      setError(
+        isEn
+          ? "Please complete the required evaluation fields."
+          : "Vui lòng hoàn thiện các trường đánh giá bắt buộc."
+      );
       return;
     }
 
@@ -188,81 +239,125 @@ export default function ScorecardPanel({
       const json = await res.json();
       if (!res.ok || !json.success) {
         if (json.fieldErrors) setFieldErrors(json.fieldErrors);
-        setError(json.error || "Không thể lưu phiếu đánh giá");
+        setError(json.error || (isEn ? "Could not save scorecard." : "Không thể lưu phiếu đánh giá."));
       } else {
-        setSuccessMsg("Đã lưu phiếu đánh giá phỏng vấn thành công!");
+        setSuccessMsg(
+          isEn ? "Scorecard submitted successfully." : "Đã lưu phiếu đánh giá thành công."
+        );
         resetForm();
         setShowForm(false);
         onSuccess();
       }
     } catch {
-      setError("Lỗi kết nối máy chủ khi lưu phiếu đánh giá.");
+      setError(
+        isEn ? "Connection error while saving scorecard." : "Lỗi kết nối khi lưu phiếu đánh giá."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const renderStarButtons = (
-    value: number,
-    onChange: (val: number) => void,
-    fieldKey: string
-  ) => (
-    <div className="flex items-center gap-1.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => {
-            onChange(star);
-            if (fieldErrors[fieldKey]) {
-              const next = { ...fieldErrors };
-              delete next[fieldKey];
-              setFieldErrors(next);
-            }
-          }}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs transition-all cursor-pointer ${
-            star <= value
-              ? "bg-amber-500 text-white shadow-xs scale-105"
-              : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-          }`}
-        >
-          <Star className={`w-4 h-4 ${star <= value ? "fill-white" : ""}`} />
-        </button>
-      ))}
-      <span className="text-xs font-bold text-slate-700 ml-2">{value}/5 sao</span>
+  const renderCompetencyRow = ({
+    label,
+    weight,
+    value,
+    onChange,
+    notes,
+    onNotesChange,
+    placeholder,
+    fieldKey,
+  }: {
+    label: string;
+    weight: string;
+    value: number;
+    onChange: (val: number) => void;
+    notes: string;
+    onNotesChange: (val: string) => void;
+    placeholder: string;
+    fieldKey: string;
+  }) => (
+    <div className="py-3.5 first:pt-0 last:pb-0 space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <span className="text-xs font-semibold text-zinc-900">{label}</span>
+          <span className="ml-2 text-[11px] text-zinc-400 tabular-nums">{weight}</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="inline-flex rounded-md border border-zinc-200 overflow-hidden bg-white">
+            {[1, 2, 3, 4, 5].map((num) => (
+              <button
+                key={num}
+                type="button"
+                onClick={() => {
+                  onChange(num);
+                  if (fieldErrors[fieldKey]) {
+                    const next = { ...fieldErrors };
+                    delete next[fieldKey];
+                    setFieldErrors(next);
+                  }
+                }}
+                className={`w-8 h-7 text-xs font-semibold tabular-nums transition-colors cursor-pointer border-r last:border-r-0 border-zinc-200 ${
+                  value === num
+                    ? "bg-zinc-900 text-white"
+                    : "text-zinc-600 hover:bg-zinc-100"
+                }`}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+          <span className="text-[11px] font-medium text-zinc-500 w-20 text-right">
+            {scoreLabels[value]}
+          </span>
+        </div>
+      </div>
+
+      <input
+        type="text"
+        value={notes}
+        onChange={(e) => onNotesChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full text-xs rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400"
+      />
     </div>
   );
 
   return (
     <div className="space-y-6">
-      {/* 1. THANH TỔNG HỢP ĐIỂM & TRẠNG THÁI CHỐT CHẶN BRL-06 */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            {hasPassingScorecard ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold border border-emerald-200">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                {t("scorecard.qualified", "Đủ điều kiện Tuyển chọn")}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold border border-amber-200">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                {t("scorecard.needScorecard", "Cần phiếu đạt chuẩn trước khi Tuyển chọn")}
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-slate-500">
-            {candidateName} &bull; {jobTitle}
+      {/* 1. SUMMARY HEADER (Flat, No Pills, No Purple, No Avatars) */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-zinc-200">
+        <div className="space-y-1 min-w-0">
+          <p className="text-xs text-zinc-500 truncate">
+            {candidateName} · {jobTitle}
+          </p>
+          <p
+            className={`text-xs font-semibold ${
+              hasPassingScorecard ? "text-emerald-700" : "text-amber-700"
+            }`}
+          >
+            {hasPassingScorecard
+              ? isEn
+                ? "Qualified for Hiring Decision"
+                : "Đủ điều kiện Tuyển chọn"
+              : isEn
+              ? "Requires at least 1 passing scorecard before Hiring"
+              : "Cần tối thiểu 1 phiếu đạt chuẩn trước khi Tuyển chọn"}
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-4 shrink-0">
           {avgScore && (
-            <div className="text-right px-3 py-1.5 rounded-xl bg-purple-50 border border-purple-200">
-              <span className="block text-[10px] font-bold text-purple-600 uppercase">
-                Điểm TB ({evaluations.length} phiếu)
+            <div className="text-right pr-4 border-r border-zinc-200">
+              <span className="block text-[11px] text-zinc-500">
+                {isEn
+                  ? `Average (${evaluations.length})`
+                  : `Điểm TB (${evaluations.length} phiếu)`}
               </span>
-              <span className="text-lg font-black text-purple-800">{avgScore}/5.0★</span>
+              <span className="text-base font-bold text-zinc-900 tabular-nums">
+                {avgScore}
+                <span className="text-xs font-normal text-zinc-400"> / 5.0</span>
+              </span>
             </div>
           )}
 
@@ -272,392 +367,423 @@ export default function ScorecardPanel({
               setShowForm((prev) => !prev);
               setSuccessMsg(null);
             }}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
               showForm
-                ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-                : "bg-purple-600 hover:bg-purple-700 text-white"
+                ? "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                : "bg-brand-600 hover:bg-brand-700 text-white"
             }`}
           >
-            {showForm ? (
-              <>
-                <ChevronUp className="w-4 h-4" />
-                <span>Thu gọn biểu mẫu</span>
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4" />
-                <span>Tạo phiếu đánh giá</span>
-              </>
-            )}
+            {showForm
+              ? isEn
+                ? "Close Form"
+                : "Đóng biểu mẫu"
+              : isEn
+              ? "New Scorecard"
+              : "Tạo phiếu đánh giá"}
           </button>
         </div>
       </div>
 
-      {/* Thông báo thành công */}
+      {/* Inline feedback message */}
       {successMsg && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{successMsg}</span>
+        <div className="px-4 py-2.5 rounded-lg bg-emerald-50/70 border border-emerald-200 border-l-2 border-l-emerald-600 text-xs text-emerald-900">
+          {successMsg}
         </div>
       )}
 
-      {/* 2. BIỂU MẪU CHẤM ĐIỂM TRỰC TIẾP TRONG TAB (INLINE — KHÔNG CÒN POPUP MODAL) */}
+      {/* 2. STRUCTURED SCORECARD FORM */}
       {showForm && (
-        <div className="bg-white rounded-2xl border-2 border-purple-200/80 p-5 sm:p-6 shadow-sm space-y-4">
-          <div className="pb-3 border-b border-slate-100">
-            <h3 className="text-sm font-bold text-slate-900">
-              {t("scorecard.newTitle", "Nhập Phiếu Đánh Giá Mới")}
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-lg border border-zinc-200 p-5 space-y-5"
+        >
+          <div className="flex items-baseline justify-between gap-2 pb-3 border-b border-zinc-100">
+            <h3 className="text-sm font-semibold text-zinc-900">
+              {isEn ? "New Interview Scorecard" : "Phiếu đánh giá phỏng vấn mới"}
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {t("scorecard.scoreFormula", "Chuyên môn 40% • Giao tiếp 30% • Văn hóa 30%")}
-            </p>
+            <span className="text-[11px] text-zinc-400">
+              {isEn
+                ? "Technical 40% · Communication 30% · Culture 30%"
+                : "Chuyên môn 40% · Giao tiếp 30% · Văn hóa 30%"}
+            </span>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-300 rounded-xl p-3 text-red-900 flex items-start gap-2.5 text-xs">
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-              <p className="font-semibold">{error}</p>
+            <div className="px-3.5 py-2.5 rounded-md bg-rose-50/70 border border-rose-200 border-l-2 border-l-brand-600 text-xs text-rose-800">
+              {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Vòng phỏng vấn & Level */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/70">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Vòng Phỏng Vấn <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={round}
-                  onChange={(e) => setRound(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="Vòng 1 — Đánh giá Kỹ thuật & Chuyên môn">
-                    Vòng 1 — Đánh giá Kỹ thuật &amp; Chuyên môn
-                  </option>
-                  <option value="Vòng 2 — Phỏng vấn Văn hóa & Quản lý">
-                    Vòng 2 — Phỏng vấn Văn hóa &amp; Quản lý
-                  </option>
-                  <option value="Vòng Tổng hợp — Hội đồng Phỏng vấn">
-                    Vòng Tổng hợp — Hội đồng Phỏng vấn
-                  </option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Khuyến Nghị Cấp Bậc (Level)
-                </label>
-                <select
-                  value={levelRecommendation}
-                  onChange={(e) => setLevelRecommendation(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="TRAINEE">Trainee / Thực tập sinh</option>
-                  <option value="JUNIOR">Junior</option>
-                  <option value="MIDDLE">Middle</option>
-                  <option value="SENIOR">Senior</option>
-                  <option value="LEAD">Lead / Principal</option>
-                </select>
-              </div>
-            </div>
-
-            {/* 3 Tiêu chí đánh giá năng lực */}
-            <div className="space-y-3 bg-slate-50/40 p-4 rounded-xl border border-slate-200/80">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-purple-600" />
-                {t("scorecard.criteria", "Tiêu Chí Đánh Giá Năng Lực")}
-              </h4>
-
-              <div className="pt-1">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {t("scorecard.technical", "Kỹ năng chuyên môn (Trọng số 40%)")}
-                </label>
-                {renderStarButtons(techScore, setTechScore, "techScore")}
-                <input
-                  type="text"
-                  value={technicalNotes}
-                  onChange={(e) => setTechnicalNotes(e.target.value)}
-                  placeholder={t("scorecard.technicalPlaceholder", "Nhận xét chuyên môn...")}
-                  className="mt-1.5 w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <div className="pt-2.5 border-t border-slate-200/70">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {t("scorecard.communication", "Kỹ năng giao tiếp & thuyết trình (Trọng số 30%)")}
-                </label>
-                {renderStarButtons(commScore, setCommScore, "commScore")}
-                <input
-                  type="text"
-                  value={communicationNotes}
-                  onChange={(e) => setCommunicationNotes(e.target.value)}
-                  placeholder={t("scorecard.communicationPlaceholder", "Nhận xét giao tiếp...")}
-                  className="mt-1.5 w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <div className="pt-2.5 border-t border-slate-200/70">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {t("scorecard.culture", "Độ phù hợp văn hóa & làm việc nhóm (Trọng số 30%)")}
-                </label>
-                {renderStarButtons(cultScore, setCultScore, "cultScore")}
-                <input
-                  type="text"
-                  value={cultureNotes}
-                  onChange={(e) => setCultureNotes(e.target.value)}
-                  placeholder={t("scorecard.culturePlaceholder", "Nhận xét văn hóa...")}
-                  className="mt-1.5 w-full text-xs rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-            </div>
-
-            {/* Điểm tổng hợp tự tính + Khuyến nghị */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-              <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-3.5 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold text-purple-900 uppercase block">
-                    {t("scorecard.overallScore", "Điểm Tổng Hợp")}
-                  </span>
-                  <span className="text-[10px] text-purple-600 block">
-                    40% CM + 30% GT + 30% VH
-                  </span>
-                </div>
-                <div>
-                  <span className="text-2xl font-black text-purple-700">
-                    {overallScore}
-                  </span>
-                  <span className="text-xs font-bold text-purple-500"> / 5.0★</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  {t("scorecard.recommendation", "Khuyến Nghị Tuyển Dụng")} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={recommendation}
-                  onChange={(e) => setRecommendation(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="STRONG_HIRE">{t("scorecard.recommendStrongHire", "🌟 Xuất sắc — Tuyển ngay (Strong Hire)")}</option>
-                  <option value="HIRE">{t("scorecard.recommendHire", "✅ Đạt chuẩn — Đề xuất tuyển (Hire)")}</option>
-                  <option value="NO_HIRE">{t("scorecard.recommendReject", "⚠️ Chưa đạt — Cân nhắc loại (No Hire)")}</option>
-                  <option value="STRONG_NO_HIRE">{t("scorecard.recommendStrongReject", "⛔ Không phù hợp (Strong No Hire)")}</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Căn cứ điểm mạnh */}
+          {/* Round & Level */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                <ThumbsUp className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{t("scorecard.strengths", "Điểm mạnh nổi bật (Căn cứ quyết định)")}</span>
-                <span className="text-red-500">*</span>
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+                {isEn ? "Interview Round" : "Vòng phỏng vấn"}
+              </label>
+              <select
+                value={round}
+                onChange={(e) => setRound(e.target.value)}
+                className="w-full text-xs rounded-md border border-zinc-200 bg-white py-2 px-3 text-zinc-800 focus:outline-none focus:border-zinc-400"
+              >
+                <option value={isEn ? "Round 1 — Technical & Domain Assessment" : "Vòng 1 — Đánh giá Kỹ thuật & Chuyên môn"}>
+                  {isEn ? "Round 1 — Technical & Domain" : "Vòng 1 — Kỹ thuật & Chuyên môn"}
+                </option>
+                <option value={isEn ? "Round 2 — Culture & Management" : "Vòng 2 — Văn hóa & Quản lý"}>
+                  {isEn ? "Round 2 — Culture & Management" : "Vòng 2 — Văn hóa & Quản lý"}
+                </option>
+                <option value={isEn ? "Final Panel Review" : "Vòng Tổng hợp — Hội đồng"}>
+                  {isEn ? "Final Panel Review" : "Vòng Tổng hợp — Hội đồng"}
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+                {isEn ? "Recommended Level" : "Cấp bậc đề xuất"}
+              </label>
+              <div className="grid grid-cols-5 rounded-md border border-zinc-200 overflow-hidden bg-white">
+                {LEVELS.map((lvl) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setLevelRecommendation(lvl)}
+                    className={`py-2 text-[11px] font-medium border-r last:border-r-0 border-zinc-200 transition-colors cursor-pointer ${
+                      levelRecommendation === lvl
+                        ? "bg-zinc-900 text-white"
+                        : "text-zinc-600 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {lvl.charAt(0) + lvl.slice(1).toLowerCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Weighted Competencies */}
+          <div className="divide-y divide-zinc-100 border-y border-zinc-100 py-1">
+            {renderCompetencyRow({
+              label: isEn ? "Technical & Domain" : "Kỹ năng chuyên môn",
+              weight: "40%",
+              value: techScore,
+              onChange: setTechScore,
+              notes: technicalNotes,
+              onNotesChange: setTechnicalNotes,
+              placeholder: isEn
+                ? "Optional note on technical depth..."
+                : "Ghi chú ngắn về chuyên môn (không bắt buộc)...",
+              fieldKey: "techScore",
+            })}
+            {renderCompetencyRow({
+              label: isEn ? "Communication" : "Giao tiếp & Trình bày",
+              weight: "30%",
+              value: commScore,
+              onChange: setCommScore,
+              notes: communicationNotes,
+              onNotesChange: setCommunicationNotes,
+              placeholder: isEn
+                ? "Optional note on clarity & structure..."
+                : "Ghi chú ngắn về giao tiếp (không bắt buộc)...",
+              fieldKey: "commScore",
+            })}
+            {renderCompetencyRow({
+              label: isEn ? "Culture & Collaboration" : "Phù hợp văn hóa & Teamwork",
+              weight: "30%",
+              value: cultScore,
+              onChange: setCultScore,
+              notes: cultureNotes,
+              onNotesChange: setCultureNotes,
+              placeholder: isEn
+                ? "Optional note on teamwork & alignment..."
+                : "Ghi chú ngắn về văn hóa (không bắt buộc)...",
+              fieldKey: "cultScore",
+            })}
+          </div>
+
+          {/* Live Weighted Score + Recommendation */}
+          <div className="space-y-2.5">
+            <div className="flex items-baseline justify-between">
+              <label className="text-xs font-medium text-zinc-700">
+                {isEn ? "Hiring Recommendation" : "Khuyến nghị tuyển dụng"}{" "}
+                <span className="text-brand-600">*</span>
+              </label>
+              <div className="text-xs text-zinc-500">
+                {isEn ? "Weighted score: " : "Điểm tổng hợp: "}
+                <strong className="text-sm font-bold text-zinc-900 tabular-nums">
+                  {overallScore}
+                </strong>
+                <span className="text-zinc-400"> / 5.00</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {recommendationOptions.map((opt) => {
+                const isSelected = recommendation === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setRecommendation(opt.value)}
+                    className={`py-2 px-3 rounded-md border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                      isSelected
+                        ? opt.activeClass
+                        : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Key Feedback */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-zinc-700 mb-1">
+                {isEn ? "Key Strengths" : "Điểm mạnh nổi bật"}{" "}
+                {(recommendation === "HIRE" || recommendation === "STRONG_HIRE") && (
+                  <span className="text-brand-600">*</span>
+                )}
               </label>
               <textarea
                 rows={2}
                 value={strengths}
                 onChange={(e) => setStrengths(e.target.value)}
-                placeholder={t("scorecard.strengthsPlaceholder", "Căn cứ nổi bật để đánh giá...")}
-                className={`w-full text-xs rounded-xl border ${
-                  fieldErrors.strengths
-                    ? "border-red-400 bg-red-50/20"
-                    : "border-slate-200 bg-slate-50/50"
-                } p-2.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                placeholder={
+                  isEn
+                    ? "Evidence supporting this candidate..."
+                    : "Căn cứ nổi bật từ buổi phỏng vấn..."
+                }
+                className={`w-full text-xs rounded-md border ${
+                  fieldErrors.strengths ? "border-brand-600 bg-rose-50/20" : "border-zinc-200 bg-white"
+                } p-2.5 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400`}
               />
               {fieldErrors.strengths && (
-                <p className="text-[11px] text-red-600 font-medium mt-1">
-                  {fieldErrors.strengths}
-                </p>
+                <p className="text-[11px] text-brand-600 mt-1">{fieldErrors.strengths}</p>
               )}
             </div>
 
-            {/* Điểm cần lưu ý & Kết luận */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                  <span>{t("scorecard.weaknesses", "Điểm cần cải thiện / Đào tạo thêm")}</span>
-                </label>
-                <textarea
-                  rows={2}
-                  value={weaknesses}
-                  onChange={(e) => setWeaknesses(e.target.value)}
-                  placeholder={t("scorecard.weaknessesPlaceholder", "Điểm cần lưu ý hoặc đào tạo bổ sung...")}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{t("scorecard.conclusion", "Kết luận chung")}</span>
-                </label>
-                <textarea
-                  rows={2}
-                  value={hireReason}
-                  onChange={(e) => setHireReason(e.target.value)}
-                  placeholder={t("scorecard.conclusionPlaceholder", "Tóm tắt ngắn gọn căn cứ tuyển hoặc loại...")}
-                  className="w-full text-xs rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-700 mb-1">
+                {isEn ? "Areas of Concern" : "Điểm cần lưu ý / Đào tạo thêm"}
+              </label>
+              <textarea
+                rows={2}
+                value={weaknesses}
+                onChange={(e) => setWeaknesses(e.target.value)}
+                placeholder={
+                  isEn
+                    ? "Gaps or risks to consider..."
+                    : "Điểm còn thiếu hoặc cần bổ sung..."
+                }
+                className="w-full text-xs rounded-md border border-zinc-200 bg-white p-2.5 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400"
+              />
             </div>
+          </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-              {evaluations.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  disabled={loading}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
-                >
-                  {t("scorecard.cancel", "Hủy bỏ")}
-                </button>
-              )}
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 mb-1">
+              {isEn ? "Final Summary" : "Kết luận chung"}
+            </label>
+            <textarea
+              rows={2}
+              value={hireReason}
+              onChange={(e) => setHireReason(e.target.value)}
+              placeholder={
+                isEn
+                  ? "Concise decision rationale (optional)..."
+                  : "Tóm tắt ngắn gọn quyết định (không bắt buộc)..."
+              }
+              className="w-full text-xs rounded-md border border-zinc-200 bg-white p-2.5 text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-400"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-100">
+            {evaluations.length > 0 && (
               <button
-                type="submit"
+                type="button"
+                onClick={() => setShowForm(false)}
                 disabled={loading}
-                className="px-5 py-2.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 rounded-xl shadow-sm flex items-center gap-2 cursor-pointer"
+                className="px-3.5 py-2 text-xs font-medium text-zinc-600 hover:text-zinc-900 cursor-pointer whitespace-nowrap"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>{t("scorecard.saving", "Đang lưu phiếu...")}</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>{t("scorecard.save", "Lưu Phiếu Đánh Giá")}</span>
-                  </>
-                )}
+                {isEn ? "Cancel" : "Hủy"}
               </button>
-            </div>
-          </form>
-        </div>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:bg-brand-300 rounded-lg inline-flex items-center gap-2 cursor-pointer whitespace-nowrap"
+            >
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>
+                {loading
+                  ? isEn
+                    ? "Saving..."
+                    : "Đang lưu..."
+                  : isEn
+                  ? "Submit Scorecard"
+                  : "Lưu phiếu đánh giá"}
+              </span>
+            </button>
+          </div>
+        </form>
       )}
 
-      {/* 3. DANH SÁCH PHIẾU ĐÁNH GIÁ ĐÃ NỘP */}
+      {/* 3. SUBMITTED SCORECARDS LIST */}
       <div className="space-y-3">
-        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-          <Star className="w-4 h-4 text-purple-600 fill-purple-600" />
-          Danh Sách Phiếu Đánh Giá Đã Nộp ({evaluations.length})
+        <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+          {isEn
+            ? `Submitted Scorecards (${evaluations.length})`
+            : `Phiếu đánh giá đã nộp (${evaluations.length})`}
         </h4>
 
         {evaluations.length === 0 ? (
-          <div className="p-6 rounded-2xl border border-dashed border-slate-200 bg-white text-center text-xs text-slate-500">
-            Chưa có phiếu đánh giá nào được ghi nhận cho ứng viên này. Hãy hoàn thiện biểu mẫu ở trên để lưu phiếu đánh giá đầu tiên.
+          <div className="py-8 px-4 rounded-lg border border-dashed border-zinc-200 text-center text-xs text-zinc-500">
+            {isEn
+              ? "No scorecards submitted yet."
+              : "Chưa có phiếu đánh giá nào cho ứng viên này."}
           </div>
         ) : (
-          evaluations.map((ev) => (
-            <div
-              key={ev.id}
-              className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white space-y-3 text-xs shadow-2xs"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                    {ev.evaluator?.fullName?.charAt(0) || "G"}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-sm">
-                        {ev.evaluator?.fullName || "Chuyên gia phỏng vấn"}
+          <div className="space-y-3">
+            {evaluations.map((ev) => {
+              const recDisplay = getRecommendationDisplay(ev.recommendation);
+              const computedOverall =
+                ev.overallScore ??
+                ev.technicalScore * 0.4 +
+                  ev.communicationScore * 0.3 +
+                  ev.culturalFitScore * 0.3;
+
+              return (
+                <div
+                  key={ev.id}
+                  className="p-5 rounded-lg border border-zinc-200 bg-white space-y-4 text-xs"
+                >
+                  {/* Top row: Evaluator & Decision */}
+                  <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-zinc-100">
+                    <div className="space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-zinc-900 text-sm">
+                          {ev.evaluator?.fullName || (isEn ? "Interviewer" : "Người phỏng vấn")}
+                        </span>
+                        <span className="text-[11px] text-zinc-400">
+                          {ev.evaluator?.role === "HIRING_MANAGER"
+                            ? "Hiring Manager"
+                            : ev.evaluator?.role === "ADMIN"
+                            ? "Admin"
+                            : "HR"}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-500">
+                        {ev.round || (isEn ? "Round 1" : "Vòng 1")} ·{" "}
+                        {formatDateTime(ev.createdAt)}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-4 shrink-0">
+                      {ev.levelRecommendation && (
+                        <span className="text-[11px] font-medium text-zinc-500">
+                          {ev.levelRecommendation}
+                        </span>
+                      )}
+                      <span className={`font-semibold whitespace-nowrap ${recDisplay.colorClass}`}>
+                        {recDisplay.label}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                        {ev.evaluator?.role === "HIRING_MANAGER"
-                          ? "Hiring Manager"
-                          : ev.evaluator?.role === "ADMIN"
-                          ? "Admin"
-                          : "Ban Giám Khảo"}
+                      <span className="text-sm font-bold text-zinc-900 tabular-nums">
+                        {computedOverall.toFixed(2)}
+                        <span className="text-[11px] font-normal text-zinc-400"> / 5.0</span>
                       </span>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-medium block mt-0.5">
-                      {ev.round || "Vòng 1 — Đánh giá Chuyên môn"} &bull;{" "}
-                      {formatDateTime(ev.createdAt)}
-                    </span>
                   </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {ev.levelRecommendation && (
-                    <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200">
-                      Level: {ev.levelRecommendation}
-                    </span>
+                  {/* 3-Column Metric Breakdown (Flat, Hairline Dividers) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-200 bg-zinc-50/70 rounded-md py-2.5">
+                    <div className="px-3 py-1 sm:py-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[11px] text-zinc-500">
+                          {isEn ? "Technical (40%)" : "Chuyên môn (40%)"}
+                        </span>
+                        <strong className="text-zinc-900 tabular-nums">{ev.technicalScore}/5</strong>
+                      </div>
+                      {ev.technicalNotes && (
+                        <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
+                          {ev.technicalNotes}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="px-3 py-1 sm:py-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[11px] text-zinc-500">
+                          {isEn ? "Communication (30%)" : "Giao tiếp (30%)"}
+                        </span>
+                        <strong className="text-zinc-900 tabular-nums">
+                          {ev.communicationScore}/5
+                        </strong>
+                      </div>
+                      {ev.communicationNotes && (
+                        <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
+                          {ev.communicationNotes}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="px-3 py-1 sm:py-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[11px] text-zinc-500">
+                          {isEn ? "Culture (30%)" : "Văn hóa (30%)"}
+                        </span>
+                        <strong className="text-zinc-900 tabular-nums">
+                          {ev.culturalFitScore}/5
+                        </strong>
+                      </div>
+                      {ev.cultureNotes && (
+                        <p className="text-[11px] text-zinc-600 mt-1 leading-relaxed">
+                          {ev.cultureNotes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Structured Feedback (Left-border accents, no colored boxes) */}
+                  {(ev.strengths || ev.weaknesses || ev.hireReason || ev.comments) && (
+                    <div className="space-y-2.5 pt-1">
+                      {ev.strengths && (
+                        <div className="border-l-2 border-emerald-500 pl-3 space-y-0.5">
+                          <span className="text-[11px] font-semibold text-zinc-500">
+                            {isEn ? "Key Strengths" : "Điểm mạnh nổi bật"}
+                          </span>
+                          <p className="text-zinc-800 leading-relaxed">{ev.strengths}</p>
+                        </div>
+                      )}
+
+                      {ev.weaknesses && (
+                        <div className="border-l-2 border-amber-500 pl-3 space-y-0.5">
+                          <span className="text-[11px] font-semibold text-zinc-500">
+                            {isEn ? "Areas of Concern" : "Điểm cần lưu ý"}
+                          </span>
+                          <p className="text-zinc-800 leading-relaxed">{ev.weaknesses}</p>
+                        </div>
+                      )}
+
+                      {(ev.hireReason || ev.comments) &&
+                        (ev.hireReason || ev.comments) !== ev.strengths && (
+                          <div className="border-l-2 border-zinc-300 pl-3 space-y-0.5">
+                            <span className="text-[11px] font-semibold text-zinc-500">
+                              {isEn ? "Final Summary" : "Kết luận chung"}
+                            </span>
+                            <p className="text-zinc-700 leading-relaxed">
+                              {ev.hireReason || ev.comments}
+                            </p>
+                          </div>
+                        )}
+                    </div>
                   )}
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
-                      ev.recommendation === "STRONG_HIRE" || ev.recommendation === "HIRE"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                        : "bg-rose-50 text-rose-700 border-rose-300"
-                    }`}
-                  >
-                    {ev.recommendation === "STRONG_HIRE"
-                      ? "🌟 Xuất sắc"
-                      : ev.recommendation === "HIRE"
-                      ? "✅ Đạt chuẩn"
-                      : "⚠️ Chưa đạt"}
-                  </span>
-                  <span className="font-extrabold text-purple-700 text-sm px-2.5 py-0.5 bg-purple-50 rounded-lg border border-purple-200">
-                    {ev.overallScore ? `${ev.overallScore.toFixed(2)}/5.0★` : "—"}
-                  </span>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 py-2 border-y border-slate-100 text-[11px]">
-                <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
-                  <span className="text-slate-500 block">Chuyên môn (40%)</span>
-                  <strong className="text-slate-900 text-xs">{ev.technicalScore}/5★</strong>
-                  {ev.technicalNotes && (
-                    <p className="text-slate-600 mt-1 leading-relaxed">{ev.technicalNotes}</p>
-                  )}
-                </div>
-                <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
-                  <span className="text-slate-500 block">Giao tiếp (30%)</span>
-                  <strong className="text-slate-900 text-xs">{ev.communicationScore}/5★</strong>
-                  {ev.communicationNotes && (
-                    <p className="text-slate-600 mt-1 leading-relaxed">
-                      {ev.communicationNotes}
-                    </p>
-                  )}
-                </div>
-                <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
-                  <span className="text-slate-500 block">Văn hóa (30%)</span>
-                  <strong className="text-slate-900 text-xs">{ev.culturalFitScore}/5★</strong>
-                  {ev.cultureNotes && (
-                    <p className="text-slate-600 mt-1 leading-relaxed">{ev.cultureNotes}</p>
-                  )}
-                </div>
-              </div>
-
-              {ev.strengths && (
-                <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 text-emerald-950 text-xs">
-                  <strong className="text-emerald-900 block mb-0.5 font-bold">
-                    {t("scorecard.strengths", "Điểm mạnh nổi bật")}:
-                  </strong>
-                  <p className="leading-relaxed font-medium">{ev.strengths}</p>
-                </div>
-              )}
-
-              {ev.weaknesses && (
-                <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-950 text-xs">
-                  <strong className="text-amber-900 block mb-0.5 font-bold">
-                    {t("scorecard.weaknesses", "Điểm cần cải thiện")}:
-                  </strong>
-                  <p className="leading-relaxed font-medium">{ev.weaknesses}</p>
-                </div>
-              )}
-
-              {(ev.hireReason || ev.comments) && (ev.hireReason || ev.comments) !== ev.strengths && (
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs">
-                  <strong className="text-slate-900 block mb-0.5 font-bold">
-                    {t("scorecard.conclusion", "Kết luận chung")}:
-                  </strong>
-                  <p className="leading-relaxed">{ev.hireReason || ev.comments}</p>
-                </div>
-              )}
-            </div>
-          ))
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
