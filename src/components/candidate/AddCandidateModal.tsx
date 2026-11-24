@@ -2,23 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/lib/i18n";
-import {
-  X,
-  UploadCloud,
-  FileText,
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  Award,
-  Image as ImageIcon,
-  Plus,
-  Briefcase,
-  User,
-  Mail,
-  Phone,
-  Clock,
-  FileUp,
-} from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
 interface JobOption {
   id: number;
@@ -39,7 +23,9 @@ export default function AddCandidateModal({
   onSuccess,
   defaultJobId = null,
 }: AddCandidateModalProps) {
-  const { t } = useLanguage();
+  const { locale } = useLanguage();
+  const isEn = locale === "en";
+
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>(
     defaultJobId ? String(defaultJobId) : ""
@@ -59,7 +45,6 @@ export default function AddCandidateModal({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const certInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Lấy danh sách Jobs đang mở & đồng bộ defaultJobId
   useEffect(() => {
     if (isOpen) {
       if (defaultJobId) {
@@ -69,9 +54,10 @@ export default function AddCandidateModal({
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.data) {
-            setJobs(data.data.filter((j: any) => j.status === "ACTIVE"));
-            if (!defaultJobId && !selectedJobId && data.data.length > 0) {
-              setSelectedJobId(String(data.data[0].id));
+            const active = data.data.filter((j: any) => j.status === "ACTIVE");
+            setJobs(active);
+            if (!defaultJobId && !selectedJobId && active.length > 0) {
+              setSelectedJobId(String(active[0].id));
             }
           }
         })
@@ -87,14 +73,16 @@ export default function AddCandidateModal({
     if (![".pdf", ".docx"].includes(ext)) {
       setFieldErrors((prev) => ({
         ...prev,
-        cvFile: "Chỉ chấp nhận tệp định dạng .pdf hoặc .docx",
+        cvFile: isEn
+          ? "Only .pdf or .docx files are accepted."
+          : "Chỉ chấp nhận tệp định dạng .pdf hoặc .docx.",
       }));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
       setFieldErrors((prev) => ({
         ...prev,
-        cvFile: "Dung lượng tệp CV không được vượt quá 10MB",
+        cvFile: isEn ? "CV file size cannot exceed 10MB." : "Dung lượng tệp CV tối đa 10MB.",
       }));
       return;
     }
@@ -104,7 +92,6 @@ export default function AddCandidateModal({
     setFieldErrors(next);
     setCvFile(file);
 
-    // Gợi ý tên ứng viên từ tên file nếu chưa nhập tên
     if (!fullName.trim()) {
       const cleanName = file.name
         .replace(/\.(pdf|docx)$/i, "")
@@ -142,27 +129,35 @@ export default function AddCandidateModal({
 
     const errors: Record<string, string> = {};
     if (!selectedJobId) {
-      errors.jobId = "Vui lòng chọn vị trí tuyển dụng";
+      errors.jobId = isEn ? "Please select a position." : "Vui lòng chọn vị trí tuyển dụng.";
     }
     if (!fullName.trim() || fullName.trim().length < 2) {
-      errors.fullName = "Họ và tên ứng viên bắt buộc và phải từ 2 ký tự trở lên";
+      errors.fullName = isEn
+        ? "Full name must be at least 2 characters."
+        : "Họ và tên phải có ít nhất 2 ký tự.";
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email.trim() || !emailRegex.test(email.trim())) {
-      errors.email = "Email ứng viên không hợp lệ (VD: ungvien@gmail.com)";
+      errors.email = isEn ? "Please enter a valid email address." : "Email không hợp lệ.";
     }
     const cleanPhone = phone.replace(/\s+/g, "");
     const phoneRegex = /^(0|\+84)[0-9]{9,10}$/;
     if (!cleanPhone || !phoneRegex.test(cleanPhone)) {
-      errors.phone = "Số điện thoại không hợp lệ (Phải từ 10 chữ số)";
+      errors.phone = isEn
+        ? "Phone number must be 10–11 digits."
+        : "Số điện thoại phải gồm 10 chữ số.";
     }
     if (!cvFile) {
-      errors.cvFile = "Vui lòng tải lên tệp CV của ứng viên";
+      errors.cvFile = isEn ? "Please upload a CV file." : "Vui lòng tải lên tệp CV.";
     }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
-      setError("Vui lòng hoàn thiện các trường thông tin bắt buộc.");
+      setError(
+        isEn
+          ? "Please complete all required fields."
+          : "Vui lòng hoàn thiện các trường bắt buộc."
+      );
       return;
     }
 
@@ -188,11 +183,10 @@ export default function AddCandidateModal({
       const data = await res.json();
       if (!res.ok || !data.success) {
         if (data.fieldErrors) setFieldErrors(data.fieldErrors);
-        setError(data.error || "Không thể tiếp nhận hồ sơ.");
+        setError(data.error || (isEn ? "Could not submit candidate." : "Không thể tiếp nhận hồ sơ."));
       } else {
         onSuccess();
         onClose();
-        // Reset form
         setFullName("");
         setEmail("");
         setPhone("");
@@ -201,53 +195,50 @@ export default function AddCandidateModal({
       }
     } catch (err: any) {
       console.error("Intake submit error:", err);
-      setError("Lỗi kết nối máy chủ khi tiếp nhận hồ sơ.");
+      setError(isEn ? "Connection error while submitting." : "Lỗi kết nối máy chủ.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-white rounded-3xl border border-slate-200 max-w-2xl w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-start justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
-              <User className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">
-                {t("intake.modalTitle")}
-              </h3>
-              <p className="text-xs text-slate-500">
-                {t("intake.modalSubtitle")}
-              </p>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-xs">
+      <div className="bg-white rounded-lg border border-zinc-200 max-w-2xl w-full shadow-xl max-h-[92vh] overflow-y-auto">
+        {/* Header — Clean Swiss Minimalist (No Avatar Circle, No Excess Icons) */}
+        <div className="px-6 py-4 border-b border-zinc-100 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-zinc-900 tracking-tight">
+              {isEn ? "New Candidate Intake" : "Tiếp nhận hồ sơ ứng viên"}
+            </h3>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              {isEn
+                ? "Add a candidate from LinkedIn, referrals, or direct channels."
+                : "Nhập hồ sơ từ LinkedIn, giới thiệu nội bộ hoặc các kênh tuyển dụng."}
+            </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            className="p-1 rounded-md text-zinc-400 hover:text-zinc-700 cursor-pointer"
+            aria-label={isEn ? "Close" : "Đóng"}
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-900 flex items-start gap-2.5 text-xs">
-            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-            <p className="font-semibold">{error}</p>
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-xs">
+          {error && (
+            <div className="px-3.5 py-2.5 rounded-md bg-rose-50/70 border border-rose-200 border-l-2 border-l-brand-600 text-rose-800">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Cặp trường 1: Vị trí Tuyển dụng & Nguồn Ứng viên */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Row 1: Position & Source */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
-                {t("intake.jobLabel")}
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+                {isEn ? "Job Position" : "Vị trí tuyển dụng"}{" "}
+                <span className="text-brand-600">*</span>
               </label>
               <select
                 value={selectedJobId}
@@ -259,11 +250,13 @@ export default function AddCandidateModal({
                     setFieldErrors(next);
                   }
                 }}
-                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
-                  fieldErrors.jobId ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                className={`w-full text-xs rounded-md border bg-white py-2 px-3 text-zinc-900 focus:outline-none focus:border-zinc-900 ${
+                  fieldErrors.jobId ? "border-brand-600" : "border-zinc-300"
                 }`}
               >
-                <option value="">-- {t("kanban.allJobs")} --</option>
+                <option value="">
+                  {isEn ? "Select a position..." : "Chọn vị trí tuyển dụng..."}
+                </option>
                 {jobs.map((job) => (
                   <option key={job.id} value={String(job.id)}>
                     {job.title} ({job.department})
@@ -271,36 +264,50 @@ export default function AddCandidateModal({
                 ))}
               </select>
               {fieldErrors.jobId && (
-                <p className="text-[11px] text-red-600 mt-1">{fieldErrors.jobId}</p>
+                <p className="text-[11px] text-brand-600 mt-1">{fieldErrors.jobId}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-indigo-600" />
-                {t("intake.sourceLabel")}
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+                {isEn ? "Candidate Source" : "Nguồn ứng viên"}
               </label>
               <select
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
-                className="w-full text-xs rounded-xl border border-slate-200 bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="w-full text-xs rounded-md border border-zinc-300 bg-white py-2 px-3 text-zinc-900 focus:outline-none focus:border-zinc-900"
               >
-                <option value="LINKEDIN">LinkedIn Sourcing</option>
-                <option value="REFERRAL">Giới thiệu nội bộ (Referral)</option>
-                <option value="HEADHUNTER">Agency / Headhunter</option>
-                <option value="DIRECT_EMAIL">Email trực tiếp (Direct Email)</option>
-                <option value="CAREER_SITE">Cổng tuyển dụng (Careers Portal)</option>
-                <option value="OTHER">Nguồn khác (Other)</option>
+                <option value="LINKEDIN">LinkedIn</option>
+                <option value="REFERRAL">
+                  {isEn ? "Internal Referral" : "Giới thiệu nội bộ"}
+                </option>
+                <option value="HEADHUNTER">
+                  {isEn ? "Agency / Headhunter" : "Agency / Headhunter"}
+                </option>
+                <option value="DIRECT_EMAIL">
+                  {isEn ? "Direct Email" : "Email trực tiếp"}
+                </option>
+                <option value="CAREER_SITE">
+                  {isEn ? "Careers Portal" : "Cổng tuyển dụng"}
+                </option>
+                <option value="OTHER">{isEn ? "Other" : "Nguồn khác"}</option>
               </select>
             </div>
           </div>
 
-          {/* Tải CV gốc */}
+          {/* Row 2: CV Upload */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
-              <span>{t("intake.cvLabel")}</span>
-              {cvFile && <span className="text-[11px] text-emerald-600 font-semibold">✓ Selected</span>}
-            </label>
+            <div className="flex items-baseline justify-between mb-1.5">
+              <label className="block text-xs font-medium text-zinc-700">
+                {isEn ? "Resume / CV (.pdf, .docx)" : "Tệp CV (.pdf, .docx)"}{" "}
+                <span className="text-brand-600">*</span>
+              </label>
+              {cvFile && (
+                <span className="text-[11px] font-medium text-emerald-700">
+                  {isEn ? "Selected" : "Đã chọn"}
+                </span>
+              )}
+            </div>
 
             <input
               type="file"
@@ -316,22 +323,21 @@ export default function AddCandidateModal({
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
+              className={`border border-dashed rounded-md p-4 text-center cursor-pointer transition-colors ${
                 fieldErrors.cvFile
-                  ? "border-red-400 bg-red-50/20"
+                  ? "border-brand-600 bg-rose-50/20"
                   : cvFile
-                  ? "border-emerald-400 bg-emerald-50/20"
-                  : "border-slate-300 bg-slate-50/50 hover:bg-slate-100 hover:border-indigo-400"
+                  ? "border-emerald-500 bg-emerald-50/20"
+                  : "border-zinc-300 bg-zinc-50/50 hover:border-zinc-500 hover:bg-zinc-50"
               }`}
             >
               {cvFile ? (
-                <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-emerald-200 text-xs">
-                  <div className="flex items-center gap-2 truncate">
-                    <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <span className="font-semibold text-slate-900 truncate">{cvFile.name}</span>
-                    <span className="text-[11px] text-slate-400 shrink-0">
-                      ({(cvFile.size / (1024 * 1024)).toFixed(2)} MB)
-                    </span>
+                <div className="flex items-center justify-between gap-3 text-left">
+                  <div className="min-w-0">
+                    <p className="font-medium text-zinc-900 truncate">{cvFile.name}</p>
+                    <p className="text-[11px] text-zinc-500 tabular-nums">
+                      {(cvFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -339,74 +345,73 @@ export default function AddCandidateModal({
                       e.stopPropagation();
                       setCvFile(null);
                     }}
-                    className="p-1 text-slate-400 hover:text-red-600"
+                    className="text-xs font-medium text-brand-600 hover:text-brand-700 cursor-pointer shrink-0"
                   >
-                    <X className="w-4 h-4" />
+                    {isEn ? "Remove" : "Xóa"}
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-1.5 py-1">
-                  <UploadCloud className="w-6 h-6 text-indigo-600" />
-                  <p className="text-xs font-semibold text-slate-800">
-                    {t("intake.uploadPrompt")}
+                <div className="py-2 space-y-1">
+                  <p className="font-medium text-zinc-800">
+                    {isEn
+                      ? "Click to upload or drag & drop CV file"
+                      : "Bấm để chọn hoặc kéo thả tệp CV vào đây"}
                   </p>
-                  <p className="text-[11px] text-slate-400">
-                    {t("intake.uploadSub")}
+                  <p className="text-[11px] text-zinc-400">
+                    {isEn ? "PDF or DOCX · Max 10MB" : "Hỗ trợ PDF, DOCX · Tối đa 10MB"}
                   </p>
                 </div>
               )}
             </div>
             {fieldErrors.cvFile && (
-              <p className="text-[11px] text-red-600 mt-1">{fieldErrors.cvFile}</p>
+              <p className="text-[11px] text-brand-600 mt-1">{fieldErrors.cvFile}</p>
             )}
           </div>
 
-          {/* Thông tin ứng viên: Họ tên, Email, SĐT */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Row 3: Candidate Contact Details */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <User className="w-3.5 h-3.5 text-slate-400" />
-                {t("intake.nameLabel")}
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+                {isEn ? "Full Name" : "Họ và tên"} <span className="text-brand-600">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Nguyễn Văn A"
-                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
-                  fieldErrors.fullName ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                placeholder={isEn ? "Jane Doe" : "Nguyễn Văn A"}
+                className={`w-full text-xs rounded-md border bg-white py-2 px-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 ${
+                  fieldErrors.fullName ? "border-brand-600" : "border-zinc-300"
                 }`}
               />
               {fieldErrors.fullName && (
-                <p className="text-[10px] text-red-600 mt-1">{fieldErrors.fullName}</p>
+                <p className="text-[11px] text-brand-600 mt-1">{fieldErrors.fullName}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5 text-slate-400" />
-                {t("intake.emailLabel")}
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+                {isEn ? "Email" : "Email liên hệ"} <span className="text-brand-600">*</span>
               </label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="a.nguyen@email.com"
-                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
-                  fieldErrors.email ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                placeholder="name@email.com"
+                className={`w-full text-xs rounded-md border bg-white py-2 px-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 ${
+                  fieldErrors.email ? "border-brand-600" : "border-zinc-300"
                 }`}
               />
               {fieldErrors.email && (
-                <p className="text-[10px] text-red-600 mt-1">{fieldErrors.email}</p>
+                <p className="text-[11px] text-brand-600 mt-1">{fieldErrors.email}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5 text-slate-400" />
-                {t("intake.phoneLabel")}
+              <label className="block text-xs font-medium text-zinc-700 mb-1.5">
+                {isEn ? "Phone Number" : "Số điện thoại"}{" "}
+                <span className="text-brand-600">*</span>
               </label>
               <input
                 type="tel"
@@ -414,24 +419,25 @@ export default function AddCandidateModal({
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="0901234567"
-                className={`w-full text-xs rounded-xl border bg-white py-2.5 px-3 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 ${
-                  fieldErrors.phone ? "border-red-400 bg-red-50/20" : "border-slate-200"
+                className={`w-full text-xs rounded-md border bg-white py-2 px-3 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900 ${
+                  fieldErrors.phone ? "border-brand-600" : "border-zinc-300"
                 }`}
               />
               {fieldErrors.phone && (
-                <p className="text-[10px] text-red-600 mt-1">{fieldErrors.phone}</p>
+                <p className="text-[11px] text-brand-600 mt-1">{fieldErrors.phone}</p>
               )}
             </div>
           </div>
 
-          {/* Đính kèm Bằng cấp / Chứng chỉ dạng Ảnh hoặc PDF */}
-          <div className="space-y-2 pt-1 border-t border-slate-100">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <Award className="w-3.5 h-3.5 text-indigo-600" />
-                <span>{t("intake.certLabel")}</span>
+          {/* Row 4: Optional Certificates */}
+          <div className="space-y-2 pt-2 border-t border-zinc-100">
+            <div className="flex items-baseline justify-between">
+              <label className="block text-xs font-medium text-zinc-700">
+                {isEn ? "Certificates & Diplomas" : "Bằng cấp & chứng chỉ"}
               </label>
-              <span className="text-[11px] text-slate-400">{t("intake.certOptional")}</span>
+              <span className="text-[11px] text-zinc-400">
+                {isEn ? "Optional · Up to 5 files" : "Tùy chọn · Tối đa 5 tệp"}
+              </span>
             </div>
 
             <input
@@ -443,90 +449,64 @@ export default function AddCandidateModal({
               className="hidden"
             />
 
-            {certificateFiles.length > 0 ? (
-              <div className="space-y-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {certificateFiles.map((file, idx) => {
-                    const isImg =
-                      file.type.startsWith("image/") || /\.(jpg|jpeg|png|webp)$/i.test(file.name);
-                    return (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-200 text-xs"
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <div className="w-6 h-6 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
-                            {isImg ? (
-                              <ImageIcon className="w-3.5 h-3.5 text-purple-600" />
-                            ) : (
-                              <FileText className="w-3.5 h-3.5 text-red-600" />
-                            )}
-                          </div>
-                          <span className="truncate font-medium text-slate-800 text-[11px]">
-                            {file.name}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveCertificate(idx)}
-                          className="text-slate-400 hover:text-red-600 p-1"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {certificateFiles.length < 5 && (
-                  <button
-                    type="button"
-                    onClick={() => certInputRef.current?.click()}
-                    className="w-full py-2 px-3 rounded-xl border border-dashed border-slate-300 hover:border-purple-500 hover:bg-purple-50/40 text-slate-600 hover:text-purple-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            {certificateFiles.length > 0 && (
+              <div className="space-y-1.5">
+                {certificateFiles.map((file, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-md border border-zinc-200 bg-zinc-50 text-xs"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>+ {t("intake.certUpload")}</span>
-                  </button>
-                )}
+                    <span className="text-zinc-800 truncate">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCertificate(idx)}
+                      className="text-brand-600 hover:text-brand-700 font-medium cursor-pointer shrink-0"
+                    >
+                      {isEn ? "Remove" : "Xóa"}
+                    </button>
+                  </div>
+                ))}
               </div>
-            ) : (
+            )}
+
+            {certificateFiles.length < 5 && (
               <button
                 type="button"
                 onClick={() => certInputRef.current?.click()}
-                className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-200 hover:border-purple-400 hover:bg-slate-50 text-slate-500 hover:text-purple-700 text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full py-2 px-3 rounded-md border border-dashed border-zinc-300 hover:border-zinc-500 text-zinc-600 hover:text-zinc-900 text-xs font-medium transition-colors cursor-pointer"
               >
-                <ImageIcon className="w-4 h-4 text-slate-400" />
-                <span>{t("intake.certUpload")}</span>
+                {isEn
+                  ? "Attach certificate or diploma files (PNG, JPG, PDF)"
+                  : "Đính kèm tệp bằng cấp hoặc chứng chỉ (PNG, JPG, PDF)"}
               </button>
             )}
           </div>
 
-          {/* Footer nút hành động */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer active:scale-[0.98] transition-all"
+              className="px-4 py-2 text-xs font-medium text-zinc-600 hover:text-zinc-900 cursor-pointer whitespace-nowrap"
             >
-              {t("intake.cancelBtn")}
+              {isEn ? "Cancel" : "Hủy"}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 rounded-xl shadow-sm flex items-center gap-2 cursor-pointer active:scale-[0.98] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20"
+              className="px-4 py-2 text-xs font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:bg-brand-300 rounded-md inline-flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{t("intake.submitting")}</span>
-                </>
-              ) : (
-                <>
-                  <FileUp className="w-4 h-4" />
-                  <span>{t("intake.submitBtn")}</span>
-                </>
-              )}
+              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>
+                {loading
+                  ? isEn
+                    ? "Submitting..."
+                    : "Đang xử lý..."
+                  : isEn
+                  ? "Submit Intake"
+                  : "Tiếp nhận hồ sơ"}
+              </span>
             </button>
           </div>
         </form>
