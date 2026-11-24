@@ -13,6 +13,7 @@ model User {
   id           Int          @id @default(autoincrement())
   fullName     String
   email        String       @unique
+  phone        String?
   passwordHash String
   role         String       @default("HR") // ADMIN, HR, HIRING_MANAGER
   isActive     Boolean      @default(true)

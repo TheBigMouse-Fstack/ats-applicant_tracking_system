@@ -1,19 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Users,
-  UserPlus,
-  Shield,
-  ShieldCheck,
-  Briefcase,
-  Lock,
-  Unlock,
-  AlertCircle,
-  X,
-  Search,
-  Loader2,
-} from "lucide-react";
+import { AlertCircle, X, Search, Loader2, CheckCircle2 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
 import { clientCache } from "@/lib/client-cache";
@@ -22,6 +10,7 @@ interface UserItem {
   id: number;
   fullName: string;
   email: string;
+  phone?: string | null;
   role: string;
   isActive: boolean;
   createdAt: string;
@@ -36,19 +25,31 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  // Form thêm User mới
+  // Create User Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("HR");
   const [submitting, setSubmitting] = useState(false);
-
-  // Trạng thái đánh đỏ lỗi từng ô (UI/UX Guidelines)
   const [modalGeneralError, setModalGeneralError] = useState("");
-  const [errorField, setErrorField] = useState<"fullName" | "email" | "password" | "">("");
+  const [errorField, setErrorField] = useState<string>("");
   const [fieldErrorMsg, setFieldErrorMsg] = useState("");
+
+  // Edit User Modal (Admin edits name, email, phone, role, or resets password)
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
+  const [editFullName, setEditFullName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editRole, setEditRole] = useState("HR");
+  const [editNewPassword, setEditNewPassword] = useState("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editGeneralError, setEditGeneralError] = useState("");
+  const [editErrorField, setEditErrorField] = useState<string>("");
+  const [editFieldErrorMsg, setEditFieldErrorMsg] = useState("");
 
   const fetchUsers = async (isSilent = false) => {
     try {
@@ -72,7 +73,6 @@ export default function UserManagementPage() {
   };
 
   useEffect(() => {
-    // 1. Kiểm tra cache: Nếu có dữ liệu người dùng, hiển thị ngay tức thì (0ms)
     const cached = clientCache.getStale<UserItem[]>("admin_users_list");
     if (cached && cached.length > 0) {
       setUsers(cached);
@@ -83,7 +83,11 @@ export default function UserManagementPage() {
     }
   }, []);
 
-  // Xử lý tạo User mới
+  const showNotice = (msg: string) => {
+    setNotice(msg);
+    setTimeout(() => setNotice(null), 4000);
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setModalGeneralError("");
@@ -95,7 +99,7 @@ export default function UserManagementPage() {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, password, role }),
+        body: JSON.stringify({ fullName, email, phone, password, role }),
       });
 
       const data = await res.json();
@@ -109,15 +113,15 @@ export default function UserManagementPage() {
         return;
       }
 
-      // Thành công
       setIsModalOpen(false);
       setFullName("");
       setEmail("");
+      setPhone("");
       setPassword("");
-      setErrorField("");
-      setFieldErrorMsg("");
+      setRole("HR");
       clientCache.invalidate("admin_users_list");
       fetchUsers(true);
+      showNotice("Đã tạo tài khoản thành công.");
     } catch {
       setModalGeneralError("Lỗi kết nối máy chủ");
     } finally {
@@ -125,20 +129,92 @@ export default function UserManagementPage() {
     }
   };
 
-  // Khóa / Mở khóa tài khoản
-  const handleToggleActive = async (userId: number, currentStatus: boolean) => {
+  const handleOpenEdit = (u: UserItem) => {
+    setEditingUser(u);
+    setEditFullName(u.fullName);
+    setEditEmail(u.email);
+    setEditPhone(u.phone || "");
+    setEditRole(u.role);
+    setEditNewPassword("");
+    setEditGeneralError("");
+    setEditErrorField("");
+    setEditFieldErrorMsg("");
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    setEditGeneralError("");
+    setEditErrorField("");
+    setEditFieldErrorMsg("");
+
+    if (editNewPassword && editNewPassword.length < 8) {
+      setEditErrorField("newPassword");
+      setEditFieldErrorMsg("Mật khẩu mới phải có ít nhất 8 ký tự.");
+      return;
+    }
+
+    setEditSubmitting(true);
     try {
       const res = await fetch("/api/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, isActive: !currentStatus }),
+        body: JSON.stringify({
+          userId: editingUser.id,
+          fullName: editFullName,
+          email: editEmail,
+          phone: editPhone,
+          role: editRole,
+          ...(editNewPassword ? { newPassword: editNewPassword } : {}),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        if (data.field) {
+          setEditErrorField(data.field);
+          setEditFieldErrorMsg(data.error);
+        } else {
+          setEditGeneralError(data.error || "Không thể cập nhật tài khoản");
+        }
+        return;
+      }
+
+      setEditingUser(null);
+      clientCache.invalidate("admin_users_list");
+      fetchUsers(true);
+      showNotice(
+        editNewPassword
+          ? `Đã cập nhật thông tin và đặt lại mật khẩu cho ${editFullName}.`
+          : `Đã cập nhật thông tin tài khoản ${editFullName}.`
+      );
+    } catch {
+      setEditGeneralError("Lỗi kết nối máy chủ");
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleToggleActive = async (userId: number, currentActive: boolean) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, isActive: !currentActive } : u))
+    );
+    try {
+      const res = await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, isActive: !currentActive }),
       });
       if (res.ok) {
         clientCache.invalidate("admin_users_list");
         fetchUsers(true);
+      } else {
+        fetchUsers(true);
       }
     } catch (e) {
       console.error(e);
+      fetchUsers(true);
     }
   };
 
@@ -146,6 +222,7 @@ export default function UserManagementPage() {
     (u) =>
       u.fullName.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()) ||
+      (u.phone || "").toLowerCase().includes(search.toLowerCase()) ||
       u.role.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -170,51 +247,66 @@ export default function UserManagementPage() {
         </button>
       </div>
 
+      {notice && (
+        <div className="p-3 rounded-md bg-emerald-50 flex items-center justify-between gap-2 text-xs font-medium text-emerald-800">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            {notice}
+          </span>
+          <button onClick={() => setNotice(null)} className="text-emerald-600 hover:text-emerald-800 cursor-pointer">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Filter / Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+      <div className="bg-white p-4 rounded-lg border border-zinc-200 flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm kiếm theo tên, email, vai trò..."
-            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-800 placeholder:text-slate-400"
+            placeholder="Tìm theo tên, email, số điện thoại..."
+            className="w-full pl-9 pr-4 py-2 border border-zinc-200 rounded-md text-sm focus:outline-none focus:border-zinc-900 text-zinc-900 placeholder:text-zinc-400"
           />
         </div>
-        <div className="text-xs text-slate-500 font-medium">
-          Tổng số: <span className="font-bold text-slate-900">{filteredUsers.length}</span> tài khoản
+        <div className="text-xs text-zinc-500 whitespace-nowrap">
+          Tổng: <strong className="text-zinc-900">{filteredUsers.length}</strong> tài khoản
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-lg border border-zinc-200 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-slate-500 text-sm">Đang tải danh sách người dùng...</div>
+          <div className="p-8 text-center text-zinc-500 text-sm">Đang tải danh sách người dùng...</div>
         ) : filteredUsers.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">Không tìm thấy tài khoản nào</div>
+          <div className="p-8 text-center text-zinc-500 text-sm">Không tìm thấy tài khoản nào</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs font-semibold">
-                  <th className="py-3.5 px-4">Thành viên</th>
-                  <th className="py-3.5 px-4">Email</th>
-                  <th className="py-3.5 px-4">Vai trò</th>
-                  <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 text-right">Thao tác</th>
+                <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 text-xs font-medium">
+                  <th className="py-3 px-4">Thành viên</th>
+                  <th className="py-3 px-4">Email &amp; SĐT</th>
+                  <th className="py-3 px-4">Vai trò</th>
+                  <th className="py-3 px-4">Trạng thái</th>
+                  <th className="py-3 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-zinc-100">
                 {filteredUsers.map((user) => (
                   <tr key={user.id} className="hover:bg-zinc-50/70 transition-colors">
                     <td className="py-3.5 px-4">
                       <p className="font-medium text-zinc-900 leading-tight">{user.fullName}</p>
-                      <p className="text-xs text-zinc-400 mt-0.5">
-                        {formatDateTime(user.createdAt)}
-                      </p>
+                      <p className="text-xs text-zinc-400 mt-0.5">{formatDateTime(user.createdAt)}</p>
                     </td>
-                    <td className="py-3.5 px-4 text-zinc-600 font-mono text-xs">{user.email}</td>
+                    <td className="py-3.5 px-4">
+                      <p className="text-zinc-700 font-mono text-xs">{user.email}</p>
+                      {user.phone && (
+                        <p className="text-xs text-zinc-400 mt-0.5 tabular-nums">{user.phone}</p>
+                      )}
+                    </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       {user.role === "ADMIN" && (
                         <span className="text-xs font-semibold text-brand-600">Admin</span>
@@ -228,26 +320,30 @@ export default function UserManagementPage() {
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       {user.isActive ? (
-                        <span className="text-xs font-medium text-emerald-700">
-                          Đang hoạt động
-                        </span>
+                        <span className="text-xs font-medium text-emerald-700">Đang hoạt động</span>
                       ) : (
-                        <span className="text-xs font-medium text-zinc-400">
-                          Đã khóa
-                        </span>
+                        <span className="text-xs font-medium text-zinc-400">Đã khóa</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => handleToggleActive(user.id, user.isActive)}
-                        className={`text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
-                          user.isActive
-                            ? "text-brand-600 hover:text-brand-700"
-                            : "text-emerald-700 hover:text-emerald-800"
-                        }`}
-                      >
-                        {user.isActive ? "Khóa" : "Mở khóa"}
-                      </button>
+                      <div className="inline-flex items-center gap-4">
+                        <button
+                          onClick={() => handleOpenEdit(user)}
+                          className="text-xs font-medium text-zinc-700 hover:text-zinc-900 transition-colors cursor-pointer whitespace-nowrap"
+                        >
+                          Chỉnh sửa
+                        </button>
+                        <button
+                          onClick={() => handleToggleActive(user.id, user.isActive)}
+                          className={`text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                            user.isActive
+                              ? "text-brand-600 hover:text-brand-700"
+                              : "text-emerald-700 hover:text-emerald-800"
+                          }`}
+                        >
+                          {user.isActive ? "Khóa" : "Mở khóa"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -257,36 +353,189 @@ export default function UserManagementPage() {
         )}
       </div>
 
-      {/* Modal Thêm Người Dùng Mới (Tuân thủ UI/UX Guidelines) */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+      {/* Modal Chỉnh Sửa Tài Khoản (Admin đổi tên, email, sđt, vai trò, mật khẩu) */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 bg-zinc-900/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full shadow-xl border border-zinc-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
+              <h3 className="font-semibold text-zinc-900 text-sm">
+                Chỉnh sửa tài khoản
+              </h3>
+              <button
+                onClick={() => setEditingUser(null)}
+                className="p-1 rounded text-zinc-400 hover:text-zinc-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
+              {editGeneralError && (
+                <div className="p-3 rounded-md bg-red-50 text-xs text-red-700 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>{editGeneralError}</span>
+                </div>
+              )}
+
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Thêm Tài Khoản Nhân Viên Mới</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Thiết lập thông tin và phân quyền người dùng</p>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">Họ và tên</label>
+                <input
+                  type="text"
+                  required
+                  value={editFullName}
+                  onChange={(e) => {
+                    setEditFullName(e.target.value);
+                    if (editErrorField === "fullName") {
+                      setEditErrorField("");
+                      setEditFieldErrorMsg("");
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md text-sm text-zinc-900 ${
+                    editErrorField === "fullName"
+                      ? "border-red-500 focus:outline-none"
+                      : "border-zinc-300 focus:outline-none focus:border-zinc-900"
+                  }`}
+                />
+                {editErrorField === "fullName" && (
+                  <p className="text-xs text-red-600 mt-1">{editFieldErrorMsg}</p>
+                )}
               </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={editEmail}
+                  onChange={(e) => {
+                    setEditEmail(e.target.value);
+                    if (editErrorField === "email") {
+                      setEditErrorField("");
+                      setEditFieldErrorMsg("");
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md text-sm text-zinc-900 ${
+                    editErrorField === "email"
+                      ? "border-red-500 focus:outline-none"
+                      : "border-zinc-300 focus:outline-none focus:border-zinc-900"
+                  }`}
+                />
+                {editErrorField === "email" && (
+                  <p className="text-xs text-red-600 mt-1">{editFieldErrorMsg}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">
+                  Số điện thoại
+                </label>
+                <input
+                  type="text"
+                  value={editPhone}
+                  onChange={(e) => {
+                    setEditPhone(e.target.value);
+                    if (editErrorField === "phone") {
+                      setEditErrorField("");
+                      setEditFieldErrorMsg("");
+                    }
+                  }}
+                  placeholder="0901 234 567"
+                  className={`w-full px-3 py-2 border rounded-md text-sm text-zinc-900 ${
+                    editErrorField === "phone"
+                      ? "border-red-500 focus:outline-none"
+                      : "border-zinc-300 focus:outline-none focus:border-zinc-900"
+                  }`}
+                />
+                {editErrorField === "phone" && (
+                  <p className="text-xs text-red-600 mt-1">{editFieldErrorMsg}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">Vai trò</label>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-md text-sm focus:outline-none focus:border-zinc-900 bg-white text-zinc-900"
+                >
+                  <option value="HR">HR Lead</option>
+                  <option value="HIRING_MANAGER">Hiring Manager</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
+
+              <div className="pt-2 border-t border-zinc-100">
+                <label className="block text-xs font-medium text-zinc-700 mb-1">
+                  Đặt lại mật khẩu mới (tuỳ chọn)
+                </label>
+                <input
+                  type="password"
+                  value={editNewPassword}
+                  onChange={(e) => {
+                    setEditNewPassword(e.target.value);
+                    if (editErrorField === "newPassword") {
+                      setEditErrorField("");
+                      setEditFieldErrorMsg("");
+                    }
+                  }}
+                  placeholder="Để trống nếu giữ mật khẩu cũ (tối thiểu 8 ký tự)"
+                  className={`w-full px-3 py-2 border rounded-md text-sm text-zinc-900 ${
+                    editErrorField === "newPassword"
+                      ? "border-red-500 focus:outline-none"
+                      : "border-zinc-300 focus:outline-none focus:border-zinc-900"
+                  }`}
+                />
+                {editErrorField === "newPassword" && (
+                  <p className="text-xs text-red-600 mt-1">{editFieldErrorMsg}</p>
+                )}
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="px-4 py-2 border border-zinc-200 text-zinc-700 text-xs font-medium rounded-md hover:bg-zinc-50 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-60 cursor-pointer whitespace-nowrap"
+                >
+                  {editSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Lưu thay đổi</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Thêm Người Dùng Mới */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-zinc-900/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-md w-full shadow-xl border border-zinc-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
+              <h3 className="font-semibold text-zinc-900 text-sm">Thêm tài khoản mới</h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1 rounded text-zinc-400 hover:text-zinc-700 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreateUser} className="p-5 space-y-4">
               {modalGeneralError && (
-                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                <div className="p-3 rounded-md bg-red-50 text-xs text-red-700 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
                   <span>{modalGeneralError}</span>
                 </div>
               )}
 
-              {/* Họ tên */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Họ và tên nhân viên <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">Họ và tên</label>
                 <input
                   type="text"
                   required
@@ -298,26 +547,16 @@ export default function UserManagementPage() {
                       setFieldErrorMsg("");
                     }
                   }}
-                  placeholder="Ví dụ: Lê Bảo Hoàng"
-                  className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all text-slate-900 ${
-                    errorField === "fullName"
-                      ? "border-red-500 bg-red-50/20 text-red-900 focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                      : "border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  }`}
+                  placeholder="Nguyễn Văn B"
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-md text-sm text-zinc-900 focus:outline-none focus:border-zinc-900"
                 />
                 {errorField === "fullName" && (
-                  <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{fieldErrorMsg}</span>
-                  </p>
+                  <p className="text-xs text-red-600 mt-1">{fieldErrorMsg}</p>
                 )}
               </div>
 
-              {/* Email (Có kiểm tra trùng lặp) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Email công ty <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">Email</label>
                 <input
                   type="email"
                   required
@@ -329,26 +568,33 @@ export default function UserManagementPage() {
                       setFieldErrorMsg("");
                     }
                   }}
-                  placeholder="hoang.le@recoverx.career"
-                  className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all text-slate-900 ${
+                  placeholder="hr@ats.vn"
+                  className={`w-full px-3 py-2 border rounded-md text-sm text-zinc-900 ${
                     errorField === "email"
-                      ? "border-red-500 bg-red-50/20 text-red-900 focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                      : "border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      ? "border-red-500 focus:outline-none"
+                      : "border-zinc-300 focus:outline-none focus:border-zinc-900"
                   }`}
                 />
                 {errorField === "email" && (
-                  <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{fieldErrorMsg}</span>
-                  </p>
+                  <p className="text-xs text-red-600 mt-1">{fieldErrorMsg}</p>
                 )}
               </div>
 
-              {/* Mật khẩu (Có kiểm tra tối thiểu 8 ký tự BRL-Auth) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Mật khẩu khởi tạo <span className="text-red-500">*</span>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">
+                  Số điện thoại (tuỳ chọn)
                 </label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0901 234 567"
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-md text-sm text-zinc-900 focus:outline-none focus:border-zinc-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">Mật khẩu</label>
                 <input
                   type="password"
                   required
@@ -361,35 +607,27 @@ export default function UserManagementPage() {
                     }
                   }}
                   placeholder="Tối thiểu 8 ký tự"
-                  className={`w-full px-3.5 py-2.5 border rounded-xl text-sm transition-all text-slate-900 ${
+                  className={`w-full px-3 py-2 border rounded-md text-sm text-zinc-900 ${
                     errorField === "password"
-                      ? "border-red-500 bg-red-50/20 text-red-900 focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                      : "border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      ? "border-red-500 focus:outline-none"
+                      : "border-zinc-300 focus:outline-none focus:border-zinc-900"
                   }`}
                 />
-                {errorField === "password" ? (
-                  <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 font-medium">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{fieldErrorMsg}</span>
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-slate-400 mt-1">Tối thiểu 8 ký tự.</p>
+                {errorField === "password" && (
+                  <p className="text-xs text-red-600 mt-1">{fieldErrorMsg}</p>
                 )}
               </div>
 
-              {/* Vai trò */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Phân quyền vai trò <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-xs font-medium text-zinc-700 mb-1">Vai trò</label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white text-slate-900"
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-md text-sm focus:outline-none focus:border-zinc-900 bg-white text-zinc-900"
                 >
-                  <option value="HR">HR LEAD — Quản lý tuyển dụng và phê duyệt hồ sơ</option>
-                  <option value="HIRING_MANAGER">HIRING MANAGER — Hội đồng chuyên môn & Đánh giá phỏng vấn</option>
-                  <option value="ADMIN">ADMIN — Quản trị toàn bộ hệ thống</option>
+                  <option value="HR">HR Lead</option>
+                  <option value="HIRING_MANAGER">Hiring Manager</option>
+                  <option value="ADMIN">Admin</option>
                 </select>
               </div>
 
@@ -397,23 +635,17 @@ export default function UserManagementPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="px-4 py-2 border border-zinc-200 text-zinc-700 text-xs font-medium rounded-md hover:bg-zinc-50 transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  Hủy bỏ
+                  Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-60 cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-60 cursor-pointer whitespace-nowrap"
                 >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang lưu vào CSDL...</span>
-                    </>
-                  ) : (
-                    <span>Tạo Tài Khoản</span>
-                  )}
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Tạo tài khoản</span>
                 </button>
               </div>
             </form>
