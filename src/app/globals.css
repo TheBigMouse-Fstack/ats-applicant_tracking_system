@@ -3,14 +3,28 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 15, 23, 42;
-  --background-rgb: 248, 250, 252;
+  --brand-primary: #d92027;
+  --brand-primary-hover: #b91c1c;
+  --brand-tint: #fef2f2;
+  --surface-canvas: #f8f9fa;
+  --surface-card: #ffffff;
+  --border-subtle: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #52525b;
+  --text-muted: #9ca3af;
 }
 
+html,
 body {
-  color: rgb(var(--foreground-rgb));
-  background-color: rgb(var(--background-rgb));
+  overflow-x: clip;
+  color: var(--text-primary);
+  background-color: var(--surface-canvas);
   min-height: 100vh;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
 }
 
 /* Thanh đếm ngược thời gian tự đóng cho Toast Notification */
@@ -27,4 +41,15 @@ body {
   animation-name: toastProgress;
   animation-timing-function: linear;
   animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

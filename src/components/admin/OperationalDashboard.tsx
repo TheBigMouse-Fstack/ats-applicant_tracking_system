@@ -126,11 +126,11 @@ interface DashboardData {
 }
 
 const STAGE_META = [
-  { key: "NEW" as const, label: "Mới nộp", dotColor: "bg-blue-500", barColor: "bg-blue-500", desc: "Chờ HR sơ loại" },
-  { key: "SCREENING" as const, label: "Sàng lọc", dotColor: "bg-indigo-500", barColor: "bg-indigo-500", desc: "Chờ duyệt PV" },
-  { key: "INTERVIEW" as const, label: "Phỏng vấn", dotColor: "bg-amber-500", barColor: "bg-amber-500", desc: "Đang đánh giá" },
-  { key: "HIRED" as const, label: "Tuyển chọn", dotColor: "bg-emerald-500", barColor: "bg-emerald-500", desc: "Đã trúng tuyển" },
-  { key: "REJECTED" as const, label: "Từ chối", dotColor: "bg-rose-400", barColor: "bg-rose-400", desc: "Lưu kho dự phòng" },
+  { key: "NEW" as const, label: "Mới tiếp nhận", barColor: "bg-zinc-400", textColor: "text-zinc-700" },
+  { key: "SCREENING" as const, label: "Sàng lọc", barColor: "bg-zinc-600", textColor: "text-zinc-800" },
+  { key: "INTERVIEW" as const, label: "Phỏng vấn", barColor: "bg-zinc-900", textColor: "text-zinc-900" },
+  { key: "HIRED" as const, label: "Tuyển chọn", barColor: "bg-brand-600", textColor: "text-brand-600" },
+  { key: "REJECTED" as const, label: "Từ chối", barColor: "bg-zinc-300", textColor: "text-zinc-500" },
 ];
 
 const ACTION_LABELS: Record<string, string> = {
@@ -315,18 +315,15 @@ export default function OperationalDashboard() {
         </div>
       )}
 
-      {/* HEADER TỐI GIẢN — KHÔNG NHỒI NÚT THỪA */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              {t("dashboard.title", "Tổng Quan Tuyển Dụng")}
-            </h1>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
-              {roleMeta.badge}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-0.5">{roleMeta.subtitle}</p>
+      {/* HEADER TỐI GIẢN */}
+      <div className="flex items-baseline justify-between gap-4">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">
+            {t("dashboard.title", "Tổng quan")}
+          </h1>
+          <span className="text-xs font-medium text-brand-600">
+            {roleMeta.badge}
+          </span>
         </div>
       </div>
 
@@ -427,65 +424,41 @@ export default function OperationalDashboard() {
         </div>
       )}
 
-      {/* TẦNG 2: PHỄU CHUYỂN ĐỔI TUYỂN DỤNG (RECRUITMENT CONVERSION FUNNEL) */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="font-bold text-slate-900 text-sm">{t("dashboard.funnelTitle", "Phễu Chuyển Đổi Tuyển Dụng")}</h2>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200">
-                5 Giai Đoạn
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              {t("dashboard.funnelDesc", "Tỷ lệ chuyển đổi và phân bổ hồ sơ qua từng vòng tuyển dụng.")}
-            </p>
-          </div>
-          <span className="text-slate-500 font-semibold text-xs shrink-0">
-            Tổng cộng: <strong className="text-slate-900">{data.funnel.total}</strong> hồ sơ
+      {/* TẦNG 2: PHỄU CHUYỂN ĐỔI TUYỂN DỤNG (HORIZONTAL PROPORTIONAL FUNNEL) */}
+      <section className="bg-white border border-zinc-200 rounded-lg p-5 space-y-4">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-semibold text-zinc-900 text-sm">
+            {t("dashboard.funnelTitle", "Phễu chuyển đổi tuyển dụng")}
+          </h2>
+          <span className="text-zinc-500 text-xs tabular-nums">
+            Tổng: <strong className="text-zinc-900 font-semibold">{data.funnel.total}</strong> hồ sơ
           </span>
         </div>
 
-        {/* Thanh phễu đa sắc trực quan */}
-        <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
-          {data.funnel.total > 0 ? (
-            STAGE_META.map((stage) => {
-              const pct = (data.funnel[stage.key] / data.funnel.total) * 100;
-              if (pct <= 0) return null;
-              return (
-                <div
-                  key={stage.key}
-                  style={{ width: `${pct}%` }}
-                  className={`${stage.barColor} transition-all duration-300 relative group`}
-                  title={`${t(`stage.${stage.key}`, stage.label)}: ${data.funnel[stage.key]} hồ sơ (${pct.toFixed(1)}%)`}
-                />
-              );
-            })
-          ) : (
-            <div className="w-full bg-slate-200" />
-          )}
-        </div>
-
-        {/* 5 Hộp thống kê giai đoạn có hiển thị Tỷ lệ % và Ý nghĩa vai trò */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
+        <div className="space-y-3">
           {STAGE_META.map((stage) => {
-            const pct = data.funnel.total > 0 ? ((data.funnel[stage.key] / data.funnel.total) * 100).toFixed(1) : "0.0";
+            const count = data.funnel[stage.key];
+            const pct = data.funnel.total > 0 ? (count / data.funnel.total) * 100 : 0;
+            const barWidth = count > 0 ? Math.max(pct, 3) : 0;
+
             return (
-              <div key={stage.key} className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700">
-                    <span className={`w-2 h-2 rounded-full ${stage.dotColor}`} />
-                    <span className="truncate">{t(`stage.${stage.key}`, stage.label)}</span>
+              <div key={stage.key} className="grid grid-cols-12 items-center gap-3">
+                <div className="col-span-4 sm:col-span-3 flex items-center justify-between pr-2">
+                  <span className={`text-xs font-medium whitespace-nowrap ${stage.textColor}`}>
+                    {t(`stage.${stage.key}`, stage.label)}
                   </span>
-                  <span className="text-[10px] font-semibold text-slate-400">{pct}%</span>
                 </div>
-                <div className="flex items-baseline justify-between mt-1">
-                  <p className="text-xl font-extrabold text-slate-900">
-                    {data.funnel[stage.key]}
-                  </p>
-                  <span className="text-[10px] text-slate-500 font-medium">
-                    {t(`stageDesc.${stage.key}`, stage.desc)}
-                  </span>
+                <div className="col-span-5 sm:col-span-7">
+                  <div className="w-full h-2.5 bg-zinc-100 rounded-sm overflow-hidden">
+                    <div
+                      style={{ width: `${barWidth}%` }}
+                      className={`h-full ${stage.barColor} transition-[width] duration-300`}
+                    />
+                  </div>
+                </div>
+                <div className="col-span-3 sm:col-span-2 flex items-baseline justify-end gap-2 tabular-nums">
+                  <span className="text-sm font-semibold text-zinc-900">{count}</span>
+                  <span className="text-xs text-zinc-400 w-11 text-right">{pct.toFixed(1)}%</span>
                 </div>
               </div>
             );

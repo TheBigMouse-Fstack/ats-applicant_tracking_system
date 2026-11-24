@@ -22,7 +22,15 @@ export function SessionProvider({
   const [user, setUser] = useState<SessionUser | null>(initialUser);
   const [isLoading, setIsLoading] = useState<boolean>(!initialUser);
 
-  // Fallback nếu vì lý do nào đó server layout chưa kịp truyền initialUser
+  // Sync immediately whenever server layout passes an updated initialUser (e.g. right after login)
+  useEffect(() => {
+    if (initialUser) {
+      setUser(initialUser);
+      setIsLoading(false);
+    }
+  }, [initialUser]);
+
+  // Fallback fetch if user is still missing on client mount
   useEffect(() => {
     if (!user && !initialUser) {
       fetch("/api/auth/me")

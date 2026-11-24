@@ -22,7 +22,7 @@ interface DemoRoleBarProps {
 
 export default function DemoRoleBar({ currentRole, currentUser }: DemoRoleBarProps) {
   const pathname = usePathname();
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
   const [switching, setSwitching] = useState<string | null>(null);
 
   // Không hiển thị trên màn hình login

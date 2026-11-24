@@ -483,57 +483,54 @@ export default function TalentPoolPage() {
                       </td>
 
                       {/* AI Đánh giá */}
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         {matchTier.score !== null ? (
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${matchTier.badgeClass}`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${matchTier.dotClass}`} />
+                          <span className={`text-xs font-semibold tabular-nums ${matchTier.scoreTextClass}`}>
                             {matchTier.score}%
                           </span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-zinc-400">—</span>
                         )}
                       </td>
 
-                      {/* Trạng thái Kho Nhân Tài (nghiệp vụ thực tế thay cho raw Kanban stage) */}
-                      <td className="py-3.5 px-4 text-center">
+                      {/* Trạng thái Kho Nhân Tài (chỉ đánh màu chữ, không viền, 1 hàng) */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         {app.poolStatus === "SILVER_MEDALIST" ? (
-                          <div className="inline-flex flex-col items-center">
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                          <div>
+                            <span className="text-xs font-medium text-emerald-700">
                               Tiềm năng / Dự bị
                             </span>
                             {app.retentionDaysLeft !== null && (
-                              <span className="text-[10px] text-slate-400 mt-0.5">
-                                Còn {app.retentionDaysLeft} ngày lưu trữ
+                              <span className="block text-[11px] text-zinc-400 mt-0.5">
+                                Còn {app.retentionDaysLeft} ngày
                               </span>
                             )}
                           </div>
                         ) : app.poolStatus === "IN_PIPELINE_WATCH" ? (
-                          <div className="inline-flex flex-col items-center">
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-blue-50 text-blue-700 border-blue-200">
+                          <div>
+                            <span className="text-xs font-medium text-zinc-800">
                               Đang chờ đợt khác
                             </span>
-                            <span className="text-[10px] text-slate-400 mt-0.5">
+                            <span className="block text-[11px] text-zinc-400 mt-0.5">
                               {app.currentStage === "INTERVIEW" ? "Đang phỏng vấn" : "Đang sàng lọc"}
                             </span>
                           </div>
                         ) : (
-                          <div className="inline-flex flex-col items-center">
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-slate-100 text-slate-600 border-slate-200">
+                          <div>
+                            <span className="text-xs font-medium text-zinc-500">
                               Lưu trữ dự phòng
                             </span>
                             {app.retentionDaysLeft !== null && (
-                              <span className="text-[10px] text-slate-400 mt-0.5">
-                                Còn {app.retentionDaysLeft} ngày lưu trữ
+                              <span className="block text-[11px] text-zinc-400 mt-0.5">
+                                Còn {app.retentionDaysLeft} ngày
                               </span>
                             )}
                           </div>
                         )}
                       </td>
 
-                      {/* Thao tác duy nhất: Khôi phục (Re-pooling) */}
-                      <td className="py-3.5 px-4 text-right">
+                      {/* Thao tác duy nhất: Khôi phục (1 hàng, không icon) */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -541,11 +538,10 @@ export default function TalentPoolPage() {
                             setTargetJobId(String(jobs[0]?.id || ""));
                             setRepoolError(null);
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-brand-50 hover:text-brand-700 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors cursor-pointer"
+                          className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors cursor-pointer whitespace-nowrap"
                           title="Tái sử dụng hồ sơ sang vị trí tuyển dụng khác"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Khôi phục</span>
+                          Khôi phục
                         </button>
                       </td>
                     </tr>

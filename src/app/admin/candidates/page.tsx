@@ -25,11 +25,11 @@ interface JobOption {
 }
 
 const STAGE_STYLES: Record<string, { label: string; cls: string }> = {
-  NEW: { label: "Mới nộp", cls: "bg-blue-50 text-blue-700 border-blue-200" },
-  SCREENING: { label: "Sàng lọc", cls: "bg-indigo-50 text-indigo-700 border-indigo-200" },
-  INTERVIEW: { label: "Phỏng vấn", cls: "bg-amber-50 text-amber-800 border-amber-200" },
-  HIRED: { label: "Tuyển chọn", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  REJECTED: { label: "Từ chối", cls: "bg-rose-50 text-rose-700 border-rose-200" },
+  NEW: { label: "Mới nộp", cls: "text-zinc-600 border-transparent bg-transparent" },
+  SCREENING: { label: "Sàng lọc", cls: "text-zinc-800 border-transparent bg-transparent" },
+  INTERVIEW: { label: "Phỏng vấn", cls: "text-amber-700 border-transparent bg-transparent" },
+  HIRED: { label: "Tuyển chọn", cls: "text-emerald-700 border-transparent bg-transparent" },
+  REJECTED: { label: "Từ chối", cls: "text-brand-600 border-transparent bg-transparent" },
 };
 
 /**

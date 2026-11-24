@@ -28,11 +28,11 @@ export function getAiMatchTier(rawScore: number | null | undefined): AiMatchTier
       label: "Chưa đối chiếu",
       shortLabel: "Chưa đối chiếu",
       recommendation: "Chưa hoàn tất đối chiếu tiêu chuẩn vị trí — HR có thể bấm Đối chiếu lại.",
-      badgeClass: "bg-slate-100 text-slate-600 border-slate-200",
-      barClass: "bg-slate-300",
-      panelClass: "bg-slate-50/80 border-slate-200",
-      scoreTextClass: "text-slate-600",
-      dotClass: "bg-slate-400",
+      badgeClass: "text-zinc-500 border-transparent bg-transparent",
+      barClass: "bg-zinc-300",
+      panelClass: "bg-zinc-50 border-zinc-200",
+      scoreTextClass: "text-zinc-600",
+      dotClass: "bg-zinc-400",
     };
   }
 
@@ -45,11 +45,11 @@ export function getAiMatchTier(rawScore: number | null | undefined): AiMatchTier
       label: "Phù hợp cao",
       shortLabel: "Phù hợp cao",
       recommendation: "Đáp ứng tốt kỹ năng cốt lõi và kinh nghiệm JD — Khuyến nghị ưu tiên sàng lọc.",
-      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      barClass: "bg-emerald-500",
-      panelClass: "bg-emerald-50/40 border-emerald-200",
+      badgeClass: "text-emerald-700 border-transparent bg-transparent",
+      barClass: "bg-emerald-600",
+      panelClass: "bg-zinc-50 border-zinc-200",
       scoreTextClass: "text-emerald-700",
-      dotClass: "bg-emerald-500",
+      dotClass: "bg-emerald-600",
     };
   }
 
@@ -60,9 +60,9 @@ export function getAiMatchTier(rawScore: number | null | undefined): AiMatchTier
       label: "Tiềm năng / Cân nhắc",
       shortLabel: "Cân nhắc",
       recommendation: "Đáp ứng một phần tiêu chuẩn JD — Cần HR đọc kỹ hồ sơ và đánh giá tiềm năng.",
-      badgeClass: "bg-amber-50 text-amber-800 border-amber-200",
+      badgeClass: "text-amber-700 border-transparent bg-transparent",
       barClass: "bg-amber-500",
-      panelClass: "bg-amber-50/40 border-amber-200",
+      panelClass: "bg-zinc-50 border-zinc-200",
       scoreTextClass: "text-amber-700",
       dotClass: "bg-amber-500",
     };
@@ -74,10 +74,10 @@ export function getAiMatchTier(rawScore: number | null | undefined): AiMatchTier
     label: "Phù hợp thấp",
     shortLabel: "Thấp",
     recommendation: "Thiếu nhiều kỹ năng bắt buộc hoặc chưa khớp kinh nghiệm JD — Cần cân nhắc kỹ trước khi duyệt.",
-    badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
-    barClass: "bg-rose-500",
-    panelClass: "bg-rose-50/40 border-rose-200",
-    scoreTextClass: "text-rose-700",
+    badgeClass: "text-brand-600 border-transparent bg-transparent",
+    barClass: "bg-brand-600",
+    panelClass: "bg-zinc-50 border-zinc-200",
+    scoreTextClass: "text-brand-600",
     dotClass: "bg-rose-500",
   };
 }

@@ -273,15 +273,15 @@ export default function AdminJobsPage() {
                 className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-brand-50 text-brand-700 border border-brand-200">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs font-medium text-zinc-500">
                       {job.department}
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      className={`text-xs font-medium whitespace-nowrap ${
                         job.status === "ACTIVE" && !job.headcountMetrics?.isHeadcountFull
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-slate-100 text-slate-600 border-slate-200"
+                          ? "text-emerald-700"
+                          : "text-zinc-400"
                       }`}
                     >
                       {job.status === "ACTIVE" && !job.headcountMetrics?.isHeadcountFull
@@ -290,60 +290,45 @@ export default function AdminJobsPage() {
                     </span>
                   </div>
 
-                  <h3 className="text-base font-bold text-slate-900 line-clamp-1">
+                  <h3 className="text-base font-semibold text-zinc-900 line-clamp-1">
                     {job.title}
                   </h3>
 
-                  <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      {job.location}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      {job.minExperienceYears} năm KN
-                    </span>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
+                    <span>{job.location}</span>
+                    <span>{job.minExperienceYears} năm KN</span>
                   </div>
 
-                  {/* Tiến độ chỉ tiêu tuyển dụng & giới hạn phỏng vấn cùng lúc */}
-                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
+                  {/* Tiến độ chỉ tiêu tuyển dụng (chữ màu gọn, không viền) */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs tabular-nums">
                     <span
-                      className={`px-2 py-0.5 rounded-md font-semibold border ${
+                      className={
                         job.headcountMetrics?.isHeadcountFull
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-slate-50 text-slate-700 border-slate-200"
-                      }`}
+                          ? "font-medium text-emerald-700"
+                          : "text-zinc-600"
+                      }
                     >
-                      Chỉ tiêu: {job.headcountMetrics?.hiredCount ?? 0}/
-                      {job.headcountMetrics?.targetHeadcount ?? job.targetHeadcount ?? 1} đã tuyển
+                      Chỉ tiêu: <strong className="text-zinc-900">{job.headcountMetrics?.hiredCount ?? 0}/{job.headcountMetrics?.targetHeadcount ?? job.targetHeadcount ?? 1}</strong>
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded-md font-semibold border ${
+                      className={
                         job.headcountMetrics?.isInterviewAtCap
-                          ? "bg-amber-50 text-amber-700 border-amber-200"
-                          : "bg-slate-50 text-slate-600 border-slate-200"
-                      }`}
+                          ? "font-medium text-amber-700"
+                          : "text-zinc-600"
+                      }
                     >
-                      Đang PV: {job.headcountMetrics?.activeInterviewCount ?? 0}/
-                      {job.headcountMetrics?.effectiveInterviewCap ?? job.maxActiveInterviews ?? 3}
+                      Đang PV: <strong className="text-zinc-900">{job.headcountMetrics?.activeInterviewCount ?? 0}/{job.headcountMetrics?.effectiveInterviewCap ?? job.maxActiveInterviews ?? 3}</strong>
                     </span>
                   </div>
 
-                  {/* Skills */}
+                  {/* Skills (chữ xám nhẹ, không viền hộp) */}
                   {skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-1">
+                    <div className="flex flex-wrap gap-x-2.5 gap-y-1 pt-1 text-xs text-zinc-500">
                       {skills.slice(0, 4).map((sk) => (
-                        <span
-                          key={sk}
-                          className="px-2 py-0.5 rounded-md text-[10px] bg-slate-100 text-slate-600 border border-slate-200"
-                        >
-                          {sk}
-                        </span>
+                        <span key={sk}>{sk}</span>
                       ))}
                       {skills.length > 4 && (
-                        <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-slate-50 text-slate-400">
-                          +{skills.length - 4}
-                        </span>
+                        <span className="text-zinc-400">+{skills.length - 4}</span>
                       )}
                     </div>
                   )}

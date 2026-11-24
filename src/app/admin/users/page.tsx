@@ -153,18 +153,9 @@ export default function UserManagementPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold mb-1.5">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            {t("usersAdmin.title")}
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            {t("usersAdmin.title")}
-          </h1>
-          <p className="text-sm text-slate-500">
-            {t("usersAdmin.subtitle")}
-          </p>
-        </div>
+        <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">
+          {t("usersAdmin.title")}
+        </h1>
 
         <button
           onClick={() => {
@@ -173,9 +164,8 @@ export default function UserManagementPage() {
             setModalGeneralError("");
             setIsModalOpen(true);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 transition-all self-start sm:self-auto cursor-pointer"
+          className="inline-flex items-center px-4 py-2 rounded-md bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm transition-colors self-start sm:self-auto cursor-pointer whitespace-nowrap"
         >
-          <UserPlus className="w-4 h-4" />
           {t("usersAdmin.createBtn")}
         </button>
       </div>
@@ -217,69 +207,46 @@ export default function UserManagementPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-slate-900">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center text-brand-700 font-bold text-xs">
-                          {user.fullName.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-slate-900 leading-tight">{user.fullName}</p>
-                          <p className="text-[11px] text-slate-400 font-normal">
-                            Tạo ngày: {formatDateTime(user.createdAt)}
-                          </p>
-                        </div>
-                      </div>
+                  <tr key={user.id} className="hover:bg-zinc-50/70 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <p className="font-medium text-zinc-900 leading-tight">{user.fullName}</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        {formatDateTime(user.createdAt)}
+                      </p>
                     </td>
-                    <td className="py-3 px-4 text-slate-600 font-mono text-xs">{user.email}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4 text-zinc-600 font-mono text-xs">{user.email}</td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       {user.role === "ADMIN" && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                          <Shield className="w-3 h-3" />
-                          ADMIN
-                        </span>
+                        <span className="text-xs font-semibold text-brand-600">Admin</span>
                       )}
                       {user.role === "HR" && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                          <Briefcase className="w-3 h-3" />
-                          HR LEAD
-                        </span>
+                        <span className="text-xs font-semibold text-zinc-800">HR Lead</span>
                       )}
                       {user.role === "HIRING_MANAGER" && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
-                          HIRING MANAGER
-                        </span>
+                        <span className="text-xs font-semibold text-zinc-700">Hiring Manager</span>
                       )}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       {user.isActive ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200">
+                        <span className="text-xs font-medium text-emerald-700">
                           Đang hoạt động
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                        <span className="text-xs font-medium text-zinc-400">
                           Đã khóa
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <button
                         onClick={() => handleToggleActive(user.id, user.isActive)}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                        className={`text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
                           user.isActive
-                            ? "border-red-200 text-red-600 hover:bg-red-50"
-                            : "border-green-200 text-green-600 hover:bg-green-50"
+                            ? "text-brand-600 hover:text-brand-700"
+                            : "text-emerald-700 hover:text-emerald-800"
                         }`}
                       >
-                        {user.isActive ? (
-                          <>
-                            <Lock className="w-3 h-3" /> Khóa
-                          </>
-                        ) : (
-                          <>
-                            <Unlock className="w-3 h-3" /> Mở khóa
-                          </>
-                        )}
+                        {user.isActive ? "Khóa" : "Mở khóa"}
                       </button>
                     </td>
                   </tr>
