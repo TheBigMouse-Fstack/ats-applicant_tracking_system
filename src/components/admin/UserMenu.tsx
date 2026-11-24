@@ -138,7 +138,7 @@ export default function UserMenu({ user, onLogout }: UserMenuProps) {
               onClick={() => setIsOpen(false)}
               className="block px-4 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
             >
-              Cài đặt tài khoản & Đổi mật khẩu
+              {locale === "en" ? "Account Settings & Password" : "Cài đặt tài khoản & Đổi mật khẩu"}
             </Link>
           </div>
 

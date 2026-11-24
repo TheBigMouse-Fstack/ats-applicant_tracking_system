@@ -21,7 +21,8 @@ interface UserItem {
 }
 
 export default function UserManagementPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en";
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -267,31 +268,41 @@ export default function UserManagementPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm theo tên, email, số điện thoại..."
+            placeholder={
+              isEn
+                ? "Search by name, email, or phone..."
+                : "Tìm theo tên, email, số điện thoại..."
+            }
             className="w-full pl-9 pr-4 py-2 border border-zinc-200 rounded-md text-sm focus:outline-none focus:border-zinc-900 text-zinc-900 placeholder:text-zinc-400"
           />
         </div>
         <div className="text-xs text-zinc-500 whitespace-nowrap">
-          Tổng: <strong className="text-zinc-900">{filteredUsers.length}</strong> tài khoản
+          {isEn ? "Total:" : "Tổng:"}{" "}
+          <strong className="text-zinc-900">{filteredUsers.length}</strong>{" "}
+          {isEn ? "accounts" : "tài khoản"}
         </div>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-lg border border-zinc-200 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-zinc-500 text-sm">Đang tải danh sách người dùng...</div>
+          <div className="p-8 text-center text-zinc-500 text-sm">
+            {isEn ? "Loading users..." : "Đang tải danh sách người dùng..."}
+          </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="p-8 text-center text-zinc-500 text-sm">Không tìm thấy tài khoản nào</div>
+          <div className="p-8 text-center text-zinc-500 text-sm">
+            {isEn ? "No accounts found." : "Không tìm thấy tài khoản nào"}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 text-xs font-medium">
-                  <th className="py-3 px-4">Thành viên</th>
-                  <th className="py-3 px-4">Email &amp; SĐT</th>
-                  <th className="py-3 px-4">Vai trò</th>
-                  <th className="py-3 px-4">Trạng thái</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
+                  <th className="py-3 px-4">{isEn ? "Member" : "Thành viên"}</th>
+                  <th className="py-3 px-4">{isEn ? "Email & Phone" : "Email & SĐT"}</th>
+                  <th className="py-3 px-4">{isEn ? "Role" : "Vai trò"}</th>
+                  <th className="py-3 px-4">{isEn ? "Status" : "Trạng thái"}</th>
+                  <th className="py-3 px-4 text-right">{isEn ? "Actions" : "Thao tác"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
@@ -320,9 +331,13 @@ export default function UserManagementPage() {
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       {user.isActive ? (
-                        <span className="text-xs font-medium text-emerald-700">Đang hoạt động</span>
+                        <span className="text-xs font-medium text-emerald-700">
+                          {isEn ? "Active" : "Đang hoạt động"}
+                        </span>
                       ) : (
-                        <span className="text-xs font-medium text-zinc-400">Đã khóa</span>
+                        <span className="text-xs font-medium text-zinc-400">
+                          {isEn ? "Locked" : "Đã khóa"}
+                        </span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
@@ -331,7 +346,7 @@ export default function UserManagementPage() {
                           onClick={() => handleOpenEdit(user)}
                           className="text-xs font-medium text-zinc-700 hover:text-zinc-900 transition-colors cursor-pointer whitespace-nowrap"
                         >
-                          Chỉnh sửa
+                          {isEn ? "Edit" : "Chỉnh sửa"}
                         </button>
                         <button
                           onClick={() => handleToggleActive(user.id, user.isActive)}
@@ -341,7 +356,13 @@ export default function UserManagementPage() {
                               : "text-emerald-700 hover:text-emerald-800"
                           }`}
                         >
-                          {user.isActive ? "Khóa" : "Mở khóa"}
+                          {user.isActive
+                            ? isEn
+                              ? "Lock"
+                              : "Khóa"
+                            : isEn
+                            ? "Unlock"
+                            : "Mở khóa"}
                         </button>
                       </div>
                     </td>

@@ -142,32 +142,28 @@ const ACTION_LABELS: Record<string, string> = {
   INTERVIEW_CANCELLED: "Hủy lịch PV",
 };
 
-function getRoleMeta(role: string) {
+function getRoleMeta(role: string, isEn: boolean) {
   if (role === "ADMIN") {
     return {
-      badge: "Quản trị viên (Admin)",
-      subtitle: "Bảng điều khiển vận hành: Giám sát phễu chuyển đổi tuyển dụng, kiểm soát điểm nghẽn SLA và nhật ký kiểm toán hệ thống.",
+      badge: isEn ? "Administrator" : "Quản trị viên (Admin)",
+      subtitle: "",
     };
   }
   if (role === "HIRING_MANAGER") {
     return {
       badge: "Hiring Manager",
-      subtitle: "Hồ sơ chờ duyệt phỏng vấn, lịch hẹn sắp tới và phiếu đánh giá còn thiếu.",
+      subtitle: "",
     };
   }
   return {
-    badge: "HR",
-    subtitle: "Hồ sơ mới chưa xem và cảnh báo tồn đọng đầu phễu cần sơ loại.",
+    badge: isEn ? "HR Specialist" : "HR",
+    subtitle: "",
   };
 }
 
-/**
- * Bảng Điều Khiển Tổng Quan Vận Hành (Minimalist Operational Dashboard):
- * - Triệt tiêu hoàn toàn nút trùng lặp (không lặp nút Tiếp nhận CV, Xuất CSV, Mở Pipeline vốn đã có trên Navbar/trang chuyên biệt).
- * - Mỗi dòng danh sách chỉ hiển thị đúng 4 tín hiệu tổng quan (Tên, Vị trí, AI %, SLA) — nhấp vào để mở Drawer Chi tiết.
- */
 export default function OperationalDashboard() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en";
   const searchParams = useSearchParams();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -281,7 +277,7 @@ export default function OperationalDashboard() {
     );
   }
 
-  const roleMeta = getRoleMeta(data.role);
+  const roleMeta = getRoleMeta(data.role, isEn);
 
   const hrActiveList: QueueCandidateItem[] =
     hrTab === "UNVIEWED"
@@ -331,30 +327,38 @@ export default function OperationalDashboard() {
       {data.role === "HR" && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <KpiCard
-            label="CV mới chưa xem"
+            label={isEn ? "Unviewed CVs" : "CV mới chưa xem"}
             value={data.summary.unviewedNewCount}
-            subtext={`Trên ${data.funnel.NEW} hồ sơ cột Mới nộp`}
-            icon={<Eye className="w-4 h-4 text-slate-500" />}
+            subtext={
+              isEn
+                ? `of ${data.funnel.NEW} new applications`
+                : `Trên ${data.funnel.NEW} hồ sơ cột Mới nộp`
+            }
+            icon={<Eye className="w-4 h-4 text-zinc-400" />}
             highlight={data.summary.unviewedNewCount > 0 ? "info" : "neutral"}
           />
           <KpiCard
-            label="Quá hạn xử lý (>48h)"
+            label={isEn ? "SLA Breached (>48h)" : "Quá hạn xử lý (>48h)"}
             value={data.sla.newBreachCount}
-            subtext="Hồ sơ mới chờ quá 48 giờ, cần sơ loại sớm"
-            icon={<AlertTriangle className="w-4 h-4 text-slate-500" />}
+            subtext={isEn ? "Waiting over 48h" : "Chờ sơ loại quá 48 giờ"}
+            icon={<AlertTriangle className="w-4 h-4 text-zinc-400" />}
             highlight={data.sla.newBreachCount > 0 ? "danger" : "neutral"}
           />
           <KpiCard
-            label="Đang ở Sàng lọc"
+            label={isEn ? "In Screening" : "Đang ở Sàng lọc"}
             value={data.funnel.SCREENING}
-            subtext="Chờ Hiring Manager duyệt PV"
-            icon={<CheckCircle2 className="w-4 h-4 text-slate-500" />}
+            subtext={isEn ? "Awaiting manager review" : "Chờ Hiring Manager duyệt PV"}
+            icon={<CheckCircle2 className="w-4 h-4 text-zinc-400" />}
           />
           <KpiCard
-            label="Vị trí đang mở"
+            label={isEn ? "Active Positions" : "Vị trí đang mở"}
             value={data.summary.activeJobsCount}
-            subtext={`Tổng ${data.funnel.total} hồ sơ toàn hệ thống`}
-            icon={<Briefcase className="w-4 h-4 text-slate-500" />}
+            subtext={
+              isEn
+                ? `${data.funnel.total} total applications`
+                : `Tổng ${data.funnel.total} hồ sơ`
+            }
+            icon={<Briefcase className="w-4 h-4 text-zinc-400" />}
           />
         </div>
       )}
@@ -362,34 +366,46 @@ export default function OperationalDashboard() {
       {data.role === "HIRING_MANAGER" && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <KpiCard
-            label="Chờ duyệt Phỏng vấn"
+            label={isEn ? "Awaiting Interview Approval" : "Chờ duyệt Phỏng vấn"}
             value={data.funnel.SCREENING}
             subtext={
               data.sla.screeningBreachCount > 0
-                ? `${data.sla.screeningBreachCount} hồ sơ quá 72h`
+                ? isEn
+                  ? `${data.sla.screeningBreachCount} overdue (>72h)`
+                  : `${data.sla.screeningBreachCount} hồ sơ quá 72h`
+                : isEn
+                ? "Screened by HR"
                 : "Hồ sơ HR đã sơ loại"
             }
-            icon={<Clock className="w-4 h-4 text-slate-500" />}
+            icon={<Clock className="w-4 h-4 text-zinc-400" />}
             highlight={data.sla.screeningBreachCount > 0 ? "danger" : "neutral"}
           />
           <KpiCard
-            label="Đang Phỏng vấn"
+            label={isEn ? "Interviewing" : "Đang Phỏng vấn"}
             value={data.funnel.INTERVIEW}
-            subtext={`${data.summary.upcomingInterviewsCount} lịch hẹn đã xếp`}
-            icon={<Calendar className="w-4 h-4 text-slate-500" />}
+            subtext={
+              isEn
+                ? `${data.summary.upcomingInterviewsCount} scheduled`
+                : `${data.summary.upcomingInterviewsCount} lịch hẹn đã xếp`
+            }
+            icon={<Calendar className="w-4 h-4 text-zinc-400" />}
           />
           <KpiCard
-            label="Thiếu Scorecard"
+            label={isEn ? "Missing Scorecards" : "Thiếu Scorecard"}
             value={data.summary.pendingScorecardCount}
-            subtext="Chưa có phiếu đánh giá"
-            icon={<ClipboardCheck className="w-4 h-4 text-slate-500" />}
+            subtext={isEn ? "Pending evaluation" : "Chưa có phiếu đánh giá"}
+            icon={<ClipboardCheck className="w-4 h-4 text-zinc-400" />}
             highlight={data.summary.pendingScorecardCount > 0 ? "danger" : "neutral"}
           />
           <KpiCard
-            label="Đã Tuyển chọn"
+            label={isEn ? "Hired" : "Đã Tuyển chọn"}
             value={data.funnel.HIRED}
-            subtext={`Tỷ lệ tuyển chọn: ${data.summary.hireRatePercent}%`}
-            icon={<CheckCircle2 className="w-4 h-4 text-slate-500" />}
+            subtext={
+              isEn
+                ? `Hire rate: ${data.summary.hireRatePercent}%`
+                : `Tỷ lệ tuyển chọn: ${data.summary.hireRatePercent}%`
+            }
+            icon={<CheckCircle2 className="w-4 h-4 text-zinc-400" />}
           />
         </div>
       )}
@@ -397,29 +413,41 @@ export default function OperationalDashboard() {
       {data.role === "ADMIN" && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <KpiCard
-            label="Tổng hồ sơ"
+            label={isEn ? "Total Applications" : "Tổng hồ sơ"}
             value={data.funnel.total}
-            subtext={`${data.summary.activeJobsCount} vị trí đang mở`}
-            icon={<Briefcase className="w-4 h-4 text-slate-500" />}
+            subtext={
+              isEn
+                ? `${data.summary.activeJobsCount} open positions`
+                : `${data.summary.activeJobsCount} vị trí đang mở`
+            }
+            icon={<Briefcase className="w-4 h-4 text-zinc-400" />}
           />
           <KpiCard
-            label="Hồ sơ quá hạn xử lý"
+            label={isEn ? "SLA Breaches" : "Hồ sơ quá hạn xử lý"}
             value={data.sla.totalBreaches}
-            subtext={`Chờ HR: ${data.sla.newBreachCount} • Chờ Manager: ${data.sla.screeningBreachCount}`}
-            icon={<AlertTriangle className="w-4 h-4 text-slate-500" />}
+            subtext={
+              isEn
+                ? `HR: ${data.sla.newBreachCount} · Manager: ${data.sla.screeningBreachCount}`
+                : `Chờ HR: ${data.sla.newBreachCount} · Chờ Manager: ${data.sla.screeningBreachCount}`
+            }
+            icon={<AlertTriangle className="w-4 h-4 text-zinc-400" />}
             highlight={data.sla.totalBreaches > 0 ? "danger" : "neutral"}
           />
           <KpiCard
-            label="Đã Tuyển chọn"
+            label={isEn ? "Hired" : "Đã Tuyển chọn"}
             value={data.funnel.HIRED}
-            subtext={`Tỷ lệ: ${data.summary.hireRatePercent}% • ${data.funnel.INTERVIEW} đang PV`}
-            icon={<CheckCircle2 className="w-4 h-4 text-slate-500" />}
+            subtext={
+              isEn
+                ? `Rate: ${data.summary.hireRatePercent}% · ${data.funnel.INTERVIEW} interviewing`
+                : `Tỷ lệ: ${data.summary.hireRatePercent}% · ${data.funnel.INTERVIEW} đang PV`
+            }
+            icon={<CheckCircle2 className="w-4 h-4 text-zinc-400" />}
           />
           <KpiCard
-            label="Tài khoản hoạt động"
+            label={isEn ? "Active Accounts" : "Tài khoản hoạt động"}
             value={data.adminStats?.activeUsers ?? 0}
-            subtext={`HR: ${data.adminStats?.hrCount ?? 0} • HM: ${data.adminStats?.managerCount ?? 0} • Admin: ${data.adminStats?.adminCount ?? 0}`}
-            icon={<Users className="w-4 h-4 text-slate-500" />}
+            subtext={`HR: ${data.adminStats?.hrCount ?? 0} · HM: ${data.adminStats?.managerCount ?? 0} · Admin: ${data.adminStats?.adminCount ?? 0}`}
+            icon={<Users className="w-4 h-4 text-zinc-400" />}
           />
         </div>
       )}
@@ -431,7 +459,9 @@ export default function OperationalDashboard() {
             {t("dashboard.funnelTitle", "Phễu chuyển đổi tuyển dụng")}
           </h2>
           <span className="text-zinc-500 text-xs tabular-nums">
-            Tổng: <strong className="text-zinc-900 font-semibold">{data.funnel.total}</strong> hồ sơ
+            {isEn ? "Total:" : "Tổng:"}{" "}
+            <strong className="text-zinc-900 font-semibold">{data.funnel.total}</strong>{" "}
+            {isEn ? "applications" : "hồ sơ"}
           </span>
         </div>
 

@@ -27,7 +27,8 @@ import { clientCache } from "@/lib/client-cache";
 
 export default function TalentPoolPage() {
   const { user: currentUser } = useSession();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en";
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
@@ -359,7 +360,7 @@ export default function TalentPoolPage() {
                   starredOnly ? "fill-amber-400 text-amber-400" : "text-slate-400"
                 }`}
               />
-              <span>Gắn sao</span>
+              <span>{isEn ? "Starred" : "Gắn sao"}</span>
             </button>
 
             <select
@@ -367,42 +368,44 @@ export default function TalentPoolPage() {
               onChange={(e) => setSortBy(e.target.value)}
               className="rounded-xl border border-slate-200 bg-white py-2 px-3 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer"
             >
-              <option value="MATCH_DESC">Phù hợp nhất</option>
-              <option value="STARRED_FIRST">Gắn sao trước</option>
-              <option value="NEWEST">Mới cập nhật</option>
-              <option value="OLDEST">Lưu lâu nhất</option>
+              <option value="MATCH_DESC">{isEn ? "Best Match" : "Phù hợp nhất"}</option>
+              <option value="STARRED_FIRST">{isEn ? "Starred First" : "Gắn sao trước"}</option>
+              <option value="NEWEST">{isEn ? "Recently Updated" : "Mới cập nhật"}</option>
+              <option value="OLDEST">{isEn ? "Longest Archived" : "Lưu lâu nhất"}</option>
             </select>
           </div>
         </div>
       </div>
 
       {/* 3. Bảng danh sách ứng viên Talent Pool */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-lg border border-zinc-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
+              <tr className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 font-medium text-xs">
                 <th className="py-3 px-3 text-center w-10" />
-                <th className="py-3 px-4">Ứng viên</th>
-                <th className="py-3 px-4">Vị trí &amp; Kinh nghiệm</th>
-                <th className="py-3 px-4">Kỹ năng chính</th>
-                <th className="py-3 px-4 text-center">Độ phù hợp</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
-                <th className="py-3 px-4 text-right">Luân chuyển</th>
+                <th className="py-3 px-4">{isEn ? "Candidate" : "Ứng viên"}</th>
+                <th className="py-3 px-4">{isEn ? "Role & Experience" : "Vị trí & Kinh nghiệm"}</th>
+                <th className="py-3 px-4">{isEn ? "Key Skills" : "Kỹ năng chính"}</th>
+                <th className="py-3 px-4 text-center whitespace-nowrap">{isEn ? "Match" : "Độ phù hợp"}</th>
+                <th className="py-3 px-4 whitespace-nowrap">{isEn ? "Status" : "Trạng thái"}</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">{isEn ? "Action" : "Thao tác"}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-zinc-100 text-zinc-700">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-zinc-400">
                     <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-brand-600" />
-                    Đang tải dữ liệu kho nhân tài...
+                    {isEn ? "Loading talent pool..." : "Đang tải dữ liệu kho nhân tài..."}
                   </td>
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    Không tìm thấy ứng viên nào phù hợp với bộ lọc hiện tại.
+                  <td colSpan={7} className="py-12 text-center text-zinc-400">
+                    {isEn
+                      ? "No candidates match the current filters."
+                      : "Không tìm thấy ứng viên nào phù hợp với bộ lọc hiện tại."}
                   </td>
                 </tr>
               ) : (
@@ -456,9 +459,13 @@ export default function TalentPoolPage() {
                         <span className="font-semibold text-slate-900 block">
                           {app.job?.title}
                         </span>
-                        <span className="text-[11px] text-slate-500 block mt-0.5">
+                        <span className="text-[11px] text-zinc-500 block mt-0.5">
                           {candidate?.experienceYears > 0
-                            ? `${candidate.experienceYears} năm kinh nghiệm`
+                            ? isEn
+                              ? `${candidate.experienceYears} yrs experience`
+                              : `${candidate.experienceYears} năm kinh nghiệm`
+                            : isEn
+                            ? "< 1 yr experience"
                             : "Dưới 1 năm kinh nghiệm"}
                         </span>
                       </td>
@@ -498,31 +505,41 @@ export default function TalentPoolPage() {
                         {app.poolStatus === "SILVER_MEDALIST" ? (
                           <div>
                             <span className="text-xs font-medium text-emerald-700">
-                              Tiềm năng / Dự bị
+                              {isEn ? "Silver Medalist" : "Tiềm năng / Dự bị"}
                             </span>
                             {app.retentionDaysLeft !== null && (
                               <span className="block text-[11px] text-zinc-400 mt-0.5">
-                                Còn {app.retentionDaysLeft} ngày
+                                {isEn
+                                  ? `${app.retentionDaysLeft} days left`
+                                  : `Còn ${app.retentionDaysLeft} ngày`}
                               </span>
                             )}
                           </div>
                         ) : app.poolStatus === "IN_PIPELINE_WATCH" ? (
                           <div>
                             <span className="text-xs font-medium text-zinc-800">
-                              Đang chờ đợt khác
+                              {isEn ? "In Pipeline Watch" : "Đang chờ đợt khác"}
                             </span>
                             <span className="block text-[11px] text-zinc-400 mt-0.5">
-                              {app.currentStage === "INTERVIEW" ? "Đang phỏng vấn" : "Đang sàng lọc"}
+                              {app.currentStage === "INTERVIEW"
+                                ? isEn
+                                  ? "Interviewing"
+                                  : "Đang phỏng vấn"
+                                : isEn
+                                ? "Screening"
+                                : "Đang sàng lọc"}
                             </span>
                           </div>
                         ) : (
                           <div>
                             <span className="text-xs font-medium text-zinc-500">
-                              Lưu trữ dự phòng
+                              {isEn ? "Archived Backup" : "Lưu trữ dự phòng"}
                             </span>
                             {app.retentionDaysLeft !== null && (
                               <span className="block text-[11px] text-zinc-400 mt-0.5">
-                                Còn {app.retentionDaysLeft} ngày
+                                {isEn
+                                  ? `${app.retentionDaysLeft} days left`
+                                  : `Còn ${app.retentionDaysLeft} ngày`}
                               </span>
                             )}
                           </div>
@@ -539,9 +556,13 @@ export default function TalentPoolPage() {
                             setRepoolError(null);
                           }}
                           className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors cursor-pointer whitespace-nowrap"
-                          title="Tái sử dụng hồ sơ sang vị trí tuyển dụng khác"
+                          title={
+                            isEn
+                              ? "Re-pool candidate to another position"
+                              : "Tái sử dụng hồ sơ sang vị trí tuyển dụng khác"
+                          }
                         >
-                          Khôi phục
+                          {isEn ? "Re-pool" : "Khôi phục"}
                         </button>
                       </td>
                     </tr>

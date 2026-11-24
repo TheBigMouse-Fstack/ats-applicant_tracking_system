@@ -21,7 +21,8 @@ import {
 
 export default function AdminJobsPage() {
   const { user: currentUser } = useSession();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en";
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -285,7 +286,11 @@ export default function AdminJobsPage() {
                       }`}
                     >
                       {job.status === "ACTIVE" && !job.headcountMetrics?.isHeadcountFull
-                        ? "Đang tuyển"
+                        ? isEn
+                          ? "Active"
+                          : "Đang tuyển"
+                        : isEn
+                        ? "Filled"
                         : "Đã đủ chỉ tiêu"}
                     </span>
                   </div>
@@ -296,7 +301,9 @@ export default function AdminJobsPage() {
 
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500">
                     <span>{job.location}</span>
-                    <span>{job.minExperienceYears} năm KN</span>
+                    <span>
+                      {job.minExperienceYears} {isEn ? "yrs exp" : "năm KN"}
+                    </span>
                   </div>
 
                   {/* Tiến độ chỉ tiêu tuyển dụng (chữ màu gọn, không viền) */}
@@ -308,7 +315,11 @@ export default function AdminJobsPage() {
                           : "text-zinc-600"
                       }
                     >
-                      Chỉ tiêu: <strong className="text-zinc-900">{job.headcountMetrics?.hiredCount ?? 0}/{job.headcountMetrics?.targetHeadcount ?? job.targetHeadcount ?? 1}</strong>
+                      {isEn ? "Quota:" : "Chỉ tiêu:"}{" "}
+                      <strong className="text-zinc-900">
+                        {job.headcountMetrics?.hiredCount ?? 0}/
+                        {job.headcountMetrics?.targetHeadcount ?? job.targetHeadcount ?? 1}
+                      </strong>
                     </span>
                     <span
                       className={
@@ -317,7 +328,11 @@ export default function AdminJobsPage() {
                           : "text-zinc-600"
                       }
                     >
-                      Đang PV: <strong className="text-zinc-900">{job.headcountMetrics?.activeInterviewCount ?? 0}/{job.headcountMetrics?.effectiveInterviewCap ?? job.maxActiveInterviews ?? 3}</strong>
+                      {isEn ? "Interviewing:" : "Đang PV:"}{" "}
+                      <strong className="text-zinc-900">
+                        {job.headcountMetrics?.activeInterviewCount ?? 0}/
+                        {job.headcountMetrics?.effectiveInterviewCap ?? job.maxActiveInterviews ?? 3}
+                      </strong>
                     </span>
                   </div>
 
@@ -334,29 +349,28 @@ export default function AdminJobsPage() {
                   )}
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-brand-600" />
-                    <strong>{job._count?.applications || 0}</strong> hồ sơ
+                <div className="mt-5 pt-3 border-t border-zinc-100 flex items-center justify-between gap-2 text-xs">
+                  <span className="font-medium text-zinc-600 tabular-nums">
+                    <strong className="text-zinc-900">{job._count?.applications || 0}</strong>{" "}
+                    {isEn ? "applicants" : "hồ sơ"}
                   </span>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     {canCreateJob && (
                       <button
                         type="button"
                         onClick={() => handleOpenEditJob(job)}
-                        className="text-slate-500 hover:text-brand-600 font-medium cursor-pointer"
+                        className="text-zinc-600 hover:text-brand-600 font-medium cursor-pointer whitespace-nowrap"
                       >
-                        Chỉnh chỉ tiêu
+                        {isEn ? "Edit quota" : "Chỉnh chỉ tiêu"}
                       </button>
                     )}
                     <Link
                       href={`/jobs/${job.id}`}
                       target="_blank"
-                      className="inline-flex items-center gap-1 text-slate-500 hover:text-brand-600 font-medium"
+                      className="text-zinc-600 hover:text-brand-600 font-medium whitespace-nowrap"
                     >
-                      <span>Trang nộp CV</span>
-                      <ExternalLink className="w-3 h-3" />
+                      {isEn ? "Apply page" : "Trang nộp CV"}
                     </Link>
                   </div>
                 </div>

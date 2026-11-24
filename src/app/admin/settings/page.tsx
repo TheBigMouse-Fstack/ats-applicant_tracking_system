@@ -2,16 +2,25 @@
 
 import { useState } from "react";
 import { useSession } from "@/contexts/SessionContext";
+import { useLanguage } from "@/lib/i18n";
 import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: "Quản trị viên (Admin)",
-  HR: "Chuyên viên tuyển dụng (HR)",
-  HIRING_MANAGER: "Quản lý chuyên môn (Hiring Manager)",
-};
 
 export default function AdminSettingsPage() {
   const { user } = useSession();
+  const { locale } = useLanguage();
+  const isEn = locale === "en";
+
+  const roleLabels: Record<string, string> = isEn
+    ? {
+        ADMIN: "Administrator (Admin)",
+        HR: "HR Specialist (HR)",
+        HIRING_MANAGER: "Hiring Manager",
+      }
+    : {
+        ADMIN: "Quản trị viên (Admin)",
+        HR: "Chuyên viên tuyển dụng (HR)",
+        HIRING_MANAGER: "Quản lý chuyên môn (Hiring Manager)",
+      };
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -29,13 +38,19 @@ export default function AdminSettingsPage() {
 
     if (newPassword.length < 8) {
       setErrorField("newPassword");
-      setErrorMessage("Mật khẩu mới phải có ít nhất 8 ký tự.");
+      setErrorMessage(
+        isEn
+          ? "New password must be at least 8 characters."
+          : "Mật khẩu mới phải có ít nhất 8 ký tự."
+      );
       return;
     }
 
     if (newPassword !== confirmPassword) {
       setErrorField("confirmPassword");
-      setErrorMessage("Xác nhận mật khẩu mới không khớp.");
+      setErrorMessage(
+        isEn ? "Password confirmation does not match." : "Xác nhận mật khẩu mới không khớp."
+      );
       return;
     }
 
@@ -50,16 +65,20 @@ export default function AdminSettingsPage() {
       const data = await res.json();
       if (!res.ok || !data.success) {
         if (data.field) setErrorField(data.field);
-        setErrorMessage(data.error || "Không thể đổi mật khẩu.");
+        setErrorMessage(
+          data.error || (isEn ? "Unable to update password." : "Không thể đổi mật khẩu.")
+        );
         return;
       }
 
-      setSuccessMessage("Đổi mật khẩu thành công.");
+      setSuccessMessage(isEn ? "Password updated successfully." : "Đổi mật khẩu thành công.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch {
-      setErrorMessage("Lỗi kết nối máy chủ. Vui lòng thử lại.");
+      setErrorMessage(
+        isEn ? "Connection error. Please try again." : "Lỗi kết nối máy chủ. Vui lòng thử lại."
+      );
     } finally {
       setSaving(false);
     }
@@ -68,17 +87,21 @@ export default function AdminSettingsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">Cài đặt tài khoản</h1>
+        <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">
+          {isEn ? "Account Settings" : "Cài đặt tài khoản"}
+        </h1>
       </div>
 
       {/* Personal Information */}
       <section className="bg-white rounded-lg border border-zinc-200">
         <div className="px-6 py-4 border-b border-zinc-100">
-          <h2 className="text-sm font-semibold text-zinc-900">Thông tin cá nhân</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            {isEn ? "Personal Information" : "Thông tin cá nhân"}
+          </h2>
         </div>
         <dl className="divide-y divide-zinc-100 text-sm">
           <div className="px-6 py-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <dt className="text-zinc-500">Họ và tên</dt>
+            <dt className="text-zinc-500">{isEn ? "Full Name" : "Họ và tên"}</dt>
             <dd className="sm:col-span-2 font-medium text-zinc-900">{user?.fullName || "—"}</dd>
           </div>
           <div className="px-6 py-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -86,14 +109,16 @@ export default function AdminSettingsPage() {
             <dd className="sm:col-span-2 text-zinc-900">{user?.email || "—"}</dd>
           </div>
           <div className="px-6 py-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <dt className="text-zinc-500">Vai trò</dt>
+            <dt className="text-zinc-500">{isEn ? "Role" : "Vai trò"}</dt>
             <dd className="sm:col-span-2 font-medium text-brand-600">
-              {user?.role ? ROLE_LABELS[user.role] || user.role : "—"}
+              {user?.role ? roleLabels[user.role] || user.role : "—"}
             </dd>
           </div>
           <div className="px-6 py-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <dt className="text-zinc-500">Trạng thái</dt>
-            <dd className="sm:col-span-2 font-medium text-emerald-700">Đang hoạt động</dd>
+            <dt className="text-zinc-500">{isEn ? "Status" : "Trạng thái"}</dt>
+            <dd className="sm:col-span-2 font-medium text-emerald-700">
+              {isEn ? "Active" : "Đang hoạt động"}
+            </dd>
           </div>
         </dl>
       </section>
@@ -101,7 +126,9 @@ export default function AdminSettingsPage() {
       {/* Change Password */}
       <section className="bg-white rounded-lg border border-zinc-200">
         <div className="px-6 py-4 border-b border-zinc-100">
-          <h2 className="text-sm font-semibold text-zinc-900">Đổi mật khẩu</h2>
+          <h2 className="text-sm font-semibold text-zinc-900">
+            {isEn ? "Change Password" : "Đổi mật khẩu"}
+          </h2>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-w-md">
           {successMessage && (
@@ -120,7 +147,7 @@ export default function AdminSettingsPage() {
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 mb-1.5">
-              Mật khẩu hiện tại
+              {isEn ? "Current Password" : "Mật khẩu hiện tại"}
             </label>
             <input
               type="password"
@@ -146,7 +173,7 @@ export default function AdminSettingsPage() {
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 mb-1.5">
-              Mật khẩu mới (tối thiểu 8 ký tự)
+              {isEn ? "New Password (min. 8 characters)" : "Mật khẩu mới (tối thiểu 8 ký tự)"}
             </label>
             <input
               type="password"
@@ -173,7 +200,7 @@ export default function AdminSettingsPage() {
 
           <div>
             <label className="block text-xs font-medium text-zinc-700 mb-1.5">
-              Xác nhận mật khẩu mới
+              {isEn ? "Confirm New Password" : "Xác nhận mật khẩu mới"}
             </label>
             <input
               type="password"
@@ -205,7 +232,7 @@ export default function AdminSettingsPage() {
               className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>Cập nhật mật khẩu</span>
+              <span>{isEn ? "Update Password" : "Cập nhật mật khẩu"}</span>
             </button>
           </div>
         </form>

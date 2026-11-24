@@ -92,7 +92,7 @@ export default function AdminNavbar({ initialUser = null }: AdminNavbarProps) {
               target="_blank"
               className="hidden sm:inline-block text-xs font-medium text-zinc-500 hover:text-brand-600 transition-colors whitespace-nowrap"
             >
-              Trang tuyển dụng
+              {t("public.jobs", "Trang tuyển dụng")}
             </Link>
             <UserMenu user={currentUser} onLogout={handleLogout} />
           </div>

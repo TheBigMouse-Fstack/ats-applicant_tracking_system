@@ -69,7 +69,8 @@ export default function CandidateDrawer({
   onClose,
   onStageChange,
 }: CandidateDrawerProps) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
+  const isEn = locale === "en";
   const [data, setData] = useState<any>(null);
   const { user: currentUser } = useSession();
   const [loading, setLoading] = useState(true);
@@ -814,7 +815,7 @@ export default function CandidateDrawer({
                             onClick={handleStartEditProfile}
                             className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                           >
-                            Chỉnh sửa
+                            {isEn ? "Edit" : "Chỉnh sửa"}
                           </button>
                         )}
                       </div>
@@ -953,14 +954,18 @@ export default function CandidateDrawer({
                           {/* CHẾ ĐỘ HIỂN THỊ CHUẨN: FLAT METADATA ROW (NO CARD-IN-CARD) */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
                             <div>
-                              <span className="text-zinc-400 block mb-1">Vị trí ứng tuyển</span>
+                              <span className="text-zinc-400 block mb-1">
+                                {isEn ? "Applied Position" : "Vị trí ứng tuyển"}
+                              </span>
                               <span className="font-semibold text-zinc-900 text-sm block truncate">
                                 {data?.job?.title}
                               </span>
                             </div>
 
                             <div>
-                              <span className="text-zinc-400 block mb-1">Số năm kinh nghiệm</span>
+                              <span className="text-zinc-400 block mb-1">
+                                {isEn ? "Experience" : "Số năm kinh nghiệm"}
+                              </span>
                               <div className="flex items-baseline gap-2 flex-wrap">
                                 <span
                                   className={`font-semibold text-sm tabular-nums ${
@@ -969,10 +974,10 @@ export default function CandidateDrawer({
                                       : "text-emerald-700"
                                   }`}
                                 >
-                                  {candidateExp} năm
+                                  {candidateExp} {isEn ? "yrs" : "năm"}
                                 </span>
                                 <span className="text-xs text-zinc-400">
-                                  (JD yêu cầu ≥ {minExpRequired} năm)
+                                  ({isEn ? `JD requires ≥ ${minExpRequired} yrs` : `JD yêu cầu ≥ ${minExpRequired} năm`})
                                 </span>
                               </div>
                             </div>
@@ -981,7 +986,7 @@ export default function CandidateDrawer({
                           {/* Kỹ năng (Đánh màu chữ cho kỹ năng đạt JD, không viền hộp) */}
                           <div className="space-y-1.5 pt-2 border-t border-zinc-100">
                             <h4 className="text-xs text-zinc-400">
-                              Kỹ năng ({parsedSkills.length})
+                              {isEn ? `Skills (${parsedSkills.length})` : `Kỹ năng (${parsedSkills.length})`}
                             </h4>
                             <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs">
                               {parsedSkills.length > 0 ? (
@@ -1006,7 +1011,9 @@ export default function CandidateDrawer({
                                 })
                               ) : (
                                 <span className="text-xs text-zinc-400">
-                                  Chưa có kỹ năng — bấm &quot;Chỉnh sửa&quot; để bổ sung
+                                  {isEn
+                                    ? 'No skills extracted — click "Edit" to add'
+                                    : 'Chưa có kỹ năng — bấm "Chỉnh sửa" để bổ sung'}
                                 </span>
                               )}
                             </div>
@@ -1197,12 +1204,16 @@ export default function CandidateDrawer({
                     <div className="p-5 rounded-lg border border-zinc-200 bg-white space-y-5">
                       <div className="flex items-baseline justify-between gap-3">
                         <h3 className="text-sm font-semibold text-zinc-900">
-                          Mức độ phù hợp với vị trí
+                          {isEn ? "Job Match Assessment" : "Mức độ phù hợp với vị trí"}
                         </h3>
 
                         <div className="flex items-center gap-3">
                           <span className="text-xs text-zinc-500 tabular-nums">
-                            Đáp ứng <strong className="text-zinc-900">{aiMatchedSkills.length}/{jobRequiredSkills.length}</strong> kỹ năng JD
+                            {isEn ? "Matched" : "Đáp ứng"}{" "}
+                            <strong className="text-zinc-900">
+                              {aiMatchedSkills.length}/{jobRequiredSkills.length}
+                            </strong>{" "}
+                            {isEn ? "JD skills" : "kỹ năng JD"}
                           </span>
                           {canEditProfile && needsAiRetry && (
                             <button
@@ -1211,7 +1222,13 @@ export default function CandidateDrawer({
                               disabled={reparsing}
                               className="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors cursor-pointer whitespace-nowrap"
                             >
-                              {reparsing ? "Đang đối chiếu..." : "Đối chiếu lại"}
+                              {reparsing
+                                ? isEn
+                                  ? "Re-evaluating..."
+                                  : "Đang đối chiếu..."
+                                : isEn
+                                ? "Re-evaluate"
+                                : "Đối chiếu lại"}
                             </button>
                           )}
                         </div>
@@ -1224,7 +1241,7 @@ export default function CandidateDrawer({
                             {matchTier.score !== null ? `${matchTier.score}%` : "—"}
                           </span>
                           <span className={`text-xs font-medium ${matchTier.scoreTextClass}`}>
-                            {matchTier.label}
+                            {t(`tier.${matchTier.tier}`, matchTier.label)}
                           </span>
                         </div>
 
@@ -1240,7 +1257,9 @@ export default function CandidateDrawer({
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-zinc-100 text-xs">
                         <div className="space-y-1.5">
                           <span className="text-zinc-400 block">
-                            Kỹ năng đạt ({aiMatchedSkills.length})
+                            {isEn
+                              ? `Matched skills (${aiMatchedSkills.length})`
+                              : `Kỹ năng đạt (${aiMatchedSkills.length})`}
                           </span>
                           <div className="flex flex-wrap gap-x-3 gap-y-1">
                             {aiMatchedSkills.length > 0 ? (
@@ -1250,14 +1269,16 @@ export default function CandidateDrawer({
                                 </span>
                               ))
                             ) : (
-                              <span className="text-zinc-400">Chưa có</span>
+                              <span className="text-zinc-400">{isEn ? "None" : "Chưa có"}</span>
                             )}
                           </div>
                         </div>
 
                         <div className="space-y-1.5">
                           <span className="text-zinc-400 block">
-                            Kỹ năng còn thiếu ({aiMissingSkills.length})
+                            {isEn
+                              ? `Missing skills (${aiMissingSkills.length})`
+                              : `Kỹ năng còn thiếu (${aiMissingSkills.length})`}
                           </span>
                           <div className="flex flex-wrap gap-x-3 gap-y-1">
                             {aiMissingSkills.length > 0 ? (
@@ -1268,7 +1289,7 @@ export default function CandidateDrawer({
                               ))
                             ) : (
                               <span className="text-emerald-700 font-medium">
-                                Đạt đủ kỹ năng yêu cầu
+                                {isEn ? "All required skills met" : "Đạt đủ kỹ năng yêu cầu"}
                               </span>
                             )}
                           </div>
@@ -1278,7 +1299,9 @@ export default function CandidateDrawer({
                       {/* Tóm tắt đối chiếu */}
                       {data?.aiMatchRationale && (
                         <div className="pt-4 border-t border-zinc-100 text-xs text-zinc-600 leading-relaxed space-y-1">
-                          <span className="text-zinc-400 block">Tóm tắt đối chiếu</span>
+                          <span className="text-zinc-400 block">
+                            {isEn ? "Assessment summary" : "Tóm tắt đối chiếu"}
+                          </span>
                           <p className="text-zinc-700">{data.aiMatchRationale}</p>
                         </div>
                       )}
