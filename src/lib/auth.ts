@@ -12,12 +12,16 @@ export interface SessionUser {
 }
 
 const SESSION_COOKIE_NAME = "ats_user_session";
-const SESSION_SECRET =
-  process.env.SESSION_SECRET ||
-  "recoverx_career_ats_enterprise_security_secret_key_2026_super_safe";
+const DEV_FALLBACK_SECRET = "local_dev_only_ats_session_secret_do_not_use_in_prod";
+const SESSION_SECRET = process.env.SESSION_SECRET || (
+  process.env.NODE_ENV === "production" ? "" : DEV_FALLBACK_SECRET
+);
 
-if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
-  console.warn("⚠️ SECURITY WARNING: SESSION_SECRET is not set in environment variables. Please set a strong SESSION_SECRET for production.");
+function getVerifiedSecret(): string {
+  if (!SESSION_SECRET) {
+    throw new Error("FATAL SECURITY ERROR: SESSION_SECRET must be set in production.");
+  }
+  return SESSION_SECRET;
 }
 
 /**
@@ -32,56 +36,46 @@ export function signSessionToken(payload: SessionUser): string {
   };
   const payloadBase64 = Buffer.from(JSON.stringify(dataToSign)).toString("base64url");
   const signature = crypto
-    .createHmac("sha256", SESSION_SECRET)
+    .createHmac("sha256", getVerifiedSecret())
     .update(payloadBase64)
     .digest("base64url");
   return `${payloadBase64}.${signature}`;
 }
 
 /**
- * Xác thực và giải mã Token phiên người dùng với chữ ký số
+ * Xác thực và giải mã Token phiên người dùng với chữ ký số HMAC-SHA256 nghiêm ngặt
  */
 export function verifySessionToken(token: string): SessionUser | null {
-  if (!token) return null;
+  if (!token || !token.includes(".")) return null;
 
   try {
-    // 1. Hỗ trợ định dạng có ký số: [payloadBase64].[signature]
-    if (token.includes(".")) {
-      const parts = token.split(".");
-      if (parts.length !== 2) return null;
-      const [payloadBase64, signature] = parts;
+    const parts = token.split(".");
+    if (parts.length !== 2) return null;
+    const [payloadBase64, signature] = parts;
 
-      const expectedSignature = crypto
-        .createHmac("sha256", SESSION_SECRET)
-        .update(payloadBase64)
-        .digest("base64url");
+    const expectedSignature = crypto
+      .createHmac("sha256", getVerifiedSecret())
+      .update(payloadBase64)
+      .digest("base64url");
 
-      // So sánh an toàn chống tấn công Timing Attack
-      const sigBuf = Buffer.from(signature);
-      const expectedBuf = Buffer.from(expectedSignature);
-      if (sigBuf.length !== expectedBuf.length) return null;
-      if (!crypto.timingSafeEqual(sigBuf, expectedBuf)) return null;
+    // So sánh an toàn chống tấn công Timing Attack
+    const sigBuf = Buffer.from(signature);
+    const expectedBuf = Buffer.from(expectedSignature);
+    if (sigBuf.length !== expectedBuf.length) return null;
+    if (!crypto.timingSafeEqual(sigBuf, expectedBuf)) return null;
 
-      const jsonStr = Buffer.from(payloadBase64, "base64url").toString("utf-8");
-      const user = JSON.parse(jsonStr) as SessionUser;
+    const jsonStr = Buffer.from(payloadBase64, "base64url").toString("utf-8");
+    const user = JSON.parse(jsonStr) as SessionUser;
 
-      // Kiểm tra hết hạn (exp)
-      if (user.exp && user.exp < Math.floor(Date.now() / 1000)) {
-        return null;
-      }
-
-      return user;
+    // Kiểm tra hết hạn (exp)
+    if (user.exp && user.exp < Math.floor(Date.now() / 1000)) {
+      return null;
     }
 
-    // 2. Tương thích ngược an toàn nếu cookie cũ là chuỗi JSON thô
-    if (token.startsWith("{") && token.endsWith("}")) {
-      return JSON.parse(token) as SessionUser;
-    }
+    return user;
   } catch {
     return null;
   }
-
-  return null;
 }
 
 /**
@@ -165,6 +159,6 @@ export function verifyPassword(password: string, storedHash: string): boolean {
     return crypto.timingSafeEqual(keyBuf, origBuf);
   }
 
-  // 2. Hỗ trợ dữ liệu Seed cũ (Plaintext) và tự động tương thích
-  return password === storedHash;
+  // Không chấp nhận so sánh mật khẩu plaintext
+  return false;
 }

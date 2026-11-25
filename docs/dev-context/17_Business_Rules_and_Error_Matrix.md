@@ -240,3 +240,19 @@ Feature: Tối ưu hóa hiệu năng hiển thị và kéo thả Kanban với t�
     Then toàn bộ 4 thẻ hồ sơ được hiển thị đầy đủ
     And chân cột không hiển thị nút tải thêm
 ```
+
+
+---
+
+## Phụ lục Cập nhật Phiên bản v2.1 (24/11/2026) — Đồng bộ Thực tế Hệ thống
+
+| Hạng mục nâng cấp | Mã quy tắc | Mô tả triển khai thực tế trong hệ thống |
+|---|---|---|
+| Đọc tệp Word `.docx` chuẩn | `BRL-01` / `AI-L1` | Tích hợp thư viện `mammoth` (`extractRawText`) bóc tách văn bản sạch từ XML `.docx` thay cho giải mã UTF-8 thô. |
+| Đồng nhất công thức chấm điểm 60/40 | `BRL-04` | Thống nhất tuyệt đối trọng số **60% Kỹ năng + 40% Kinh nghiệm** giữa Layer 2 (Gemini `gemini-2.5-flash`, `temperature: 0`) và Layer 1 (Heuristic dự phòng); loại bỏ hoàn toàn dữ liệu mẫu hardcode cũ. |
+| Blind Scorecard chống thiên kiến mỏ neo | `BRL-15` | Khóa ẩn điểm số và nhận xét của các giám khảo khác ở tầng API (`GET /api/applications/[id]`, `GET /api/scorecards`) cho đến khi người chấm (`HR` / `HIRING_MANAGER`) tự nộp phiếu đánh giá của mình (`ADMIN` giữ quyền giám sát). |
+| Tách riêng vòng Đề nghị (`OFFER`) | `BRL-06` / FSM | Mở rộng Pipeline từ 5 lên **6 giai đoạn**: `NEW ➔ SCREENING ➔ INTERVIEW ➔ OFFER ➔ HIRED / REJECTED`. Chốt chặn `BRL-06` (≥ 1 Scorecard `HIRE` / `STRONG_HIRE`) áp dụng trước khi chuyển sang `OFFER` và `HIRED`. |
+| Câu hỏi sàng lọc cứng (Knock-out Questions) | `BRL-16` | HR/Admin cấu hình tối đa 5 câu hỏi Có/Không kèm cờ tiêu chí cứng (`Job.screeningQuestions`). Ứng viên trả lời trên cổng ứng tuyển (`/jobs/[id]`), hệ thống lưu `Application.screeningAnswers` và gắn cờ mềm `knockoutFailed` (Human-in-the-Loop, không tự xóa hồ sơ). |
+| Phê duyệt tin tuyển dụng (Requisition Approval) | `BRL-17` | Mở rộng vòng đời tin tuyển dụng thành 4 trạng thái: `DRAFT ➔ PENDING_APPROVAL ➔ ACTIVE ➔ CLOSED`. Tin do `HR` tạo chuyển sang `PENDING_APPROVAL` chờ `HIRING_MANAGER` hoặc `ADMIN` duyệt (`POST /api/jobs/[id]/approve`) trước khi công khai lên `/jobs`. |
+| Quản trị Tài khoản & Tự đổi mật khẩu | `FR-ADM` | `ADMIN` có thể chỉnh sửa Họ tên, Email, SĐT (`User.phone`), Vai trò và đặt lại mật khẩu (`PATCH /api/users`). Mọi người dùng nội bộ tự đổi mật khẩu an toàn tại `/admin/settings` (`POST /api/auth/change-password`). |
+| Kiểm chứng Tự động & Giao diện Song ngữ | `NFR-USA` | Giao diện chuẩn tối giản (ELCA Swiss Minimalist), bỏ toàn bộ mã kỹ thuật/enum thô ở Nhật ký hoạt động, kiểm thử tự động **169/169 Passed** và rà soát toàn bộ màn hình VI/EN bằng Playwright. |

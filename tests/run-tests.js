@@ -946,6 +946,20 @@ async function runTests() {
     assert(schemaSrc.includes("screeningQuestions") && schemaSrc.includes("screeningAnswers") && schemaSrc.includes("knockoutFailed"), "Schema CSDL hỗ trợ Câu hỏi sàng lọc cứng (Knock-out Questions — BRL-16)");
     assert(jobsApproveApiExists && schemaSrc.includes("approvedById") && schemaSrc.includes("PENDING_APPROVAL"), "Hỗ trợ luồng Phê duyệt tin tuyển dụng (Requisition Approval — BRL-17)");
 
+    // ---------------------------------------------------------
+    // 24. DAY 1 P0 SECURITY & CONTEXT HYGIENE HARDENING
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}24. Day 1 P0 Security Hardening & AI-Native Context Hygiene:${colors.reset}`);
+    const authSrc = fs.readFileSync(path.join(process.cwd(), "src/lib/auth.ts"), "utf8");
+    const jobsApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/jobs/route.ts"), "utf8");
+    const jobFormSrc = fs.readFileSync(path.join(process.cwd(), "src/components/candidate/JobApplicationForm.tsx"), "utf8");
+
+    assert(!authSrc.includes('token.startsWith("{")') && !authSrc.includes("return password === storedHash"), "Đã gỡ bỏ hoàn toàn lỗ hổng Auth Bypass cookie JSON không chữ ký và so sánh mật khẩu plaintext");
+    assert(jobsApiSrc.includes("if (!sessionUser)") && !jobsApiSrc.includes("fallbackUser"), "Khóa xác thực bắt buộc (HTTP 401) cho cả GET và POST /api/jobs, xóa fallbackUser");
+    assert(!envExampleSrc.includes("applicanttrackingsystem.app.n8n.cloud") && envExampleSrc.includes("N8N_WEBHOOK_SECRET"), "Đã xóa URL webhook thật khỏi .env.example và bổ sung N8N_WEBHOOK_SECRET");
+    assert(!jobFormSrc.includes("khanhnqse19@gmail.com") && !jobFormSrc.includes("0708462865"), "Đã gỡ sạch PII cá nhân thật khỏi mã nguồn Frontend (JobApplicationForm.tsx)");
+    assert(fs.existsSync(path.join(process.cwd(), ".aiignore")) && fs.existsSync(path.join(process.cwd(), "specs/constitution.md")), "Đã khởi tạo .aiignore và specs/constitution.md chuẩn AI-Native");
+
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
   } finally {

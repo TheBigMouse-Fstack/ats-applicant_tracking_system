@@ -8,6 +8,14 @@ export const dynamic = "force-dynamic";
 // GET: Lấy toàn bộ danh sách tin tuyển dụng nội bộ kèm tiến độ chỉ tiêu & trần phỏng vấn
 export async function GET(req: Request) {
   try {
+    const sessionUser = getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json(
+        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để xem danh sách tin tuyển dụng." },
+        { status: 401 }
+      );
+    }
+
     const jobs = await prisma.job.findMany({
       include: {
         creator: {
@@ -56,7 +64,13 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const sessionUser = getSessionUser();
-    if (sessionUser && sessionUser.role === "HIRING_MANAGER") {
+    if (!sessionUser) {
+      return NextResponse.json(
+        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để tạo tin tuyển dụng." },
+        { status: 401 }
+      );
+    }
+    if (sessionUser.role === "HIRING_MANAGER") {
       return NextResponse.json(
         {
           success: false,
@@ -125,14 +139,7 @@ export async function POST(req: Request) {
       );
     }
 
-    let creatorId = sessionUser ? sessionUser.id : null;
-
-    if (!creatorId) {
-      const fallbackUser = await prisma.user.findFirst({
-        where: { role: { in: ["ADMIN", "HR"] } },
-      });
-      creatorId = fallbackUser ? fallbackUser.id : 1;
-    }
+    const creatorId = sessionUser.id;
 
     // Xử lý skills mảng thành JSON string
     let formattedSkills = "[]";

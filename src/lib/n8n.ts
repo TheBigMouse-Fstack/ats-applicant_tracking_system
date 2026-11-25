@@ -85,6 +85,9 @@ export async function dispatchN8NInterviewWebhook(
       headers: {
         "Content-Type": "application/json",
         "User-Agent": "RecoverX-ATS-Engine/1.0",
+        ...(process.env.N8N_WEBHOOK_SECRET
+          ? { "X-Webhook-Secret": process.env.N8N_WEBHOOK_SECRET }
+          : {}),
       },
       body: JSON.stringify(payload),
       signal: controller.signal,
@@ -190,6 +193,9 @@ export async function dispatchN8NTelegramAlert(
       headers: {
         "Content-Type": "application/json",
         "User-Agent": "RecoverX-ATS-Engine/1.0",
+        ...(process.env.N8N_WEBHOOK_SECRET
+          ? { "X-Webhook-Secret": process.env.N8N_WEBHOOK_SECRET }
+          : {}),
       },
       body: JSON.stringify(payload),
       signal: controller.signal,
@@ -290,6 +296,9 @@ export async function dispatchN8NRejectionEmail(
       headers: {
         "Content-Type": "application/json",
         "User-Agent": "RecoverX-ATS-Engine/1.0",
+        ...(process.env.N8N_WEBHOOK_SECRET
+          ? { "X-Webhook-Secret": process.env.N8N_WEBHOOK_SECRET }
+          : {}),
       },
       body: JSON.stringify(payload),
       signal: controller.signal,

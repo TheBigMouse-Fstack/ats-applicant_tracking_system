@@ -1,58 +1,26 @@
-# AGENTS.md — ATS — Applicant Tracking System
+# AGENTS.md — ATS (Applicant Tracking System)
 
-> Standard Operating Instructions for AI Agents (Google Antigravity, Gemini, Codex, Claude Code).
+> Single Source of Truth for AI Coding Agents. Keep under 100 lines.
 
-## 1. Project Overview & Identity
-- **Project Name (Internal System):** ATS — Applicant Tracking System
-- **Simulated Company (Public Careers Portal only):** RecoverX (`/`, `/jobs`, `/jobs/tracker`)
-- **Primary Objective:** Build an AI-assisted, full-stack recruitment management platform that automates CV intake, 5-core-field extraction, JD match scoring (3-tier Traffic-Light), role-based Operational Dashboard, 5-stage Kanban tracking, inline Scorecard evaluations, and Talent Pool management.
-- **Root Directory:** `D:\ATS project`
+## 1. Identity & Tech Stack
+- **Internal System:** ATS — Applicant Tracking System *(Public Careers Portal: RecoverX — `/`, `/jobs`, `/jobs/tracker`)*
+- **Stack:** Next.js 14.2.x (App Router, React 18) + TypeScript + Tailwind CSS + Prisma ORM (Neon PostgreSQL)
+- **AI Engine:** Hybrid Layer 1 (`pdf-parse` + `mammoth` + Heuristic) & Layer 2 (Google Gemini `temperature: 0`, unified **60% Skills + 40% Experience**).
+- **Pipeline:** 6 stages (`NEW ➔ SCREENING ➔ INTERVIEW ➔ OFFER ➔ HIRED / REJECTED`) via `@hello-pangea/dnd`.
 
-## 2. Architecture & Tech Stack
-- **Fullstack Framework:** Next.js 14+ (App Router) + TypeScript
-- **Styling & Components:** Tailwind CSS + Lucide React + Flat Minimalist Enterprise UI (60-30-10 visual calm)
-- **Drag-and-Drop Pipeline:** `@hello-pangea/dnd` (5-stage Kanban board)
-- **Database & ORM:** Prisma ORM (SQLite for local dev `file:./dev.db`, PostgreSQL for production)
-- **AI Engine:** Hybrid AI (Layer 1 local `pdf-parse`/`mammoth` + Heuristic NLP fallback; Layer 2 Google Gemini `@google/genai` `temperature: 0`)
+## 2. Core Business Rules (Immutable)
+- **Auth & Security:** Every internal API route MUST call `getSessionUser()` + role check. NEVER accept unsigned cookies, plaintext passwords, or fallback unauthenticated users.
+- **PII & AI Safety:** NEVER send raw unredacted PII to LLMs in new AI modules; NEVER store real candidate CVs in `public/` or Git; NEVER auto-reject candidates by AI (Human-in-the-Loop only).
+- **RBAC Stage Limits:** `HR` manages `NEW ↔ SCREENING` + 5-core-field edits + `OFFER ➔ HIRED/REJECTED`; `HIRING_MANAGER` manages `SCREENING ➔ INTERVIEW ➔ OFFER ➔ HIRED`; `ADMIN` has full access.
+- **Stage Gates:** `BRL-06` requires ≥1 passing Scorecard (`HIRE` / `STRONG_HIRE`) before `OFFER` and `HIRED`; `BRL-11` requires rejection reason (≥5 chars); `BRL-15` enforces Blind Scorecard at API layer; `BRL-16` Knock-out Questions (soft flag); `BRL-17` Requisition Approval (`DRAFT ➔ PENDING_APPROVAL ➔ ACTIVE ➔ CLOSED`).
+- **UI/UX (ELCA Swiss Minimalist):** Crimson `#D92027` accent, neutral surfaces, colored text over bordered pills, zero decorative icons on headings/labels, zero raw technical enums (`BRL-*`, `INTERVIEW_SCHEDULED_*`) on end-user UI, 100% VI/EN bilingual.
 
-## 3. Ground Truth Documents (2 Dedicated Folders)
+## 3. Single Source of Truth (Context Boundaries)
+- **Active Feature Specs:** `specs/constitution.md` & `specs/active/<feature-id>/` (`spec.md`, `sprint-contract.json`).
+- **Living Docs:** `docs/ba/` (Stakeholder) & `docs/dev-context/` (Technical). Ignore `docs/master/`, `docs/specs/`, `docs/exports/`.
+- **Core Workspace Skills (8):** `srs`, `brd`, `erd`, `state`, `api-design`, `doc-drift`, `gap`, `unslop`.
 
-### A. `docs/ba/` — Stakeholder & Business-Facing BA Documents (Non-Tech Language)
-- `docs/ba/00_BA_Documentation_Index_and_RTM.md` — Master Index, Bi-directional RTM & Doc-Drift Report
-- `docs/ba/02_BRD_Updated_Full.md` — Business Requirements Document (SMART Objectives, ROI, AS-IS/TO-BE)
-- `docs/ba/03_BPMN_As_Is_and_To_Be.md` — As-Is and To-Be BPMN 2.0 processes
-- `docs/ba/04_FDD_and_Use_Case_List.md` — Functional decomposition (`FR-[MOD]-[FEAT]-[SEQ]`) & Use Cases
-- `docs/ba/05_Use_Case_Specifications.md` — Alistair Cockburn 12-part Use Case Specifications
-- `docs/ba/06_Dynamic_Models_Activity_Sequence_State.md` — Finite State Machine & State Transition Guards
-- `docs/ba/08_NonFunctional_and_Permissions.md` — Actor Taxonomy, RBAC Matrix & ISO 25010 Quality Requirements
-- `docs/ba/10_Scope_and_System_Comparison.md` — Scope boundary & Benchmark comparison
-- `docs/ba/11_UI_UX_Design_and_Form_Validation_Guidelines.md` — Enterprise UI/UX & Friendly End-User Validation
-- `docs/ba/14_Scope_Expansion_and_Advanced_Features.md` — Scope expansion log
-- `docs/ba/18_Brief_Compliance_and_Value_Added_Analysis.md` — Original Brief Compliance, Benchmark Clone & Hybrid AI Rationale
-- `docs/ba/TEST_SCENARIOS_AND_UAT_GUIDE.md` — UAT Guide for Business Stakeholders
-
-### B. `docs/dev-context/` — Technical & Coding Context (For AI Agents, Dev & QA)
-- `docs/dev-context/07_Database_Design_ERD.md` — 10-column Data Dictionary (with PII/Masking) & ERD
-- `docs/dev-context/09_Technical_Setup_and_Antigravity_Guide.md` — Environment Setup & Screen Registry
-- `docs/dev-context/12_Hybrid_AI_Architecture_and_Scoring_Engine.md` — Hybrid AI Architecture, 5-Core-Field Rule & 3-Tier Match Score
-- `docs/dev-context/13_System_Architecture_and_Technology_Stack.md` — Next.js Fullstack, Prisma & Security Architecture
-- `docs/dev-context/15_API_Specifications_and_Error_Codes.md` — 16 REST API Contracts & System Error Codes
-- `docs/dev-context/16_SDD_Prompt_Playbook.md` — Spec-Driven Development Prompt Playbook
-- `docs/dev-context/17_Business_Rules_and_Error_Matrix.md` — 3-Clause Business Rules, 7-Column Error Matrix & Gherkin BDD AC
-
-## 4. Specialized Rules & BA Skills Directory
-- `.agents/rules/ba-documentation-standards.md`: Universal BA Toolkit 19 Documentation Standards
-- `.agents/rules/ba-export-workflow.md`: Quy trình tự động soạn thảo Markdown & tự động chạy Pandoc xuất file Word (.docx)
-- `.agents/rules/business-ats.md`: Core Business Rules (`BRL-01` to `BRL-11`, State Machine & RBAC Stage Limits)
-- `.agents/rules/nextjs-app-router.md`: Next.js 14 App Router & TypeScript conventions
-- `.agents/rules/tailwind-shadcn.md`: UI styling, visual calm, Kanban, and Drawer design
-- `.agents/rules/prisma-database.md`: Database schema, Prisma client singleton, and queries
-- `.agents/skills/`: 19 installed BA skills + `.agents/ba-templates/`
-
-## 5. Standard Commands
-- Install dependencies: `npm install`
-- Local dev server: `npm run dev` (Runs at `http://localhost:3000`)
-- Type check: `npx tsc --noEmit`
-- Automated test suite: `node tests/run-tests.js`
-- Database synchronization: `npx prisma db push`
-- Seed database: `npx ts-node prisma/seed.ts` (or `node prisma/seed.js`)
+## 4. Mandatory Verification Gate (Before Reporting Done)
+1. `npx tsc --noEmit` (0 errors)
+2. `node tests/run-tests.js` (100% pass)
+3. Deploy live updates via `npx vercel deploy --prod -y` (GitHub push alone does not trigger prod).

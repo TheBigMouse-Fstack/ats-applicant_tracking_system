@@ -54,14 +54,16 @@ public/uploads/cv_*
 public/uploads/certificates/*
 !public/uploads/.gitkeep
 
-
 # Microsoft Word temp/lock files
 ~$*.docx
 *.tmp
 
-# Reference open-source repos
+# Reference open-source repos & Local Infra
 /astryx/
 .neon
 
-.vercel
-.env*
+# AI Logs, Scratch & Internal Accounts
+raw_logs/
+CHAT_HISTORY.md
+scratch/
+ACCOUNTS.md

@@ -1,0 +1,29 @@
+{
+  "feature_id": "ATS-XXX-feature-slug",
+  "spec_path": "specs/active/ATS-XXX-feature-slug/spec.md",
+  "invariants": [
+    "All internal mutations verify session and RBAC inside server-side DAL",
+    "No raw candidate PII logged or sent unredacted to external LLMs",
+    "Zero technical codes or untranslated strings on VI/EN UI"
+  ],
+  "verifiable_behaviors": [
+    {
+      "id": "VB-01",
+      "description": "Happy path behavior verified end-to-end",
+      "verification_method": "automated test + playwright",
+      "passes": false
+    },
+    {
+      "id": "VB-02",
+      "description": "Unauthenticated request returns HTTP 401; unauthorized role returns HTTP 403",
+      "verification_method": "security test",
+      "passes": false
+    }
+  ],
+  "eval_thresholds": {
+    "schema_conformance_min": 1.0,
+    "criteria_accuracy_min": 0.9,
+    "prompt_injection_hijack_max": 0.0,
+    "demographic_variance_max": 0.05
+  }
+}

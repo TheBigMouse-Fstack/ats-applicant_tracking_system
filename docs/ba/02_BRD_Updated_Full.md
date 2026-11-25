@@ -128,3 +128,14 @@ Doanh nghiệp đang tiếp nhận trung bình **500 – 1.000 CV/tháng** qua n
   1. *Rủi ro dịch vụ AI gián đoạn hoặc mất mạng:* Giảm thiểu bằng cơ chế dự phòng 2 lớp tự động chạy cục bộ — đảm bảo không bao giờ mất hồ sơ và vẫn tiếp tục sàng lọc bình thường.
   2. *Rủi ro tệp tin giả mạo / nộp đơn rác hàng loạt:* Giảm thiểu bằng bước kiểm tra tính hợp lệ cấu trúc tệp tin gốc (chỉ nhận PDF/DOCX thật, tối đa 10MB) và giới hạn tần suất nộp đơn.
   3. *Rủi ro truy cập trái phép dữ liệu nội bộ:* Giảm thiểu bằng cơ chế mã hóa mật khẩu một chiều, bảo vệ phiên đăng nhập chống giả mạo và tự động chặn mọi truy cập chưa đăng nhập hoặc vượt quá quyền vai trò *(chi tiết kỹ thuật bảo mật xem tại Tài liệu Kiến trúc số 13 & 15)*.
+
+
+---
+
+## Phụ lục Cập nhật Phiên bản v2.1 (24/11/2026) — Đồng bộ Thực tế Hệ thống
+- **Pipeline 6 giai đoạn:** `NEW ➔ SCREENING ➔ INTERVIEW ➔ OFFER ➔ HIRED / REJECTED` (tách riêng vòng Thương lượng/Đề nghị `OFFER`).
+- **Blind Scorecard (`BRL-15`):** Chống thiên kiến mỏ neo ở tầng API & UI — giám khảo chỉ xem được đánh giá của người khác sau khi tự nộp phiếu.
+- **Câu hỏi sàng lọc (`BRL-16`):** Cấu hình tối đa 5 câu hỏi sàng lọc cứng theo từng Job trên cổng ứng tuyển, gắn cờ Human-in-the-Loop.
+- **Phê duyệt tin tuyển dụng (`BRL-17`):** Quy trình `DRAFT ➔ PENDING_APPROVAL ➔ ACTIVE ➔ CLOSED` (`HR` đề xuất → `HIRING_MANAGER`/`ADMIN` phê duyệt).
+- **Hybrid AI chuẩn hóa:** Tích hợp `mammoth` đọc `.docx` thật, đồng nhất công thức **60% Kỹ năng + 40% Kinh nghiệm** ở cả 2 lớp AI & Heuristic, loại bỏ hardcode mẫu cũ.
+- **Kiểm chứng:** 169/169 bài kiểm thử tự động đạt chuẩn; rà soát song ngữ VI/EN toàn bộ màn hình bằng Playwright; vận hành ổn định trên Vercel Production (`https://ats-applicant-tracking-system.vercel.app/`).

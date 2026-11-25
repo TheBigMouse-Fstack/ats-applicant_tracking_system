@@ -73,9 +73,9 @@ export default function JobApplicationForm({
       await handleFileSelect(sampleFile);
     } catch (err) {
       console.error(err);
-      setFullName("Nguyễn Quốc Khánh");
-      setEmail("khanhnqse19@gmail.com");
-      setPhone("0708462865");
+      setFullName("Nguyễn Minh Khôi");
+      setEmail("demo.candidate@example.com");
+      setPhone("0900000001");
       setAutoFillNotice("Đã nạp sẵn thông tin ứng viên mẫu. Vui lòng tải CV để hoàn tất hồ sơ.");
     } finally {
       setSampleLoading(false);
