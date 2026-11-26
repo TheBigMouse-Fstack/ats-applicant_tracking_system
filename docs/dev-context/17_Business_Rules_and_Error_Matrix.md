@@ -2,13 +2,15 @@
 id: "BR-ERR-17"
 title: "Danh mục Business Rules 3 Vế, Ma trận Lỗi 7 Cột & Acceptance Criteria (Gherkin BDD)"
 type: "srs"
-version: "2.2.0"
+version: "2.3.0"
 status: "approved"
 owner: "ATS BA & QA Team"
 domain: "recruitment-ats"
 tags:
   - "business-rules"
   - "error-matrix"
+  - "better-auth"
+  - "server-only-dal"
   - "gherkin-bdd"
   - "acceptance-criteria"
 upstream_deps:
@@ -17,7 +19,7 @@ upstream_deps:
 downstream_deps:
   - "API-ATS-15"
   - "UAT-ATS-18"
-last_updated: "2026-11-18"
+last_updated: "2026-11-26"
 ---
 
 # DANH MỤC BUSINESS RULES, MA TRẬN LỖI 7 CỘT & ACCEPTANCE CRITERIA (GHERKIN BDD)
@@ -30,6 +32,7 @@ last_updated: "2026-11-18"
 | :---: | :---: | :--- | :---: | :--- | :--- |
 | `v2.1.0` | 2026-11-18 | BA & QA Team | **Initial** | Chuẩn hóa trọn bộ Business Rules (3 vế `WHEN/THEN/UNLESS`), Ma trận Lỗi 7 cột chuẩn `ERR-[MOD]-[HTTP]-[SEQ]` và Acceptance Criteria Gherkin BDD bám sát 100% mã nguồn ATS — Applicant Tracking System. | Product Owner & Tech Lead |
 | `v2.2.0` | 2026-11-19 | BA & QA Team | **Added** | Bổ sung quy tắc nghiệp vụ BRL-14 Phân trang Lũy tiến từng Cột trên Bảng Kanban (Column Progressive Loading) & kịch bản BDD Acceptance Criteria. | Product Owner & Tech Lead |
+| `v2.3.0` | 2026-11-26 | Principal Engineering & QA | **Changed** | Nâng cấp `ATS-002`: Thực thi tập trung toàn bộ `BRL-Auth`, `BRL-06`, `BRL-11`, `BRL-15`, `BRL-17` bên trong tầng `src/server/dal/` (`import "server-only"`) kết hợp **Better Auth** trên Neon PostgreSQL (`auth_sessions`, `auth_accounts`), thu hồi phiên tức thì khi khóa tài khoản và nâng tổng kiểm thử tự động lên **197/197 Passed**. | Product Owner & QA Lead |
 
 ---
 
@@ -56,7 +59,7 @@ Mọi quy tắc nghiệp vụ của hệ thống đều tuân thủ cấu trúc 
 | **`BRL-STAGE-ORDER`**<br>`BR-FSM-001` | Tuân thủ trình tự tuyến tính State Machine | `src/lib/stage-rules.ts` | **WHEN** người dùng thao tác chuyển trạng thái hồ sơ **THEN** chỉ chấp nhận các đường chuyển hợp lệ kế tiếp (`NEW ➔ SCREENING ➔ INTERVIEW ➔ HIRED`) và nghiêm cấm nhảy cóc (`NEW ➔ INTERVIEW`, `NEW ➔ HIRED`, `SCREENING ➔ HIRED`, `REJECTED ➔ HIRED`) **UNLESS** Không có ngoại lệ (áp dụng cho cả `ADMIN`). | `ERR-PIPE-422-01` |
 | **`BRL-STAGE-TERMINAL`**<br>`BR-FSM-002` | Khóa trạng thái kết thúc (`HIRED`) | `src/lib/stage-rules.ts` | **WHEN** hồ sơ đã đạt trạng thái `HIRED` **THEN** hệ thống khóa hoàn toàn thao tác chuyển sang bất kỳ trạng thái nào khác nhằm bảo vệ toàn vẹn dữ liệu tuyển chọn **UNLESS** Không có ngoại lệ trên luồng Kanban tiêu chuẩn. | `ERR-PIPE-409-01` |
 | **`RBAC-STAGE-LIMIT`**<br>`BR-RBAC-001` | Phân tách thẩm quyền vòng tuyển HR vs Hiring Manager | `src/lib/stage-rules.ts`, `schedule/route.ts` | **WHEN** người dùng luân chuyển cột Kanban hoặc xếp/hủy lịch phỏng vấn **THEN** `HR` chỉ được chuyển tối đa đến `SCREENING` (`NEW ➔ SCREENING`, `NEW/SCREENING ➔ REJECTED`, phục hồi về `NEW/SCREENING`); `HIRING_MANAGER` phụ trách từ `SCREENING` trở đi (`SCREENING ➔ INTERVIEW`, xếp/sửa/hủy lịch PV, `INTERVIEW ➔ HIRED`, `SCREENING/INTERVIEW ➔ REJECTED`) và không tác động vòng `NEW` **UNLESS** người dùng có vai trò `ADMIN`. | `ERR-PIPE-403-01`<br>`ERR-INTV-403-01` |
-| **`BRL-Auth`**<br>`BR-SEC-001` | Bảo mật mật khẩu, phiên làm việc & chống Spam | `auth.ts`, `middleware.ts`, `applications/route.ts` | **WHEN** người dùng nội bộ đăng nhập hoặc tạo tài khoản **THEN** mật khẩu tối thiểu 8 ký tự, băm bằng NIST `PBKDF2-SHA512` (100,000 vòng lặp), phiên ký số `HMAC-SHA256` trong `HttpOnly Cookie`, chặn truy cập `/admin/users` bằng HTTP 307 nếu không phải `ADMIN`, và giới hạn nộp đơn công khai tối đa 5 lượt / 10 phút / IP **UNLESS** Không có ngoại lệ. | `ERR-AUTH-401-01`<br>`ERR-AUTH-403-01`<br>`ERR-SYS-429-01` |
+| **`BRL-Auth`**<br>`BR-SEC-001` | Bảo mật mật khẩu, phiên Better Auth, DAL RBAC & chống Spam | `better-auth.ts`, `src/server/dal/*`, `middleware.ts` | **WHEN** người dùng nội bộ đăng nhập hoặc thao tác trên hệ thống **THEN** mật khẩu tối thiểu 8 ký tự băm bằng NIST `PBKDF2-SHA512` (100,000 vòng lặp, đồng bộ `auth_accounts`), phiên lưu trong bảng `auth_sessions` trên Neon PostgreSQL qua cookie ký số `better-auth.session_token`, cấm tự đăng ký công khai (`disableSignUp: true`), mọi API nội bộ và `ProtectedAdminLayout` xác thực phiên + 24 quyền RBAC ngay tại `src/server/dal/` (không phụ thuộc Middleware), thu hồi phiên tức thì khi `isActive = false`, và giới hạn nộp đơn công khai theo IP **UNLESS** Không có ngoại lệ. | `AUTH_UNAUTHORIZED`<br>`AUTH_INVALID_CREDENTIALS`<br>`AUTH_ACCOUNT_DISABLED`<br>`AUTH_FORBIDDEN` |
 
 ---
 
@@ -64,8 +67,8 @@ Mọi quy tắc nghiệp vụ của hệ thống đều tuân thủ cấu trúc 
 
 | Mã Lỗi Chuẩn (`RULE-03`) | Tình Huống Kích Hoạt (Trigger Condition) | HTTP & Mã Rule Code Trong API | Hành Vi Hệ Thống (Backend Behavior) | Phản Hồi Giao Diện (UI/UX Response) | Hành Động Phục Hồi (Recovery Action) | Mức Độ (Severity) |
 | :--- | :--- | :---: | :--- | :--- | :--- | :---: |
-| **`ERR-AUTH-401-01`** | Nhập sai mật khẩu hoặc phiên cookie hết hạn / giả mạo chữ ký HMAC | `401 Unauthorized`<br>`AUTH_INVALID_CRED` | Từ chối xác thực; nếu cookie bị sửa đổi, `middleware.ts` xóa cookie và chuyển hướng HTTP 307 về `/admin/login`. | Báo viền đỏ dưới ô mật khẩu: *"Mật khẩu không chính xác. Vui lòng kiểm tra lại."* | Nhập lại mật khẩu đúng hoặc đăng nhập lại. | **High** |
-| **`ERR-AUTH-403-01`** | Tài khoản bị khóa (`isActive=false`) hoặc HR/HM truy cập `/admin/users` | `403 Forbidden` / `307`<br>`AUTH_USER_LOCKED` | Chặn đăng nhập tại `/api/auth/login` hoặc redirect về `/admin/pipeline?error=forbidden`. | Hiển thị thông báo quyền hạn không đủ / tài khoản bị tạm khóa. | Liên hệ `ADMIN` kích hoạt tài khoản hoặc cấp quyền. | **High** |
+| **`ERR-AUTH-401-01`** | Nhập sai email/mật khẩu hoặc phiên `auth_sessions` hết hạn / bị thu hồi / giả mạo chữ ký | `401 Unauthorized`<br>`AUTH_INVALID_CREDENTIALS` / `AUTH_UNAUTHORIZED` | DAL `requireSession()` đối soát trực tiếp Better Auth + Neon PostgreSQL; từ chối truy cập với thông điệp song ngữ sạch. | Hiển thị lỗi song ngữ VI/EN tại trang đăng nhập hoặc chuyển hướng về `/admin/login`. | Nhập lại thông tin xác thực hợp lệ hoặc đăng nhập lại. | **High** |
+| **`ERR-AUTH-403-01`** | Tài khoản bị khóa (`isActive=false`), cố gọi `/api/auth/sign-up/*`, hoặc sai quyền RBAC trong DAL | `403 Forbidden`<br>`AUTH_ACCOUNT_DISABLED` / `AUTH_FORBIDDEN` | DAL chặn tại cả `POST /api/auth/login`, Better Auth `databaseHooks`, `requirePermission()`, và xóa toàn bộ `auth_sessions` của user bị khóa. | Hiển thị thông báo song ngữ VI/EN thân thiện (không chứa mã kỹ thuật nội bộ). | Liên hệ `ADMIN` kích hoạt tài khoản hoặc sử dụng đúng vai trò thẩm quyền. | **High** |
 | **`ERR-SYS-429-01`** | Một IP nộp vượt quá 05 hồ sơ ứng tuyển trong 10 phút | `429 Too Many Requests`<br>`NFR-SEC-03` | Chặn ngay đầu hàm `POST /api/applications` bằng sliding-window rate limiter. | Banner cảnh báo đỏ yêu cầu chờ 10 phút trước khi nộp lại. | Chờ hết chu kỳ 10 phút rồi thử lại. | **Medium** |
 | **`ERR-APP-400-01`** | Tệp CV tải lên sai định dạng (khác `.pdf`, `.docx`) hoặc > 10MB | `400 Bad Request`<br>`BRL-01` | Chặn lưu file trước khi ghi vào `public/uploads/`. | Viền đỏ ô upload CV hiển thị lỗi inline chi tiết. | Chọn lại tệp `.pdf` hoặc `.docx` dung lượng ≤ 10MB. | **Low** |
 | **`ERR-APP-400-02`** | Tệp đổi đuôi giả mạo (VD: file HTML/EXE đổi tên thành `.pdf`) | `400 Bad Request`<br>`MAGIC_BYTES_INVALID` | Kiểm tra 4 bytes đầu (`%PDF-`) / 2 bytes đầu (`PK`); từ chối ngay không gọi `pdf-parse`. | Báo lỗi bảo mật: *"Nội dung tệp không phải PDF/DOCX chuẩn"*. | Xuất lại CV từ Word/Canva đúng chuẩn định dạng. | **Critical** |
@@ -256,3 +259,14 @@ Feature: Tối ưu hóa hiệu năng hiển thị và kéo thả Kanban với t�
 | Phê duyệt tin tuyển dụng (Requisition Approval) | `BRL-17` | Mở rộng vòng đời tin tuyển dụng thành 4 trạng thái: `DRAFT ➔ PENDING_APPROVAL ➔ ACTIVE ➔ CLOSED`. Tin do `HR` tạo chuyển sang `PENDING_APPROVAL` chờ `HIRING_MANAGER` hoặc `ADMIN` duyệt (`POST /api/jobs/[id]/approve`) trước khi công khai lên `/jobs`. |
 | Quản trị Tài khoản & Tự đổi mật khẩu | `FR-ADM` | `ADMIN` có thể chỉnh sửa Họ tên, Email, SĐT (`User.phone`), Vai trò và đặt lại mật khẩu (`PATCH /api/users`). Mọi người dùng nội bộ tự đổi mật khẩu an toàn tại `/admin/settings` (`POST /api/auth/change-password`). |
 | Kiểm chứng Tự động & Giao diện Song ngữ | `NFR-USA` | Giao diện chuẩn tối giản (ELCA Swiss Minimalist), bỏ toàn bộ mã kỹ thuật/enum thô ở Nhật ký hoạt động, kiểm thử tự động **169/169 Passed** và rà soát toàn bộ màn hình VI/EN bằng Playwright. |
+
+---
+
+## Phụ lục Cập nhật Phiên bản v2.3 (26/11/2026) — Kiến trúc Better Auth & Server-Only DAL (`ATS-002`)
+
+| Hạng mục nâng cấp (`ATS-002`) | Module Thực Thi | Mô tả triển khai & Nghiệm thu QA (GO — 0 P0/P1) |
+|---|---|---|
+| Chuyển đổi sang **Better Auth** trên Neon PostgreSQL | `src/lib/better-auth.ts`, `prisma/schema.prisma`, `prisma/backfill-better-auth.ts` | Cấu hình `prismaAdapter` với `generateId: "serial"` giữ nguyên khóa ngoại `Int` (`users.id`); bổ sung `auth_sessions`, `auth_accounts`, `auth_verifications`; khóa `disableSignUp: true`; chặn `isActive = false` ngay tại `databaseHooks`; đồng bộ 6/6 tài khoản demo băm `PBKDF2-SHA512`. |
+| Tầng **Server-Only Data Access Layer (DAL)** | `src/server/dal/*` (14 modules) | 100% module khai báo `import "server-only"`; toàn bộ 22/22 API routes nội bộ và `src/app/admin/(protected)/` đi qua DAL (0 route nội bộ import `prisma` trực tiếp hay gọi `getSessionUser()` cũ). |
+| Ma trận 24 Quyền Hạt Mịn & Chống Tự Khóa Admin | `src/server/dal/permissions.ts`, `users.ts`, `errors.ts` | Kiểm tra `requirePermission()` tập trung; thu hồi tức thì toàn bộ `auth_sessions` trong cùng `$transaction` khi khóa user hoặc đổi mật khẩu; chặn Admin tự khóa/hạ quyền (`SELF_LOCKOUT_PREVENTED`); thông điệp lỗi song ngữ VI/EN sạch 100%. |
+| Chốt chặn Nghiệp vụ Tập trung & Vá Bảo mật | `src/server/dal/gates.ts`, `jobs.ts`, `scorecards.ts`, `interviews.ts`, `middleware.ts` | Phủ đồng bộ `BRL-15` (Blind Scorecard) trên toàn bộ 8 luồng đọc/xuất; khóa `BRL-17` chặn HR tự đóng/mở tin chưa duyệt (`approvedById = null`); xóa `customWebhookUrl` chống SSRF; xóa bypass `Referer` trên Storage Proxy; gỡ `x-user-*` header injection ở `middleware.ts` (CVE-2025-29927); nâng tổng kiểm thử tự động lên **26 Suites — 197/197 Passed (100%)**. |

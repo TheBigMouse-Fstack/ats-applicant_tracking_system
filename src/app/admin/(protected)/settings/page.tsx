@@ -58,7 +58,10 @@ export default function AdminSettingsPage() {
     try {
       const res = await fetch("/api/auth/change-password", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-locale": locale,
+        },
         body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
       });
 
@@ -66,7 +69,9 @@ export default function AdminSettingsPage() {
       if (!res.ok || !data.success) {
         if (data.field) setErrorField(data.field);
         setErrorMessage(
-          data.error || (isEn ? "Unable to update password." : "Không thể đổi mật khẩu.")
+          isEn
+            ? data.messageEn || data.error || "Unable to update password."
+            : data.error || "Không thể đổi mật khẩu."
         );
         return;
       }

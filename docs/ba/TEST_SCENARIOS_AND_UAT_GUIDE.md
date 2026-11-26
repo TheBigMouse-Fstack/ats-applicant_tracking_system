@@ -1,8 +1,8 @@
 ---
 id: "UAT-ATS-18"
-title: "Kịch bản Kiểm thử Nghiệm thu UAT & Hướng dẫn Thử nghiệm Doanh nghiệp 1 Tuần (161 Test Cases PASS)"
+title: "Kịch bản Kiểm thử Nghiệm thu UAT & Hướng dẫn Thử nghiệm Doanh nghiệp (197 Test Cases PASS)"
 type: "test-suite"
-version: "2.3.0"
+version: "2.4.0"
 status: "approved"
 owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
@@ -10,6 +10,7 @@ tags:
   - "uat"
   - "test-cases"
   - "qa"
+  - "better-auth-dal"
   - "rtm"
   - "enterprise-trial"
 upstream_deps:
@@ -18,14 +19,14 @@ upstream_deps:
   - "API-ATS-15"
 downstream_deps:
   []
-last_updated: "2026-11-19"
+last_updated: "2026-11-26"
 ---
 
 # BẢNG TÌNH HUỐNG KIỂM THỬ THỰC HÀNH TOÀN DIỆN (FULL UAT TEST SCENARIOS GUIDE)
 ## Dự án: ATS — Applicant Tracking System — Hệ thống Quản trị Tuyển dụng Doanh nghiệp
 
 > **Dành cho:** Bộ phận Nhân sự (HR Lead), Quản lý Chuyên môn (Hiring Manager), Ban Giám đốc và Đội ngũ Kiểm thử (QA) trong đợt thử nghiệm thực tế 1 tuần.  
-> **Mục tiêu:** Từng bước thao tác thực tế trên giao diện để kiểm chứng 100% các Use Case (UC-00 đến UC-07), các Quy tắc Nghiệp vụ cốt lõi (**BRL-01 đến BRL-14**) và bảo mật an toàn thông tin.
+> **Mục tiêu:** Từng bước thao tác thực tế trên giao diện để kiểm chứng 100% các Use Case (UC-00 đến UC-07), các Quy tắc Nghiệp vụ cốt lõi (**BRL-01 đến BRL-17**), xác thực **Better Auth** và tầng kiểm soát truy cập **Server-Only DAL (`src/server/dal/`)**.
 
 ---
 
@@ -36,6 +37,7 @@ last_updated: "2026-11-19"
 | `v1.0.0` | 2026-11-10 | BA Team | **Initial** | Khởi tạo kịch bản UAT thủ công ban đầu. | Product Owner |
 | `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit. | Product Owner |
 | `v2.3.0` | 2026-11-19 | ATS BA & QA Team | **Added** | Mở rộng 22 Test Suites (161 tests PASS), cập nhật kịch bản dùng thử Doanh nghiệp 1 tuần trên Vercel Cloud & Neon PostgreSQL. | Product Owner & Tech Lead |
+| `v2.4.0` | 2026-11-26 | Principal Engineering & QA | **Added** | Đồng bộ `ATS-002` (Better Auth + Server-Only DAL): nâng lên **26 Test Suites — 197/197 kịch bản tự động PASS (100%)**, kiểm chứng khóa tự đăng ký công khai, Blind Scorecard (`BRL-15`), Requisition Approval (`BRL-17`) và thu hồi phiên tức thì. | Product Owner & QA Lead |
 
 ---
 
@@ -53,7 +55,7 @@ last_updated: "2026-11-19"
    # Truy cập tại: http://localhost:3000
    ```
 
-3. **Chạy bộ kiểm thử tự động toàn diện (161 Test Cases PASS 100%):**
+3. **Chạy bộ kiểm thử tự động toàn diện (26 Suites — 197 Test Cases PASS 100%):**
    ```bash
    node tests/run-tests.js
    ```

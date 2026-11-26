@@ -2,13 +2,15 @@
 id: "API-ATS-15"
 title: "Đặc tả Hợp đồng API Chính & Hệ thống Mã lỗi Chuẩn"
 type: "api-spec"
-version: "2.2.0"
+version: "2.4.0"
 status: "approved"
 owner: "ATS BA & Engineering Team"
 domain: "recruitment-ats"
 tags:
   - "api-contract"
   - "rest-api"
+  - "better-auth"
+  - "server-only-dal"
   - "error-codes"
 upstream_deps:
   - "FDD-ATS-04"
@@ -17,14 +19,14 @@ upstream_deps:
   - "BR-ERR-17"
 downstream_deps:
   - "UAT-ATS-18"
-last_updated: "2026-11-18"
+last_updated: "2026-11-26"
 ---
 
 # ĐẶC TẢ API CHÍNH & DANH MỤC MÃ LỖI (API SPECIFICATIONS & ERROR CODES)
 
 > **Dự án:** ATS — Applicant Tracking System  
-> **Phiên bản tài liệu:** v1.0  
-> **Kiến trúc:** Next.js 14 App Router Route Handlers (`src/app/api/`) + TypeScript + Prisma ORM  
+> **Phiên bản tài liệu:** v2.4.0  
+> **Kiến trúc:** Next.js 14 App Router Thin Route Handlers (`src/app/api/`) ➔ Server-Only Data Access Layer (`src/server/dal/`) + Better Auth + Prisma ORM (Neon PostgreSQL)  
 
 ---
 
@@ -33,14 +35,14 @@ last_updated: "2026-11-18"
 | Phiên Bản | Ngày Phát Hành | Tác Giả | Phân Loại | Tóm Tắt Thay Đổi | Phê Duyệt |
 | :---: | :---: | :--- | :---: | :--- | :--- |
 | `v2.1.0` | 2026-11-18 | ATS BA Team | **Changed** | Chuẩn hóa tài liệu theo bộ tiêu chuẩn Universal BA Toolkit (YAML Metadata, SemVer, đồng bộ 100% mã nguồn hiện tại). | Product Owner |
-| `v2.2.0` | 2026-11-19 | ATS BA Team | **Added** | Bổ sung query parameter `limitPerStage` và siêu dữ liệu `stagePagination` trong `GET /api/pipeline` phục vụ BRL-14. | Product Owner & Tech Lead |
-| `v2.2.0` | 2026-11-18 | ATS BA Team | **Added** | Bổ sung hợp đồng API `GET /api/dashboard` cho Bảng điều khiển Tổng quan Vận hành phân quyền theo Role (`ADMIN`, `HR`, `HIRING_MANAGER`). | Product Owner |
+| `v2.2.0` | 2026-11-19 | ATS BA Team | **Added** | Bổ sung query parameter `limitPerStage` và siêu dữ liệu `stagePagination` trong `GET /api/pipeline` phục vụ BRL-14; hợp đồng `GET /api/dashboard`. | Product Owner & Tech Lead |
+| `v2.4.0` | 2026-11-26 | Principal Engineering & Security | **Changed** | Nâng cấp `ATS-002`: Ủy thác 100% (22/22) internal API routes qua `src/server/dal/`; tích hợp Better Auth (`/api/auth/[...all]` + thin wrappers); chuẩn hóa phong bì lỗi song ngữ `DalError` (`messageVi`, `messageEn`, không lộ mã `BRL-*` ra UI); bổ sung `POST /api/jobs/[id]/approve` (`BRL-17`), khóa Blind Scorecard (`BRL-15`) trên toàn bộ read/export routes và gỡ bỏ bypass `Referer` tại Storage Proxy. | Product Owner & QA Lead |
 
 ---
 
 ## 1. QUY CHUẨN CẤU TRÚC PHẢN HỒI (STANDARD RESPONSE ENVELOPE)
 
-Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc phản hồi JSON đồng nhất:
+Toàn bộ các điểm cuối API nội bộ ủy thác xử lý và bắt lỗi qua `toHttpErrorResponse(err, req)` trong `src/server/dal/errors.ts`:
 
 ### 1.1 Cấu trúc khi Thành công (Success Response - HTTP 200/201)
 ```json
@@ -51,13 +53,15 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 }
 ```
 
-### 1.2 Cấu trúc khi Thất bại (Error Response - HTTP 400/401/403/404/429/500)
+### 1.2 Cấu trúc khi Thất bại từ DAL (Error Response - HTTP 400/401/403/404/409/429/500/503)
 ```json
 {
   "success": false,
-  "error": "Thông báo lỗi chi tiết hiển thị cho người dùng",
-  "rule": "BRL-xx hoặc NFR-xx (nếu có)",
-  "field": "tên_trường_lỗi (nếu có)",
+  "code": "AUTH_UNAUTHORIZED | AUTH_FORBIDDEN | BAD_REQUEST | ...",
+  "error": "Thông báo lỗi thân thiện theo ngôn ngữ người dùng (x-locale / Accept-Language)",
+  "messageVi": "Thông báo tiếng Việt sạch (không chứa mã kỹ thuật nội bộ)",
+  "messageEn": "Clean English end-user message (zero raw technical codes)",
+  "field": "tên_trường_lỗi (tùy chọn)",
   "fieldErrors": {
     "fieldName": "Lý do vi phạm cụ thể của từng trường"
   }
@@ -82,10 +86,14 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 | **`RBAC-STAGE-LIMIT`** | `403 Forbidden` | "Phân quyền HR: Chuyên viên HR chỉ được chuyển tối đa đến vòng Sàng lọc tiêu chuẩn (SCREENING)..." / "Phân quyền Hiring Manager..." | Phân tách thẩm quyền vòng tuyển: HR max `SCREENING`; Hiring Manager phụ trách `INTERVIEW` & `HIRED` và lịch phỏng vấn. |
 | **`RBAC-PROFILE-EDIT`** | `403 Forbidden` | "Quản lý chuyên môn (Hiring Manager) chỉ có quyền xem hồ sơ; quyền chuẩn hóa dữ liệu trích xuất CV thuộc bộ phận HR." | Chặn Hiring Manager gọi `PATCH /api/applications/[id]/profile`. |
 | **`RBAC-PURGE-BLOCK`**| `403 Forbidden` | "Truy cập bị từ chối: Chỉ Quản trị viên (Admin) mới có quyền thực thi tác vụ dọn dẹp vòng đời hồ sơ BRL-10." | Chặn HR và Manager gọi lệnh xóa vĩnh viễn tại `POST /api/talent-pool/cleanup`. |
-| **`AUTH_INVALID_CRED`**| `401 Unauthorized` | "Mật khẩu không chính xác. Vui lòng kiểm tra lại." | Xác thực đăng nhập thất bại qua PBKDF2 tại `POST /api/auth/login`. |
-| **`AUTH_USER_LOCKED`** | `403 Forbidden` | "Tài khoản của bạn đã bị Quản trị viên tạm khóa. Vui lòng liên hệ Admin." | Tài khoản có `isActive = false` không được phép đăng nhập. |
-| **`NOT_FOUND`** | `404 Not Found` | "Không tìm thấy hồ sơ ứng tuyển này" / "Vị trí tuyển dụng không tồn tại" | Truy vấn ID không tồn tại trong cơ sở dữ liệu. |
-| **`INTERNAL_ERROR`** | `500 Server Error` | "Lỗi hệ thống khi xử lý yêu cầu. Vui lòng thử lại sau." | Lỗi bắt ngoại lệ (Catch Exception) ở tầng máy chủ. |
+| **`AUTH_UNAUTHORIZED`** | `401 Unauthorized` | "Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại." | Phiên Better Auth không tồn tại trong bảng `auth_sessions`, hết hạn hoặc chữ ký cookie không hợp lệ (`dal/auth.ts`). |
+| **`AUTH_INVALID_CREDENTIALS`**| `401 Unauthorized` | "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại." | Xác thực đăng nhập thất bại qua PBKDF2-SHA512 (không tiết lộ email có tồn tại hay không). |
+| **`AUTH_ACCOUNT_DISABLED`** | `403 Forbidden` | "Tài khoản của bạn hiện đang tạm khóa. Vui lòng liên hệ quản trị viên." | Tài khoản có `isActive = false` bị chặn ở cả `POST /api/auth/login`, native Better Auth `databaseHooks`, và thu hồi toàn bộ `auth_sessions` hiện có. |
+| **`AUTH_FORBIDDEN`** | `403 Forbidden` | "Bạn không có quyền thực hiện thao tác này." | Người dùng thiếu quyền trong `ROLE_PERMISSIONS` (24 quyền hạt mịn) hoặc cố gọi `/api/auth/sign-up/*` (`disableSignUp: true`). |
+| **`SELF_LOCKOUT_PREVENTED`** | `400 Bad Request` | "Bạn không thể tự khóa hoặc tự hạ quyền tài khoản Quản trị viên của chính mình." | Chặn Admin tự khóa (`isActive: false`) hoặc tự hạ vai trò tài khoản đang đăng nhập tại `PATCH /api/users`. |
+| **`AUTH_SERVICE_UNAVAILABLE`** | `503 Service Unavailable` | "Dịch vụ xác thực tạm thời gián đoạn. Vui lòng thử lại sau giây lát." | Cơ chế Fail-Closed khi kết nối CSDL xác thực gặp sự cố (không bao giờ tự động cho qua). |
+| **`NOT_FOUND`** | `404 Not Found` | "Không tìm thấy dữ liệu yêu cầu." | Truy vấn ID không tồn tại trong cơ sở dữ liệu. |
+| **`INTERNAL_ERROR`** | `500 Server Error` | "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau." | Lỗi bắt ngoại lệ (Catch Exception) ở tầng máy chủ. |
 
 ---
 
@@ -133,27 +141,27 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 
 ---
 
-### Phân hệ 1: Xác thực & Quản trị Người dùng (Internal Auth & Users)
+### Phân hệ 1: Xác thực Better Auth & Quản trị Người dùng (`src/server/dal/auth.ts`, `users.ts`)
 
-#### 1. `POST /api/auth/login` — Đăng nhập hệ thống nội bộ
-* **Mục đích:** Xác thực tài khoản nhân viên (Admin, HR, Hiring Manager) và cấp cookie phiên đã ký số.
-* **Yêu cầu phân quyền:** Công khai (Nội bộ).
-* **Request Body:**
+#### 1. `POST /api/auth/login` & `/api/auth/[...all]` — Đăng nhập nội bộ qua Better Auth
+* **Mục đích:** Xác thực tài khoản nhân viên (`ADMIN`, `HR`, `HIRING_MANAGER`) qua mật khẩu băm `PBKDF2-SHA512`, tự động đồng bộ `auth_accounts` cho tài khoản cũ, tạo phiên trong bảng `auth_sessions` trên Neon PostgreSQL và gắn cookie phiên đã ký của Better Auth.
+* **Chính sách đăng ký:** `disableSignUp: true` — mọi yêu cầu tới `/api/auth/sign-up/*` đều bị chặn cứng với `HTTP 403`.
+* **Request Body (`POST /api/auth/login`):**
   ```json
   {
-    "email": "hr.lead@recoverx.com",
-    "password": "Password123"
+    "email": "hr@ats.vn",
+    "password": "Hr@123456"
   }
   ```
 * **Success Response (HTTP 200):**
-  * Đồng thời thiết lập cookie HttpOnly: `ats_user_session=[payloadBase64].[HMAC-SHA256 signature]`
+  * Thiết lập cookie HttpOnly `better-auth.session_token` (hoặc `__Secure-better-auth.session_token` trên HTTPS production), `SameSite=Lax`, hạn 7 ngày (sliding refresh 24h), đồng thời xóa cookie cũ `ats_user_session` nếu còn.
   ```json
   {
     "success": true,
     "user": {
       "id": 2,
-      "email": "hr.lead@recoverx.com",
-      "fullName": "Nguyễn Phương Anh",
+      "email": "hr@ats.vn",
+      "fullName": "Nguyễn Thu Hà",
       "role": "HR"
     }
   }
@@ -162,25 +170,25 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
   ```json
   {
     "success": false,
-    "error": "Mật khẩu không chính xác. Vui lòng kiểm tra lại.",
-    "field": "password"
+    "code": "AUTH_INVALID_CREDENTIALS",
+    "error": "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.",
+    "messageVi": "Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.",
+    "messageEn": "Incorrect email or password. Please check your credentials."
   }
   ```
 
 ---
 
-#### 2. `POST /api/auth/logout` — Đăng xuất hệ thống
-* **Mục đích:** Hủy phiên đăng nhập và xóa cookie xác thực.
-* **Success Response (HTTP 200):**
-  ```json
-  { "success": true, "message": "Đăng xuất thành công" }
-  ```
+#### 2. `POST /api/auth/logout`, `GET /api/auth/me` & `PATCH /api/auth/change-password` — Quản lý phiên & Đổi mật khẩu
+* **`POST /api/auth/logout`:** Thu hồi bản ghi phiên hiện tại khỏi bảng `auth_sessions` thông qua `auth.api.signOut` và xóa cookie xác thực.
+* **`GET /api/auth/me`:** Kiểm tra phiên qua `getCurrentSession()` trong DAL (đối soát trực tiếp `auth_sessions` và `users.isActive === true`).
+* **`PATCH /api/auth/change-password`:** Yêu cầu phiên hợp lệ (`auth:change-password`), xác minh `currentPassword`, băm `newPassword` (≥ 8 ký tự) cập nhật đồng bộ cả `users.passwordHash` và `auth_accounts.password` trong `$transaction`, đồng thời thu hồi mọi phiên đăng nhập trên thiết bị khác.
 
 ---
 
-#### 3. `GET /api/users` & `POST /api/users` — Quản trị tài khoản nhân viên
-* **Mục đích:** Admin xem danh sách và tạo mới tài khoản nhân viên (`HR`, `HIRING_MANAGER`).
-* **Yêu cầu phân quyền:** Chỉ `ADMIN` (Middleware chặn HTTP 307 và API chặn HTTP 403).
+#### 3. `GET /api/users`, `POST /api/users` & `PATCH /api/users` — Quản trị tài khoản nhân viên
+* **Mục đích:** Admin xem danh sách, cấp tài khoản mới (tạo đồng thời `User` + `AuthAccount` trong 1 transaction) và cập nhật thông tin / khóa tài khoản nhân viên (`HR`, `HIRING_MANAGER`, `ADMIN`).
+* **Yêu cầu phân quyền:** Bắt buộc xác thực tại `src/server/dal/users.ts` (`users:read` / `users:write` — chỉ `ADMIN`). Trả về `401` nếu chưa đăng nhập, `403` nếu vai trò khác `ADMIN`. Khi Admin đặt `isActive: false`, hệ thống xóa tức thì toàn bộ `auth_sessions` của người dùng đó; đồng thời chặn Admin tự khóa/hạ quyền chính mình (`400 SELF_LOCKOUT_PREVENTED`).
 * **POST Request Body:**
   ```json
   {
@@ -529,12 +537,11 @@ Toàn bộ các điểm cuối API của hệ thống tuân thủ cấu trúc ph
 ### Phân hệ 7: Lưu Trữ Đám Mây & Bảo Vệ PII Proxy (Cloud Storage & PII Shield)
 
 #### 15. `GET /api/applications/storage/[...key]` — Truy xuất An toàn Tệp CV & Chứng chỉ
-* **Mục đích:** Đóng vai trò là Proxy trung chuyển tệp tin từ Cloud Object Storage (Neon bucket `uploads`) hoặc đĩa cục bộ đến trình duyệt, bảo vệ quyền riêng tư PII của ứng viên và ngăn chặn thu thập trái phép (Web Scraping).
-* **Phân quyền truy cập:**
-  * **Nội bộ:** Bắt buộc có Cookie phiên xác thực hợp lệ (`HR`, `HIRING_MANAGER`, `ADMIN`).
-  * **Công khai:** Cho phép ứng viên xem lại bản nộp thông qua referer hợp lệ từ trang tra cứu `/jobs/tracker`.
-  * **Trường hợp từ chối:** Trả về HTTP 401 Unauthorized nếu không có quyền truy cập.
-* **Bảo vệ an ninh (Path Traversal Protection):** Kiểm tra và từ chối ngay lập tức các tham số chứa `..` hoặc `\\` bằng mã lỗi HTTP 400 Bad Request.
+* **Mục đích:** Đóng vai trò là Proxy trung chuyển tệp tin từ Cloud Object Storage (Neon bucket `uploads`) hoặc đĩa cục bộ đến trình duyệt thông qua `src/server/dal/applications.ts`, bảo vệ quyền riêng tư PII của ứng viên và ngăn chặn thu thập trái phép.
+* **Phân quyền truy cập (`applications:cv:read`):**
+  * **Nội bộ bắt buộc:** Yêu cầu phiên đăng nhập Better Auth hợp lệ (`HR`, `HIRING_MANAGER`, `ADMIN`). Đã gỡ bỏ hoàn toàn cơ chế bypass qua header `Referer: /jobs/tracker`.
+  * **Trường hợp từ chối:** Trả về `HTTP 401 Unauthorized` nếu thiếu phiên hợp lệ, hoặc `HTTP 403 Forbidden` nếu tài khoản bị tạm khóa.
+* **Bảo vệ an ninh (Path Traversal Protection):** Kiểm tra và từ chối ngay lập tức các tham số chứa `..`, `\`, hoặc byte rỗng bằng mã lỗi `HTTP 400 Bad Request`.
 * **Headers phản hồi (HTTP 200):**
   * `Content-Type`: `application/pdf` (hoặc `image/jpeg`, `image/png`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`)
   * `Content-Disposition`: `inline; filename="{safeFileName}"`

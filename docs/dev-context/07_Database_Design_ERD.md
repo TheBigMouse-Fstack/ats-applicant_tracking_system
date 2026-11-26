@@ -2,7 +2,7 @@
 id: "ERD-ATS-07"
 title: "Thiết kế Cơ sở Dữ liệu, Sơ đồ ERD & Từ điển Dữ liệu 10 Cột Chuẩn PII/Masking"
 type: "diagram"
-version: "2.2.0"
+version: "2.3.0"
 status: "approved"
 owner: "ATS BA & Backend Team"
 domain: "recruitment-ats"
@@ -10,6 +10,7 @@ tags:
   - "erd"
   - "data-dictionary"
   - "prisma-schema"
+  - "better-auth"
   - "pii-masking"
 upstream_deps:
   - "BRD-ATS-01"
@@ -17,13 +18,13 @@ upstream_deps:
 downstream_deps:
   - "API-ATS-15"
   - "BR-ERR-17"
-last_updated: "2026-11-18"
+last_updated: "2026-11-26"
 ---
 
 # THIẾT KẾ CƠ SỞ DỮ LIỆU, SƠ ĐỒ ERD & TỪ ĐIỂN DỮ LIỆU CHUẨN 10 CỘT
 
 > **Dự án:** ATS — Applicant Tracking System  
-> **ORM & DBMS:** Prisma ORM (`prisma/schema.prisma`) — SQLite (`file:./dev.db`) trên môi trường phát triển, PostgreSQL trên môi trường sản xuất.  
+> **ORM & DBMS:** Prisma ORM (`prisma/schema.prisma`) — Neon Serverless PostgreSQL (Pooler `DATABASE_URL` + Direct `DATABASE_URL_UNPOOLED`).  
 > **Tiêu chuẩn biên soạn:** Universal BA Toolkit (`RULE-09` — Từ điển dữ liệu 10 cột & Data Masking Nghị định 13/2023/NĐ-CP, `RULE-18`, `RULE-19`).
 
 ## Lịch Sử Phiên Bản (Revision History)
@@ -34,6 +35,7 @@ last_updated: "2026-11-18"
 | `v2.0.0` | 2026-11-15 | BA & Dev Team | **Added** | Bổ sung `certificates`, `isStarred`, `isViewed`, `interview*` (6 trường vòng đời phỏng vấn) và 7 trường Deep Scorecard trong `evaluations`. | Tech Lead |
 | `v2.1.0` | 2026-11-18 | BA & Dev Team | **Changed** | Bổ sung `Application.rejectionReason` (`BRL-11`) và `AuditLog.reason`; nâng cấp toàn bộ Từ điển dữ liệu lên chuẩn **10 cột (`RULE-09`)** có phân cấp bảo mật `PII`/`Restricted` và quy tắc che giấu. | Product Owner & Tech Lead |
 | `v2.2.0` | 2026-11-19 | BA & Backend Team | **Changed** | Chuyển đổi toàn diện sang PostgreSQL trên Neon Cloud; bổ sung 11 Composite B-tree Indexes tối ưu hóa truy vấn Kanban, SLA và Deduplication. | Tech Lead |
+| `v2.3.0` | 2026-11-26 | BA & Security Team | **Added** | Tích hợp **Better Auth (`ATS-002`)** trên Neon PostgreSQL với 3 bảng phiên/xác thực mới (`auth_sessions`, `auth_accounts`, `auth_verifications`) dùng khóa chính `Int` tự tăng (`serial`) bảo toàn 100% khóa ngoại `users.id`; đồng bộ vòng `OFFER`, `BRL-16` (`screeningQuestions`, `knockoutFailed`) và `BRL-17` (`approvedById`, `approvedAt`, `approvalNote`). | Product Owner & Tech Lead |
 
 ---
 
@@ -51,6 +53,8 @@ last_updated: "2026-11-18"
 
 ```mermaid
 erDiagram
+    USERS ||--o{ AUTH_SESSIONS : "duy_trì_phiên"
+    USERS ||--o{ AUTH_ACCOUNTS : "lưu_credential"
     USERS ||--o{ JOBS : "tạo_và_quản_lý"
     USERS ||--o{ EVALUATIONS : "chấm_điểm"
     USERS ||--o{ AUDIT_LOGS : "thực_hiện"
@@ -65,10 +69,44 @@ erDiagram
         int id PK
         string fullName
         string email UK
-        string passwordHash
+        boolean emailVerified
+        string image
+        string phone
+        string passwordHash "PBKDF2-SHA512 synced with auth_accounts"
         string role "ADMIN | HR | HIRING_MANAGER"
         boolean isActive
         datetime createdAt
+        datetime updatedAt
+    }
+
+    AUTH_SESSIONS {
+        int id PK
+        int userId FK
+        string token UK "Better Auth signed session token"
+        datetime expiresAt
+        string ipAddress
+        string userAgent
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    AUTH_ACCOUNTS {
+        int id PK
+        int userId FK
+        string accountId
+        string providerId "credential"
+        string password "PBKDF2-SHA512 salted hash"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    AUTH_VERIFICATIONS {
+        int id PK
+        string identifier
+        string value
+        datetime expiresAt
+        datetime createdAt
+        datetime updatedAt
     }
 
     JOBS {
@@ -83,7 +121,11 @@ erDiagram
         string requiredSkills "JSON array"
         int targetHeadcount "BRL-13 Headcount (default 1)"
         int maxActiveInterviews "BRL-13 Interview WIP Cap (default 3x)"
-        string status "ACTIVE | CLOSED"
+        string screeningQuestions "BRL-16 JSON array"
+        string status "DRAFT | PENDING_APPROVAL | ACTIVE | CLOSED"
+        int approvedById "BRL-17 Approver User ID"
+        datetime approvedAt
+        string approvalNote
         datetime createdAt
     }
 
@@ -111,7 +153,9 @@ erDiagram
         int candidateId FK
         int jobId FK
         string source "CAREER_SITE | LINKEDIN | REFERRAL | HEADHUNTER"
-        string currentStage "NEW | SCREENING | INTERVIEW | HIRED | REJECTED"
+        string currentStage "NEW | SCREENING | INTERVIEW | OFFER | HIRED | REJECTED"
+        string screeningAnswers "BRL-16 JSON array"
+        boolean knockoutFailed "BRL-16 Soft warning flag"
         float aiMatchScore
         string aiMatchRationale
         string aiMatchedSkills "JSON array"
@@ -179,17 +223,29 @@ erDiagram
 
 ## 3. TỪ ĐIỂN DỮ LIỆU CHUẨN 10 CỘT (DATA DICTIONARY — RULE-09)
 
-### Bảng 1: `users` (Tài khoản Nội bộ)
+### Bảng 1: `users` (Tài khoản Nội bộ — Đồng bộ Better Auth)
 
 | Tên Thuộc Tính | Cột DB (`Prisma`) | Kiểu Dữ Liệu | Nullability | Key | Mặc Định | Ràng Buộc Validation | Mức Độ Nhạy Cảm | Quy Tắc Che Giấu | Mô Tả Nghiệp Vụ |
 | :--- | :--- | :--- | :---: | :---: | :---: | :--- | :---: | :--- | :--- |
-| Mã người dùng | `id` | `INT` (Autoincrement) | NOT NULL | PK | Auto | Số nguyên dương | Internal | Không che | Khóa chính định danh nhân viên nội bộ. |
-| Họ và tên | `fullName` | `VARCHAR(150)` | NOT NULL | - | None | ≥ 2 ký tự | Internal | Không che | Tên hiển thị trên Scorecard và AuditLog. |
+| Mã người dùng | `id` | `INT` (Autoincrement) | NOT NULL | PK | Auto | Số nguyên dương (`generateId: "serial"`) | Internal | Không che | Khóa chính định danh nhân viên nội bộ, giữ nguyên FK cho `jobs`/`evaluations`/`audit_logs`. |
+| Họ và tên | `fullName` | `VARCHAR(150)` | NOT NULL | - | None | ≥ 2 ký tự (`user.fields.name = "fullName"`) | Internal | Không che | Tên hiển thị trên Navbar, Scorecard và AuditLog. |
 | Email đăng nhập | `email` | `VARCHAR(255)` | NOT NULL | UK | None | RFC 5322, viết thường | **Confidential - PII** | Ẩn khỏi Public API | Địa chỉ email định danh đăng nhập nội bộ. |
-| Mật khẩu băm | `passwordHash` | `VARCHAR(255)` | NOT NULL | - | None | NIST `PBKDF2-SHA512` (100k iter) | **Restricted** | **Cấm trả ra mọi API/UI** | Chuỗi hash có salt 16 bytes chống Rainbow Table. |
-| Vai trò RBAC | `role` | `VARCHAR(30)` | NOT NULL | - | `'HR'` | Enum: `ADMIN \| HR \| HIRING_MANAGER` | Internal | Không che | Quyết định quyền truy cập & chuyển vòng Kanban. |
-| Trạng thái hoạt động | `isActive` | `BOOLEAN` | NOT NULL | - | `true` | `true \| false` | Internal | Không che | `false` khóa đăng nhập tức thì (`ERR-AUTH-403-01`). |
-| Ngày tạo | `createdAt` | `DATETIME` | NOT NULL | - | `now()` | ISO 8601 UTC | Public | Không che | Thời điểm tạo tài khoản nhân viên. |
+| Xác minh Email | `emailVerified` | `BOOLEAN` | NOT NULL | - | `true` | `true \| false` | Internal | Ẩn khỏi Public API | Cờ chuẩn của Better Auth cho tài khoản nhân sự nội bộ do Admin cấp. |
+| Số điện thoại & Ảnh | `phone`, `image` | `VARCHAR` | NULL | - | `NULL` | SĐT hợp lệ 8–20 ký tự | **Confidential - PII** | Chỉ nội bộ | Thông tin liên hệ nội bộ của nhân sự. |
+| Mật khẩu băm | `passwordHash` | `VARCHAR(255)` | NOT NULL | - | `''` | NIST `PBKDF2-SHA512` (100k iter) | **Restricted** | **Cấm trả ra mọi API/UI** | Đồng bộ 1-1 với `auth_accounts.password`; cấm lưu plaintext. |
+| Vai trò RBAC | `role` | `VARCHAR(30)` | NOT NULL | - | `'HR'` | Enum: `ADMIN \| HR \| HIRING_MANAGER` | Internal | Không che | Ánh xạ sang 24 quyền hạt mịn trong `src/server/dal/permissions.ts`. |
+| Trạng thái hoạt động | `isActive` | `BOOLEAN` | NOT NULL | - | `true` | `true \| false` | Internal | Không che | Khi đặt `false`, DAL tự động xóa toàn bộ `auth_sessions` và chặn tức thì (`403`). |
+| Thời điểm tạo / cập nhật | `createdAt`, `updatedAt` | `DATETIME` | NOT NULL | - | `now()` | ISO 8601 UTC | Internal | Không che | Dấu thời gian tạo và cập nhật bản ghi người dùng. |
+
+---
+
+### Bảng 1B, 1C, 1D: `auth_sessions`, `auth_accounts`, `auth_verifications` (Better Auth Core trên Neon PostgreSQL)
+
+| Bảng (`Prisma Model`) | Các Cột Cốt Lõi | Khóa & Chỉ Mục | Mức Độ Nhạy Cảm | Vai Trò Bảo Mật Trong DAL (`src/server/dal/auth.ts`) |
+| :--- | :--- | :--- | :---: | :--- |
+| **`auth_sessions`** (`AuthSession`) | `id` (`INT` PK), `userId` (`INT` FK `users.id`), `token` (`UNIQUE`), `expiresAt`, `ipAddress`, `userAgent`, `createdAt`, `updatedAt` | PK `id`, UK `token`, Index `(userId)`, `(expiresAt)`, `onDelete: Cascade` | **Restricted** | Lưu phiên đăng nhập có thể thu hồi tức thì trên máy chủ (7 ngày, sliding refresh 24h). Bị xóa ngay khi đăng xuất, đổi mật khẩu (các thiết bị khác) hoặc Admin khóa tài khoản (`isActive = false`). |
+| **`auth_accounts`** (`AuthAccount`) | `id` (`INT` PK), `userId` (`INT` FK `users.id`), `accountId` (`String(userId)`), `providerId` (`"credential"`), `password` (`pbkdf2$100000$...`), OAuth tokens, `createdAt`, `updatedAt` | PK `id`, UK `(providerId, accountId)`, Index `(userId)`, `onDelete: Cascade` | **Restricted** | Lưu thông tin xác thực mật khẩu băm có salt `PBKDF2-SHA512` cho Better Auth; hỗ trợ backfill an toàn từ `users.passwordHash` qua `prisma/backfill-better-auth.ts`. |
+| **`auth_verifications`** (`AuthVerification`) | `id` (`INT` PK), `identifier`, `value`, `expiresAt`, `createdAt`, `updatedAt` | PK `id`, Index `(identifier)` | **Restricted** | Bảng mã xác minh có thời hạn theo chuẩn lược đồ Better Auth. |
 
 ---
 

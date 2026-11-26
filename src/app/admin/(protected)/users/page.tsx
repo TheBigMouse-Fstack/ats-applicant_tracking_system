@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AlertCircle, X, Search, Loader2, CheckCircle2 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n";
+import { useSession } from "@/contexts/SessionContext";
 import { clientCache } from "@/lib/client-cache";
 
 interface UserItem {
@@ -22,6 +23,7 @@ interface UserItem {
 
 export default function UserManagementPage() {
   const { t, locale } = useLanguage();
+  const { user: currentUser } = useSession();
   const isEn = locale === "en";
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -350,10 +352,20 @@ export default function UserManagementPage() {
                         </button>
                         <button
                           onClick={() => handleToggleActive(user.id, user.isActive)}
-                          className={`text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
-                            user.isActive
-                              ? "text-brand-600 hover:text-brand-700"
-                              : "text-emerald-700 hover:text-emerald-800"
+                          disabled={user.id === currentUser?.id}
+                          title={
+                            user.id === currentUser?.id
+                              ? isEn
+                                ? "You cannot lock your own account"
+                                : "Không thể tự khóa tài khoản của chính mình"
+                              : undefined
+                          }
+                          className={`text-xs font-medium transition-colors whitespace-nowrap ${
+                            user.id === currentUser?.id
+                              ? "text-zinc-300 cursor-not-allowed"
+                              : user.isActive
+                              ? "text-brand-600 hover:text-brand-700 cursor-pointer"
+                              : "text-emerald-700 hover:text-emerald-800 cursor-pointer"
                           }`}
                         >
                           {user.isActive
@@ -480,13 +492,21 @@ export default function UserManagementPage() {
                 </label>
                 <select
                   value={editRole}
+                  disabled={editingUser?.id === currentUser?.id}
                   onChange={(e) => setEditRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-300 rounded-md text-sm focus:outline-none focus:border-zinc-900 bg-white text-zinc-900"
+                  className="w-full px-3 py-2 border border-zinc-300 rounded-md text-sm focus:outline-none focus:border-zinc-900 bg-white text-zinc-900 disabled:bg-zinc-100 disabled:text-zinc-500 disabled:cursor-not-allowed"
                 >
                   <option value="HR">HR Lead</option>
                   <option value="HIRING_MANAGER">Hiring Manager</option>
                   <option value="ADMIN">Admin</option>
                 </select>
+                {editingUser?.id === currentUser?.id && (
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    {isEn
+                      ? "You cannot downgrade your own Administrator role."
+                      : "Bạn không thể tự hạ quyền Quản trị viên của chính mình."}
+                  </p>
+                )}
               </div>
 
               <div className="pt-2 border-t border-zinc-100">

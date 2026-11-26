@@ -1,36 +1,97 @@
 import { PrismaClient } from "@prisma/client";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
+
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const iterations = 100000;
+  const derivedKey = crypto
+    .pbkdf2Sync(password, salt, iterations, 64, "sha512")
+    .toString("hex");
+  return `pbkdf2$${iterations}$${salt}$${derivedKey}`;
+}
+
+async function upsertInternalUser(params: {
+  fullName: string;
+  email: string;
+  password: string;
+  role: "ADMIN" | "HR" | "HIRING_MANAGER";
+}) {
+  const passwordHash = hashPassword(params.password);
+  const user = await prisma.user.upsert({
+    where: { email: params.email },
+    update: { fullName: params.fullName, role: params.role, passwordHash, isActive: true },
+    create: {
+      fullName: params.fullName,
+      email: params.email,
+      passwordHash,
+      role: params.role,
+      isActive: true,
+    },
+  });
+
+  await prisma.authAccount.upsert({
+    where: {
+      providerId_accountId: {
+        providerId: "credential",
+        accountId: String(user.id),
+      },
+    },
+    update: { password: passwordHash },
+    create: {
+      userId: user.id,
+      accountId: String(user.id),
+      providerId: "credential",
+      password: passwordHash,
+    },
+  });
+
+  return user;
+}
 
 async function main() {
   console.log("🌱 Bắt đầu nạp dữ liệu mẫu (Seeding)...");
 
-  // 1. Tạo tài khoản HR / Admin
-  const hrUser = await prisma.user.upsert({
-    where: { email: "hr@recoverx.career" },
-    update: { fullName: "Nguyễn Thu Hà" },
-    create: {
-      fullName: "Nguyễn Thu Hà",
-      email: "hr@recoverx.career",
-      passwordHash: "hashed_password_123",
-      role: "HR",
-      isActive: true,
-    },
+  // 1. Tạo đủ 6 tài khoản nội bộ chuẩn PBKDF2-SHA512 + Better Auth auth_accounts (P1-05)
+  await upsertInternalUser({
+    fullName: "Nguyễn Văn An",
+    email: "admin@ats.vn",
+    password: process.env.SEED_ADMIN_PASSWORD || "Admin@123456",
+    role: "ADMIN",
+  });
+  await upsertInternalUser({
+    fullName: "Nguyễn Thu Hà",
+    email: "hr@ats.vn",
+    password: process.env.SEED_HR_PASSWORD || "Hr@123456",
+    role: "HR",
+  });
+  await upsertInternalUser({
+    fullName: "Trần Minh Quân",
+    email: "manager@ats.vn",
+    password: process.env.SEED_MANAGER_PASSWORD || "Manager@123456",
+    role: "HIRING_MANAGER",
+  });
+  await upsertInternalUser({
+    fullName: "Nguyễn Văn An",
+    email: "admin@recoverx.career",
+    password: process.env.SEED_ADMIN_PASSWORD || "Admin@123456",
+    role: "ADMIN",
+  });
+  const hrUser = await upsertInternalUser({
+    fullName: "Nguyễn Thu Hà",
+    email: "hr@recoverx.career",
+    password: process.env.SEED_HR_PASSWORD || "Hr@123456",
+    role: "HR",
+  });
+  const hiringManager = await upsertInternalUser({
+    fullName: "Trần Minh Quân",
+    email: "techlead@recoverx.career",
+    password: process.env.SEED_MANAGER_PASSWORD || "Manager@123456",
+    role: "HIRING_MANAGER",
   });
 
-  const hiringManager = await prisma.user.upsert({
-    where: { email: "techlead@recoverx.career" },
-    update: { fullName: "Trần Minh Quân" },
-    create: {
-      fullName: "Trần Minh Quân",
-      email: "techlead@recoverx.career",
-      passwordHash: "hashed_password_123",
-      role: "HIRING_MANAGER",
-      isActive: true,
-    },
-  });
-
-  console.log("✅ Tạo người dùng HR & Hiring Manager thành công.");
+  console.log("✅ Tạo 6 tài khoản nội bộ PBKDF2 + Better Auth thành công.");
 
   // 2. Tạo 2 vị trí tuyển dụng mẫu (Jobs)
   const job1 = await prisma.job.create({

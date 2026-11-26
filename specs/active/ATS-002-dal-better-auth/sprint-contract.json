@@ -1,0 +1,79 @@
+{
+  "feature_id": "ATS-002-dal-better-auth",
+  "spec_path": "specs/active/ATS-002-dal-better-auth/spec.md",
+  "invariants": [
+    "Every internal API Route Handler and AdminLayout verifies session and RBAC inside server-only DAL modules (`src/server/dal/`), never relying solely on Next.js Middleware",
+    "Zero unsigned cookies, zero plaintext password fallbacks, and zero hardcoded production secrets in `src/lib/auth.ts` or `src/middleware.ts`",
+    "Existing integer primary key `User.id` (`Int`) and all foreign keys (`jobs`, `evaluations`, `audit_logs`) remain 100% intact on Neon PostgreSQL",
+    "Core business gates (`BRL-06`, `BRL-11`, `BRL-15`, `BRL-17`) are enforced inside `src/server/dal/` regardless of caller entry point",
+    "Zero technical rule codes (`BRL-*`, `RBAC-*`) or raw enums exposed as UI labels; all user-facing messages remain VI/EN compliant"
+  ],
+  "verifiable_behaviors": [
+    {
+      "id": "VB-01",
+      "description": "Prisma schema defines Better Auth models (`Session`, `Account`, `Verification`) with `Int` serial IDs alongside `User` (`@@map(\"users\")`), `npx prisma db push` / `prisma generate` succeeds on Neon PostgreSQL without breaking existing FKs, and all demo/seed accounts have salted PBKDF2 `Account` credentials (zero plaintext or placeholder hashes).",
+      "verification_method": "schema inspection + prisma validate + automated DB seed/migration check in `node tests/run-tests.js`",
+      "passes": true
+    },
+    {
+      "id": "VB-02",
+      "description": "Better Auth handler (`/api/auth/[...all]`) and compatibility wrappers (`/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/change-password`) create, validate, and revoke real `sessions` rows in Neon PostgreSQL, set signed HttpOnly cookies, migrate legacy `users.passwordHash` rows on login, and reject public sign-up (`POST /api/auth/sign-up/email` disabled).",
+      "verification_method": "automated integration test + API/Playwright sign-in, session persistence, DemoRoleBar switch, and sign-out check",
+      "passes": true
+    },
+    {
+      "id": "VB-03",
+      "description": "All modules in `src/server/dal/` start with `import \"server-only\"`, and all 17 internal API routes plus `src/app/admin/layout.tsx` delegate session, RBAC, and database operations through `src/server/dal/` (zero direct `prisma.*` imports in internal route handlers).",
+      "verification_method": "static AST/source audit in `node tests/run-tests.js` + `npx tsc --noEmit`",
+      "passes": true
+    },
+    {
+      "id": "VB-04",
+      "description": "Unauthenticated requests (missing, expired, or signature-tampered cookies) to ANY internal API route — specifically including patched `POST /api/users`, `POST /api/applications/[id]/re-parse`, `GET /api/export`, `GET/POST /api/talent-pool`, and `GET /api/applications/storage/[...key]` even with spoofed `Referer: /jobs/tracker` — deterministically return HTTP 401.",
+      "verification_method": "security test in `node tests/run-tests.js` + unauthenticated HTTP curl/fetch probes",
+      "passes": true
+    },
+    {
+      "id": "VB-05",
+      "description": "Deactivating a user (`isActive: false`) via `PATCH /api/users` immediately deletes all of that user's rows in `sessions`, blocks subsequent DAL requests with HTTP 401/403, blocks new sign-ins with HTTP 403, and prevents an Admin from locking or demoting their own active account (HTTP 400).",
+      "verification_method": "automated DAL & DB session revocation test in `node tests/run-tests.js`",
+      "passes": true
+    },
+    {
+      "id": "VB-06",
+      "description": "DAL strictly enforces role boundaries (HTTP 403): `HR` cannot manage users, approve jobs, schedule/move to `INTERVIEW`/`OFFER`, or purge retention data; `HIRING_MANAGER` cannot create/edit jobs, move `NEW` stage cards, edit/re-parse candidate CV profiles, access Talent Pool, or export CSV; `ADMIN` retains full valid access.",
+      "verification_method": "automated RBAC matrix test across `ADMIN`, `HR`, and `HIRING_MANAGER` in `node tests/run-tests.js`",
+      "passes": true
+    },
+    {
+      "id": "VB-07",
+      "description": "Pipeline DAL (`src/server/dal/pipeline.ts`) enforces `BRL-06` (blocks transition to `OFFER` or `HIRED` with HTTP 400 unless ≥1 `HIRE`/`STRONG_HIRE` scorecard exists) and `BRL-11` (blocks transition to `REJECTED` with HTTP 400 unless `rejectionReason` trimmed length ≥ 5), recording `AuditLog` with the authenticated `sessionUser.id`.",
+      "verification_method": "automated DAL stage-gate test in `node tests/run-tests.js`",
+      "passes": true
+    },
+    {
+      "id": "VB-08",
+      "description": "Scorecard & Application DAL (`src/server/dal/scorecards.ts`, `src/server/dal/applications.ts`) enforce `BRL-15` Blind Scorecard for `HR` and `HIRING_MANAGER` on `GET /api/applications/[id]` AND `GET /api/scorecards` (both with and without `applicationId` query param), hiding peer evaluations until the viewer submits their own while allowing `ADMIN` full visibility.",
+      "verification_method": "automated Blind Scorecard anti-bypass test in `node tests/run-tests.js`",
+      "passes": true
+    },
+    {
+      "id": "VB-09",
+      "description": "Jobs DAL (`src/server/dal/jobs.ts`) enforces `BRL-17` Requisition Approval: `HR`-created jobs default to `PENDING_APPROVAL` (or `DRAFT`), `HR` cannot self-activate an unapproved job via `PATCH /api/jobs/[id]`, and only `HIRING_MANAGER` or `ADMIN` can approve (`ACTIVE`) or return to `DRAFT` (requiring `approvalNote` ≥ 5 chars on `REJECT`).",
+      "verification_method": "automated Requisition Approval test in `node tests/run-tests.js`",
+      "passes": true
+    },
+    {
+      "id": "VB-10",
+      "description": "Edge `src/middleware.ts` contains zero hardcoded fallback secrets, redirects unauthenticated `/admin/*` requests cleanly to `/admin/login`, public portal routes (`/`, `/jobs`, `/jobs/tracker`, `POST /api/applications`) remain functional, `npx tsc --noEmit` exits with 0 errors, and `node tests/run-tests.js` passes 100%.",
+      "verification_method": "typecheck (`npx tsc --noEmit`) + full test suite (`node tests/run-tests.js`) + browser smoke check",
+      "passes": true
+    }
+  ],
+  "eval_thresholds": {
+    "schema_conformance_min": 1.0,
+    "criteria_accuracy_min": 0.9,
+    "prompt_injection_hijack_max": 0.0,
+    "demographic_variance_max": 0.05
+  }
+}

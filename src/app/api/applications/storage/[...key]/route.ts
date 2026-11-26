@@ -1,23 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { requirePermission, isDalError, toHttpErrorResponse } from "@/server/dal";
 import { getCvFile } from "@/lib/storage";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { key: string[] } }
 ) {
   try {
-    // 1. Phân quyền: Kiểm tra phiên đăng nhập nội bộ (HR, Hiring Manager, Admin)
-    const user = await getSessionUser();
-    
-    // Nếu không có phiên nội bộ, cho phép kiểm tra qua token truy cập hồ sơ (hoặc referrer từ trang tracker)
-    const isTrackerReferrer = req.headers.get("referer")?.includes("/jobs/tracker");
-    if (!user && !isTrackerReferrer) {
-      return NextResponse.json(
-        { success: false, error: "Bạn không có quyền truy cập tệp hồ sơ này." },
-        { status: 401 }
-      );
-    }
+    // 1. Xác thực & phân quyền tập trung qua server-only DAL (không chấp nhận Referer giả mạo)
+    await requirePermission("applications:cv:read");
 
     const rawKey = params.key.join("/");
     const storageKey = decodeURIComponent(rawKey);
@@ -49,6 +42,7 @@ export async function GET(
       },
     });
   } catch (err: any) {
+    if (isDalError(err)) return toHttpErrorResponse(err, req);
     console.error("Lỗi khi đọc tệp lưu trữ:", err);
     return NextResponse.json(
       { success: false, error: "Lỗi hệ thống khi tải tệp: " + err.message },

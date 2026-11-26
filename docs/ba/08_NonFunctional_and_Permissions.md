@@ -2,7 +2,7 @@
 id: "RBAC-NFR-08"
 title: "Phân loại Tác nhân, Ma trận Phân quyền RBAC & Yêu cầu Phi chức năng (ISO/IEC 25010)"
 type: "srs"
-version: "2.3.0"
+version: "2.4.0"
 status: "approved"
 owner: "ATS BA & Security Team"
 domain: "recruitment-ats"
@@ -17,7 +17,7 @@ upstream_deps:
 downstream_deps:
   - "API-ATS-15"
   - "BR-ERR-17"
-last_updated: "2026-11-18"
+last_updated: "2026-11-26"
 ---
 
 # PHÂN LOẠI TÁC NHÂN, MA TRẬN PHÂN QUYỀN (RBAC) & YÊU CẦU PHI CHỨC NĂNG (NFR)
@@ -34,6 +34,7 @@ last_updated: "2026-11-18"
 | `v2.1.0` | 2026-11-18 | BA & Security Team | **Changed** | Bổ sung Phân loại 4 nhóm Tác nhân (`RULE-17`); phân tách thẩm quyền vòng tuyển: `HR` max `SCREENING` + sửa 5 trường CV; `HIRING_MANAGER` phụ trách `INTERVIEW`/`HIRED` & lịch phỏng vấn. | Product Owner & Tech Lead |
 | `v2.2.0` | 2026-11-18 | BA & Security Team | **Added** | Đặc tả phân quyền **Operational Dashboard** (`/admin/dashboard`) theo từng vai trò (Least Privilege + Job-to-be-Done) và tách biệt thương hiệu Nội bộ (`ATS — Applicant Tracking System`) vs Public (`RecoverX`). | Product Owner & Tech Lead |
 | `v2.3.0` | 2026-11-19 | BA & QA Team | **Added** | Bổ sung tiêu chuẩn hiệu năng NFR-PER-05: Giới hạn DOM rendering và phân trang lũy tiến cột Kanban (BRL-14) đảm bảo tốc độ kéo thả ≥ 55 FPS khi số lượng hồ sơ > 1.000. | Tech Lead |
+| `v2.4.0` | 2026-11-26 | Principal Engineering & Security | **Security** | Nâng cấp `ATS-002`: Chuyển xác thực sang **Better Auth** trên Neon PostgreSQL (`auth_sessions`, `auth_accounts`, cấm tự đăng ký công khai); thực thi 24 quyền RBAC hạt mịn và các Stage Gates (`BRL-06`, `BRL-11`, `BRL-15`, `BRL-17`) tập trung 100% tại tầng máy chủ `src/server/dal/`; thu hồi phiên tức thì khi khóa tài khoản. | Product Owner & QA Lead |
 
 ---
 
@@ -143,7 +144,7 @@ Tài liệu phân loại các yêu cầu chất lượng hệ thống theo tiêu
 | Mã NFR | Tiêu chí | Mô tả yêu cầu bảo mật | Cơ chế đảm bảo *(chi tiết kỹ thuật tại Tài liệu số 13 & 15)* |
 | :---: | :--- | :--- | :--- |
 | **NFR-SEC-01** | **Mã hóa kết nối truyền tải** | Toàn bộ dữ liệu ứng viên và tài khoản truyền qua Internet đều được mã hóa. | Kết nối bảo mật chuẩn **HTTPS**. |
-| **NFR-SEC-02** | **An toàn Mật khẩu & Phiên làm việc** | Bảo vệ tài khoản nội bộ chống đánh cắp mật khẩu, chống giả mạo phiên đăng nhập và chặn truy cập trái phép. | Mật khẩu mã hóa một chiều an toàn; phiên làm việc chống giả mạo tự hết hạn sau 7 ngày; tự động chuyển về trang đăng nhập nếu chưa xác thực. |
+| **NFR-SEC-02** | **An toàn Mật khẩu & Phiên Better Auth** | Bảo vệ tài khoản nội bộ chống đánh cắp mật khẩu, chống giả mạo phiên đăng nhập, cấm tự đăng ký công khai và thu hồi quyền tức thì khi nhân sự nghỉ việc/bị khóa. | Mật khẩu băm có salt `PBKDF2-SHA512` (100,000 vòng); phiên **Better Auth** lưu trên Neon PostgreSQL (`auth_sessions`, tự hết hạn sau 7 ngày) và kiểm tra trực tiếp tại tầng `src/server/dal/` (xóa phiên tức thì khi Admin khóa tài khoản hoặc đổi mật khẩu). |
 | **NFR-SEC-03** | **Chống nộp đơn rác & Tệp giả mạo** | Ngăn chặn gửi đơn hàng loạt tự động và chặn tệp mã độc đổi tên thành `.pdf`/`.docx`. | Giới hạn tối đa **5 lượt nộp / 10 phút** từ cùng địa chỉ mạng và kiểm tra cấu trúc thực của tệp tin gốc trước khi lưu. |
 | **NFR-SEC-04** | **Bảo mật dữ liệu theo vai trò & Trang công khai** | Mỗi vai trò chỉ thấy đúng dữ liệu trong phạm vi trách nhiệm; ứng viên không thấy dữ liệu nội bộ. | Dashboard phân tách dữ liệu ngay từ máy chủ; Cổng tra cứu ứng viên ẩn 100% điểm AI và nhận xét phỏng vấn. |
 | **NFR-SEC-05** | **Nhật ký kiểm toán bất biến** | Mọi thay đổi trạng thái, lý do từ chối, chỉnh sửa hồ sơ và chấm điểm đều được ghi nhận đầy đủ để đối soát. | Chỉ cho phép ghi bổ sung, tuyệt đối không cho sửa hay xóa lịch sử hoạt động. |
@@ -157,5 +158,5 @@ Tài liệu phân loại các yêu cầu chất lượng hệ thống theo tiêu
 | **NFR-USA-01** | **Tương thích đa thiết bị** | Hiển thị rõ ràng trên máy tính bàn, laptop, máy tính bảng và điện thoại di động. | Tương thích tốt trên Chrome, Edge, Safari, Firefox. |
 | **NFR-USA-02** | **Giao diện dịu mắt & Dễ làm quen** | Thiết kế tối giản, không chớp nháy gây mỏi mắt, tách bạch Tổng quan và Chi tiết 5 tab, thông báo lỗi tiếng Việt thân thiện không chứa mã kỹ thuật. | Nhân sự tuyển dụng sử dụng thành thạo sau **dưới 01 giờ** làm quen. |
 | **NFR-MNT-01** | **Dễ dàng mở rộng & nâng cấp AI** | Kiến trúc tách rời phần gọi dịch vụ AI và sẵn sàng tích hợp gửi Email tự động trong tương lai đúng yêu cầu đề bài. | Nâng cấp mô hình AI hoặc kết nối hệ thống gửi mail mà không phải làm lại giao diện. |
-| **NFR-MNT-02** | **Kiểm thử tự động đảm bảo chất lượng** | Tích hợp bộ kịch bản kiểm thử tự động rà soát toàn bộ quy tắc nghiệp vụ, phân quyền và vòng đời hồ sơ sau mỗi lần cập nhật. | Duy trì tỷ lệ **100% kiểm thử đạt chuẩn** (hiện đạt **112/112 kịch bản**). |
+| **NFR-MNT-02** | **Kiểm thử tự động đảm bảo chất lượng** | Tích hợp bộ kịch bản kiểm thử tự động rà soát toàn bộ quy tắc nghiệp vụ, phân quyền DAL, phiên Better Auth và vòng đời hồ sơ sau mỗi lần cập nhật. | Duy trì tỷ lệ **100% kiểm thử đạt chuẩn** (hiện đạt **197/197 kịch bản trên 26 Test Suites**). |
 

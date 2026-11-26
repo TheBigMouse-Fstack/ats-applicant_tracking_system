@@ -11,7 +11,7 @@ import BrandLogo from "@/components/common/BrandLogo";
 export default function AdminLoginPage() {
   const router = useRouter();
   const { setUser } = useSession();
-  const { locale } = useLanguage();
+  const { locale, setLocale } = useLanguage();
   const isEn = locale === "en";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,17 +30,23 @@ export default function AdminLoginPage() {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-locale": locale,
+        },
         body: JSON.stringify({ email: loginEmail, password: loginPass }),
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
+        const localizedMsg = isEn
+          ? data.messageEn || data.error || "Sign-in failed."
+          : data.error || "Đăng nhập thất bại";
         if (data.field) {
           setErrorField(data.field);
-          setFieldMessage(data.error);
+          setFieldMessage(localizedMsg);
         } else {
-          setGeneralError(data.error || "Đăng nhập thất bại");
+          setGeneralError(localizedMsg);
         }
         return;
       }
@@ -56,7 +62,11 @@ export default function AdminLoginPage() {
       router.push(redirectTarget);
       router.refresh();
     } catch {
-      setGeneralError("Không thể kết nối đến máy chủ. Vui lòng thử lại.");
+      setGeneralError(
+        isEn
+          ? "Unable to connect to the server. Please try again."
+          : "Không thể kết nối đến máy chủ. Vui lòng thử lại."
+      );
     } finally {
       setLoading(false);
       setQuickLoadingRole(null);
@@ -78,8 +88,29 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-6">
-        {/* Brand */}
-        <div className="flex flex-col items-center text-center gap-2">
+        {/* Brand & Language Switcher */}
+        <div className="flex flex-col items-center text-center gap-2 relative">
+          <div className="self-end inline-flex items-center gap-1 text-xs font-medium text-zinc-500">
+            <button
+              type="button"
+              onClick={() => setLocale("vi")}
+              className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                locale === "vi" ? "text-brand-600 font-semibold" : "hover:text-zinc-900"
+              }`}
+            >
+              VI
+            </button>
+            <span className="text-zinc-300">/</span>
+            <button
+              type="button"
+              onClick={() => setLocale("en")}
+              className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                locale === "en" ? "text-brand-600 font-semibold" : "hover:text-zinc-900"
+              }`}
+            >
+              EN
+            </button>
+          </div>
           <Link href="/" className="hover:opacity-85 transition-opacity" aria-label="ATS — Applicant Tracking System">
             <BrandLogo variant="internal" size="md" />
           </Link>
@@ -192,7 +223,7 @@ export default function AdminLoginPage() {
                     setFieldMessage("");
                   }
                 }}
-                placeholder="Nhập mật khẩu"
+                placeholder={isEn ? "Enter password" : "Nhập mật khẩu"}
                 className={`w-full px-3 py-2 border rounded-md text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors ${
                   errorField === "password"
                     ? "border-red-500 focus:outline-none focus:border-red-600"
@@ -212,11 +243,11 @@ export default function AdminLoginPage() {
               {loading && !quickLoadingRole ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Đang xác thực...</span>
+                  <span>{isEn ? "Signing in..." : "Đang xác thực..."}</span>
                 </>
               ) : (
                 <>
-                  <span>Đăng nhập</span>
+                  <span>{isEn ? "Sign in" : "Đăng nhập"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -226,7 +257,7 @@ export default function AdminLoginPage() {
 
         <div className="text-center">
           <Link href="/jobs" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">
-            ← Quay lại trang tuyển dụng
+            {isEn ? "← Back to Careers Portal" : "← Quay lại trang tuyển dụng"}
           </Link>
         </div>
       </div>

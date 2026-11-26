@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { Sparkles, X, ChevronRight, UserPlus, BellRing } from "lucide-react";
 import { clientCache } from "@/lib/client-cache";
 import { getAiMatchTier } from "@/lib/match-score";
+import { useSession } from "@/contexts/SessionContext";
 
 interface NewApplicationAlert {
   id: number;
@@ -44,13 +45,14 @@ function playChimeSound() {
 }
 
 export default function RealtimeNotifications() {
+  const { user } = useSession();
   const [alerts, setAlerts] = useState<NewApplicationAlert[]>([]);
   const lastCheckedRef = useRef<string>(new Date().toISOString());
   const seenIdsRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
-    // Chỉ kích hoạt thăm dò thời gian thực trên môi trường Client
-    if (typeof window === "undefined") return;
+    // P1-08: Tuyệt đối ngắt polling khi chưa có phiên đăng nhập nội bộ hợp lệ
+    if (typeof window === "undefined" || !user) return;
 
     const pollInterval = setInterval(async () => {
       // Tiết kiệm tài nguyên: Chỉ thăm dò khi người dùng đang mở tab (visible)
@@ -109,7 +111,7 @@ export default function RealtimeNotifications() {
     }, 6000); // Thăm dò chu kỳ 6 giây
 
     return () => clearInterval(pollInterval);
-  }, []);
+  }, [user]);
 
   const handleDismiss = (id: number) => {
     setAlerts((prev) => prev.filter((a) => a.id !== id));

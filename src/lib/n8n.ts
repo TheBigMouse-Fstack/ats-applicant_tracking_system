@@ -59,11 +59,10 @@ export interface N8NInterviewPayload {
 }
 
 export async function dispatchN8NInterviewWebhook(
-  payload: N8NInterviewPayload,
-  customWebhookUrl?: string
+  payload: N8NInterviewPayload
 ): Promise<N8NDispatchResult> {
+  // P1-04: Chỉ sử dụng webhook URL từ biến môi trường server, tuyệt đối không nhận URL từ client
   const webhookUrl = sanitizeWebhookUrl(
-    customWebhookUrl ||
     process.env.N8N_INTERVIEW_WEBHOOK_URL ||
     process.env.N8N_WEBHOOK_URL
   );

@@ -2,7 +2,7 @@
 id: "IDX-ATS-00"
 title: "Hồ sơ Tổng thể BA, Ma trận Truy vết Hai chiều (RTM) & Báo cáo Doc-Drift"
 type: "overview"
-version: "2.3.0"
+version: "2.4.0"
 status: "approved"
 owner: "ATS BA & Product Team"
 domain: "recruitment-ats"
@@ -10,6 +10,7 @@ tags:
   - "master-index"
   - "rtm-traceability"
   - "doc-drift"
+  - "better-auth-dal"
   - "universal-ba-toolkit"
 upstream_deps: []
 downstream_deps:
@@ -23,7 +24,7 @@ downstream_deps:
   - "API-ATS-15"
   - "BR-ERR-17"
   - "BRIEF-CMP-18"
-last_updated: "2026-11-19"
+last_updated: "2026-11-26"
 ---
 
 # HỒ SƠ TỔNG THỂ BA, MA TRẬN TRUY VẾT HAI CHIỀU (RTM) & BÁO CÁO DOC-DRIFT
@@ -39,6 +40,7 @@ last_updated: "2026-11-19"
 | `v2.0.0` | 2026-11-15 | BA & Dev Team | **Added** | Đồng bộ Scope Expansion (Interview Lifecycle, Public Tracker, Deep Scorecard, BRL-10 Purge). | Tech Lead |
 | `v2.1.0` | 2026-11-18 | BA & Dev Team | **Changed** | Áp dụng trọn bộ chuẩn `Universal_BA_Toolkit` (19 Rules): xóa bản nháp BRD cũ, bổ sung RTM hai chiều, Business Rules 3 vế, Error Matrix 7 cột, Gherkin BDD AC, phân tách quyền HR vs Hiring Manager và 5 trường cốt lõi CV. | Product Owner & Tech Lead |
 | `v2.3.0` | 2026-11-19 | BA & Dev Team | **Added** | Tích hợp BRL-12 (Source of Truth & SHA-256), BRL-13 (Chỉ tiêu & Trần PV), BRL-14 (Phân trang lũy tiến Kanban), n8n Automation (Gmail 12h, Telegram Alert HR, Google Calendar), Phân luồng PV Online/Offline, 3 tùy chọn thư mời và Chuyển đổi song ngữ VI/EN toàn diện. | Product Owner & Tech Lead |
+| `v2.4.0` | 2026-11-26 | Principal Engineering & BA | **Changed** | Đồng bộ `ATS-002`: Chuyển đổi xác thực nội bộ sang **Better Auth** trên Neon PostgreSQL (`auth_sessions`, `auth_accounts`) và tập trung 100% kiểm soát phiên + RBAC + Stage Gates (`BRL-06`, `BRL-11`, `BRL-15`, `BRL-17`) tại tầng `src/server/dal/` (`import "server-only"`), nâng tổng kiểm thử lên **26 Suites — 197/197 Passed**. | Product Owner & QA Lead |
 
 ---
 
@@ -97,20 +99,20 @@ last_updated: "2026-11-19"
 | `BRD-GOAL-05` (Chỉ tiêu tuyển dụng & Khống chế trần PV cùng lúc) | `FR-QUOTA-CAP-001` | `FR-20` | `UC-01` | `BRL-13` | `POST /api/jobs`, `POST /api/pipeline/move` | Suite 16 (4 tests) | **Pass (100%)** |
 | `BRD-GOAL-05` (Phân trang lũy tiến 15 thẻ độc lập từng cột Kanban) | `FR-PIPE-PAG-001` | `FR-21` | `UC-04` | `BRL-14` | `GET /api/pipeline?limitPerStage=15` | Suite 17 (7 tests) | **Pass (100%)** |
 | `BRD-GOAL-06` (Hạ tầng Song ngữ VI/EN & Chuẩn hóa Text toàn hệ thống) | `FR-I18N-SYS-001` | `FR-22` | Toàn hệ thống | `NFR-UI-01`, `NFR-UI-02` | `src/lib/i18n.tsx`, `LanguageSwitcher.tsx` | All Suites (Clean UI) | **Pass (100%)** |
-| `BRD-GOAL-07` (Lưu trữ Đám mây Neon Object Storage & Bảo vệ PII Proxy) | `FR-STOR-OBJ-001` | `FR-23` | `UC-02`, `UC-03` | `NFR-SEC-01`, `NFR-SEC-03` | `GET /api/applications/storage/[...key]`, `src/lib/storage.ts` | Suite 20 (Storage & PII Proxy) | **Pass (100%)** |
-| `BRD-GOAL-08` (Bảo mật Phiên HMAC, Chống Prompt Injection & Chặn Hack) | `FR-SECR-HRD-001` | `FR-24` | Toàn hệ thống | `NFR-SEC-01`, `NFR-SEC-04` | `src/lib/auth.ts`, `src/lib/ai-parser.ts` | Suite 18, 19, 21, 22 (White/Black-box) | **Pass (100%)** |
+| `BRD-GOAL-07` (Lưu trữ Đám mây Neon Object Storage & Bảo vệ PII Proxy) | `FR-STOR-OBJ-001` | `FR-23` | `UC-02`, `UC-03` | `NFR-SEC-01`, `NFR-SEC-03` | `GET /api/applications/storage/[...key]`, `src/server/dal/applications.ts` | Suite 20, 26 (Storage & Auth DAL Proxy) | **Pass (100%)** |
+| `BRD-GOAL-08` (Better Auth, Server-Only DAL, Chống Prompt Injection & Chặn Hack) | `FR-SECR-HRD-001` | `FR-24` | Toàn hệ thống | `NFR-SEC-01`, `NFR-SEC-02`, `BRL-15`, `BRL-17` | `src/lib/better-auth.ts`, `src/server/dal/*`, `src/lib/ai-parser.ts` | Suite 18..26 (DAL, Better Auth, Security) | **Pass (100%)** |
 
 ### Chỉ Số Bao Phủ Kiểm Thử (Coverage Gate — `RULE-14`)
-* **Quy tắc nghiệp vụ cốt lõi (`BRL-01`..`BRL-14`, `BRL-Auth`, State Rules, Security):** **100%** được phủ bởi test tự động.
-* **Tổng số kịch bản kiểm thử tự động (`node tests/run-tests.js`):** **161 / 161 Passed (0 Failed — Đạt 100%)**.
-* **Phân bổ 22 bộ kiểm thử:** White-box (HMAC SHA-256, RBAC Guards, Logic Gates), Black-box (Magic Bytes, Rate Limiting 10req/10min, API Schemas), Cloud Storage (Neon S3, PII Proxy, Path Traversal Defense), Prompt Injection Defense (XML isolation & guardrails).
-* **Kiểm tra kiểu tĩnh & Production Build (`npx next build`):** **19/19 Routes compiled, 0 TypeScript / Lint Errors**.
+* **Quy tắc nghiệp vụ cốt lõi (`BRL-01`..`BRL-17`, `BRL-Auth`, State Rules, DAL RBAC & Security):** **100%** được phủ bởi test tự động.
+* **Tổng số kịch bản kiểm thử tự động (`node tests/run-tests.js`):** **197 / 197 Passed (0 Failed — Đạt 100%)**.
+* **Phân bổ 26 bộ kiểm thử:** Server-Only DAL & Better Auth (`ATS-002` VB-01..VB-10 + P0/P1 Remediation), White-box (PBKDF2-SHA512, Session Security, Stage Gates), Black-box (Magic Bytes, Rate Limiting, API Schemas), Cloud Storage (Neon S3, Authenticated PII Proxy, Path Traversal Defense), Prompt Injection Defense (XML isolation & guardrails).
+* **Kiểm tra kiểu tĩnh (`npx tsc --noEmit`):** **0 TypeScript Errors**.
 
 ---
 
 ## 3. BÁO CÁO KIỂM TOÁN LỆCH PHA TÀI LIỆU VS MÃ NGUỒN (DOC-DRIFT AUDIT REPORT)
 
-Thực thi theo quy trình `skills/doc-drift/SKILL.md` cập nhật ngày **2026-11-19**:
+Thực thi theo quy trình `skills/doc-drift/SKILL.md` cập nhật ngày **2026-11-26**:
 
 | Hạng Mục Kiểm Toán | Trạng Thái Đặc Tả (`docs/`) | Trạng Thái Mã Nguồn (`src/`, `prisma/`) | Độ Lệch (Drift) | Kết Luận |
 | :--- | :--- | :--- | :---: | :---: |
@@ -129,4 +131,5 @@ Thực thi theo quy trình `skills/doc-drift/SKILL.md` cập nhật ngày **2026
 | **Hàng rào Chống Hack, Chôm Key & Anti-Prompt-Injection** | Hardening SESSION_SECRET, cô lập thẻ XML `<candidate_cv_raw_text>`, gỡ .env khỏi Git, Rate Limit 10req/10min. | `src/lib/auth.ts`, `src/lib/ai-parser.ts`, `.gitignore`, `route.ts`. | **0% (Hardened)** | ✅ Đạt |
 | **Tách Biệt Cổng Public / Nội Bộ & Gỡ Nút Thừa Header** | Tách hẳn `/` và `/jobs` khỏi nút admin login; gỡ bỏ nút trùng lặp chức năng ở Header. | `src/app/page.tsx`, `src/app/jobs/page.tsx`, `JobsPublicClient.tsx`. | **0% (Matched)** | ✅ Đạt |
 | **Triển Khai Đám Mây Vercel Production & Live Tracking** | Triển khai live trên domain Vercel, tích hợp Tra cứu hồ sơ thời gian thực (Candidate Tracker). | `https://ats-applicant-tracking-system.vercel.app`, `/jobs/tracker`. | **0% (Live)** | ✅ Đạt |
-| **Tài Khoản Thử Nghiệm Chuẩn Hóa PBKDF2 (100k vòng)** | Tạo và mã hóa tài khoản Admin, HR Lead, Hiring Manager trên Neon PostgreSQL (Hỗ trợ @ats.vn & @recoverx.career). | `ACCOUNTS.md`, `README.md`, `prisma/seed.ts`, `scripts/sync-trial-accounts.js`. | **0% (Synced)** | ✅ Đạt |
+| **Tài Khoản Thử Nghiệm Chuẩn Hóa PBKDF2 (100k vòng)** | Tạo và mã hóa tài khoản Admin, HR Lead, Hiring Manager trên Neon PostgreSQL (Hỗ trợ @ats.vn & @recoverx.career). | `prisma/seed.ts`, `prisma/backfill-better-auth.ts` (đồng bộ 6/6 tài khoản sang `auth_accounts`). | **0% (Synced)** | ✅ Đạt |
+| **Better Auth & Server-Only Data Access Layer (`ATS-002`)** | Đặc tả tại `specs/active/ATS-002-dal-better-auth/spec.md`, `[[ERD-ATS-07]]`, `[[SYS-ARCH-13]]`, `[[API-ATS-15]]`, `[[BR-ERR-17]]`. | `src/lib/better-auth.ts`, 14 module `src/server/dal/*`, `src/app/admin/(protected)/`, `src/middleware.ts` (22/22 internal APIs qua DAL). | **0% (Matched)** | ✅ Đạt |

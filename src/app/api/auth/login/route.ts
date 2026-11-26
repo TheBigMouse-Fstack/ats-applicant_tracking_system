@@ -1,98 +1,33 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { createSessionCookie, verifyPassword, hashPassword } from "@/lib/auth";
-import { UserRole } from "@/types";
+import { signInInternalUser, isDalError, toHttpErrorResponse } from "@/server/dal";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, password } = body;
-
-    // Kiểm tra thiếu trường
-    if (!email) {
-      return NextResponse.json(
-        { success: false, error: "Vui lòng nhập địa chỉ Email", field: "email" },
-        { status: 400 }
-      );
-    }
-
-    if (!password) {
-      return NextResponse.json(
-        { success: false, error: "Vui lòng nhập Mật khẩu", field: "password" },
-        { status: 400 }
-      );
-    }
-
-    // Tìm tài khoản theo email
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+    const sessionUser = await signInInternalUser({
+      email: body?.email,
+      password: body?.password,
+      reqHeaders: req.headers,
     });
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Không tìm thấy tài khoản với email "${email}". Vui lòng kiểm tra lại.`,
-          field: "email",
-        },
-        { status: 401 }
-      );
-    }
-
-    if (!user.isActive) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Tài khoản của bạn đã bị Quản trị viên tạm khóa. Vui lòng liên hệ Admin.",
-          field: "email",
-        },
-        { status: 403 }
-      );
-    }
-
-    // Kiểm tra mật khẩu an toàn với PBKDF2 (NFR-SEC-02)
-    const isMatch = verifyPassword(password, user.passwordHash);
-
-    if (!isMatch) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Mật khẩu không chính xác. Vui lòng kiểm tra lại.",
-          field: "password",
-        },
-        { status: 401 }
-      );
-    }
-
-    // Tự động nâng cấp hash mật khẩu nếu là chuỗi plaintext cũ
-    if (!user.passwordHash.startsWith("pbkdf2$")) {
-      prisma.user
-        .update({
-          where: { id: user.id },
-          data: { passwordHash: hashPassword(password) },
-        })
-        .catch((e) => console.error("Error auto-migrating password hash:", e));
-    }
-
-    // Tạo phiên đăng nhập đã ký số an toàn
-    const sessionUser = {
-      id: user.id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role as UserRole,
-    };
-
-    createSessionCookie(sessionUser);
 
     return NextResponse.json({
       success: true,
       message: "Đăng nhập thành công",
+      messageEn: "Signed in successfully.",
       user: sessionUser,
     });
   } catch (error) {
-    console.error("Login API error:", error);
+    if (isDalError(error)) return toHttpErrorResponse(error, req);
+    console.error("Login API error:", error instanceof Error ? error.message : "unknown");
     return NextResponse.json(
-      { success: false, error: "Lỗi hệ thống khi xử lý đăng nhập" },
+      {
+        success: false,
+        code: "AUTH_SERVICE_UNAVAILABLE",
+        error: "Dịch vụ xác thực tạm thời gián đoạn. Vui lòng thử lại sau giây lát.",
+        messageEn: "Authentication service is temporarily unavailable. Please try again shortly.",
+      },
       { status: 500 }
     );
   }

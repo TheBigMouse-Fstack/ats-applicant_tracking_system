@@ -1,364 +1,34 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getSessionUser } from "@/lib/auth";
-import { evaluateHeadcountGate } from "@/lib/headcount-rules";
-import { dispatchN8NInterviewWebhook, N8NInterviewPayload, N8NDispatchResult } from "@/lib/n8n";
+import {
+  scheduleOrUpdateInterview,
+  cancelInterview,
+  isDalError,
+  toHttpErrorResponse,
+} from "@/server/dal";
 
 export const dynamic = "force-dynamic";
 
-// POST: Đặt, cập nhật lịch phỏng vấn hoặc lưu ghi chú trước / sau phỏng vấn
 export async function POST(req: Request) {
   try {
-    const sessionUser = getSessionUser();
-    if (!sessionUser) {
-      return NextResponse.json(
-        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để thao tác lịch phỏng vấn" },
-        { status: 401 }
-      );
-    }
-
     const body = await req.json();
-    const {
-      applicationId,
-      interviewDate,
-      interviewFormat,
-      interviewLocation,
-      interviewNotes,
-      interviewInterviewerNotes,
-      interviewPostNotes,
-      interviewEmailOption = "AUTO_N8N",
-      customEmailSubject,
-      customEmailBody,
-      moveToInterviewStage,
-      isQuickNotesUpdate,
-      forceInterviewCapOverride,
-    } = body;
+    const result = await scheduleOrUpdateInterview(body || {});
 
-    // RBAC mới: Chỉ Quản lý Chuyên môn (Hiring Manager) và Admin được xếp/sửa lịch phỏng vấn & chuyển sang INTERVIEW
-    // HR chỉ có thể cập nhật ghi chú hỗ trợ khi isQuickNotesUpdate = true
-    if (!isQuickNotesUpdate && sessionUser.role === "HR") {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Phân quyền HR: Chuyên viên HR chỉ chuyển tối đa đến vòng Sàng lọc tiêu chuẩn (SCREENING). Quyền xếp lịch và duyệt Phỏng vấn (INTERVIEW) thuộc thẩm quyền Quản lý chuyên môn (Hiring Manager).",
-          rule: "RBAC-STAGE-LIMIT",
-        },
-        { status: 403 }
-      );
-    }
-
-    if (!applicationId) {
-      return NextResponse.json(
-        { success: false, error: "Thiếu mã hồ sơ ứng tuyển" },
-        { status: 400 }
-      );
-    }
-
-    // 1. Tìm Application
-    const app = await prisma.application.findUnique({
-      where: { id: Number(applicationId) },
-      include: {
-        candidate: true,
-        job: true,
-        evaluations: {
-          include: {
-            evaluator: {
-              select: { id: true, fullName: true, email: true, role: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (!app) {
-      return NextResponse.json(
-        { success: false, error: "Không tìm thấy hồ sơ ứng tuyển này" },
-        { status: 404 }
-      );
-    }
-
-    // Trường hợp 1: Chỉ cập nhật nhanh Ghi chú Trước hoặc Sau phỏng vấn (không thay đổi ngày giờ/địa điểm)
-    if (isQuickNotesUpdate) {
-      const updatedApp = await prisma.application.update({
-        where: { id: app.id },
-        data: {
-          interviewNotes: interviewNotes !== undefined ? (interviewNotes ? String(interviewNotes).trim() : null) : app.interviewNotes,
-          interviewInterviewerNotes:
-            interviewInterviewerNotes !== undefined
-              ? (interviewInterviewerNotes ? String(interviewInterviewerNotes).trim() : null)
-              : app.interviewInterviewerNotes,
-          interviewPostNotes:
-            interviewPostNotes !== undefined
-              ? (interviewPostNotes ? String(interviewPostNotes).trim() : null)
-              : app.interviewPostNotes,
-        },
-        include: {
-          candidate: true,
-          job: true,
-          evaluations: {
-            include: {
-              evaluator: {
-                select: { id: true, fullName: true, email: true, role: true },
-              },
-            },
-          },
-        },
-      });
-
-      await prisma.auditLog.create({
-        data: {
-          applicationId: app.id,
-          userId: sessionUser.id,
-          fromStage: app.currentStage,
-          toStage: app.currentStage,
-          action: "INTERVIEW_NOTES_UPDATED",
-        },
-      });
-
+    if (result.isQuickNotes) {
       return NextResponse.json({
         success: true,
-        message: "Đã lưu ghi chú phỏng vấn thành công!",
-        data: updatedApp,
+        message: result.message,
+        data: result.data,
       });
-    }
-
-    // Trường hợp 2: Lên lịch mới hoặc Sửa lịch hẹn
-    if (!interviewDate) {
-      return NextResponse.json(
-        { success: false, error: "Vui lòng chọn ngày và giờ diễn ra phỏng vấn" },
-        { status: 400 }
-      );
-    }
-
-    const parsedDate = new Date(interviewDate);
-    if (isNaN(parsedDate.getTime())) {
-      return NextResponse.json(
-        { success: false, error: "Định dạng thời gian phỏng vấn không hợp lệ" },
-        { status: 400 }
-      );
-    }
-
-    if (!interviewLocation || !interviewLocation.trim()) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Vui lòng nhập link phòng họp trực tuyến hoặc địa chỉ phòng họp trực tiếp",
-        },
-        { status: 400 }
-      );
-    }
-
-    const isRescheduling = Boolean(app.interviewDate);
-    const format = interviewFormat === "OFFLINE" ? "OFFLINE" : "ONLINE";
-    const location = interviewLocation.trim();
-    const notes = interviewNotes ? String(interviewNotes).trim() : null;
-    const interviewerNotes = interviewInterviewerNotes
-      ? String(interviewInterviewerNotes).trim()
-      : null;
-    const postNotes = interviewPostNotes ? String(interviewPostNotes).trim() : null;
-
-    // Kiểm tra quy tắc tuần tự State Machine: Chỉ được xếp lịch phỏng vấn cho hồ sơ ở SCREENING hoặc INTERVIEW
-    if (app.currentStage === "NEW" || app.currentStage === "HIRED") {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            app.currentStage === "NEW"
-              ? "Hồ sơ đang ở vòng Mới nộp, cần được HR chuyển sang Sàng lọc tiêu chuẩn trước khi xếp lịch phỏng vấn."
-              : "Hồ sơ đã ở trạng thái Tuyển chọn (HIRED), không thể lên lịch phỏng vấn mới.",
-          rule: "BRL-STAGE-ORDER",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Chuyển sang INTERVIEW nếu được yêu cầu và hiện tại đang ở SCREENING/REJECTED
-    const targetStage =
-      moveToInterviewStage && app.currentStage !== "INTERVIEW"
-        ? "INTERVIEW"
-        : app.currentStage;
-
-    // Kiểm tra chỉ tiêu tuyển dụng & trần phỏng vấn cùng lúc khi đẩy thêm người vào INTERVIEW (BRL-13)
-    if (targetStage === "INTERVIEW" && app.currentStage !== "INTERVIEW") {
-      const [hiredCount, activeInterviewCount] = await Promise.all([
-        prisma.application.count({ where: { jobId: app.jobId, currentStage: "HIRED" } }),
-        prisma.application.count({ where: { jobId: app.jobId, currentStage: "INTERVIEW" } }),
-      ]);
-      const headcountCheck = evaluateHeadcountGate({
-        jobTitle: app.job.title,
-        fromStage: app.currentStage,
-        toStage: "INTERVIEW",
-        targetHeadcount: app.job.targetHeadcount,
-        maxActiveInterviews: app.job.maxActiveInterviews,
-        hiredCount,
-        activeInterviewCount,
-        forceOverride: Boolean(forceInterviewCapOverride),
-      });
-      if (!headcountCheck.allowed) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: headcountCheck.error,
-            rule: headcountCheck.rule,
-            requiresOverride: Boolean(headcountCheck.requiresOverride),
-            headcountMetrics: headcountCheck.metrics,
-          },
-          { status: headcountCheck.statusCode || 400 }
-        );
-      }
-    }
-
-    // Cập nhật Application và ghi nhận AuditLog trong Transaction
-    const [updatedApp] = await prisma.$transaction([
-      prisma.application.update({
-        where: { id: app.id },
-        data: {
-          interviewDate: parsedDate,
-          interviewFormat: format,
-          interviewLocation: location,
-          interviewNotes: notes,
-          interviewInterviewerNotes: interviewerNotes,
-          interviewPostNotes: postNotes,
-          interviewEmailOption,
-          customEmailSubject: interviewEmailOption === "MANUAL_CUSTOM" ? (customEmailSubject || null) : null,
-          customEmailBody: interviewEmailOption === "MANUAL_CUSTOM" ? (customEmailBody || null) : null,
-          isInterviewInviteSent: interviewEmailOption === "AUTO_N8N" ? false : true,
-          currentStage: targetStage,
-          stageUpdatedAt: targetStage !== app.currentStage ? new Date() : app.stageUpdatedAt,
-        },
-        include: {
-          candidate: true,
-          job: true,
-          evaluations: {
-            include: {
-              evaluator: {
-                select: { id: true, fullName: true, email: true, role: true },
-              },
-            },
-          },
-        },
-      }),
-      prisma.auditLog.create({
-        data: {
-          applicationId: app.id,
-          userId: sessionUser.id,
-          fromStage: app.currentStage,
-          toStage: targetStage,
-          action: isRescheduling
-            ? "INTERVIEW_RESCHEDULED"
-            : interviewEmailOption === "MANUAL_CUSTOM"
-            ? "INTERVIEW_SCHEDULED_CUSTOM_EMAIL"
-            : interviewEmailOption === "NONE"
-            ? "INTERVIEW_SCHEDULED_NO_EMAIL"
-            : "INTERVIEW_SCHEDULED_AUTO_EMAIL",
-          reason:
-            interviewEmailOption === "MANUAL_CUSTOM"
-              ? "Tự soạn thư mời và lưu trữ trên hệ thống"
-              : interviewEmailOption === "NONE"
-              ? "Không gửi email (đã liên hệ trực tiếp)"
-              : "Kích hoạt gửi thư mời tự động kèm lịch hẹn",
-        },
-      }),
-    ]);
-
-    // Sinh mẫu Thư mời hoặc Thư đính chính phỏng vấn tự động
-    const formattedTime = parsedDate.toLocaleString("vi-VN", {
-      dateStyle: "full",
-      timeStyle: "short",
-    });
-
-    const emailSubject = isRescheduling
-      ? `[RecoverX] THÔNG BÁO ĐIỀU CHỈNH LỊCH PHỎNG VẤN — Vị trí ${app.job.title}`
-      : `[RecoverX] THƯ MỜI PHỎNG VẤN CHUYÊN MÔN — Vị trí ${app.job.title}`;
-
-    const emailTemplate = `
-Kính gửi bạn ${app.candidate.fullName},
-
-${
-  isRescheduling
-    ? `Ban Tuyển dụng RecoverX xin gửi thông báo điều chỉnh lịch hẹn Phỏng vấn Chuyên môn cho vị trí "${app.job.title}".`
-    : `Ban Tuyển dụng RecoverX trân trọng chúc mừng hồ sơ của bạn đã vượt qua vòng sơ loại tiêu chuẩn cho vị trí "${app.job.title}".`
-}
-
-Thông tin lịch hẹn phỏng vấn cập nhật như sau:
-• Vị trí ứng tuyển: ${app.job.title} (${app.job.department})
-• Thời gian phỏng vấn: ${formattedTime}
-• Hình thức: ${format === "ONLINE" ? "Phỏng vấn Trực tuyến (Online)" : "Phỏng vấn Trực tiếp (Tại văn phòng)"}
-• Địa điểm / Đường dẫn: ${location}
-${notes ? `• Ghi chú chuẩn bị cho ứng viên: ${notes}` : ""}
-
-Vui lòng xác nhận sự hiện diện của bạn bằng cách phản hồi email này trước 24 giờ.
-Nếu cần hỗ trợ điều chỉnh lịch hẹn, bạn có thể liên hệ trực tiếp với chuyên viên tuyển dụng ${sessionUser.fullName}.
-
-Trân trọng,
-Ban Tuyển dụng RecoverX
-    `.trim();
-
-    // Tự động kích hoạt n8n nếu chọn AUTO_N8N
-    let n8nResult: N8NDispatchResult | null = null;
-    if (interviewEmailOption === "AUTO_N8N") {
-      const payload: N8NInterviewPayload = {
-        event: isRescheduling ? "INTERVIEW_RESCHEDULED" : "INTERVIEW_SCHEDULED",
-        applicationId: app.id,
-        candidate: {
-          fullName: app.candidate.fullName,
-          email: app.candidate.email,
-          phone: app.candidate.phone,
-        },
-        job: {
-          title: app.job.title,
-          department: app.job.department,
-        },
-        interview: {
-          date: parsedDate.toISOString(),
-          formattedTime,
-          format,
-          location,
-          notes,
-        },
-        interviewer: {
-          name: sessionUser.fullName,
-          email: sessionUser.email,
-        },
-        emailOption: interviewEmailOption,
-        timestamp: new Date().toISOString(),
-      };
-
-      n8nResult = await dispatchN8NInterviewWebhook(payload);
-      if (n8nResult.success) {
-        await prisma.application.update({
-          where: { id: app.id },
-          data: { isInterviewInviteSent: true },
-        });
-        (updatedApp as any).isInterviewInviteSent = true;
-      }
-    }
-
-    let responseMessage = isRescheduling
-      ? `Đã cập nhật lịch phỏng vấn cho ứng viên ${app.candidate.fullName} thành công!`
-      : `Đã lên lịch phỏng vấn cho ứng viên ${app.candidate.fullName} thành công!`;
-
-    if (interviewEmailOption === "AUTO_N8N") {
-      if (n8nResult?.success) {
-        responseMessage += ` Đã tự động gửi thư mời và đồng bộ lịch hẹn cho ứng viên.`;
-      } else if (n8nResult && !n8nResult.success) {
-        responseMessage += ` (Thư mời tự động đang trong hàng đợi xử lý).`;
-      }
     }
 
     return NextResponse.json({
       success: true,
-      message: responseMessage,
-      n8nResult,
-      data: {
-        application: updatedApp,
-        formattedTime,
-        emailSubject,
-        emailTemplate,
-      },
+      message: result.message,
+      n8nResult: result.n8nResult,
+      data: result.data,
     });
   } catch (error: any) {
+    if (isDalError(error)) return toHttpErrorResponse(error, req);
     console.error("Schedule interview error:", error);
     return NextResponse.json(
       { success: false, error: "Lỗi hệ thống khi lên lịch phỏng vấn: " + error.message },
@@ -367,151 +37,19 @@ Ban Tuyển dụng RecoverX
   }
 }
 
-// DELETE: Hủy lịch phỏng vấn đã xếp
 export async function DELETE(req: Request) {
   try {
-    const sessionUser = getSessionUser();
-    if (!sessionUser) {
-      return NextResponse.json(
-        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để hủy lịch phỏng vấn" },
-        { status: 401 }
-      );
-    }
-
-    if (sessionUser.role === "HR") {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Chỉ Quản lý chuyên môn (Hiring Manager) hoặc Quản trị viên mới có quyền hủy lịch phỏng vấn.",
-          rule: "RBAC-STAGE-LIMIT",
-        },
-        { status: 403 }
-      );
-    }
-
     const { searchParams } = new URL(req.url);
     const appId = Number(searchParams.get("applicationId"));
-
-    if (!appId) {
-      return NextResponse.json(
-        { success: false, error: "Thiếu mã hồ sơ ứng tuyển" },
-        { status: 400 }
-      );
-    }
-
-    const app = await prisma.application.findUnique({
-      where: { id: appId },
-      include: {
-        candidate: true,
-        job: true,
-        evaluations: {
-          include: {
-            evaluator: {
-              select: { id: true, fullName: true, email: true, role: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (!app) {
-      return NextResponse.json(
-        { success: false, error: "Không tìm thấy hồ sơ ứng tuyển này" },
-        { status: 404 }
-      );
-    }
-
-    const prevDate = app.interviewDate
-      ? new Date(app.interviewDate).toLocaleString("vi-VN", {
-          dateStyle: "full",
-          timeStyle: "short",
-        })
-      : "";
-
-    // Xóa lịch phỏng vấn và ghi AuditLog
-    const [updatedApp] = await prisma.$transaction([
-      prisma.application.update({
-        where: { id: app.id },
-        data: {
-          interviewDate: null,
-          interviewFormat: null,
-          interviewLocation: null,
-          interviewNotes: null,
-          interviewInterviewerNotes: null,
-          interviewPostNotes: null,
-          isInterviewInviteSent: false,
-        },
-        include: {
-          candidate: true,
-          job: true,
-          evaluations: {
-            include: {
-              evaluator: {
-                select: { id: true, fullName: true, email: true, role: true },
-              },
-            },
-          },
-        },
-      }),
-      prisma.auditLog.create({
-        data: {
-          applicationId: app.id,
-          userId: sessionUser.id,
-          fromStage: app.currentStage,
-          toStage: app.currentStage,
-          action: "INTERVIEW_CANCELLED",
-          reason: `Hủy lịch phỏng vấn (${prevDate || "đã xếp"})`,
-        },
-      }),
-    ]);
-
-    // Tự động kích hoạt n8n gửi thông báo hủy lịch phỏng vấn và hủy Calendar
-    let cancelNotice = "";
-    if (app.interviewDate) {
-      const cancelPayload: N8NInterviewPayload = {
-        event: "INTERVIEW_CANCELLED",
-        applicationId: app.id,
-        candidate: {
-          fullName: app.candidate.fullName,
-          email: app.candidate.email,
-          phone: app.candidate.phone,
-        },
-        job: {
-          title: app.job.title,
-          department: app.job.department,
-        },
-        interview: {
-          date: new Date(app.interviewDate).toISOString(),
-          formattedTime: prevDate,
-          format: app.interviewFormat === "OFFLINE" ? "OFFLINE" : "ONLINE",
-          location: app.interviewLocation || "Chưa xác định",
-          notes: app.interviewNotes,
-        },
-        interviewer: {
-          name: sessionUser.fullName,
-          email: sessionUser.email,
-        },
-        emailOption: app.interviewEmailOption || "AUTO_N8N",
-        timestamp: new Date().toISOString(),
-      };
-
-      try {
-        const n8nResult = await dispatchN8NInterviewWebhook(cancelPayload);
-        if (n8nResult.success) {
-          cancelNotice = " Đã tự động gửi thông báo hủy lịch phỏng vấn cho ứng viên qua n8n.";
-        }
-      } catch (err: any) {
-        console.warn("Lỗi kích hoạt webhook n8n hủy lịch:", err.message);
-      }
-    }
+    const result = await cancelInterview(appId);
 
     return NextResponse.json({
       success: true,
-      message: `Đã hủy lịch phỏng vấn (${prevDate || "đã xếp"}) của ứng viên ${app.candidate.fullName} thành công!${cancelNotice}`,
-      data: updatedApp,
+      message: result.message,
+      data: result.data,
     });
   } catch (error: any) {
+    if (isDalError(error)) return toHttpErrorResponse(error, req);
     console.error("Cancel interview error:", error);
     return NextResponse.json(
       { success: false, error: "Lỗi hệ thống khi hủy lịch phỏng vấn: " + error.message },

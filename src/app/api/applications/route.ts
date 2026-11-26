@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { extractTextFromCv, parseAndScoreCv } from "@/lib/ai-parser";
-import { getSessionUser } from "@/lib/auth";
+import { listApplications, isDalError, toHttpErrorResponse } from "@/server/dal";
 import {
   normalizeEmail,
   normalizePhone,
@@ -19,120 +19,14 @@ export const dynamic = "force-dynamic";
 // Rate Limiter trượt trong bộ nhớ: Tối đa 5 lần nộp / 10 phút trên mỗi IP (NFR-SEC-03)
 const ipSubmissionTimestamps = new Map<string, number[]>();
 
-// GET: Lấy danh sách hồ sơ ứng tuyển (dành cho API nội bộ hoặc xuất báo cáo)
+// GET: Lấy danh sách hồ sơ ứng tuyển nội bộ qua server-only DAL (kèm BRL-15 Blind Scorecard)
 export async function GET(req: Request) {
   try {
-    const sessionUser = getSessionUser();
-    if (!sessionUser) {
-      return NextResponse.json(
-        { success: false, error: "Yêu cầu đăng nhập tài khoản nội bộ để xem danh sách hồ sơ" },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(req.url);
-    const jobId = searchParams.get("jobId");
-    const stage = searchParams.get("stage");
-    const source = searchParams.get("source");
-    const search = searchParams.get("search");
-    const sortBy = searchParams.get("sortBy") || "NEWEST";
-    const starredOnly = searchParams.get("starred") === "true";
-    const unviewedOnly = searchParams.get("unviewed") === "true";
-    const unevaluatedOnly = searchParams.get("unevaluated") === "true";
-
-    const where: any = {};
-    if (jobId && jobId !== "ALL") where.jobId = Number(jobId);
-    if (stage && stage !== "ALL") where.currentStage = stage;
-    if (source && source !== "ALL") where.source = source;
-    if (starredOnly) where.isStarred = true;
-    if (unviewedOnly) where.isViewed = false;
-    if (unevaluatedOnly) where.evaluations = { none: {} };
-
-    if (search && search.trim()) {
-      const q = search.trim();
-      where.OR = [
-        { candidate: { fullName: { contains: q } } },
-        { candidate: { email: { contains: q } } },
-        { candidate: { phone: { contains: q } } },
-        { candidate: { parsedSkills: { contains: q } } },
-        { job: { title: { contains: q } } },
-      ];
-    }
-
-    let orderBy: any = { createdAt: "desc" };
-    if (sortBy === "OLDEST") {
-      orderBy = { createdAt: "asc" };
-    } else if (sortBy === "NAME_ASC") {
-      orderBy = { candidate: { fullName: "asc" } };
-    }
-
-    const applications = await prisma.application.findMany({
-      where,
-      select: {
-        id: true,
-        candidateId: true,
-        jobId: true,
-        source: true,
-        currentStage: true,
-        aiMatchScore: true,
-        aiMatchRationale: true,
-        isStarred: true,
-        isViewed: true,
-        viewedAt: true,
-        stageUpdatedAt: true,
-        createdAt: true,
-        candidate: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-            experienceYears: true,
-            parsedSkills: true,
-            createdAt: true,
-          },
-        },
-        job: {
-          select: {
-            id: true,
-            title: true,
-            department: true,
-            status: true,
-          },
-        },
-        evaluations: {
-          select: {
-            id: true,
-            overallScore: true,
-            recommendation: true,
-          },
-        },
-      },
-      orderBy,
-    });
-
-    // Sắp xếp tùy biến ở tầng server cho các tiêu chí phức tạp
-    if (sortBy === "STARRED_FIRST") {
-      applications.sort((a, b) => {
-        if (a.isStarred !== b.isStarred) return b.isStarred ? 1 : -1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-    } else if (sortBy === "UNVIEWED_FIRST") {
-      applications.sort((a, b) => {
-        if (a.isViewed !== b.isViewed) return a.isViewed ? 1 : -1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-    } else if (sortBy === "UNEVALUATED_FIRST") {
-      applications.sort((a, b) => {
-        const aHasEval = a.evaluations && a.evaluations.length > 0;
-        const bHasEval = b.evaluations && b.evaluations.length > 0;
-        if (aHasEval !== bHasEval) return aHasEval ? 1 : -1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-    }
-
+    const applications = await listApplications(searchParams);
     return NextResponse.json({ success: true, data: applications });
   } catch (error: any) {
+    if (isDalError(error)) return toHttpErrorResponse(error, req);
     console.error("GET /api/applications error:", error);
     return NextResponse.json(
       { success: false, error: "Không thể lấy danh sách ứng viên" },

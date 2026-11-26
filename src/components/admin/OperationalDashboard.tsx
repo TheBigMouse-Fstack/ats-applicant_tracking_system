@@ -318,7 +318,9 @@ export default function OperationalDashboard() {
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              Tài khoản của bạn không có quyền truy cập mục vừa yêu cầu.
+              {locale === "en"
+                ? "You do not have permission to access the requested page."
+                : "Tài khoản của bạn không có quyền truy cập mục vừa yêu cầu."}
             </span>
           </div>
           <button

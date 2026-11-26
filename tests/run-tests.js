@@ -659,8 +659,10 @@ async function runTests() {
     assert(cardSrc.includes("getAiMatchTier"), "CandidateCard trên Kanban hiển thị huy hiệu AI đánh giá % theo chuẩn 3 mức");
 
     // Kiểm tra logic nghiệp vụ Kho Nhân Tài (loại trừ NEW & HIRED, không có bộ lọc Chưa xem, 3 trạng thái chuẩn)
-    const talentPoolApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/talent-pool/route.ts"), "utf8");
-    const talentPoolPageSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/talent-pool/page.tsx"), "utf8");
+    const talentPoolApiSrc =
+      fs.readFileSync(path.join(process.cwd(), "src/app/api/talent-pool/route.ts"), "utf8") +
+      fs.readFileSync(path.join(process.cwd(), "src/server/dal/talent-pool.ts"), "utf8");
+    const talentPoolPageSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/(protected)/talent-pool/page.tsx"), "utf8");
     assert(talentPoolApiSrc.includes('["REJECTED", "SCREENING", "INTERVIEW"]') && talentPoolApiSrc.includes("SILVER_MEDALIST"), "API Kho Nhân Tài loại trừ hoàn toàn NEW & HIRED và phân loại 3 nhóm nhân tài chuẩn (Silver Medalist / Đang chờ đợt khác / Lưu trữ dự phòng)");
     assert(!talentPoolPageSrc.includes("Chưa xem") && talentPoolPageSrc.includes("SILVER_MEDALIST"), "UI Kho Nhân Tài đã bỏ nút Chưa xem vô lý và lọc theo 3 trạng thái Kho Nhân Tài thực tế");
 
@@ -756,8 +758,10 @@ async function runTests() {
     // 16D. Kiểm tra mã nguồn & lược đồ thực tế cho cả 2 tính năng
     const appsApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/applications/route.ts"), "utf8");
     const previewApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/applications/preview-cv/route.ts"), "utf8");
-    const moveApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/pipeline/move/route.ts"), "utf8");
-    const jobsPageSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/jobs/page.tsx"), "utf8");
+    const moveApiSrc =
+      fs.readFileSync(path.join(process.cwd(), "src/app/api/pipeline/move/route.ts"), "utf8") +
+      fs.readFileSync(path.join(process.cwd(), "src/server/dal/pipeline.ts"), "utf8");
+    const jobsPageSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/(protected)/jobs/page.tsx"), "utf8");
     const applyFormSrc = fs.readFileSync(path.join(process.cwd(), "src/components/candidate/JobApplicationForm.tsx"), "utf8");
     const dedupSrc = fs.readFileSync(path.join(process.cwd(), "src/lib/dedup-and-contact.ts"), "utf8");
 
@@ -795,7 +799,9 @@ async function runTests() {
     assert(mock45Items.length === step3Display.length, "Đã hiển thị toàn bộ hồ sơ (hasMore = false)");
 
     // 17.2 Kiểm tra mã nguồn API và UI
-    const pipelineApiSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/pipeline/route.ts"), "utf8");
+    const pipelineApiSrc =
+      fs.readFileSync(path.join(process.cwd(), "src/app/api/pipeline/route.ts"), "utf8") +
+      fs.readFileSync(path.join(process.cwd(), "src/server/dal/pipeline.ts"), "utf8");
     const kanbanBoardSrc = fs.readFileSync(path.join(process.cwd(), "src/components/kanban/KanbanBoard.tsx"), "utf8");
     assert(pipelineApiSrc.includes("limitPerStage") && pipelineApiSrc.includes("stagePagination"), "API Pipeline hỗ trợ tham số limitPerStage và trả về cấu trúc stagePagination độc lập 5 cột");
     assert(kanbanBoardSrc.includes("stageLimits") && kanbanBoardSrc.includes("handleLoadMore") && kanbanBoardSrc.includes("allColumnItems.slice(0, currentLimit)"), "Kanban UI quản lý giới hạn hiển thị riêng từng cột và có nút Tải thêm lũy tiến");
@@ -902,7 +908,7 @@ async function runTests() {
 
     assert(storageModuleSrc.includes("uploadCvFile") && storageModuleSrc.includes("getCvFile"), "src/lib/storage.ts cung cấp đầy đủ hàm uploadCvFile và getCvFile");
     assert(storageModuleSrc.includes("AWS_ENDPOINT_URL_S3") && (storageModuleSrc.includes("files-sdk") || storageModuleSrc.includes("neon")), "Storage Module cấu hình SDK chuẩn tương thích Neon Object Storage");
-    assert(storageRouteSrc.includes("getSessionUser") && storageRouteSrc.includes("401"), "Storage Proxy kiểm tra phiên đăng nhập và chặn truy cập trái phép (HTTP 401)");
+    assert((storageRouteSrc.includes("requirePermission") || storageRouteSrc.includes("getSessionUser")) && (storageRouteSrc.includes("toHttpErrorResponse") || storageRouteSrc.includes("401")), "Storage Proxy kiểm tra phiên đăng nhập qua DAL và chặn truy cập trái phép (HTTP 401)");
     assert(storageRouteSrc.includes("..") && (storageRouteSrc.includes("400") || storageRouteSrc.includes("Path Traversal")), "Storage Proxy kiểm tra và vô hiệu hóa tấn công Path Traversal (../)");
     assert(storageRouteSrc.includes("getCvFile"), "Storage Proxy tải luồng dữ liệu an toàn qua Cloud Storage SDK");
 
@@ -955,10 +961,225 @@ async function runTests() {
     const jobFormSrc = fs.readFileSync(path.join(process.cwd(), "src/components/candidate/JobApplicationForm.tsx"), "utf8");
 
     assert(!authSrc.includes('token.startsWith("{")') && !authSrc.includes("return password === storedHash"), "Đã gỡ bỏ hoàn toàn lỗ hổng Auth Bypass cookie JSON không chữ ký và so sánh mật khẩu plaintext");
-    assert(jobsApiSrc.includes("if (!sessionUser)") && !jobsApiSrc.includes("fallbackUser"), "Khóa xác thực bắt buộc (HTTP 401) cho cả GET và POST /api/jobs, xóa fallbackUser");
+    assert((jobsApiSrc.includes("@/server/dal") || jobsApiSrc.includes("requirePermission") || jobsApiSrc.includes("if (!sessionUser)")) && !jobsApiSrc.includes("fallbackUser"), "Khóa xác thực bắt buộc (HTTP 401) qua DAL cho cả GET và POST /api/jobs, xóa fallbackUser");
     assert(!envExampleSrc.includes("applicanttrackingsystem.app.n8n.cloud") && envExampleSrc.includes("N8N_WEBHOOK_SECRET"), "Đã xóa URL webhook thật khỏi .env.example và bổ sung N8N_WEBHOOK_SECRET");
     assert(!jobFormSrc.includes("khanhnqse19@gmail.com") && !jobFormSrc.includes("0708462865"), "Đã gỡ sạch PII cá nhân thật khỏi mã nguồn Frontend (JobApplicationForm.tsx)");
     assert(fs.existsSync(path.join(process.cwd(), ".aiignore")) && fs.existsSync(path.join(process.cwd(), "specs/constitution.md")), "Đã khởi tạo .aiignore và specs/constitution.md chuẩn AI-Native");
+
+    // ---------------------------------------------------------
+    // 25. ATS-002: SERVER-ONLY DAL & BETTER AUTH (VB-01..VB-05)
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}25. ATS-002 Server-Only DAL & Better Auth Standardization (VB-01..VB-05):${colors.reset}`);
+
+    // VB-01: Mọi tệp trong src/server/dal/ và src/lib/better-auth.ts đều có import "server-only"
+    const dalFiles = [
+      "src/server/dal/auth.ts",
+      "src/server/dal/permissions.ts",
+      "src/server/dal/errors.ts",
+      "src/server/dal/gates.ts",
+      "src/server/dal/schemas.ts",
+      "src/server/dal/users.ts",
+      "src/server/dal/jobs.ts",
+      "src/server/dal/scorecards.ts",
+      "src/server/dal/pipeline.ts",
+      "src/server/dal/applications.ts",
+      "src/server/dal/interviews.ts",
+      "src/server/dal/talent-pool.ts",
+      "src/server/dal/analytics.ts",
+      "src/server/dal/index.ts",
+      "src/lib/better-auth.ts",
+    ];
+    const allDalServerOnly = dalFiles.every((rel) => {
+      const fullPath = path.join(process.cwd(), rel);
+      return fs.existsSync(fullPath) && fs.readFileSync(fullPath, "utf8").includes('import "server-only"');
+    });
+    assert(allDalServerOnly, "VB-01: 100% module trong src/server/dal/ (14/14) và better-auth.ts khai báo import \"server-only\"");
+
+    // VB-01 & P1-01: 100% internal API routes đi qua DAL và ZERO import prisma trực tiếp trong 20 pure internal routes
+    const internalRoutes = [
+      "src/app/api/users/route.ts",
+      "src/app/api/applications/[id]/re-parse/route.ts",
+      "src/app/api/applications/[id]/profile/route.ts",
+      "src/app/api/applications/[id]/star/route.ts",
+      "src/app/api/applications/[id]/route.ts",
+      "src/app/api/applications/storage/[...key]/route.ts",
+      "src/app/api/applications/route.ts",
+      "src/app/api/jobs/route.ts",
+      "src/app/api/jobs/[id]/route.ts",
+      "src/app/api/jobs/[id]/approve/route.ts",
+      "src/app/api/pipeline/route.ts",
+      "src/app/api/pipeline/move/route.ts",
+      "src/app/api/interviews/schedule/route.ts",
+      "src/app/api/interviews/trigger-n8n/route.ts",
+      "src/app/api/scorecards/route.ts",
+      "src/app/api/talent-pool/route.ts",
+      "src/app/api/talent-pool/cleanup/route.ts",
+      "src/app/api/export/route.ts",
+      "src/app/api/dashboard/route.ts",
+      "src/app/api/realtime/notifications/route.ts",
+      "src/app/api/auth/change-password/route.ts",
+      "src/app/api/auth/login/route.ts",
+    ];
+    const missingDalRoutes = internalRoutes.filter((rel) => {
+      const src = fs.readFileSync(path.join(process.cwd(), rel), "utf8");
+      return !src.includes("@/server/dal");
+    });
+    assert(missingDalRoutes.length === 0, "VB-01: 100% internal API routes (22/22) ủy thác hoàn toàn qua src/server/dal/", missingDalRoutes.join(", "));
+
+    const pureInternalNoPrismaRoutes = internalRoutes.filter(
+      (rel) => rel !== "src/app/api/applications/route.ts" && rel !== "src/app/api/applications/storage/[...key]/route.ts"
+    );
+    const directPrismaRoutes = pureInternalNoPrismaRoutes.filter((rel) => {
+      const src = fs.readFileSync(path.join(process.cwd(), rel), "utf8");
+      return src.includes('from "@/lib/prisma"');
+    });
+    assert(directPrismaRoutes.length === 0, "P1-01: 0/20 internal API route import trực tiếp Prisma (100% đi qua src/server/dal/)", directPrismaRoutes.join(", "));
+
+    const legacyCallRoutes = internalRoutes.filter((rel) => {
+      const src = fs.readFileSync(path.join(process.cwd(), rel), "utf8");
+      return src.includes("getSessionUser");
+    });
+    assert(legacyCallRoutes.length === 0, "VB-01: Không còn internal API route nào gọi getSessionUser() cũ", legacyCallRoutes.join(", "));
+
+    // ---------------------------------------------------------
+    // 26. QA REMEDIATION SUITE (P0-01..P0-03 & P1-01..P1-08)
+    // ---------------------------------------------------------
+    console.log(`\n${colors.bold}26. QA Remediation Verification (3 P0 + 8 P1 Blockers):${colors.reset}`);
+    const betterAuthSrc = fs.readFileSync(path.join(process.cwd(), "src/lib/better-auth.ts"), "utf8");
+    const authAllRouteSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/auth/[...all]/route.ts"), "utf8");
+    const dalJobsSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/jobs.ts"), "utf8");
+    const dalUsersSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/users.ts"), "utf8");
+    const dalScorecardsSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/scorecards.ts"), "utf8");
+    const dalAppsSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/applications.ts"), "utf8");
+    const dalInterviewsSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/interviews.ts"), "utf8");
+    const dalPipelineSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/pipeline.ts"), "utf8");
+    const dalTalentPoolSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/talent-pool.ts"), "utf8");
+    const dalAnalyticsSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/analytics.ts"), "utf8");
+    const n8nLibSrc = fs.readFileSync(path.join(process.cwd(), "src/lib/n8n.ts"), "utf8");
+    const triggerN8nSrc = fs.readFileSync(path.join(process.cwd(), "src/app/api/interviews/trigger-n8n/route.ts"), "utf8");
+    const seedTsSrc = fs.readFileSync(path.join(process.cwd(), "prisma/seed.ts"), "utf8");
+    const backfillSrc = fs.readFileSync(path.join(process.cwd(), "prisma/backfill-better-auth.ts"), "utf8");
+    const protectedLayoutSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/(protected)/layout.tsx"), "utf8");
+    const loginPageSrc = fs.readFileSync(path.join(process.cwd(), "src/app/admin/login/page.tsx"), "utf8");
+    const rtNotifSrc = fs.readFileSync(path.join(process.cwd(), "src/components/admin/RealtimeNotifications.tsx"), "utf8");
+
+    assert(betterAuthSrc.includes("disableSignUp: true") && authAllRouteSrc.includes("/sign-up"), "P0-01: Chặn cứng đăng ký công khai (disableSignUp: true + chặn /sign-up 403)");
+    assert(
+      dalScorecardsSrc.includes("filterEvaluationsBlind") &&
+      dalAppsSrc.includes("maskApplicationBlindScorecard") &&
+      dalInterviewsSrc.includes("maskApplicationBlindScorecard") &&
+      dalPipelineSrc.includes("maskApplicationBlindScorecard") &&
+      dalTalentPoolSrc.includes("maskApplicationBlindScorecard") &&
+      dalAnalyticsSrc.includes("maskApplicationBlindScorecard"),
+      "P0-02: Blind Scorecard (BRL-15) phủ đồng bộ trên scorecards, applications, profile, re-parse, interviews, pipeline, talent-pool và export"
+    );
+    assert(dalJobsSrc.includes("assertCanActivateJobStatus") && dalJobsSrc.includes("assertCanCloseJobStatus"), "P0-03: Chặn HR tự kích hoạt hoặc tự đóng tin tuyển dụng chưa được phê duyệt (BRL-17)");
+
+    // P0-03 Unit Test trực tiếp trên src/server/dal/gates.ts (chống bypass 2 bước PENDING_APPROVAL/DRAFT -> CLOSED -> ACTIVE)
+    {
+      const ts = require("typescript");
+      const gatesRaw = fs.readFileSync(path.join(process.cwd(), "src/server/dal/gates.ts"), "utf8");
+      const sanitizedGates = gatesRaw
+        .replace(/import\s+["']server-only["'];?/g, "")
+        .replace(/import\s+\{[^}]*\}\s+from\s+["']@\/lib\/stage-rules["'];?/g, "const validateStageTransition = () => ({ allowed: true });")
+        .replace(/import\s+type\s+\{[^}]*\}\s+from\s+["']\.\/auth["'];?/g, "")
+        .replace(/import\s+\{[^}]*\}\s+from\s+["']\.\/errors["'];?/g, "class DalError extends Error { constructor(code, opts = {}) { super(opts.messageVi || code); this.code = code; this.status = opts.status || 403; } }");
+      const compiled = ts.transpileModule(sanitizedGates, {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+      }).outputText;
+      const mod = { exports: {} };
+      const fn = new Function("exports", "require", "module", compiled);
+      fn(mod.exports, require, mod);
+
+      const { assertCanActivateJobStatus, assertCanCloseJobStatus } = mod.exports;
+      const hrUser = { id: 2, role: "HR", fullName: "HR", email: "hr@ats.vn", isActive: true, sessionId: "s1" };
+      const adminUser = { id: 1, role: "ADMIN", fullName: "Admin", email: "admin@ats.vn", isActive: true, sessionId: "s2" };
+
+      const throwsForbidden = (cb) => {
+        try {
+          cb();
+          return false;
+        } catch (err) {
+          return err && err.code === "AUTH_FORBIDDEN";
+        }
+      };
+
+      assert(
+        throwsForbidden(() => assertCanCloseJobStatus(hrUser, { status: "PENDING_APPROVAL", approvedById: null })) &&
+        throwsForbidden(() => assertCanCloseJobStatus(hrUser, { status: "DRAFT", approvedById: null })),
+        "P0-03 Unit: Chặn HR chuyển tin DRAFT / PENDING_APPROVAL sang CLOSED trước khi được phê duyệt"
+      );
+      assert(
+        throwsForbidden(() => assertCanActivateJobStatus(hrUser, { status: "CLOSED", approvedById: null }, "ACTIVE")) &&
+        throwsForbidden(() => assertCanActivateJobStatus(hrUser, { status: "PENDING_APPROVAL", approvedById: 3 }, "ACTIVE")),
+        "P0-03 Unit: Chặn tuyệt đối bypass 2 bước (CLOSED với approvedById=null -> ACTIVE hoặc PENDING_APPROVAL -> ACTIVE)"
+      );
+      assert(
+        !throwsForbidden(() => assertCanCloseJobStatus(hrUser, { status: "ACTIVE", approvedById: 3 })) &&
+        !throwsForbidden(() => assertCanActivateJobStatus(hrUser, { status: "CLOSED", approvedById: 3 }, "ACTIVE")) &&
+        !throwsForbidden(() => assertCanActivateJobStatus(adminUser, { status: "PENDING_APPROVAL", approvedById: null }, "ACTIVE")),
+        "P0-03 Unit: Cho phép HR đóng/mở lại tin đã được phê duyệt (approvedById != null) và cho phép Admin toàn quyền"
+      );
+    }
+    assert(dalInterviewsSrc.includes("assertStageTransitionAllowed"), "P1-01: Kích hoạt assertStageTransitionAllowed tại DAL cho luồng chuyển sang INTERVIEW");
+    assert(dalUsersSrc.includes("SELF_LOCKOUT_PREVENTED") && dalUsersSrc.includes("prisma.$transaction"), "P1-02: Chặn Admin tự khóa/tự hạ quyền (SELF_LOCKOUT_PREVENTED) và gói $transaction nguyên tử");
+    assert(betterAuthSrc.includes("databaseHooks") && betterAuthSrc.includes("isActive"), "P1-03: Better Auth databaseHooks chặn tài khoản isActive=false ở cả native sign-in");
+    assert(!triggerN8nSrc.includes("body.customWebhookUrl") && !triggerN8nSrc.includes("body?.customWebhookUrl") && !n8nLibSrc.includes("customWebhookUrl"), "P1-04: Gỡ bỏ hoàn toàn tham số customWebhookUrl chống SSRF và rò rỉ N8N_WEBHOOK_SECRET");
+    assert(!seedTsSrc.includes("hashed_password_123") && seedTsSrc.includes("pbkdf2$") && backfillSrc.includes("isValidPbkdf2Hash"), "P1-05: Dọn sạch hashed_password_123 trong prisma/seed.ts và kiểm tra hash pbkdf2$ trong backfill script");
+    assert(protectedLayoutSrc.includes("if (!sessionUser)") && !protectedLayoutSrc.includes('headersList.get("x-pathname")') && !protectedLayoutSrc.includes('headers()'), "P1-06: Guard AdminLayout chuyển sang Route Group (protected) Fail-Closed không phụ thuộc x-pathname");
+    assert(loginPageSrc.includes("x-locale") && loginPageSrc.includes("setLocale") && loginPageSrc.includes("Sign in"), "P1-07: Chuẩn hóa 100% song ngữ VI/EN và x-locale cho trang Đăng nhập");
+    assert(protectedLayoutSrc.includes("Boolean(clientUser)") && rtNotifSrc.includes("useSession"), "P1-08: Ngắt polling RealtimeNotifications hoàn toàn khi chưa có phiên đăng nhập");
+
+    // VB-02 & VB-03: Middleware không gắn x-user-* và không chứa fallback secret hard-coded; DAL không đọc x-middleware-subrequest
+    const middlewareSrc = fs.readFileSync(path.join(process.cwd(), "src/middleware.ts"), "utf8");
+    const dalAuthSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/auth.ts"), "utf8");
+    const dalErrorsSrc = fs.readFileSync(path.join(process.cwd(), "src/server/dal/errors.ts"), "utf8");
+
+    assert(
+      !middlewareSrc.includes('requestHeaders.set("x-user-') &&
+      !middlewareSrc.includes("recoverx_career_ats_enterprise_security_secret_key"),
+      "VB-03: Middleware đã gỡ bỏ hoàn toàn x-user-* header injection và fallback secret hard-coded"
+    );
+    assert(
+      !dalAuthSrc.includes('.get("x-user-') &&
+      !dalAuthSrc.includes(".get('x-user-") &&
+      !dalAuthSrc.includes('.get("x-middleware-subrequest') &&
+      !dalAuthSrc.includes(".get('x-middleware-subrequest"),
+      "VB-03: DAL auth.ts tuyệt đối không đọc hay tin tưởng các header có thể giả mạo (CVE-2025-29927)"
+    );
+    assert(
+      fs.existsSync(path.join(process.cwd(), "src/app/api/auth/[...all]/route.ts")) &&
+      schemaSrc.includes("model AuthSession") &&
+      schemaSrc.includes("model AuthAccount"),
+      "VB-04: Better Auth route handler và Prisma models (AuthSession, AuthAccount) đã sẵn sàng"
+    );
+
+    // VB-04: 6 tài khoản demo tồn tại với PBKDF2 hash và đã đồng bộ vào auth_accounts trên Neon Postgres
+    const demoEmails = [
+      "admin@ats.vn",
+      "hr@ats.vn",
+      "manager@ats.vn",
+      "admin@recoverx.career",
+      "hr@recoverx.career",
+      "techlead@recoverx.career",
+    ];
+    const demoUsers = await prisma.user.findMany({
+      where: { email: { in: demoEmails } },
+      include: { accounts: { where: { providerId: "credential" } } },
+    });
+    assert(
+      demoUsers.length === 6 &&
+      demoUsers.every((u) => u.passwordHash.startsWith("pbkdf2$") && u.accounts.length >= 1),
+      "VB-04: Đủ 6/6 tài khoản demo có mật khẩu băm PBKDF2-SHA512 và đã đồng bộ auth_accounts trên Neon PostgreSQL",
+      `Found ${demoUsers.length}/6`
+    );
+
+    // VB-05: Zero technical codes (BRL-*, NFR-*, RBAC) trong bảng thông điệp lỗi DAL VI/EN
+    const catalogSection = dalErrorsSrc.slice(dalErrorsSrc.indexOf("DAL_ERROR_CATALOG"), dalErrorsSrc.indexOf("export class DalError"));
+    assert(
+      !catalogSection.includes("BRL-") && !catalogSection.includes("NFR-") && !catalogSection.includes("RBAC"),
+      "VB-05: Bảng thông điệp lỗi DAL (VI & EN) sạch 100%, không chứa mã kỹ thuật nội bộ"
+    );
 
   } catch (err) {
     assert(false, "Kết nối CSDL thất bại", err.message);
